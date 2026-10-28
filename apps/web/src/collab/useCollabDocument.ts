@@ -37,7 +37,7 @@ function toPeers(states: StatesArray, selfId: number): Peer[] {
 }
 
 /** Connects to one collaborative document and reports connection, sync and presence state. */
-export function useCollabDocument(name: string, identity: CollabIdentity) {
+export function useCollabDocument(name: string) {
   const [session, setSession] = useState<CollabSession | null>(null);
   const [status, setStatus] = useState<WebSocketStatus>(WebSocketStatus.Connecting);
   const [synced, setSynced] = useState(false);

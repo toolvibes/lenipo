@@ -12,10 +12,8 @@ export function PageView({ me, pageId }: { me: Me; pageId: string }) {
   const { t } = useTranslation();
   const identity = useMemo(() => ({ name: me.displayName, color: presenceColor(me.id) }), [me]);
   const documentName = `page:${pageId}`;
-  const { session, status, synced, unsyncedChanges, peers, authError } = useCollabDocument(
-    documentName,
-    identity,
-  );
+  const { session, status, synced, unsyncedChanges, peers, authError } =
+    useCollabDocument(documentName);
 
   return (
     <div className="flex flex-col">
