@@ -1,0 +1,119 @@
+import { sql } from 'drizzle-orm';
+import {
+  index,
+  inet,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
+
+export const userStatus = pgEnum('user_status', ['active', 'deactivated']);
+
+export const users = pgTable(
+  'users',
+  {
+    id: uuid().primaryKey(),
+    /** Stored lower-cased; uniqueness is case-insensitive by construction. */
+    email: text().notNull(),
+    displayName: text().notNull(),
+    /** Null for accounts that only sign in through an external identity provider. */
+    passwordHash: text(),
+    status: userStatus().notNull().default('active'),
+    locale: text().notNull().default('de'),
+    timeZone: text().notNull().default('Europe/Berlin'),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastLoginAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [uniqueIndex('users_email_unique').on(table.email)],
+);
+
+export const groups = pgTable(
+  'groups',
+  {
+    id: uuid().primaryKey(),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('groups_name_unique').on(table.name)],
+);
+
+export const groupMembers = pgTable(
+  'group_members',
+  {
+    groupId: uuid()
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    addedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.groupId, table.userId] }),
+    index('group_members_user_idx').on(table.userId),
+  ],
+);
+
+/** Global permissions are granted to groups only, never to single users. */
+export const globalPermissionGrants = pgTable(
+  'global_permission_grants',
+  {
+    permission: text().notNull(),
+    groupId: uuid()
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.permission, table.groupId] })],
+);
+
+/** Browser sessions. The cookie carries a random secret; only its SHA-256 is stored. */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid().primaryKey(),
+    tokenHash: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    authMethod: text().notNull(),
+    ip: inet(),
+    userAgent: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    revokedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('sessions_token_hash_unique').on(table.tokenHash),
+    index('sessions_user_idx').on(table.userId).where(sql`${table.revokedAt} is null`),
+  ],
+);
+
+export const personalAccessTokens = pgTable(
+  'personal_access_tokens',
+  {
+    id: uuid().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    /** First characters of the secret, shown so people can tell tokens apart. */
+    prefix: text().notNull(),
+    tokenHash: text().notNull(),
+    scopes: text().array().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    lastUsedAt: timestamp({ withTimezone: true }),
+    revokedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('personal_access_tokens_hash_unique').on(table.tokenHash),
+    index('personal_access_tokens_user_idx').on(table.userId),
+  ],
+);

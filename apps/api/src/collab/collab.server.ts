@@ -1,7 +1,9 @@
 import { Server } from '@hocuspocus/server';
 import * as Y from 'yjs';
 import type { AppDependencies } from '../app.module.js';
-import type { AppConfig } from '../core/config.js';
+import { isForeignOrigin } from '../identity/request-guards.js';
+import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
+import { SessionService } from '../identity/session.service.js';
 import { isValidDocumentName } from './document-name.js';
 import { CollabDocumentStore } from './document-store.js';
 
@@ -14,23 +16,9 @@ export interface CollabContext {
   user: CollabUser;
 }
 
-/**
- * Placeholder until the identity module exists: outside production the client's token is
- * taken as its display name; in production every connection is refused.
- */
-function authenticate(config: AppConfig, token: string): CollabUser {
-  if (config.NODE_ENV === 'production') {
-    throw new Error('Collaboration authentication is not implemented yet');
-  }
-  const name = token.trim().slice(0, 64);
-  if (!name) {
-    throw new Error('Missing token');
-  }
-  return { id: `dev:${name}`, name };
-}
-
 export function createCollabServer({ config, database, logger }: AppDependencies) {
   const store = new CollabDocumentStore(database.db);
+  const sessions = new SessionService(database, config);
   const log = logger.child({ role: 'collab' });
 
   return new Server<CollabContext>({
@@ -42,13 +30,22 @@ export function createCollabServer({ config, database, logger }: AppDependencies
     debounce: 2_000,
     maxDebounce: 10_000,
 
-    async onAuthenticate({ token, documentName }) {
+    /** Same session cookie as the REST API; the provider's token is not used. */
+    async onAuthenticate({ documentName, requestHeaders }) {
       if (!isValidDocumentName(documentName)) {
         throw new Error('Invalid document name');
       }
-      const user = authenticate(config, token);
-      log.debug({ documentName, user: user.id }, 'Client authenticated');
-      return { user };
+      if (isForeignOrigin(requestHeaders)) {
+        throw new Error('Cross-site connection rejected');
+      }
+      const secret = readCookie(requestHeaders.get('cookie') ?? undefined, SESSION_COOKIE);
+      const session = secret ? await sessions.authenticate(secret) : null;
+      if (!session) {
+        throw new Error('Not signed in');
+      }
+      // Document-level permissions (wiki spaces, issue security) come with those modules.
+      log.debug({ documentName, user: session.userId }, 'Client authenticated');
+      return { user: { id: session.userId, name: session.displayName } };
     },
 
     async onLoadDocument({ document, documentName }) {

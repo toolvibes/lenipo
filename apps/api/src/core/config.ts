@@ -11,6 +11,18 @@ const configSchema = z.object({
   REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */
   WEB_DIST_DIR: z.string().min(1).optional(),
+  /** Public address of this installation, used in log messages and links (e.g. https://tasklore.example.org). */
+  PUBLIC_URL: z.url().optional(),
+  /** Send session cookies only over HTTPS. Defaults to true in production. */
+  COOKIE_SECURE: z.stringbool().optional(),
+  /** A session ends after this many hours without activity. */
+  SESSION_IDLE_HOURS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(14 * 24),
+  /** A session ends this many days after login, active or not. */
+  SESSION_MAX_DAYS: z.coerce.number().int().positive().default(30),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;
@@ -21,6 +33,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error(`Invalid configuration:\n${z.prettifyError(result.error)}`);
   }
   return result.data;
+}
+
+export function cookieSecure(config: AppConfig): boolean {
+  return config.COOKIE_SECURE ?? config.NODE_ENV === 'production';
 }
 
 export function runsRole(config: AppConfig, role: 'api' | 'collab' | 'worker'): boolean {

@@ -1,9 +1,12 @@
 import { type DynamicModule, Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import type { AppConfig } from './core/config.js';
 import { CoreModule } from './core/core.module.js';
+import { ProblemFilter } from './core/http/problem.filter.js';
 import type { Logger } from './core/logger.js';
 import type { DatabaseHandle } from './db/client.js';
+import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 
 export interface AppDependencies {
@@ -18,10 +21,12 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [
-        CoreModule.forRoot(config, database),
+        CoreModule.forRoot(config, database, logger),
         LoggerModule.forRoot({ pinoHttp: { logger } }),
         HealthModule,
+        IdentityModule,
       ],
+      providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],
     };
   }
 }

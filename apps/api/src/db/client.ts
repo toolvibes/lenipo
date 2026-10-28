@@ -10,3 +10,14 @@ export function createDatabase(url: string) {
 
 export type DatabaseHandle = ReturnType<typeof createDatabase>;
 export type Database = DatabaseHandle['db'];
+/** A transaction handle, accepted wherever a query may run inside or outside a transaction. */
+export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+export type Executor = Database | Transaction;
+
+/** True for PostgreSQL unique-constraint violations (SQLSTATE 23505). */
+export function isUniqueViolation(error: unknown): boolean {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  return (
+    typeof cause === 'object' && cause !== null && (cause as { code?: string }).code === '23505'
+  );
+}
