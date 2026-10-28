@@ -14,6 +14,8 @@ const ALLOWED = new Set([
   'CC0-1.0',
   'BlueOak-1.0.0',
   'Python-2.0',
+  // Fonts (Source Sans 3, Source Serif 4, JetBrains Mono): may be bundled with any software.
+  'OFL-1.1',
 ]);
 
 const output = execFileSync('pnpm', ['licenses', 'list', '--json', '--prod'], { encoding: 'utf8' });
@@ -27,7 +29,9 @@ function isAllowed(license) {
 
 const violations = Object.entries(byLicense)
   .filter(([license]) => !isAllowed(license))
-  .flatMap(([license, packages]) => packages.map((pkg) => `${pkg.name}@${pkg.versions.join(',')} (${license})`));
+  .flatMap(([license, packages]) =>
+    packages.map((pkg) => `${pkg.name}@${pkg.versions.join(',')} (${license})`),
+  );
 
 if (violations.length > 0) {
   console.error(`Disallowed licenses in production dependencies:\n  ${violations.join('\n  ')}`);

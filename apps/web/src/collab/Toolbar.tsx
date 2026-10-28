@@ -1,13 +1,26 @@
+import {
+  Code,
+  CodeBlock,
+  type Icon,
+  ListBullets,
+  ListNumbers,
+  Quotes,
+  TextB,
+  TextHOne,
+  TextHTwo,
+  TextItalic,
+  TextStrikethrough,
+} from '@phosphor-icons/react';
 import { type Editor, useEditorState } from '@tiptap/react';
 
 interface ToolbarButtonProps {
-  label: string;
+  icon: Icon;
   title: string;
-  active?: boolean;
+  active: boolean;
   onClick: () => void;
 }
 
-function ToolbarButton({ label, title, active = false, onClick }: ToolbarButtonProps) {
+function ToolbarButton({ icon: IconComponent, title, active, onClick }: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -16,15 +29,19 @@ function ToolbarButton({ label, title, active = false, onClick }: ToolbarButtonP
       aria-pressed={active}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
-      className={`min-w-8 rounded-md px-2 py-1 text-sm font-medium transition-colors ${
+      className={`grid size-7 place-items-center rounded-[var(--radius-md)] transition-colors ${
         active
           ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-          : 'text-[var(--muted)] hover:bg-[var(--bg)] hover:text-[var(--text)]'
+          : 'text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]'
       }`}
     >
-      {label}
+      <IconComponent size={16} weight={active ? 'bold' : 'regular'} />
     </button>
   );
+}
+
+function Separator() {
+  return <span className="mx-1 h-5 w-px bg-[var(--border)]" />;
 }
 
 export function Toolbar({ editor }: { editor: Editor }) {
@@ -49,66 +66,66 @@ export function Toolbar({ editor }: { editor: Editor }) {
     <div
       role="toolbar"
       aria-label="Formatierung"
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--border)] px-3 py-2"
+      className="flex flex-wrap items-center gap-1 border-b border-[var(--border)] px-3 py-1.5"
     >
       <ToolbarButton
-        label="H1"
+        icon={TextHOne}
         title="Überschrift 1"
         active={state.h1}
         onClick={() => chain().toggleHeading({ level: 1 }).run()}
       />
       <ToolbarButton
-        label="H2"
+        icon={TextHTwo}
         title="Überschrift 2"
         active={state.h2}
         onClick={() => chain().toggleHeading({ level: 2 }).run()}
       />
-      <span className="mx-1 h-5 w-px bg-[var(--border)]" />
+      <Separator />
       <ToolbarButton
-        label="B"
+        icon={TextB}
         title="Fett"
         active={state.bold}
         onClick={() => chain().toggleBold().run()}
       />
       <ToolbarButton
-        label="I"
+        icon={TextItalic}
         title="Kursiv"
         active={state.italic}
         onClick={() => chain().toggleItalic().run()}
       />
       <ToolbarButton
-        label="S"
+        icon={TextStrikethrough}
         title="Durchgestrichen"
         active={state.strike}
         onClick={() => chain().toggleStrike().run()}
       />
       <ToolbarButton
-        label="</>"
+        icon={Code}
         title="Code"
         active={state.code}
         onClick={() => chain().toggleCode().run()}
       />
-      <span className="mx-1 h-5 w-px bg-[var(--border)]" />
+      <Separator />
       <ToolbarButton
-        label="• Liste"
+        icon={ListBullets}
         title="Aufzählung"
         active={state.bulletList}
         onClick={() => chain().toggleBulletList().run()}
       />
       <ToolbarButton
-        label="1. Liste"
+        icon={ListNumbers}
         title="Nummerierte Liste"
         active={state.orderedList}
         onClick={() => chain().toggleOrderedList().run()}
       />
       <ToolbarButton
-        label="Zitat"
+        icon={Quotes}
         title="Zitat"
         active={state.blockquote}
         onClick={() => chain().toggleBlockquote().run()}
       />
       <ToolbarButton
-        label="Codeblock"
+        icon={CodeBlock}
         title="Codeblock"
         active={state.codeBlock}
         onClick={() => chain().toggleCodeBlock().run()}

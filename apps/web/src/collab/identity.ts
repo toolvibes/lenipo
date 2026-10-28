@@ -3,21 +3,13 @@ export interface CollabIdentity {
   color: string;
 }
 
-const COLORS = [
-  '#e5484d',
-  '#f76b15',
-  '#d4a017',
-  '#46a758',
-  '#12a594',
-  '#0090ff',
-  '#8e4ec6',
-  '#d6409f',
-];
+/** Presence colors from the design system (`presence-1` … `presence-6`); white text on each passes AA. */
+const COLORS = ['#b3372b', '#9c4a00', '#2d6b2d', '#0d6475', '#4a4fb0', '#953374'];
 const STORAGE_KEY = 'tasklore.dev-identity';
 
 function randomIdentity(): CollabIdentity {
   const number = Math.floor(100 + Math.random() * 900);
-  const color = COLORS[Math.floor(Math.random() * COLORS.length)] ?? '#0090ff';
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)] ?? '#0d6475';
   return { name: `Gast ${number}`, color };
 }
 

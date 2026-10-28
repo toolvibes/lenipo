@@ -66,4 +66,5 @@ apps/api      NestJS 12: REST-API, Collab-Server (Hocuspocus), später Worker; R
 apps/web      React 19 + Vite: Oberfläche, TipTap-Editor
 packages/     geteilter Code (@tasklore/shared)
 docs/         Projektplan
+design/       Design-Tokens (Quelle für tokens.css), Links zu Design-System und Kernansichten
 ```

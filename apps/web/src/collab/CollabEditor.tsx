@@ -18,7 +18,9 @@ export function CollabEditor({ session, identity }: CollabEditorProps) {
       extensions: [
         // Undo/redo comes from the collaboration extension (per user, Yjs-aware).
         StarterKit.configure({ undoRedo: false }),
-        Placeholder.configure({ placeholder: 'Schreib los, andere sehen es sofort …' }),
+        Placeholder.configure({
+          placeholder: 'Text eingeben – Änderungen erscheinen sofort bei allen Bearbeitenden.',
+        }),
         Collaboration.configure({ document: session.doc }),
         CollaborationCaret.configure({ provider: session.provider, user: identity }),
       ],
@@ -36,7 +38,7 @@ export function CollabEditor({ session, identity }: CollabEditorProps) {
   return (
     <>
       <Toolbar editor={editor} />
-      <div className="px-6 py-6 sm:px-10">
+      <div className="px-6 py-8 sm:px-12">
         <EditorContent editor={editor} />
       </div>
     </>

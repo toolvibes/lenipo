@@ -1,23 +1,34 @@
 import type { Peer } from './useCollabDocument';
 
+function initials(name: string): string {
+  return name.replace(/^Gast /, '').slice(0, 3);
+}
+
 export function PresenceBar({ peers }: { peers: Peer[] }) {
-  const others = peers.filter((peer) => !peer.isSelf).length;
+  const sorted = [...peers].sort((a, b) => Number(b.isSelf) - Number(a.isSelf));
+  const shown = sorted.length > 5 ? sorted.slice(0, 4) : sorted;
+  const hidden = sorted.length - shown.length;
   return (
     <div className="flex items-center gap-2">
-      <div className="flex -space-x-2">
-        {peers.map((peer) => (
+      <div className="flex">
+        {shown.map((peer, index) => (
           <span
             key={peer.clientId}
-            title={peer.isSelf ? `${peer.name} (du)` : peer.name}
-            className="grid size-8 place-items-center rounded-full border-2 border-[var(--surface)] text-xs font-semibold text-white"
-            style={{ backgroundColor: peer.color }}
+            title={peer.isSelf ? `${peer.name} (Sie)` : peer.name}
+            className="grid size-7 place-items-center rounded-full border-2 border-[var(--surface-1)] text-[11px] font-semibold text-white"
+            style={{ backgroundColor: peer.color, marginLeft: index === 0 ? 0 : -8 }}
           >
-            {peer.name.replace(/^Gast /, '').slice(0, 3)}
+            {initials(peer.name)}
           </span>
         ))}
+        {hidden > 0 && (
+          <span className="-ml-2 grid size-7 place-items-center rounded-full border-2 border-[var(--surface-1)] bg-[var(--surface-2)] text-[11px] font-semibold text-[var(--ink)]">
+            +{hidden}
+          </span>
+        )}
       </div>
-      <span className="text-sm text-[var(--muted)]">
-        {others === 0 ? 'Nur du' : `${others} weitere ${others === 1 ? 'Person' : 'Personen'}`}
+      <span className="text-xs text-[var(--ink-muted)]">
+        {peers.length <= 1 ? 'Keine weiteren Personen' : `${peers.length} Personen bearbeiten`}
       </span>
     </div>
   );
