@@ -59,6 +59,15 @@ Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dok
 | `pnpm db:migrate` | Migrationen anwenden (passiert auch beim API-Start) |
 | `pnpm licenses:check` | Nur permissive Lizenzen in Produktionsabhängigkeiten |
 
+### Produktion
+
+```bash
+cd deploy
+POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d
+```
+
+Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Migrationen laufen beim Start. Bis das Login fertig ist (Phase 0), lehnt der Collab-Server in Produktion jede Verbindung ab.
+
 ### Aufbau
 
 ```

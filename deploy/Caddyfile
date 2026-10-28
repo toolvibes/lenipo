@@ -1,0 +1,13 @@
+# Set SITE_ADDRESS to your domain (e.g. tasklore.example.org) for automatic HTTPS.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# Collaborative editing (WebSocket) goes to the collaboration server.
+	handle_path /collab* {
+		reverse_proxy app:4001
+	}
+
+	handle {
+		reverse_proxy app:4000
+	}
+}

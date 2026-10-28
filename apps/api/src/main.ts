@@ -1,10 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger as NestPinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { createCollabServer } from './collab/collab.server.js';
 import { loadConfig, runsRole } from './core/config.js';
 import { createLogger } from './core/logger.js';
+import { serveWebApp } from './core/web-app.js';
 import { createDatabase } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
 
@@ -18,9 +20,14 @@ async function start(): Promise<void> {
   const deps = { config, database, logger };
 
   if (runsRole(config, 'api')) {
-    const app = await NestFactory.create(AppModule.forRoot(deps), { bufferLogs: true });
+    const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(deps), {
+      bufferLogs: true,
+    });
     app.useLogger(app.get(NestPinoLogger));
     app.setGlobalPrefix('api/v1');
+    if (config.WEB_DIST_DIR) {
+      serveWebApp(app, config.WEB_DIST_DIR);
+    }
     await app.listen(config.API_PORT);
     logger.info({ port: config.API_PORT }, 'API listening');
     closers.push(() => app.close());
