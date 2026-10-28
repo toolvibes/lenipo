@@ -17,9 +17,17 @@ import { SetupController } from './setup.controller.js';
 import { SetupService } from './setup.service.js';
 import { TokenService } from './token.service.js';
 import { UserService } from './user.service.js';
+import { UsersController } from './users.controller.js';
 
 @Module({
-  controllers: [SetupController, AuthController, MeController, AdminController, SystemController],
+  controllers: [
+    SetupController,
+    AuthController,
+    MeController,
+    AdminController,
+    SystemController,
+    UsersController,
+  ],
   providers: [
     AccessService,
     AuditService,

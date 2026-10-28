@@ -9,6 +9,7 @@ import type { DatabaseHandle } from './db/client.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
+import { TrackingModule } from './tracking/tracking.module.js';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -26,6 +27,7 @@ export class AppModule {
         LoggerModule.forRoot({ pinoHttp: { logger } }),
         HealthModule,
         IdentityModule,
+        TrackingModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

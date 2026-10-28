@@ -1,0 +1,681 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type {
+  ChangeGroup,
+  Comment,
+  CreateCommentRequest,
+  CreateIssueRequest,
+  Issue,
+  IssueList,
+  IssueSummary,
+  ProjectPermission,
+  RichText,
+  Transition,
+  TransitionRequest,
+  UpdateIssueRequest,
+  UserRef,
+} from '@tasklore/shared';
+import { and, asc, count, desc, eq, inArray, isNull, max, type SQL, sql } from 'drizzle-orm';
+import { v7 as uuidv7 } from 'uuid';
+import type { Principal } from '../core/http/principal.js';
+import { DATABASE } from '../core/tokens.js';
+import type { DatabaseHandle, Executor } from '../db/client.js';
+import {
+  issueChangeGroups,
+  issueChangeItems,
+  issueComments,
+  issues,
+  issueWatchers,
+  projects,
+  users,
+} from '../db/schema/index.js';
+import { builtInId } from './builtins.js';
+import { type MetaIndex, MetaService } from './meta.service.js';
+import { type ProjectRow, ProjectService } from './project.service.js';
+import { ProjectAccessService } from './project-access.service.js';
+import { rankBetween } from './rank.js';
+import { plainText } from './rich-text.js';
+import { transitionsFrom } from './workflow.js';
+
+type IssueRow = typeof issues.$inferSelect;
+
+interface Change {
+  field: string;
+  fromValue: string | null;
+  fromDisplay: string | null;
+  toValue: string | null;
+  toDisplay: string | null;
+}
+
+export interface IssueListFilter {
+  statusCategory?: 'todo' | 'in_progress' | 'done' | 'unresolved';
+  assignee?: string;
+  issueType?: string;
+  query?: string;
+  limit: number;
+  offset: number;
+}
+
+const HISTORY_TEXT_LIMIT = 1_000;
+
+function displayText(value: string | null): string | null {
+  return value === null ? null : value.slice(0, HISTORY_TEXT_LIMIT);
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+@Injectable()
+export class IssueService {
+  constructor(
+    @Inject(DATABASE) private readonly database: DatabaseHandle,
+    @Inject(ProjectService) private readonly projectService: ProjectService,
+    @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
+    @Inject(MetaService) private readonly meta: MetaService,
+  ) {}
+
+  // ---------------------------------------------------------------- reading
+
+  /** Loads an issue by key and checks the permission; unknown and invisible issues are both 404. */
+  private async load(principal: Principal, key: string, permission: ProjectPermission) {
+    const [row] = await this.database.db
+      .select({ issue: issues, project: projects })
+      .from(issues)
+      .innerJoin(projects, eq(projects.id, issues.projectId))
+      .where(and(eq(issues.key, key.toUpperCase()), isNull(issues.deletedAt)));
+    if (!row || row.project.archivedAt) throw new NotFoundException('Issue not found');
+    try {
+      const permissions = await this.projectAccess.require(principal, row.project.id, permission);
+      return { ...row, permissions };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw new NotFoundException('Issue not found');
+      throw error;
+    }
+  }
+
+  private async userRefs(
+    ids: Array<string | null>,
+    db: Executor = this.database.db,
+  ): Promise<Map<string, UserRef>> {
+    const unique = [...new Set(ids.filter((id): id is string => id !== null))];
+    if (unique.length === 0) return new Map();
+    const rows = await db
+      .select({ id: users.id, displayName: users.displayName })
+      .from(users)
+      .where(inArray(users.id, unique));
+    return new Map(rows.map((row) => [row.id, row]));
+  }
+
+  private toSummary(row: IssueRow, meta: MetaIndex, people: Map<string, UserRef>): IssueSummary {
+    const issueType = meta.issueType.get(row.issueTypeId);
+    const status = meta.status.get(row.statusId);
+    const priority = meta.priority.get(row.priorityId);
+    if (!issueType || !status || !priority)
+      throw new Error(`Issue ${row.key} references unknown metadata`);
+    return {
+      id: row.id,
+      key: row.key,
+      summary: row.summary,
+      issueType,
+      status,
+      priority,
+      assignee: row.assigneeId ? (people.get(row.assigneeId) ?? null) : null,
+      storyPoints: row.storyPoints,
+      labels: row.labels,
+      rank: row.rank,
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  async get(principal: Principal, key: string): Promise<Issue> {
+    const { issue } = await this.load(principal, key, 'browse');
+    return this.present(principal, issue.id);
+  }
+
+  /** Full issue representation, read fresh from the database. */
+  private async present(principal: Principal, issueId: string): Promise<Issue> {
+    const db = this.database.db;
+    const [row] = await db
+      .select({ issue: issues, project: projects })
+      .from(issues)
+      .innerJoin(projects, eq(projects.id, issues.projectId))
+      .where(eq(issues.id, issueId));
+    if (!row) throw new NotFoundException('Issue not found');
+    const { issue, project } = row;
+    const meta = await this.meta.load();
+    const [parent] = issue.parentId
+      ? await db
+          .select({ key: issues.key, summary: issues.summary })
+          .from(issues)
+          .where(eq(issues.id, issue.parentId))
+      : [];
+    const children = await db
+      .select()
+      .from(issues)
+      .where(and(eq(issues.parentId, issue.id), isNull(issues.deletedAt)))
+      .orderBy(asc(issues.rank));
+    const watchers = await db
+      .select({ userId: issueWatchers.userId })
+      .from(issueWatchers)
+      .where(eq(issueWatchers.issueId, issue.id));
+    const people = await this.userRefs([
+      issue.assigneeId,
+      issue.reporterId,
+      ...children.map((child) => child.assigneeId),
+    ]);
+    return {
+      ...this.toSummary(issue, meta, people),
+      project: { key: project.key, name: project.name },
+      description: (issue.description as RichText | null) ?? null,
+      resolution: issue.resolutionId ? (meta.resolution.get(issue.resolutionId) ?? null) : null,
+      reporter: issue.reporterId ? (people.get(issue.reporterId) ?? null) : null,
+      parent: parent ?? null,
+      children: children.map((child) => this.toSummary(child, meta, people)),
+      dueDate: issue.dueDate,
+      createdAt: issue.createdAt.toISOString(),
+      resolvedAt: issue.resolvedAt?.toISOString() ?? null,
+      watching: watchers.some((watcher) => watcher.userId === principal.userId),
+      watcherCount: watchers.length,
+    };
+  }
+
+  async list(
+    principal: Principal,
+    projectKey: string,
+    filter: IssueListFilter,
+  ): Promise<IssueList> {
+    const project = await this.projectService.findBrowsable(principal, projectKey);
+    const meta = await this.meta.load();
+    const conditions: SQL[] = [eq(issues.projectId, project.id), isNull(issues.deletedAt)];
+    if (filter.statusCategory) {
+      const wanted =
+        filter.statusCategory === 'unresolved'
+          ? meta.statuses.filter((status) => status.category !== 'done')
+          : meta.statuses.filter((status) => status.category === filter.statusCategory);
+      conditions.push(
+        inArray(
+          issues.statusId,
+          wanted.map((status) => status.id),
+        ),
+      );
+    }
+    if (filter.assignee === 'me') conditions.push(eq(issues.assigneeId, principal.userId));
+    else if (filter.assignee === 'unassigned') conditions.push(isNull(issues.assigneeId));
+    else if (filter.assignee) conditions.push(eq(issues.assigneeId, filter.assignee));
+    if (filter.issueType) {
+      const type = meta.issueTypes.find((entry) => entry.key === filter.issueType);
+      conditions.push(eq(issues.issueTypeId, type?.id ?? builtInId('issue-type', '__none__')));
+    }
+    if (filter.query?.trim()) {
+      const pattern = `%${escapeLike(filter.query.trim())}%`;
+      conditions.push(sql`(${issues.summary} ilike ${pattern} or ${issues.key} ilike ${pattern})`);
+    }
+    const where = and(...conditions);
+    const [rows, [total]] = await Promise.all([
+      this.database.db
+        .select()
+        .from(issues)
+        .where(where)
+        .orderBy(asc(issues.rank), asc(issues.id))
+        .limit(filter.limit)
+        .offset(filter.offset),
+      this.database.db.select({ total: count() }).from(issues).where(where),
+    ]);
+    const people = await this.userRefs(rows.map((row) => row.assigneeId));
+    return {
+      issues: rows.map((row) => this.toSummary(row, meta, people)),
+      total: total?.total ?? 0,
+    };
+  }
+
+  // ---------------------------------------------------------------- validation helpers
+
+  private async requireAssignable(projectId: string, userId: string): Promise<UserRef> {
+    const [user] = await this.database.db
+      .select({ id: users.id, displayName: users.displayName, status: users.status })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (
+      user?.status !== 'active' ||
+      !(await this.projectAccess.permissions(userId, projectId)).has('browse')
+    ) {
+      throw new BadRequestException('The assignee cannot work in this project');
+    }
+    return { id: user.id, displayName: user.displayName };
+  }
+
+  private async visibleType(project: ProjectRow, key: string, meta: MetaIndex) {
+    const type = meta.issueTypes.find((entry) => entry.key === key);
+    const hidden = await this.projectService.hiddenIssueTypeIds(project.id);
+    if (!type || hidden.includes(type.id)) {
+      throw new BadRequestException(`The issue type "${key}" is not available in ${project.key}`);
+    }
+    return type;
+  }
+
+  private priorityByKey(meta: MetaIndex, key: string | undefined) {
+    const priority = key ? meta.priorities.find((entry) => entry.key === key) : undefined;
+    if (key && !priority) throw new BadRequestException(`Unknown priority "${key}"`);
+    return (
+      priority ?? meta.priorities.find((entry) => entry.key === 'medium') ?? meta.priorities[0]
+    );
+  }
+
+  /** Parent rules: sub-tasks sit under standard issues, standard issues under epics. */
+  private async resolveParent(
+    project: ProjectRow,
+    childLevel: number,
+    parentKey: string | null,
+    meta: MetaIndex,
+    selfId?: string,
+  ) {
+    if (parentKey === null) {
+      if (childLevel < 0) throw new BadRequestException('A sub-task needs a parent issue');
+      return null;
+    }
+    const [parent] = await this.database.db
+      .select()
+      .from(issues)
+      .where(and(eq(issues.key, parentKey.toUpperCase()), isNull(issues.deletedAt)));
+    if (!parent || parent.projectId !== project.id || parent.id === selfId) {
+      throw new BadRequestException(`The parent issue "${parentKey}" is not in ${project.key}`);
+    }
+    const parentLevel = meta.issueType.get(parent.issueTypeId)?.hierarchyLevel;
+    if (parentLevel !== childLevel + 1) {
+      throw new BadRequestException(
+        childLevel < 0
+          ? 'A sub-task can only belong to a standard issue'
+          : 'Only epics can be parents of standard issues',
+      );
+    }
+    return parent;
+  }
+
+  // ---------------------------------------------------------------- writing
+
+  async create(principal: Principal, request: CreateIssueRequest): Promise<Issue> {
+    const project = await this.projectService.findBrowsable(principal, request.projectKey);
+    const permissions = await this.projectAccess.require(principal, project.id, 'create-issues');
+    const meta = await this.meta.load();
+    const type = await this.visibleType(project, request.issueType, meta);
+    const priority = this.priorityByKey(meta, request.priority);
+    if (!priority) throw new Error('No priorities configured');
+    const parent = await this.resolveParent(project, type.hierarchyLevel, request.parentKey, meta);
+    if (request.assigneeId) {
+      if (request.assigneeId !== principal.userId && !permissions.has('assign-issues')) {
+        throw new ForbiddenException('Requires the project permission "assign-issues"');
+      }
+      await this.requireAssignable(project.id, request.assigneeId);
+    }
+    const workflow = await this.projectService.workflow(project.workflowVersionId);
+    const id = uuidv7();
+
+    await this.database.db.transaction(async (tx) => {
+      // The row lock on the project serializes numbering within a project.
+      const [counter] = await tx
+        .update(projects)
+        .set({ issueCounter: sql`${projects.issueCounter} + 1` })
+        .where(eq(projects.id, project.id))
+        .returning({ number: projects.issueCounter });
+      if (!counter) throw new Error('Project vanished during issue creation');
+      const [last] = await tx.select({ rank: max(issues.rank) }).from(issues);
+      await tx.insert(issues).values({
+        id,
+        projectId: project.id,
+        number: counter.number,
+        key: `${project.key}-${counter.number}`,
+        issueTypeId: type.id,
+        statusId: workflow.initialStatusId,
+        workflowVersionId: project.workflowVersionId,
+        priorityId: priority.id,
+        summary: request.summary,
+        description: request.description,
+        descriptionText: plainText(request.description),
+        assigneeId: request.assigneeId,
+        reporterId: principal.userId,
+        parentId: parent?.id ?? null,
+        labels: [...new Set(request.labels)],
+        storyPoints: request.storyPoints,
+        dueDate: request.dueDate,
+        rank: rankBetween(last?.rank ?? null, null),
+      });
+      const watchers = [
+        ...new Set([principal.userId, request.assigneeId].filter((user): user is string => !!user)),
+      ];
+      await tx.insert(issueWatchers).values(watchers.map((userId) => ({ issueId: id, userId })));
+    });
+    return this.present(principal, id);
+  }
+
+  async update(principal: Principal, key: string, request: UpdateIssueRequest): Promise<Issue> {
+    // Jira semantics: editing fields needs edit-issues, changing the assignee needs assign-issues.
+    const editsFields = Object.keys(request).some((field) => field !== 'assigneeId');
+    const { issue, project, permissions } = await this.load(
+      principal,
+      key,
+      editsFields ? 'edit-issues' : 'assign-issues',
+    );
+    const meta = await this.meta.load();
+    const changes: Change[] = [];
+    const patch: Partial<typeof issues.$inferInsert> = {};
+    const track = (
+      field: string,
+      from: string | null,
+      to: string | null,
+      fromDisplay = from,
+      toDisplay = to,
+    ) => {
+      if (from !== to)
+        changes.push({
+          field,
+          fromValue: from,
+          toValue: to,
+          fromDisplay: displayText(fromDisplay),
+          toDisplay: displayText(toDisplay),
+        });
+    };
+
+    if (request.summary !== undefined) {
+      track('summary', issue.summary, request.summary);
+      patch.summary = request.summary;
+    }
+    if (request.description !== undefined) {
+      const text = plainText(request.description);
+      if (JSON.stringify(issue.description) !== JSON.stringify(request.description)) {
+        changes.push({
+          field: 'description',
+          fromValue: null,
+          toValue: null,
+          fromDisplay: displayText(issue.descriptionText),
+          toDisplay: displayText(text),
+        });
+      }
+      patch.description = request.description;
+      patch.descriptionText = text;
+    }
+    if (request.issueType !== undefined) {
+      const type = await this.visibleType(project, request.issueType, meta);
+      const current = meta.issueType.get(issue.issueTypeId);
+      if (type.hierarchyLevel !== current?.hierarchyLevel) {
+        throw new BadRequestException(
+          'The issue type can only change within the same hierarchy level',
+        );
+      }
+      track('issuetype', issue.issueTypeId, type.id, current?.name ?? null, type.name);
+      patch.issueTypeId = type.id;
+    }
+    if (request.priority !== undefined) {
+      const priority = this.priorityByKey(meta, request.priority);
+      if (priority) {
+        track(
+          'priority',
+          issue.priorityId,
+          priority.id,
+          meta.priority.get(issue.priorityId)?.name ?? null,
+          priority.name,
+        );
+        patch.priorityId = priority.id;
+      }
+    }
+    if (request.assigneeId !== undefined && request.assigneeId !== issue.assigneeId) {
+      if (!permissions.has('assign-issues')) {
+        throw new ForbiddenException('Requires the project permission "assign-issues"');
+      }
+      const next = request.assigneeId
+        ? await this.requireAssignable(project.id, request.assigneeId)
+        : null;
+      const previous = (await this.userRefs([issue.assigneeId])).get(issue.assigneeId ?? '');
+      track(
+        'assignee',
+        issue.assigneeId,
+        next?.id ?? null,
+        previous?.displayName ?? null,
+        next?.displayName ?? null,
+      );
+      patch.assigneeId = next?.id ?? null;
+    }
+    if (request.parentKey !== undefined) {
+      const level = meta.issueType.get(patch.issueTypeId ?? issue.issueTypeId)?.hierarchyLevel ?? 0;
+      const parent = await this.resolveParent(project, level, request.parentKey, meta, issue.id);
+      if ((parent?.id ?? null) !== issue.parentId) {
+        const [previous] = issue.parentId
+          ? await this.database.db
+              .select({ key: issues.key })
+              .from(issues)
+              .where(eq(issues.id, issue.parentId))
+          : [];
+        track(
+          'parent',
+          issue.parentId,
+          parent?.id ?? null,
+          previous?.key ?? null,
+          parent?.key ?? null,
+        );
+        patch.parentId = parent?.id ?? null;
+      }
+    }
+    if (request.labels !== undefined) {
+      const labels = [...new Set(request.labels)].sort();
+      track('labels', [...issue.labels].sort().join(' ') || null, labels.join(' ') || null);
+      patch.labels = labels;
+    }
+    if (request.storyPoints !== undefined) {
+      track(
+        'storyPoints',
+        issue.storyPoints?.toString() ?? null,
+        request.storyPoints?.toString() ?? null,
+      );
+      patch.storyPoints = request.storyPoints;
+    }
+    if (request.dueDate !== undefined) {
+      track('dueDate', issue.dueDate, request.dueDate);
+      patch.dueDate = request.dueDate;
+    }
+
+    if (changes.length > 0) {
+      await this.database.db.transaction(async (tx) => {
+        await tx
+          .update(issues)
+          .set({ ...patch, updatedAt: sql`now()` })
+          .where(eq(issues.id, issue.id));
+        await this.recordChanges(tx, issue.id, principal, changes);
+        if (patch.assigneeId) {
+          await tx
+            .insert(issueWatchers)
+            .values({ issueId: issue.id, userId: patch.assigneeId })
+            .onConflictDoNothing();
+        }
+      });
+    }
+    return this.present(principal, issue.id);
+  }
+
+  private async recordChanges(
+    tx: Executor,
+    issueId: string,
+    principal: Principal,
+    changes: Change[],
+  ) {
+    const [group] = await tx
+      .insert(issueChangeGroups)
+      .values({ issueId, authorId: principal.userId, via: principal.via })
+      .returning({ id: issueChangeGroups.id });
+    if (!group) throw new Error('Change group insert returned no row');
+    await tx
+      .insert(issueChangeItems)
+      .values(changes.map((change) => ({ ...change, groupId: group.id })));
+  }
+
+  async transitions(principal: Principal, key: string): Promise<Transition[]> {
+    const { issue } = await this.load(principal, key, 'browse');
+    const meta = await this.meta.load();
+    const definition = await this.projectService.workflow(issue.workflowVersionId);
+    return transitionsFrom(definition, issue.statusId).flatMap((transition) => {
+      const to = meta.status.get(transition.to);
+      return to
+        ? [{ id: transition.id, name: transition.name, to, setsResolution: to.category === 'done' }]
+        : [];
+    });
+  }
+
+  /** Moves an issue along its workflow. Entering a done status sets a resolution, leaving it clears it. */
+  async transition(principal: Principal, key: string, request: TransitionRequest): Promise<Issue> {
+    const { issue } = await this.load(principal, key, 'transition-issues');
+    const meta = await this.meta.load();
+    const definition = await this.projectService.workflow(issue.workflowVersionId);
+    const transition = transitionsFrom(definition, issue.statusId).find(
+      (entry) => entry.id === request.transitionId,
+    );
+    if (!transition)
+      throw new BadRequestException('This transition is not available from the current status');
+    const from = meta.status.get(issue.statusId);
+    const to = meta.status.get(transition.to);
+    if (!from || !to) throw new Error('Workflow references unknown statuses');
+
+    const changes: Change[] = [
+      {
+        field: 'status',
+        fromValue: from.id,
+        fromDisplay: from.name,
+        toValue: to.id,
+        toDisplay: to.name,
+      },
+    ];
+    const patch: Partial<typeof issues.$inferInsert> = { statusId: to.id };
+    const previousResolution = issue.resolutionId
+      ? meta.resolution.get(issue.resolutionId)
+      : undefined;
+    if (to.category === 'done') {
+      const resolution = request.resolution
+        ? meta.resolutions.find((entry) => entry.key === request.resolution)
+        : meta.resolution.get(builtInId('resolution', 'done'));
+      if (!resolution) throw new BadRequestException(`Unknown resolution "${request.resolution}"`);
+      patch.resolutionId = resolution.id;
+      patch.resolvedAt = new Date();
+      if (resolution.id !== issue.resolutionId) {
+        changes.push({
+          field: 'resolution',
+          fromValue: issue.resolutionId,
+          fromDisplay: previousResolution?.name ?? null,
+          toValue: resolution.id,
+          toDisplay: resolution.name,
+        });
+      }
+    } else if (issue.resolutionId) {
+      patch.resolutionId = null;
+      patch.resolvedAt = null;
+      changes.push({
+        field: 'resolution',
+        fromValue: issue.resolutionId,
+        fromDisplay: previousResolution?.name ?? null,
+        toValue: null,
+        toDisplay: null,
+      });
+    }
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .update(issues)
+        .set({ ...patch, updatedAt: sql`now()` })
+        .where(eq(issues.id, issue.id));
+      await this.recordChanges(tx, issue.id, principal, changes);
+    });
+    return this.present(principal, issue.id);
+  }
+
+  async comments(principal: Principal, key: string): Promise<Comment[]> {
+    const { issue } = await this.load(principal, key, 'browse');
+    const rows = await this.database.db
+      .select()
+      .from(issueComments)
+      .where(and(eq(issueComments.issueId, issue.id), isNull(issueComments.deletedAt)))
+      .orderBy(asc(issueComments.createdAt));
+    const people = await this.userRefs(rows.map((row) => row.authorId));
+    return rows.map((row) => ({
+      id: row.id,
+      author: row.authorId ? (people.get(row.authorId) ?? null) : null,
+      body: row.body as RichText,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    }));
+  }
+
+  async addComment(
+    principal: Principal,
+    key: string,
+    request: CreateCommentRequest,
+  ): Promise<Comment> {
+    const { issue } = await this.load(principal, key, 'comment');
+    const text = plainText(request.body);
+    if (!text) throw new BadRequestException('The comment is empty');
+    const id = uuidv7();
+    await this.database.db.transaction(async (tx) => {
+      await tx.insert(issueComments).values({
+        id,
+        issueId: issue.id,
+        authorId: principal.userId,
+        body: request.body,
+        bodyText: text,
+      });
+      await tx.update(issues).set({ updatedAt: sql`now()` }).where(eq(issues.id, issue.id));
+      await tx
+        .insert(issueWatchers)
+        .values({ issueId: issue.id, userId: principal.userId })
+        .onConflictDoNothing();
+    });
+    const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
+    const now = new Date().toISOString();
+    return { id, author, body: request.body, createdAt: now, updatedAt: now };
+  }
+
+  async history(principal: Principal, key: string): Promise<ChangeGroup[]> {
+    const { issue } = await this.load(principal, key, 'browse');
+    const groupsRows = await this.database.db
+      .select()
+      .from(issueChangeGroups)
+      .where(eq(issueChangeGroups.issueId, issue.id))
+      .orderBy(desc(issueChangeGroups.createdAt), desc(issueChangeGroups.id));
+    if (groupsRows.length === 0) return [];
+    const items = await this.database.db
+      .select()
+      .from(issueChangeItems)
+      .where(
+        inArray(
+          issueChangeItems.groupId,
+          groupsRows.map((group) => group.id),
+        ),
+      )
+      .orderBy(asc(issueChangeItems.id));
+    const people = await this.userRefs(groupsRows.map((group) => group.authorId));
+    return groupsRows.map((group) => ({
+      id: group.id,
+      author: group.authorId ? (people.get(group.authorId) ?? null) : null,
+      via: group.via,
+      createdAt: group.createdAt.toISOString(),
+      items: items
+        .filter((item) => item.groupId === group.id)
+        .map((item) => ({ field: item.field, from: item.fromDisplay, to: item.toDisplay })),
+    }));
+  }
+
+  async setWatching(principal: Principal, key: string, watching: boolean): Promise<void> {
+    const { issue } = await this.load(principal, key, 'browse');
+    if (watching) {
+      await this.database.db
+        .insert(issueWatchers)
+        .values({ issueId: issue.id, userId: principal.userId })
+        .onConflictDoNothing();
+    } else {
+      await this.database.db
+        .delete(issueWatchers)
+        .where(
+          and(eq(issueWatchers.issueId, issue.id), eq(issueWatchers.userId, principal.userId)),
+        );
+    }
+  }
+}

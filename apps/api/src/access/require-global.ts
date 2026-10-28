@@ -13,7 +13,7 @@ import { AccessService } from './access.service.js';
 
 export const REQUIRED_GLOBAL = 'tasklore:required-global';
 
-/** Restricts a route to holders of a global permission. Tokens also need the `admin` scope. */
+/** Restricts a route to holders of a global permission. For administrative permissions, tokens also need the `admin` scope. */
 export const RequireGlobal = (permission: GlobalPermission) =>
   SetMetadata(REQUIRED_GLOBAL, permission);
 
@@ -32,7 +32,8 @@ export class GlobalPermissionGuard implements CanActivate {
     if (!permission) return true;
     const principal = context.switchToHttp().getRequest<Request>().principal;
     if (!principal) return false;
-    if (principal.via === 'token' && !principal.scopes.includes('admin')) {
+    const administrative = permission === 'admin' || permission === 'system-admin';
+    if (principal.via === 'token' && administrative && !principal.scopes.includes('admin')) {
       throw new ForbiddenException('This token lacks the admin scope');
     }
     if (!(await this.access.hasGlobal(principal.userId, permission))) {

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { z } from 'zod';
-import { registerBodySchema } from './endpoint.js';
+import { registerBodySchema, registerQuerySchema } from './endpoint.js';
 import type { Principal } from './principal.js';
 
 export const IS_PUBLIC = 'tasklore:public';
@@ -41,3 +41,16 @@ export const CurrentPrincipal = createParamDecorator(
     return principal;
   },
 );
+
+const ParsedQuery = createParamDecorator((data: { zod: z.ZodType }, ctx: ExecutionContext) => {
+  const request = ctx.switchToHttp().getRequest<Request>();
+  return data.zod.parse(request.query ?? {});
+});
+
+/** Parses query parameters with a Zod object schema (documented in OpenAPI as query parameters). */
+export const ValidQuery =
+  (schema: z.ZodObject): ParameterDecorator =>
+  (target, key, index) => {
+    registerQuerySchema(target.constructor, String(key), schema);
+    ParsedQuery({ zod: schema })(target, key, index);
+  };

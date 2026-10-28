@@ -1,0 +1,77 @@
+import { Inject, Injectable } from '@nestjs/common';
+import type {
+  IssueTypeInfo,
+  PriorityInfo,
+  ResolutionInfo,
+  StatusInfo,
+  TrackingMeta,
+} from '@tasklore/shared';
+import { desc } from 'drizzle-orm';
+import { DATABASE } from '../core/tokens.js';
+import type { DatabaseHandle } from '../db/client.js';
+import { issueTypes, priorities, resolutions, statuses } from '../db/schema/index.js';
+
+const CACHE_MS = 30_000;
+
+export interface MetaIndex extends TrackingMeta {
+  issueType: Map<string, IssueTypeInfo>;
+  status: Map<string, StatusInfo>;
+  priority: Map<string, PriorityInfo>;
+  resolution: Map<string, ResolutionInfo>;
+}
+
+/** Issue types, statuses, priorities and resolutions: tiny, rarely changing, cached briefly. */
+@Injectable()
+export class MetaService {
+  private cached: { at: number; value: Promise<MetaIndex> } | undefined;
+
+  constructor(@Inject(DATABASE) private readonly database: DatabaseHandle) {}
+
+  load(): Promise<MetaIndex> {
+    if (!this.cached || Date.now() - this.cached.at > CACHE_MS) {
+      this.cached = { at: Date.now(), value: this.read() };
+      this.cached.value.catch(() => {
+        this.cached = undefined;
+      });
+    }
+    return this.cached.value;
+  }
+
+  private async read(): Promise<MetaIndex> {
+    const db = this.database.db;
+    const [types, statusRows, priorityRows, resolutionRows] = await Promise.all([
+      db
+        .select()
+        .from(issueTypes)
+        .orderBy(desc(issueTypes.hierarchyLevel), issueTypes.position, issueTypes.name),
+      db.select().from(statuses),
+      db.select().from(priorities).orderBy(priorities.sequence),
+      db.select().from(resolutions),
+    ]);
+    const meta: TrackingMeta = {
+      issueTypes: types.map(({ id, key, name, icon, hierarchyLevel }) => ({
+        id,
+        key,
+        name,
+        icon,
+        hierarchyLevel,
+      })),
+      statuses: statusRows.map(({ id, key, name, category }) => ({ id, key, name, category })),
+      priorities: priorityRows.map(({ id, key, name, icon, sequence }) => ({
+        id,
+        key,
+        name,
+        icon,
+        sequence,
+      })),
+      resolutions: resolutionRows.map(({ id, key, name }) => ({ id, key, name })),
+    };
+    return {
+      ...meta,
+      issueType: new Map(meta.issueTypes.map((entry) => [entry.id, entry])),
+      status: new Map(meta.statuses.map((entry) => [entry.id, entry])),
+      priority: new Map(meta.priorities.map((entry) => [entry.id, entry])),
+      resolution: new Map(meta.resolutions.map((entry) => [entry.id, entry])),
+    };
+  }
+}

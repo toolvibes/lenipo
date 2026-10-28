@@ -197,6 +197,129 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/tracking/meta': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List issue types, statuses, priorities and resolutions */
+    get: operations['Issues.trackingMeta'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create an issue */
+    post: operations['Issues.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an issue by key */
+    get: operations['Issues.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Change fields of an issue; every change is recorded in its history */
+    patch: operations['Issues.update'];
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/transitions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the workflow transitions available from the current status */
+    get: operations['Issues.transitions'];
+    put?: never;
+    /** Move an issue to another status */
+    post: operations['Issues.transition'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the comments of an issue */
+    get: operations['Issues.comments'];
+    put?: never;
+    /** Add a comment to an issue */
+    post: operations['Issues.addComment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the change history of an issue, newest first */
+    get: operations['Issues.history'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/watching': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Watch an issue */
+    put: operations['Issues.watch'];
+    post?: never;
+    /** Stop watching an issue */
+    delete: operations['Issues.unwatch'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me': {
     parameters: {
       query?: never;
@@ -283,6 +406,61 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the projects the caller can see */
+    get: operations['Projects.list'];
+    put?: never;
+    /**
+     * Create a project from a template
+     * @description Requires the global permission `create-projects`. The creator becomes project administrator.
+     */
+    post: operations['Projects.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a project with its issue types, statuses and the caller’s permissions */
+    get: operations['Projects.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/issues': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the issues of a project in rank order */
+    get: operations['Projects.listIssues'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/setup/status': {
     parameters: {
       query?: never;
@@ -311,6 +489,28 @@ export interface paths {
     put?: never;
     /** Create the first administrator with the setup code and sign in */
     post: operations['Setup.complete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Find active users by name or email
+     * @description Requires the global permission `browse-users`.
+     *
+     *     Requires the global permission `browse-users`.
+     */
+    get: operations['Users.search'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -417,6 +617,168 @@ export interface components {
       /** @enum {string} */
       database?: 'ok' | 'unreachable';
     };
+    TrackingMeta: {
+      issueTypes: components['schemas']['IssueTypeInfo'][];
+      statuses: components['schemas']['StatusInfo'][];
+      priorities: components['schemas']['PriorityInfo'][];
+      resolutions: components['schemas']['ResolutionInfo'][];
+    };
+    IssueTypeInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      icon: string;
+      hierarchyLevel: number;
+    };
+    StatusInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      category: components['schemas']['StatusCategory'];
+    };
+    /** @enum {string} */
+    StatusCategory: 'todo' | 'in_progress' | 'done';
+    PriorityInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      icon: string;
+      sequence: number;
+    };
+    ResolutionInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+    };
+    CreateIssueRequest: {
+      projectKey: string;
+      issueType: string;
+      summary: string;
+      /** @default null */
+      description: components['schemas']['RichText'] | null;
+      priority?: string;
+      /** @default null */
+      assigneeId: string | null;
+      /** @default null */
+      parentKey: string | null;
+      /** @default [] */
+      labels: string[];
+      /** @default null */
+      storyPoints: number | null;
+      /** @default null */
+      dueDate: string | null;
+    };
+    RichText: {
+      /** @constant */
+      type: 'doc';
+      content?: unknown[];
+    } & {
+      [key: string]: unknown;
+    };
+    Issue: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+      assignee: components['schemas']['UserRef'] | null;
+      storyPoints: number | null;
+      labels: string[];
+      rank: string;
+      /** Format: date-time */
+      updatedAt: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      description: components['schemas']['RichText'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      reporter: components['schemas']['UserRef'] | null;
+      parent: components['schemas']['IssueRef'] | null;
+      children: components['schemas']['IssueSummary'][];
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      resolvedAt: string | null;
+      watching: boolean;
+      watcherCount: number;
+    };
+    UserRef: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+    };
+    IssueRef: {
+      key: string;
+      summary: string;
+    };
+    IssueSummary: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+      assignee: components['schemas']['UserRef'] | null;
+      storyPoints: number | null;
+      labels: string[];
+      rank: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    UpdateIssueRequest: {
+      summary?: string;
+      description?: components['schemas']['RichText'] | null;
+      issueType?: string;
+      priority?: string;
+      assigneeId?: string | null;
+      parentKey?: string | null;
+      labels?: string[];
+      storyPoints?: number | null;
+      dueDate?: string | null;
+    };
+    Transition: {
+      id: string;
+      name: string;
+      to: components['schemas']['StatusInfo'];
+      setsResolution: boolean;
+    };
+    TransitionRequest: {
+      transitionId: string;
+      resolution?: string;
+    };
+    Comment: {
+      /** Format: uuid */
+      id: string;
+      author: components['schemas']['UserRef'] | null;
+      body: components['schemas']['RichText'];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    CreateCommentRequest: {
+      body: components['schemas']['RichText'];
+    };
+    ChangeGroup: {
+      id: number;
+      author: components['schemas']['UserRef'] | null;
+      via: string;
+      /** Format: date-time */
+      createdAt: string;
+      items: {
+        field: string;
+        from: string | null;
+        to: string | null;
+      }[];
+    };
     SessionInfo: {
       id: string;
       current: boolean;
@@ -461,6 +823,56 @@ export interface components {
       lastUsedAt: string | null;
       secret: string;
     };
+    ProjectSummary: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      description: string;
+      template: components['schemas']['ProjectTemplate'];
+      lead: components['schemas']['UserRef'] | null;
+      issueCount: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** @enum {string} */
+    ProjectTemplate: 'scrum' | 'kanban' | 'basic' | 'bugs';
+    CreateProjectRequest: {
+      key: string;
+      name: string;
+      /** @default  */
+      description: string;
+      template: components['schemas']['ProjectTemplate'];
+    };
+    ProjectDetails: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      description: string;
+      template: components['schemas']['ProjectTemplate'];
+      lead: components['schemas']['UserRef'] | null;
+      issueCount: number;
+      /** Format: date-time */
+      createdAt: string;
+      issueTypes: components['schemas']['IssueTypeInfo'][];
+      statuses: components['schemas']['StatusInfo'][];
+      permissions: components['schemas']['ProjectPermission'][];
+    };
+    /** @enum {string} */
+    ProjectPermission:
+      | 'browse'
+      | 'create-issues'
+      | 'edit-issues'
+      | 'transition-issues'
+      | 'assign-issues'
+      | 'comment'
+      | 'delete-issues'
+      | 'administer';
+    IssueList: {
+      issues: components['schemas']['IssueSummary'][];
+      total: number;
+    };
     SetupStatusResponse: {
       required: boolean;
     };
@@ -473,6 +885,12 @@ export interface components {
         displayName: string;
         password: string;
       };
+    };
+    UserLookup: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+      email: string;
     };
   };
   responses: never;
@@ -846,6 +1264,355 @@ export interface operations {
       };
     };
   };
+  'Issues.trackingMeta': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrackingMeta'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateIssueRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateIssueRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.transitions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Transition'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.transition': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TransitionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Comment'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.addComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateCommentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Comment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChangeGroup'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.watch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.unwatch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Me.me': {
     parameters: {
       query?: never;
@@ -1024,6 +1791,137 @@ export interface operations {
       };
     };
   };
+  'Projects.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateProjectRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectDetails'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectDetails'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.listIssues': {
+    parameters: {
+      query?: {
+        status?: 'todo' | 'in_progress' | 'done' | 'unresolved';
+        assignee?: string;
+        type?: string;
+        q?: string;
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueList'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Setup.status': {
     parameters: {
       query?: never;
@@ -1073,6 +1971,38 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Users.search': {
+    parameters: {
+      query?: {
+        query?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserLookup'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

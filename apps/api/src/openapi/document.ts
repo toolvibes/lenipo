@@ -3,7 +3,7 @@ import { Problem } from '@tasklore/shared';
 import { z } from 'zod';
 import { REQUIRED_GLOBAL } from '../access/require-global.js';
 import { IS_PUBLIC } from '../core/http/decorators.js';
-import { bodySchemas, endpointRegistry } from '../core/http/endpoint.js';
+import { bodySchemas, endpointRegistry, querySchemas } from '../core/http/endpoint.js';
 
 const METHODS = ['get', 'post', 'put', 'delete', 'patch'] as const;
 const API_PREFIX = '/api/v1';
@@ -100,12 +100,22 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
       Reflect.getMetadata(REQUIRED_GLOBAL, controller);
     const body = bodySchemas.get(controller)?.get(handler);
 
-    const parameters = [...path.matchAll(/\{(\w+)\}/g)].map((match) => ({
+    const pathParameters = [...path.matchAll(/\{(\w+)\}/g)].map((match) => ({
       name: match[1],
       in: 'path',
       required: true,
       schema: { type: 'string' },
     }));
+    const query = querySchemas.get(controller)?.get(handler);
+    const queryParameters = query
+      ? Object.entries(query.shape).map(([name, field]) => ({
+          name,
+          in: 'query',
+          required: !(field as z.ZodType).safeParse(undefined).success,
+          schema: components.add(field as z.ZodType, 'input'),
+        }))
+      : [];
+    const parameters = [...pathParameters, ...queryParameters];
     const description = [
       spec.description,
       permission ? `Requires the global permission \`${permission}\`.` : undefined,

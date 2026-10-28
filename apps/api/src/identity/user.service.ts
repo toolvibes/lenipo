@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Me, UserSummary } from '@tasklore/shared';
-import { eq, sql } from 'drizzle-orm';
+import type { Me, UserLookup, UserSummary } from '@tasklore/shared';
+import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';
@@ -91,5 +91,21 @@ export class UserService {
       .groupBy(users.id)
       .orderBy(users.displayName);
     return rows;
+  }
+
+  /** Active users matching a name or email fragment, for pickers. */
+  async search(query: string, limit: number): Promise<UserLookup[]> {
+    const pattern = `%${query.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    return this.database.db
+      .select({ id: users.id, displayName: users.displayName, email: users.email })
+      .from(users)
+      .where(
+        and(
+          eq(users.status, 'active'),
+          or(ilike(users.displayName, pattern), ilike(users.email, pattern)),
+        ),
+      )
+      .orderBy(users.displayName)
+      .limit(limit);
   }
 }
