@@ -15,6 +15,18 @@ const configSchema = z.object({
   PUBLIC_URL: z.url().optional(),
   /** Send session cookies only over HTTPS. Defaults to true in production. */
   COOKIE_SECURE: z.stringbool().optional(),
+  /** OpenID Connect sign-in (Keycloak, Authentik, Entra ID …). Enabled when issuer and client id are set. */
+  OIDC_ISSUER_URL: z.url().optional(),
+  OIDC_CLIENT_ID: z.string().min(1).optional(),
+  /** Omit for public clients (PKCE only). */
+  OIDC_CLIENT_SECRET: z.string().min(1).optional(),
+  /** Label of the sign-in button, e.g. "Firmen-Login". */
+  OIDC_DISPLAY_NAME: z.string().min(1).default('Single Sign-On'),
+  OIDC_SCOPES: z.string().default('openid profile email'),
+  /** Claim with group names; matching Tasklore groups are granted on sign-in. */
+  OIDC_GROUPS_CLAIM: z.string().min(1).optional(),
+  /** Create accounts for unknown people on first sign-in. */
+  OIDC_AUTO_CREATE_USERS: z.stringbool().default(true),
   /** A session ends after this many hours without activity. */
   SESSION_IDLE_HOURS: z.coerce
     .number()
@@ -28,11 +40,20 @@ const configSchema = z.object({
 export type AppConfig = z.infer<typeof configSchema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const result = configSchema.safeParse(env);
+  const result = configSchema
+    .refine((config) => !(config.OIDC_ISSUER_URL && config.OIDC_CLIENT_ID) || config.PUBLIC_URL, {
+      message: 'PUBLIC_URL is required for OIDC sign-in (it forms the redirect URI)',
+      path: ['PUBLIC_URL'],
+    })
+    .safeParse(env);
   if (!result.success) {
     throw new Error(`Invalid configuration:\n${z.prettifyError(result.error)}`);
   }
   return result.data;
+}
+
+export function oidcEnabled(config: AppConfig): boolean {
+  return Boolean(config.OIDC_ISSUER_URL && config.OIDC_CLIENT_ID);
 }
 
 export function cookieSecure(config: AppConfig): boolean {

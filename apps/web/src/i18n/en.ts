@@ -9,6 +9,10 @@ export const en: Messages = {
     signIn: 'Sign in',
     signingIn: 'Signing in …',
     invalidCredentials: 'The email address or password is incorrect.',
+    or: 'or',
+    signInWith: 'Sign in with {{provider}}',
+    oidcFailed: 'Signing in through the identity provider failed. Please try again.',
+    oidcDenied: 'This account cannot sign in. Please contact your administrators.',
   },
   setup: {
     title: 'Set up Tasklore',

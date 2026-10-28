@@ -123,6 +123,17 @@ export class GroupService {
     return rows.map((row) => row.id);
   }
 
+  /** Ids of those names that exist; unknown names are ignored (used for groups from an identity provider). */
+  async existingIds(names: string[], db: Executor = this.database.db): Promise<string[]> {
+    const unique = [...new Set(names)];
+    if (unique.length === 0) return [];
+    const rows = await db
+      .select({ id: groups.id })
+      .from(groups)
+      .where(inArray(groups.name, unique));
+    return rows.map((row) => row.id);
+  }
+
   async addMember(groupName: string, userId: string): Promise<void> {
     const [groupId] = await this.idsByName([groupName]).catch(() => {
       throw new NotFoundException(`Group "${groupName}" not found`);

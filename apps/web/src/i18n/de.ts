@@ -11,6 +11,11 @@ export const de = {
     signIn: 'Anmelden',
     signingIn: 'Anmeldung läuft …',
     invalidCredentials: 'E-Mail-Adresse oder Passwort ist falsch.',
+    or: 'oder',
+    signInWith: 'Mit {{provider}} anmelden',
+    oidcFailed:
+      'Die Anmeldung über den Identitätsanbieter ist fehlgeschlagen. Bitte erneut versuchen.',
+    oidcDenied: 'Für dieses Konto ist keine Anmeldung möglich. Bitte an die Administration wenden.',
   },
   setup: {
     title: 'Tasklore einrichten',

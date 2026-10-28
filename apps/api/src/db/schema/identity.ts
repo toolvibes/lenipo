@@ -117,3 +117,31 @@ export const personalAccessTokens = pgTable(
     index('personal_access_tokens_user_idx').on(table.userId),
   ],
 );
+
+/** Links an external identity (OIDC issuer + subject) to a Tasklore user. */
+export const userIdentities = pgTable(
+  'user_identities',
+  {
+    issuer: text().notNull(),
+    subject: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    email: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastLoginAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.issuer, table.subject] }),
+    index('user_identities_user_idx').on(table.userId),
+  ],
+);
+
+/** OIDC sign-ins between redirect and callback (decision E-30). Each row is used once. */
+export const oidcLoginAttempts = pgTable('oidc_login_attempts', {
+  stateHash: text().primaryKey(),
+  codeVerifier: text().notNull(),
+  nonce: text().notNull(),
+  redirectTo: text().notNull(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+});

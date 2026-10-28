@@ -6,7 +6,8 @@ import {
   Outlet,
   redirect,
 } from '@tanstack/react-router';
-import { LoginPage } from './features/auth/LoginPage';
+import { safeRedirectPath } from '@tasklore/shared';
+import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { PageView } from './features/pages/PageView';
 import { AppShell } from './features/shell/AppShell';
@@ -32,19 +33,17 @@ const setupRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
-    // Only same-site paths, never absolute URLs (open redirect).
-    typeof search.redirect === 'string' &&
-    search.redirect.startsWith('/') &&
-    !search.redirect.startsWith('//')
-      ? { redirect: search.redirect }
-      : {},
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; error?: LoginError } => ({
+    redirect: safeRedirectPath(search.redirect),
+    error: search.error === 'oidc' || search.error === 'oidc_denied' ? search.error : undefined,
+  }),
   beforeLoad: async ({ context }) => {
     const status = await context.queryClient.fetchQuery(setupStatusQuery);
     if (status.required) throw redirect({ to: '/setup' });
   },
   component: function Login() {
-    return <LoginPage redirect={loginRoute.useSearch().redirect} />;
+    const { redirect, error } = loginRoute.useSearch();
+    return <LoginPage redirect={redirect} error={error} />;
   },
 });
 

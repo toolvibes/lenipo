@@ -16,6 +16,12 @@ export const meQuery = queryOptions({
   staleTime: 60_000,
 });
 
+export const authProvidersQuery = queryOptions({
+  queryKey: ['auth-providers'],
+  queryFn: () => unwrap(client.GET('/api/v1/auth/providers')),
+  staleTime: Number.POSITIVE_INFINITY,
+});
+
 export const setupStatusQuery = queryOptions({
   queryKey: ['setup-status'],
   queryFn: () => unwrap(client.GET('/api/v1/setup/status')),

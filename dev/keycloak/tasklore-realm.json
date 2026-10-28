@@ -1,0 +1,47 @@
+{
+  "realm": "tasklore",
+  "displayName": "Tasklore (Entwicklung)",
+  "enabled": true,
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "tasklore",
+      "name": "Tasklore",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "tasklore-dev-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:5173/api/v1/auth/oidc/callback"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [{ "name": "team-plattform" }],
+  "users": [
+    {
+      "username": "mira",
+      "enabled": true,
+      "email": "mira.kaya@tasklore.test",
+      "emailVerified": true,
+      "firstName": "Mira",
+      "lastName": "Kaya",
+      "credentials": [{ "type": "password", "value": "tasklore-dev-mira", "temporary": false }],
+      "groups": ["/team-plattform"]
+    }
+  ]
+}

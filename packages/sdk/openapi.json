@@ -307,6 +307,36 @@
         }
       }
     },
+    "/api/v1/auth/providers": {
+      "get": {
+        "operationId": "Auth.providers",
+        "summary": "List the sign-in methods this installation offers",
+        "tags": ["Auth"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthProviders"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "operationId": "Health.live",
@@ -858,6 +888,29 @@
           "globalPermissions",
           "authenticatedVia"
         ],
+        "additionalProperties": false
+      },
+      "AuthProviders": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "boolean"
+          },
+          "oidc": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "displayName": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["enabled", "displayName"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["password", "oidc"],
         "additionalProperties": false
       },
       "HealthStatus": {

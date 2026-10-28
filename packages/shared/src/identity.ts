@@ -159,3 +159,22 @@ export type CreateGroupRequest = z.infer<typeof CreateGroupRequest>;
 
 export const AddGroupMemberRequest = z.object({ userId: Id }).meta({ id: 'AddGroupMemberRequest' });
 export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequest>;
+
+/** Which sign-in methods the login page offers. */
+export const AuthProviders = z
+  .object({
+    password: z.boolean(),
+    oidc: z.object({ enabled: z.boolean(), displayName: z.string().nullable() }),
+  })
+  .meta({ id: 'AuthProviders' });
+export type AuthProviders = z.infer<typeof AuthProviders>;
+
+/** Only same-site paths are accepted as redirect targets (no open redirects). */
+export function safeRedirectPath(value: unknown): string | undefined {
+  return typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.startsWith('/\\')
+    ? value
+    : undefined;
+}

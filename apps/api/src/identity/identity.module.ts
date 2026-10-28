@@ -9,6 +9,7 @@ import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
 import { GroupService } from './group.service.js';
 import { MeController } from './me.controller.js';
+import { OidcService } from './oidc.service.js';
 import { PasswordService } from './password.service.js';
 import { SessionService } from './session.service.js';
 import { SetupController } from './setup.controller.js';
@@ -23,6 +24,7 @@ import { UserService } from './user.service.js';
     AuditService,
     AuthService,
     GroupService,
+    OidcService,
     PasswordService,
     SessionService,
     SetupService,

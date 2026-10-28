@@ -17,7 +17,8 @@ export interface TestApp {
 }
 
 /** Starts the real API against a fresh, migrated database that is dropped again on close. */
-export async function startTestApp(): Promise<TestApp> {
+/** `env` overrides configuration, e.g. to enable optional features. */
+export async function startTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const serverUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? DEFAULT_URL;
   const name = `tasklore_test_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
   const admin = postgres(serverUrl, { max: 1, onnotice: () => {} });
@@ -29,6 +30,7 @@ export async function startTestApp(): Promise<TestApp> {
     DATABASE_URL: url.toString(),
     NODE_ENV: 'test',
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'fatal',
+    ...env,
   });
   const database = createDatabase(config.DATABASE_URL);
   await runMigrations(database);

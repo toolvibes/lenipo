@@ -15,6 +15,13 @@
       "when": 1793216740068,
       "tag": "0001_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793218325402,
+      "tag": "0002_oidc",
+      "breakpoints": true
     }
   ]
 }
