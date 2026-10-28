@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+  '/api/v1/admin/system': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Show version, runtime and database information
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.info'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/users': {
     parameters: {
       query?: never;
@@ -310,6 +330,19 @@ export interface components {
         [key: string]: string[];
       };
     };
+    SystemInfo: {
+      version: string;
+      /** @enum {string} */
+      mode: 'api' | 'collab' | 'worker' | 'all';
+      /** Format: date-time */
+      startedAt: string;
+      uptimeSeconds: number;
+      nodeVersion: string;
+      postgresVersion: string;
+      migrationsApplied: number;
+      users: number;
+      oidcEnabled: boolean;
+    };
     UserSummary: {
       /** Format: uuid */
       id: string;
@@ -450,6 +483,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'Admin.info': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SystemInfo'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Admin.listUsers': {
     parameters: {
       query?: never;

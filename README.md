@@ -63,10 +63,10 @@ Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dok
 
 ```bash
 cd deploy
-POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d
+POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d --build
 ```
 
-Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Migrationen laufen beim Start. Bis das Login fertig ist (Phase 0), lehnt der Collab-Server in Produktion jede Verbindung ab.
+Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
 
 ### Aufbau
 

@@ -19,6 +19,36 @@
     }
   ],
   "paths": {
+    "/api/v1/admin/system": {
+      "get": {
+        "operationId": "Admin.info",
+        "summary": "Show version, runtime and database information",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "Admin.listUsers",
@@ -695,6 +725,59 @@
           }
         },
         "required": ["type", "title", "status"],
+        "additionalProperties": false
+      },
+      "SystemInfo": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["api", "collab", "worker", "all"]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "uptimeSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "nodeVersion": {
+            "type": "string"
+          },
+          "postgresVersion": {
+            "type": "string"
+          },
+          "migrationsApplied": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "users": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "oidcEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "mode",
+          "startedAt",
+          "uptimeSeconds",
+          "nodeVersion",
+          "postgresVersion",
+          "migrationsApplied",
+          "users",
+          "oidcEnabled"
+        ],
         "additionalProperties": false
       },
       "UserSummary": {

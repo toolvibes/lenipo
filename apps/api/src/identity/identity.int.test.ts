@@ -253,6 +253,17 @@ describe('administration', () => {
     expect((await member.request('GET', '/admin/users')).status).toBe(403);
   });
 
+  it('shows system information to administrators only', async () => {
+    const info = await admin.request<{ version: string; migrationsApplied: number; users: number }>(
+      'GET',
+      '/admin/system',
+    );
+    expect(info.status).toBe(200);
+    expect(info.body.migrationsApplied).toBeGreaterThanOrEqual(3);
+    expect(info.body.users).toBe(2);
+    expect((await member.request('GET', '/admin/system')).status).toBe(403);
+  });
+
   it('writes security events to the audit log', async () => {
     const rows = await test.database.db.select({ action: auditLog.action }).from(auditLog);
     const actions = rows.map((row) => row.action);

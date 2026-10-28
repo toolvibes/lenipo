@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessService } from '../access/access.service.js';
 import { GlobalPermissionGuard } from '../access/require-global.js';
+import { SystemController } from '../admin/system.controller.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AdminController } from './admin.controller.js';
 import { AuthController } from './auth.controller.js';
@@ -18,7 +19,7 @@ import { TokenService } from './token.service.js';
 import { UserService } from './user.service.js';
 
 @Module({
-  controllers: [SetupController, AuthController, MeController, AdminController],
+  controllers: [SetupController, AuthController, MeController, AdminController, SystemController],
   providers: [
     AccessService,
     AuditService,

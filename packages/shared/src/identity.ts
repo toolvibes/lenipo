@@ -178,3 +178,19 @@ export function safeRedirectPath(value: unknown): string | undefined {
     ? value
     : undefined;
 }
+
+/** Health and version overview for administrators (P-ADM-07). */
+export const SystemInfo = z
+  .object({
+    version: z.string(),
+    mode: z.enum(['api', 'collab', 'worker', 'all']),
+    startedAt: z.iso.datetime(),
+    uptimeSeconds: z.number().int(),
+    nodeVersion: z.string(),
+    postgresVersion: z.string(),
+    migrationsApplied: z.number().int(),
+    users: z.number().int(),
+    oidcEnabled: z.boolean(),
+  })
+  .meta({ id: 'SystemInfo' });
+export type SystemInfo = z.infer<typeof SystemInfo>;
