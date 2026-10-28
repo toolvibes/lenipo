@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import postgres from 'postgres';
 import { createApiApp } from '../api-app.js';
-import { loadConfig } from '../core/config.js';
+import { type AppConfig, loadConfig } from '../core/config.js';
 import { createLogger } from '../core/logger.js';
 import { createDatabase, type DatabaseHandle } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
@@ -11,6 +11,7 @@ const DEFAULT_URL = 'postgres://tasklore:tasklore@localhost:5440/tasklore';
 
 export interface TestApp {
   app: NestExpressApplication;
+  config: AppConfig;
   database: DatabaseHandle;
   baseUrl: string;
   close(): Promise<void>;
@@ -40,6 +41,7 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
 
   return {
     app,
+    config,
     database,
     baseUrl,
     async close() {
