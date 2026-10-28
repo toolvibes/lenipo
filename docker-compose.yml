@@ -1,0 +1,37 @@
+# Infrastructure for local development. The app itself runs on the host (`pnpm dev`).
+# Host ports are offset from the defaults to avoid clashes with other local projects.
+name: tasklore
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: tasklore
+      POSTGRES_PASSWORD: tasklore
+      POSTGRES_DB: tasklore
+    ports:
+      - "${TASKLORE_POSTGRES_PORT:-5440}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasklore -d tasklore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Valkey: BSD-licensed, protocol-compatible Redis fork.
+  valkey:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "${TASKLORE_VALKEY_PORT:-6380}:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
+  valkey-data:
