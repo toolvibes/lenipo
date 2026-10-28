@@ -1,0 +1,68 @@
+export const de = {
+  common: {
+    product: 'Tasklore',
+    signOut: 'Abmelden',
+    loading: 'Wird geladen …',
+  },
+  auth: {
+    signInTitle: 'Anmelden',
+    email: 'E-Mail-Adresse',
+    password: 'Passwort',
+    signIn: 'Anmelden',
+    signingIn: 'Anmeldung läuft …',
+    invalidCredentials: 'E-Mail-Adresse oder Passwort ist falsch.',
+  },
+  setup: {
+    title: 'Tasklore einrichten',
+    intro:
+      'Diese Installation hat noch keinen Administrator. Den Einrichtungscode gibt der Server beim Start in seinem Log aus.',
+    code: 'Einrichtungscode',
+    codeHelp: 'Format: XXXX-XXXX-XXXX-XXXX, 24 Stunden gültig.',
+    instanceName: 'Name der Installation',
+    instanceNameHelp: 'Erscheint im Browser-Tab und in E-Mails, z. B. „Tasklore Entwicklung“.',
+    adminName: 'Name des Administrators',
+    passwordHelp: 'Mindestens 12 Zeichen.',
+    submit: 'Einrichtung abschließen',
+    submitting: 'Wird eingerichtet …',
+    invalidCode:
+      'Der Einrichtungscode ist falsch oder abgelaufen. Den aktuellen Code zeigt das Server-Log nach einem Neustart.',
+  },
+  shell: {
+    navigation: 'Hauptnavigation',
+    home: 'Startseite',
+    testPage: 'Testseite',
+    signedInAs: 'Angemeldet als {{name}}',
+  },
+  home: {
+    title: 'Willkommen, {{name}}',
+    intro:
+      'Projekte, Boards und Wiki-Bereiche folgen in den nächsten Phasen. Das gemeinsame Bearbeiten lässt sich bereits auf der Testseite ausprobieren.',
+    openTestPage: 'Testseite öffnen',
+  },
+  editor: {
+    placeholder: 'Text eingeben – Änderungen erscheinen sofort bei allen Bearbeitenden.',
+    toolbar: 'Formatierung',
+    heading1: 'Überschrift 1',
+    heading2: 'Überschrift 2',
+    bold: 'Fett',
+    italic: 'Kursiv',
+    strike: 'Durchgestrichen',
+    code: 'Code',
+    bulletList: 'Aufzählung',
+    orderedList: 'Nummerierte Liste',
+    quote: 'Zitat',
+    codeBlock: 'Codeblock',
+    content: 'Dokumentinhalt',
+  },
+  collab: {
+    connecting: 'Verbinde …',
+    offline: 'Offline – Änderungen werden nachgereicht',
+    saving: 'Speichert …',
+    saved: 'Gespeichert',
+    noOthers: 'Keine weiteren Personen',
+    editing_one: '{{count}} Person bearbeitet',
+    editing_other: '{{count}} Personen bearbeiten',
+    you: '{{name}} (Sie)',
+    accessDenied: 'Zugriff verweigert: {{reason}}',
+  },
+} as const;

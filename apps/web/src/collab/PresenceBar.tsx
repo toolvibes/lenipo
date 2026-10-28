@@ -1,10 +1,10 @@
+import { useTranslation } from 'react-i18next';
+import { initials } from '../lib/presence';
 import type { Peer } from './useCollabDocument';
 
-function initials(name: string): string {
-  return name.replace(/^Gast /, '').slice(0, 3);
-}
-
+/** Who else is editing; the local user always comes first (design: PresenceStack). */
 export function PresenceBar({ peers }: { peers: Peer[] }) {
+  const { t } = useTranslation();
   const sorted = [...peers].sort((a, b) => Number(b.isSelf) - Number(a.isSelf));
   const shown = sorted.length > 5 ? sorted.slice(0, 4) : sorted;
   const hidden = sorted.length - shown.length;
@@ -14,7 +14,7 @@ export function PresenceBar({ peers }: { peers: Peer[] }) {
         {shown.map((peer, index) => (
           <span
             key={peer.clientId}
-            title={peer.isSelf ? `${peer.name} (Sie)` : peer.name}
+            title={peer.isSelf ? t('collab.you', { name: peer.name }) : peer.name}
             className="grid size-7 place-items-center rounded-full border-2 border-[var(--surface-1)] text-[11px] font-semibold text-white"
             style={{ backgroundColor: peer.color, marginLeft: index === 0 ? 0 : -8 }}
           >
@@ -28,7 +28,7 @@ export function PresenceBar({ peers }: { peers: Peer[] }) {
         )}
       </div>
       <span className="text-xs text-[var(--ink-muted)]">
-        {peers.length <= 1 ? 'Keine weiteren Personen' : `${peers.length} Personen bearbeiten`}
+        {peers.length <= 1 ? t('collab.noOthers') : t('collab.editing', { count: peers.length })}
       </span>
     </div>
   );

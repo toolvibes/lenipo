@@ -1,0 +1,66 @@
+import type { Messages } from './index';
+
+export const en: Messages = {
+  common: { product: 'Tasklore', signOut: 'Sign out', loading: 'Loading …' },
+  auth: {
+    signInTitle: 'Sign in',
+    email: 'Email address',
+    password: 'Password',
+    signIn: 'Sign in',
+    signingIn: 'Signing in …',
+    invalidCredentials: 'The email address or password is incorrect.',
+  },
+  setup: {
+    title: 'Set up Tasklore',
+    intro:
+      'This installation has no administrator yet. The server prints the setup code to its log on startup.',
+    code: 'Setup code',
+    codeHelp: 'Format: XXXX-XXXX-XXXX-XXXX, valid for 24 hours.',
+    instanceName: 'Installation name',
+    instanceNameHelp: 'Shown in the browser tab and in emails, e.g. “Tasklore Engineering”.',
+    adminName: 'Administrator name',
+    passwordHelp: 'At least 12 characters.',
+    submit: 'Finish setup',
+    submitting: 'Setting up …',
+    invalidCode:
+      'The setup code is wrong or has expired. Restart the server to print a new code to its log.',
+  },
+  shell: {
+    navigation: 'Main navigation',
+    home: 'Home',
+    testPage: 'Test page',
+    signedInAs: 'Signed in as {{name}}',
+  },
+  home: {
+    title: 'Welcome, {{name}}',
+    intro:
+      'Projects, boards and wiki spaces come in the next phases. Collaborative editing already works on the test page.',
+    openTestPage: 'Open test page',
+  },
+  editor: {
+    placeholder: 'Start typing – everyone editing sees changes instantly.',
+    toolbar: 'Formatting',
+    heading1: 'Heading 1',
+    heading2: 'Heading 2',
+    bold: 'Bold',
+    italic: 'Italic',
+    strike: 'Strikethrough',
+    code: 'Code',
+    bulletList: 'Bulleted list',
+    orderedList: 'Numbered list',
+    quote: 'Quote',
+    codeBlock: 'Code block',
+    content: 'Document content',
+  },
+  collab: {
+    connecting: 'Connecting …',
+    offline: 'Offline – changes will sync when reconnected',
+    saving: 'Saving …',
+    saved: 'Saved',
+    noOthers: 'No one else here',
+    editing_one: '{{count}} person editing',
+    editing_other: '{{count}} people editing',
+    you: '{{name}} (you)',
+    accessDenied: 'Access denied: {{reason}}',
+  },
+};

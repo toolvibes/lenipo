@@ -3,9 +3,9 @@ import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import type { CollabIdentity } from './identity';
+import { useTranslation } from 'react-i18next';
 import { Toolbar } from './Toolbar';
-import type { CollabSession } from './useCollabDocument';
+import type { CollabIdentity, CollabSession } from './useCollabDocument';
 
 interface CollabEditorProps {
   session: CollabSession;
@@ -13,19 +13,20 @@ interface CollabEditorProps {
 }
 
 export function CollabEditor({ session, identity }: CollabEditorProps) {
+  const { t } = useTranslation();
   const editor = useEditor(
     {
       extensions: [
         // Undo/redo comes from the collaboration extension (per user, Yjs-aware).
         StarterKit.configure({ undoRedo: false }),
         Placeholder.configure({
-          placeholder: 'Text eingeben – Änderungen erscheinen sofort bei allen Bearbeitenden.',
+          placeholder: t('editor.placeholder'),
         }),
         Collaboration.configure({ document: session.doc }),
         CollaborationCaret.configure({ provider: session.provider, user: identity }),
       ],
       editorProps: {
-        attributes: { class: 'tl-prose', 'aria-label': 'Dokumentinhalt' },
+        attributes: { class: 'tl-prose', 'aria-label': t('editor.content') },
       },
     },
     [session],

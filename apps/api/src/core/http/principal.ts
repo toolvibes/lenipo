@@ -6,7 +6,6 @@ export type Principal =
   | { userId: string; via: 'token'; tokenId: string; scopes: readonly TokenScope[] };
 
 declare global {
-  // biome-ignore lint/style/noNamespace: Express exposes request extension only through this global namespace.
   namespace Express {
     interface Request {
       principal?: Principal;

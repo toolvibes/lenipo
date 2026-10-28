@@ -1,7 +1,12 @@
 import { HocuspocusProvider, type StatesArray, WebSocketStatus } from '@hocuspocus/provider';
 import { useEffect, useState } from 'react';
 import * as Y from 'yjs';
-import type { CollabIdentity } from './identity';
+
+/** How the local user appears to others: caret label and color. */
+export interface CollabIdentity {
+  name: string;
+  color: string;
+}
 
 export interface CollabSession {
   doc: Y.Doc;
@@ -46,7 +51,8 @@ export function useCollabDocument(name: string, identity: CollabIdentity) {
       url: collabUrl(),
       name,
       document: doc,
-      token: identity.name,
+      // The server authenticates with the session cookie; the provider only needs a non-empty token.
+      token: 'session',
       onStatus: ({ status }) => setStatus(status),
       onSynced: ({ state }) => setSynced(state),
       onUnsyncedChanges: ({ number }) => setUnsyncedChanges(number),
@@ -65,7 +71,7 @@ export function useCollabDocument(name: string, identity: CollabIdentity) {
       setSynced(false);
       setPeers([]);
     };
-  }, [name, identity.name]);
+  }, [name]);
 
   return { session, status, synced, unsyncedChanges, peers, authError };
 }

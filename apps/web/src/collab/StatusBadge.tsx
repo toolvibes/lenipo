@@ -1,4 +1,5 @@
 import { WebSocketStatus } from '@hocuspocus/provider';
+import { useTranslation } from 'react-i18next';
 
 interface StatusBadgeProps {
   status: WebSocketStatus;
@@ -7,13 +8,14 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, synced, unsyncedChanges }: StatusBadgeProps) {
-  let label = 'Verbinde …';
+  const { t } = useTranslation();
+  let label: string = t('collab.connecting');
   let color = 'var(--warning)';
   if (status === WebSocketStatus.Disconnected) {
-    label = 'Offline – Änderungen werden nachgereicht';
+    label = t('collab.offline');
     color = 'var(--danger)';
   } else if (status === WebSocketStatus.Connected && synced) {
-    label = unsyncedChanges > 0 ? 'Speichert …' : 'Gespeichert';
+    label = unsyncedChanges > 0 ? t('collab.saving') : t('collab.saved');
     color = unsyncedChanges > 0 ? 'var(--warning)' : 'var(--success)';
   }
   return (

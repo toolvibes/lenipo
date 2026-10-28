@@ -12,6 +12,7 @@ import {
   TextStrikethrough,
 } from '@phosphor-icons/react';
 import { type Editor, useEditorState } from '@tiptap/react';
+import { useTranslation } from 'react-i18next';
 
 interface ToolbarButtonProps {
   icon: Icon;
@@ -45,6 +46,7 @@ function Separator() {
 }
 
 export function Toolbar({ editor }: { editor: Editor }) {
+  const { t } = useTranslation();
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -65,68 +67,68 @@ export function Toolbar({ editor }: { editor: Editor }) {
   return (
     <div
       role="toolbar"
-      aria-label="Formatierung"
+      aria-label={t('editor.toolbar')}
       className="flex flex-wrap items-center gap-1 border-b border-[var(--border)] px-3 py-1.5"
     >
       <ToolbarButton
         icon={TextHOne}
-        title="Überschrift 1"
+        title={t('editor.heading1')}
         active={state.h1}
         onClick={() => chain().toggleHeading({ level: 1 }).run()}
       />
       <ToolbarButton
         icon={TextHTwo}
-        title="Überschrift 2"
+        title={t('editor.heading2')}
         active={state.h2}
         onClick={() => chain().toggleHeading({ level: 2 }).run()}
       />
       <Separator />
       <ToolbarButton
         icon={TextB}
-        title="Fett"
+        title={t('editor.bold')}
         active={state.bold}
         onClick={() => chain().toggleBold().run()}
       />
       <ToolbarButton
         icon={TextItalic}
-        title="Kursiv"
+        title={t('editor.italic')}
         active={state.italic}
         onClick={() => chain().toggleItalic().run()}
       />
       <ToolbarButton
         icon={TextStrikethrough}
-        title="Durchgestrichen"
+        title={t('editor.strike')}
         active={state.strike}
         onClick={() => chain().toggleStrike().run()}
       />
       <ToolbarButton
         icon={Code}
-        title="Code"
+        title={t('editor.code')}
         active={state.code}
         onClick={() => chain().toggleCode().run()}
       />
       <Separator />
       <ToolbarButton
         icon={ListBullets}
-        title="Aufzählung"
+        title={t('editor.bulletList')}
         active={state.bulletList}
         onClick={() => chain().toggleBulletList().run()}
       />
       <ToolbarButton
         icon={ListNumbers}
-        title="Nummerierte Liste"
+        title={t('editor.orderedList')}
         active={state.orderedList}
         onClick={() => chain().toggleOrderedList().run()}
       />
       <ToolbarButton
         icon={Quotes}
-        title="Zitat"
+        title={t('editor.quote')}
         active={state.blockquote}
         onClick={() => chain().toggleBlockquote().run()}
       />
       <ToolbarButton
         icon={CodeBlock}
-        title="Codeblock"
+        title={t('editor.codeBlock')}
         active={state.codeBlock}
         onClick={() => chain().toggleCodeBlock().run()}
       />
