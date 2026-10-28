@@ -2,6 +2,8 @@
 
 > **Tasklore**: Tasks + Lore (Wissen). Eine selbst gehostete Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center**: eine Plattform, eine Datenbank, ein Login.
 
+Repository: https://github.com/davidk85/TaskLore (privat)
+
 ## Worum es geht
 
 Atlassian hat die Server-Produkte eingestellt. Was bleibt, sind die Cloud-Version oder sehr teures Data Center. Wir bauen das nach, was die Server-Versionen stark gemacht hat:
