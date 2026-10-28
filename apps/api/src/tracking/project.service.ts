@@ -67,23 +67,19 @@ export class ProjectService {
           workflowVersionId: builtInId('workflow-version', `${template.workflow}:1`),
         });
         if (template.hiddenIssueTypes.length > 0) {
-          await tx
-            .insert(projectHiddenIssueTypes)
-            .values(
-              template.hiddenIssueTypes.map((key) => ({
-                projectId: id,
-                issueTypeId: builtInId('issue-type', key),
-              })),
-            );
+          await tx.insert(projectHiddenIssueTypes).values(
+            template.hiddenIssueTypes.map((key) => ({
+              projectId: id,
+              issueTypeId: builtInId('issue-type', key),
+            })),
+          );
         }
-        await tx
-          .insert(projectRoleMembers)
-          .values({
-            id: uuidv7(),
-            projectId: id,
-            role: 'administrators',
-            userId: principal.userId,
-          });
+        await tx.insert(projectRoleMembers).values({
+          id: uuidv7(),
+          projectId: id,
+          role: 'administrators',
+          userId: principal.userId,
+        });
         const [everyone] = await tx
           .select({ id: groups.id })
           .from(groups)

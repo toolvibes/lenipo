@@ -1,0 +1,65 @@
+import { queryOptions } from '@tanstack/react-query';
+import { client, unwrap } from './api';
+
+export type IssueFilter = {
+  status?: 'todo' | 'in_progress' | 'done' | 'unresolved';
+  assignee?: string;
+  q?: string;
+  limit?: number;
+};
+
+export const trackingMetaQuery = queryOptions({
+  queryKey: ['tracking-meta'],
+  queryFn: () => unwrap(client.GET('/api/v1/tracking/meta')),
+  staleTime: 5 * 60_000,
+});
+
+export const projectsQuery = queryOptions({
+  queryKey: ['projects'],
+  queryFn: () => unwrap(client.GET('/api/v1/projects')),
+});
+
+export const projectQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['project', key],
+    queryFn: () => unwrap(client.GET('/api/v1/projects/{key}', { params: { path: { key } } })),
+  });
+
+export const projectIssuesQuery = (key: string, filter: IssueFilter) =>
+  queryOptions({
+    queryKey: ['project-issues', key, filter],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/issues', {
+          params: { path: { key }, query: { limit: 50, ...filter } },
+        }),
+      ),
+    placeholderData: (previous) => previous,
+  });
+
+export const issueQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key],
+    queryFn: () => unwrap(client.GET('/api/v1/issues/{key}', { params: { path: { key } } })),
+  });
+
+export const transitionsQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key, 'transitions'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/transitions', { params: { path: { key } } })),
+  });
+
+export const commentsQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key, 'comments'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/comments', { params: { path: { key } } })),
+  });
+
+export const historyQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key, 'history'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/history', { params: { path: { key } } })),
+  });

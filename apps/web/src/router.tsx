@@ -12,6 +12,9 @@ import { SetupPage } from './features/auth/SetupPage';
 import { PageView } from './features/pages/PageView';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
+import { IssuePage } from './features/tracking/IssuePage';
+import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
+import { ProjectsPage } from './features/tracking/ProjectsPage';
 import { meQuery, setupStatusQuery } from './lib/queries';
 
 interface RouterContext {
@@ -80,10 +83,38 @@ const pageRoute = createRoute({
   },
 });
 
+const projectsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects',
+  component: function Projects() {
+    return <ProjectsPage me={projectsRoute.useRouteContext().me} />;
+  },
+});
+
+const projectRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key',
+  component: function Project() {
+    const { me } = projectRoute.useRouteContext();
+    const { key } = projectRoute.useParams();
+    return <ProjectIssuesPage key={key} me={me} projectKey={key.toUpperCase()} />;
+  },
+});
+
+const issueRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/issues/$key',
+  component: function IssueView() {
+    const { me } = issueRoute.useRouteContext();
+    const { key } = issueRoute.useParams();
+    return <IssuePage key={key} me={me} issueKey={key.toUpperCase()} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   setupRoute,
   loginRoute,
-  appRoute.addChildren([homeRoute, pageRoute]),
+  appRoute.addChildren([homeRoute, pageRoute, projectsRoute, projectRoute, issueRoute]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

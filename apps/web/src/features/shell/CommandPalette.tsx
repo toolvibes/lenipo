@@ -1,6 +1,7 @@
 import {
   BookOpenText,
   Desktop,
+  FolderSimple,
   House,
   type Icon,
   Moon,
@@ -81,6 +82,11 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: PaletteProps) 
             icon={House}
             label={t('shell.home')}
             onSelect={() => run(() => navigate({ to: '/' }))}
+          />
+          <Item
+            icon={FolderSimple}
+            label={t('shell.projects')}
+            onSelect={() => run(() => navigate({ to: '/projects' }))}
           />
           <Item
             icon={NotePencil}

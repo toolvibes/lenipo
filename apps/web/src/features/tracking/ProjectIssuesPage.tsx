@@ -1,0 +1,201 @@
+import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import type { Me } from '@tasklore/shared';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatRelative } from '../../lib/format';
+import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
+import { Button } from '../../ui/Button';
+import { CreateIssueDialog } from './CreateIssueDialog';
+import { IssueTypeIcon, PriorityIcon, StatusLozenge } from './icons';
+import { Avatar } from './UserPicker';
+
+type Preset = 'all' | 'mine' | 'open' | 'done';
+
+const PRESETS: Record<Preset, IssueFilter> = {
+  all: {},
+  mine: { assignee: 'me', status: 'unresolved' },
+  open: { status: 'unresolved' },
+  done: { status: 'done' },
+};
+
+/** Issue navigator for one project (design: list view, compact density). */
+export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: string }) {
+  const { t } = useTranslation();
+  const project = useQuery(projectQuery(projectKey));
+  const [preset, setPreset] = useState<Preset>('open');
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [limit, setLimit] = useState(50);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(search.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const issues = useQuery(
+    projectIssuesQuery(projectKey, { ...PRESETS[preset], q: query || undefined, limit }),
+  );
+
+  const chip = (value: Preset, label: string) => (
+    <button
+      type="button"
+      aria-pressed={preset === value}
+      onClick={() => setPreset(value)}
+      className={`h-7 rounded-[var(--radius-md)] border px-2.5 ${
+        preset === value
+          ? 'border-[var(--accent)] bg-[var(--accent-soft)] font-semibold text-[var(--accent)]'
+          : 'border-[var(--border-strong)] bg-[var(--surface-1)] text-[var(--ink)]'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <main className="flex flex-col gap-4 px-6 py-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Link
+            to="/projects"
+            className="text-xs text-[var(--ink-muted)] no-underline hover:underline"
+          >
+            {t('projects.title')}
+          </Link>
+          <h1 className="tl-heading-xl">{project.data?.name ?? projectKey}</h1>
+        </div>
+        {project.data?.permissions.includes('create-issues') && (
+          <Button variant="primary" onClick={() => setCreating(true)}>
+            <Plus size={16} aria-hidden />
+            {t('issues.create')}
+          </Button>
+        )}
+      </header>
+
+      <div
+        role="toolbar"
+        aria-label={t('issues.search')}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <label className="flex h-7 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-[var(--ink-muted)]">
+          <MagnifyingGlass size={14} aria-hidden />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('issues.search')}
+            aria-label={t('issues.search')}
+            className="w-48 bg-transparent text-[var(--ink)] outline-none"
+          />
+        </label>
+        {chip('open', t('issues.filterOpen'))}
+        {chip('mine', t('issues.filterMine'))}
+        {chip('done', t('issues.filterDone'))}
+        {chip('all', t('issues.filterAll'))}
+        {issues.data && (
+          <span className="ml-auto text-xs text-[var(--ink-muted)]">
+            {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
+          </span>
+        )}
+      </div>
+
+      <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
+        <table className="w-full min-w-[760px] border-collapse">
+          <thead>
+            <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+              <th className="w-28 border-b border-[var(--border)] px-3 py-2">
+                {t('issues.columns.key')}
+              </th>
+              <th className="border-b border-[var(--border)] px-3 py-2">
+                {t('issues.columns.summary')}
+              </th>
+              <th className="w-36 border-b border-[var(--border)] px-3 py-2">
+                {t('issues.columns.status')}
+              </th>
+              <th className="w-44 border-b border-[var(--border)] px-3 py-2">
+                {t('issues.columns.assignee')}
+              </th>
+              <th className="w-36 border-b border-[var(--border)] px-3 py-2">
+                {t('issues.columns.updated')}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {issues.data?.issues.map((issue) => (
+              <tr key={issue.id} className="h-[var(--row-compact)] hover:bg-[var(--surface-2)]">
+                <td className="border-b border-[var(--border)] px-3">
+                  <span className="flex items-center gap-2">
+                    <IssueTypeIcon type={issue.issueType} />
+                    <Link
+                      to="/issues/$key"
+                      params={{ key: issue.key }}
+                      className="tl-key no-underline hover:underline"
+                    >
+                      {issue.key}
+                    </Link>
+                  </span>
+                </td>
+                <td className="max-w-0 border-b border-[var(--border)] px-3">
+                  <span className="flex items-center gap-2">
+                    <PriorityIcon priority={issue.priority} />
+                    <Link
+                      to="/issues/$key"
+                      params={{ key: issue.key }}
+                      className="truncate text-[var(--ink)] no-underline hover:underline"
+                    >
+                      {issue.summary}
+                    </Link>
+                    {issue.storyPoints !== null && (
+                      <span className="ml-auto shrink-0 rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-1.5 text-xs font-semibold">
+                        {issue.storyPoints}
+                      </span>
+                    )}
+                  </span>
+                </td>
+                <td className="border-b border-[var(--border)] px-3">
+                  <StatusLozenge status={issue.status} />
+                </td>
+                <td className="border-b border-[var(--border)] px-3">
+                  {issue.assignee ? (
+                    <span className="flex items-center gap-2">
+                      <Avatar user={issue.assignee} size={20} />
+                      <span className="truncate">{issue.assignee.displayName}</span>
+                    </span>
+                  ) : (
+                    <span className="text-[var(--ink-muted)]">{t('issues.unassigned')}</span>
+                  )}
+                </td>
+                <td className="border-b border-[var(--border)] px-3 text-[var(--ink-muted)]">
+                  {formatRelative(issue.updatedAt)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {issues.data?.issues.length === 0 && (
+          <p className="px-3 py-8 text-center text-[var(--ink-muted)]">
+            {project.data?.issueCount === 0 ? t('issues.emptyProject') : t('issues.empty')}
+          </p>
+        )}
+      </div>
+      {issues.data && issues.data.issues.length < issues.data.total && (
+        <Button
+          className="self-center"
+          onClick={() => setLimit((current) => Math.min(current + 50, 100))}
+          disabled={limit >= 100}
+        >
+          {t('issues.loadMore')}
+        </Button>
+      )}
+      {project.data && (
+        <CreateIssueDialog
+          project={project.data}
+          open={creating}
+          onOpenChange={setCreating}
+          myId={me.id}
+        />
+      )}
+    </main>
+  );
+}

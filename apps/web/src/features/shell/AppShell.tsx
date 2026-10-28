@@ -1,4 +1,11 @@
-import { House, type Icon, MagnifyingGlass, NotePencil, SignOut } from '@phosphor-icons/react';
+import {
+  FolderSimple,
+  House,
+  type Icon,
+  MagnifyingGlass,
+  NotePencil,
+  SignOut,
+} from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
@@ -8,11 +15,21 @@ import { client } from '../../lib/api';
 import { initials, presenceColor } from '../../lib/presence';
 import { CommandPalette } from './CommandPalette';
 
-function NavItem({ to, icon: IconComponent, label }: { to: string; icon: Icon; label: string }) {
+function NavItem({
+  to,
+  icon: IconComponent,
+  label,
+  exact = true,
+}: {
+  to: string;
+  icon: Icon;
+  label: string;
+  exact?: boolean;
+}) {
   return (
     <Link
       to={to}
-      activeOptions={{ exact: true }}
+      activeOptions={{ exact }}
       className="flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)] data-[status=active]:bg-[var(--accent-soft)] data-[status=active]:font-semibold data-[status=active]:text-[var(--accent)]"
     >
       {({ isActive }) => (
@@ -71,6 +88,7 @@ export function AppShell({ me }: { me: Me }) {
         </button>
         <div className="flex flex-col gap-0.5">
           <NavItem to="/" icon={House} label={t('shell.home')} />
+          <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
           <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
         </div>
         <div className="mt-auto flex items-center gap-2 px-2">
