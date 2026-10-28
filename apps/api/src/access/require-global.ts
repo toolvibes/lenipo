@@ -11,7 +11,7 @@ import type { GlobalPermission } from '@tasklore/shared';
 import type { Request } from 'express';
 import { AccessService } from './access.service.js';
 
-const REQUIRED_GLOBAL = 'tasklore:required-global';
+export const REQUIRED_GLOBAL = 'tasklore:required-global';
 
 /** Restricts a route to holders of a global permission. Tokens also need the `admin` scope. */
 export const RequireGlobal = (permission: GlobalPermission) =>

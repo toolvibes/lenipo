@@ -1,8 +1,9 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { type Me, SetupRequest, type SetupStatusResponse } from '@tasklore/shared';
+import { Me, SetupRequest, SetupStatusResponse } from '@tasklore/shared';
 import type { Request, Response } from 'express';
 import type { AppConfig } from '../core/config.js';
 import { Public, ValidBody } from '../core/http/decorators.js';
+import { Endpoint } from '../core/http/endpoint.js';
 import { CONFIG } from '../core/tokens.js';
 import { clientOf } from './request-guards.js';
 import { SessionService } from './session.service.js';
@@ -20,12 +21,22 @@ export class SetupController {
     @Inject(UserService) private readonly users: UserService,
   ) {}
 
+  @Endpoint({
+    tag: 'Setup',
+    summary: 'Report whether first-run setup is still required',
+    response: SetupStatusResponse,
+  })
   @Get('status')
   async status(): Promise<SetupStatusResponse> {
     return { required: await this.setup.isRequired() };
   }
 
   /** Creates the first administrator and signs them in. */
+  @Endpoint({
+    tag: 'Setup',
+    summary: 'Create the first administrator with the setup code and sign in',
+    response: Me,
+  })
   @Post()
   @HttpCode(201)
   async complete(

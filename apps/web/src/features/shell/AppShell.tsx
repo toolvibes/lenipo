@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useTranslation } from 'react-i18next';
-import { api } from '../../lib/api';
+import { client } from '../../lib/api';
 import { initials, presenceColor } from '../../lib/presence';
 
 function NavItem({ to, icon: IconComponent, label }: { to: string; icon: Icon; label: string }) {
@@ -30,7 +30,7 @@ export function AppShell({ me }: { me: Me }) {
   const queryClient = useQueryClient();
 
   async function signOut() {
-    await api('POST', '/auth/logout');
+    await client.POST('/api/v1/auth/logout');
     queryClient.clear();
     await navigate({ to: '/login' });
   }

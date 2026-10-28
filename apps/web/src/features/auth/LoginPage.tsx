@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { Me } from '@tasklore/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../../lib/api';
+import { client, unwrap } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -18,7 +17,7 @@ export function LoginPage({ redirect }: { redirect?: string }) {
   const [password, setPassword] = useState('');
 
   const login = useMutation({
-    mutationFn: () => api<Me>('POST', '/auth/login', { email, password }),
+    mutationFn: () => unwrap(client.POST('/api/v1/auth/login', { body: { email, password } })),
     onSuccess: async (me) => {
       queryClient.setQueryData(meQuery.queryKey, me);
       await navigate({ to: redirect ?? '/' });

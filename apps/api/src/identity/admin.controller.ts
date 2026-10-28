@@ -14,13 +14,15 @@ import {
   AddGroupMemberRequest,
   CreateGroupRequest,
   CreateUserRequest,
-  type GroupSummary,
-  type UserSummary,
+  GroupSummary,
+  UserSummary,
 } from '@tasklore/shared';
 import type { Request } from 'express';
+import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { GroupService } from './group.service.js';
 import { PasswordService } from './password.service.js';
@@ -37,11 +39,13 @@ export class AdminController {
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
+  @Endpoint({ tag: 'Admin', summary: 'List all users', response: z.array(UserSummary) })
   @Get('users')
   listUsers(): Promise<UserSummary[]> {
     return this.users.list();
   }
 
+  @Endpoint({ tag: 'Admin', summary: 'Create a local user', response: UserSummary })
   @Post('users')
   @HttpCode(201)
   async createUser(
@@ -69,11 +73,17 @@ export class AdminController {
     return created;
   }
 
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'List all groups with their global permissions',
+    response: z.array(GroupSummary),
+  })
   @Get('groups')
   listGroups(): Promise<GroupSummary[]> {
     return this.groups.list();
   }
 
+  @Endpoint({ tag: 'Admin', summary: 'Create a group', response: GroupSummary })
   @Post('groups')
   @HttpCode(201)
   async createGroup(
@@ -94,6 +104,7 @@ export class AdminController {
     return group;
   }
 
+  @Endpoint({ tag: 'Admin', summary: 'Add a user to a group' })
   @Post('groups/:name/members')
   @HttpCode(204)
   async addMember(
@@ -114,6 +125,7 @@ export class AdminController {
     });
   }
 
+  @Endpoint({ tag: 'Admin', summary: 'Remove a user from a group' })
   @Delete('groups/:name/members/:userId')
   @HttpCode(204)
   async removeMember(

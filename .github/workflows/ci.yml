@@ -42,5 +42,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Generated API description and SDK types are up to date
+        run: pnpm api:generate && git diff --exit-code packages/sdk
       - name: Migrations apply to an empty database
         run: pnpm db:migrate

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { type Me, SetupRequest } from '@tasklore/shared';
+import { SetupRequest } from '@tasklore/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ApiError, api } from '../../lib/api';
+import { ApiError, client, unwrap } from '../../lib/api';
 import { meQuery, setupStatusQuery } from '../../lib/queries';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -26,7 +26,7 @@ export function SetupPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const setup = useMutation({
-    mutationFn: (request: SetupRequest) => api<Me>('POST', '/setup', request),
+    mutationFn: (request: SetupRequest) => unwrap(client.POST('/api/v1/setup', { body: request })),
     onSuccess: async (me) => {
       queryClient.setQueryData(meQuery.queryKey, me);
       queryClient.setQueryData(setupStatusQuery.queryKey, { required: false });

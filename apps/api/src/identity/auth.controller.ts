@@ -1,9 +1,10 @@
 import { Controller, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { LoginRequest, type Me } from '@tasklore/shared';
+import { LoginRequest, Me } from '@tasklore/shared';
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppConfig } from '../core/config.js';
 import { CurrentPrincipal, Public, ValidBody } from '../core/http/decorators.js';
+import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { CONFIG } from '../core/tokens.js';
 import { AuthService } from './auth.service.js';
@@ -22,6 +23,7 @@ export class AuthController {
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
+  @Endpoint({ tag: 'Auth', summary: 'Sign in with email and password', response: Me })
   @Public()
   @Post('login')
   @HttpCode(200)
@@ -35,6 +37,7 @@ export class AuthController {
     return this.users.me(userId, 'session');
   }
 
+  @Endpoint({ tag: 'Auth', summary: 'Sign out and end the current session' })
   @Post('logout')
   @HttpCode(204)
   async logout(

@@ -1,10 +1,13 @@
 packages:
   - apps/*
   - packages/*
+  - tools/*
 
 # Only these dependencies may run install scripts.
 allowBuilds:
   esbuild: true
+  # Install-time telemetry pulled in by swagger-ui-dist; never run it.
+  "@scarf/scarf": false
 
 # One Node typings version across the workspace (matches the Node 24 LTS runtime).
 overrides:

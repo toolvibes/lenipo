@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { z } from 'zod';
+import { registerBodySchema } from './endpoint.js';
 import type { Principal } from './principal.js';
 
 export const IS_PUBLIC = 'tasklore:public';
@@ -23,7 +24,12 @@ const ParsedBody = createParamDecorator((data: { zod: z.ZodType }, ctx: Executio
  * The schema is wrapped because Nest treats an argument with a `transform` method as a pipe and
  * `{ schema }` as its own Standard Schema option; we want Zod's output and our problem format.
  */
-export const ValidBody = (schema: z.ZodType) => ParsedBody({ zod: schema });
+export const ValidBody =
+  (schema: z.ZodType): ParameterDecorator =>
+  (target, key, index) => {
+    registerBodySchema(target.constructor, String(key), schema);
+    ParsedBody({ zod: schema })(target, key, index);
+  };
 
 /** The authenticated principal; only on routes that are not @Public(). */
 export const CurrentPrincipal = createParamDecorator(

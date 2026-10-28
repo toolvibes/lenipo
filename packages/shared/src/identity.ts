@@ -10,7 +10,7 @@ export const GLOBAL_PERMISSIONS = [
   'browse-users',
   'share-filters',
 ] as const;
-export const GlobalPermission = z.enum(GLOBAL_PERMISSIONS);
+export const GlobalPermission = z.enum(GLOBAL_PERMISSIONS).meta({ id: 'GlobalPermission' });
 export type GlobalPermission = z.infer<typeof GlobalPermission>;
 
 /** Scopes a personal access token can carry. */
@@ -21,7 +21,7 @@ export const TOKEN_SCOPES = [
   'wiki:write',
   'admin',
 ] as const;
-export const TokenScope = z.enum(TOKEN_SCOPES);
+export const TokenScope = z.enum(TOKEN_SCOPES).meta({ id: 'TokenScope' });
 export type TokenScope = z.infer<typeof TokenScope>;
 
 export const Email = z
@@ -35,81 +35,99 @@ export const Password = z
 export const DisplayName = z.string().trim().min(1).max(120);
 export const Id = z.uuid();
 
-export const SetupStatusResponse = z.object({ required: z.boolean() });
+export const SetupStatusResponse = z
+  .object({ required: z.boolean() })
+  .meta({ id: 'SetupStatusResponse' });
 export type SetupStatusResponse = z.infer<typeof SetupStatusResponse>;
 
-export const SetupRequest = z.object({
-  token: z.string().trim().min(1),
-  instanceName: z.string().trim().min(1).max(80),
-  admin: z.object({ email: Email, displayName: DisplayName, password: Password }),
-});
+export const SetupRequest = z
+  .object({
+    token: z.string().trim().min(1),
+    instanceName: z.string().trim().min(1).max(80),
+    admin: z.object({ email: Email, displayName: DisplayName, password: Password }),
+  })
+  .meta({ id: 'SetupRequest' });
 export type SetupRequest = z.infer<typeof SetupRequest>;
 
-export const LoginRequest = z.object({
-  email: Email,
-  password: z.string().min(1).max(256),
-});
+export const LoginRequest = z
+  .object({
+    email: Email,
+    password: z.string().min(1).max(256),
+  })
+  .meta({ id: 'LoginRequest' });
 export type LoginRequest = z.infer<typeof LoginRequest>;
 
-export const Me = z.object({
-  id: Id,
-  email: z.string(),
-  displayName: z.string(),
-  locale: z.string(),
-  timeZone: z.string(),
-  globalPermissions: z.array(GlobalPermission),
-  authenticatedVia: z.enum(['session', 'token']),
-});
+export const Me = z
+  .object({
+    id: Id,
+    email: z.string(),
+    displayName: z.string(),
+    locale: z.string(),
+    timeZone: z.string(),
+    globalPermissions: z.array(GlobalPermission),
+    authenticatedVia: z.enum(['session', 'token']),
+  })
+  .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;
 
-export const SessionInfo = z.object({
-  id: z.string(),
-  current: z.boolean(),
-  createdAt: z.iso.datetime(),
-  lastSeenAt: z.iso.datetime(),
-  expiresAt: z.iso.datetime(),
-  ip: z.string().nullable(),
-  userAgent: z.string().nullable(),
-});
+export const SessionInfo = z
+  .object({
+    id: z.string(),
+    current: z.boolean(),
+    createdAt: z.iso.datetime(),
+    lastSeenAt: z.iso.datetime(),
+    expiresAt: z.iso.datetime(),
+    ip: z.string().nullable(),
+    userAgent: z.string().nullable(),
+  })
+  .meta({ id: 'SessionInfo' });
 export type SessionInfo = z.infer<typeof SessionInfo>;
 
-export const CreateTokenRequest = z.object({
-  name: z.string().trim().min(1).max(80),
-  scopes: z.array(TokenScope).min(1),
-  expiresInDays: z.number().int().min(1).max(366),
-});
+export const CreateTokenRequest = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    scopes: z.array(TokenScope).min(1),
+    expiresInDays: z.number().int().min(1).max(366),
+  })
+  .meta({ id: 'CreateTokenRequest' });
 export type CreateTokenRequest = z.infer<typeof CreateTokenRequest>;
 
-export const TokenInfo = z.object({
-  id: Id,
-  name: z.string(),
-  prefix: z.string(),
-  scopes: z.array(TokenScope),
-  createdAt: z.iso.datetime(),
-  expiresAt: z.iso.datetime(),
-  lastUsedAt: z.iso.datetime().nullable(),
-});
+export const TokenInfo = z
+  .object({
+    id: Id,
+    name: z.string(),
+    prefix: z.string(),
+    scopes: z.array(TokenScope),
+    createdAt: z.iso.datetime(),
+    expiresAt: z.iso.datetime(),
+    lastUsedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'TokenInfo' });
 export type TokenInfo = z.infer<typeof TokenInfo>;
 
 /** Returned once on creation; the secret is never retrievable again. */
-export const CreatedToken = TokenInfo.extend({ secret: z.string() });
+export const CreatedToken = TokenInfo.extend({ secret: z.string() }).meta({ id: 'CreatedToken' });
 export type CreatedToken = z.infer<typeof CreatedToken>;
 
-export const UserSummary = z.object({
-  id: Id,
-  email: z.string(),
-  displayName: z.string(),
-  status: z.enum(['active', 'deactivated']),
-  groups: z.array(z.string()),
-});
+export const UserSummary = z
+  .object({
+    id: Id,
+    email: z.string(),
+    displayName: z.string(),
+    status: z.enum(['active', 'deactivated']),
+    groups: z.array(z.string()),
+  })
+  .meta({ id: 'UserSummary' });
 export type UserSummary = z.infer<typeof UserSummary>;
 
-export const CreateUserRequest = z.object({
-  email: Email,
-  displayName: DisplayName,
-  password: Password,
-  groups: z.array(z.string().trim().min(1)).default([]),
-});
+export const CreateUserRequest = z
+  .object({
+    email: Email,
+    displayName: DisplayName,
+    password: Password,
+    groups: z.array(z.string().trim().min(1)).default([]),
+  })
+  .meta({ id: 'CreateUserRequest' });
 export type CreateUserRequest = z.infer<typeof CreateUserRequest>;
 
 export const GroupName = z
@@ -119,21 +137,25 @@ export const GroupName = z
   .max(80)
   .regex(/^[a-z0-9][a-z0-9._-]*$/, 'Kleinbuchstaben, Ziffern, Punkt, Bindestrich, Unterstrich');
 
-export const GroupSummary = z.object({
-  id: Id,
-  name: z.string(),
-  description: z.string(),
-  memberCount: z.number().int(),
-  globalPermissions: z.array(GlobalPermission),
-});
+export const GroupSummary = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    memberCount: z.number().int(),
+    globalPermissions: z.array(GlobalPermission),
+  })
+  .meta({ id: 'GroupSummary' });
 export type GroupSummary = z.infer<typeof GroupSummary>;
 
-export const CreateGroupRequest = z.object({
-  name: GroupName,
-  description: z.string().trim().max(500).default(''),
-  globalPermissions: z.array(GlobalPermission).default([]),
-});
+export const CreateGroupRequest = z
+  .object({
+    name: GroupName,
+    description: z.string().trim().max(500).default(''),
+    globalPermissions: z.array(GlobalPermission).default([]),
+  })
+  .meta({ id: 'CreateGroupRequest' });
 export type CreateGroupRequest = z.infer<typeof CreateGroupRequest>;
 
-export const AddGroupMemberRequest = z.object({ userId: Id });
+export const AddGroupMemberRequest = z.object({ userId: Id }).meta({ id: 'AddGroupMemberRequest' });
 export type AddGroupMemberRequest = z.infer<typeof AddGroupMemberRequest>;

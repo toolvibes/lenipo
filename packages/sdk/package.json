@@ -1,0 +1,29 @@
+{
+  "name": "@tasklore/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed client for the Tasklore REST API, generated from its OpenAPI document.",
+  "type": "module",
+  "files": [
+    "dist",
+    "openapi.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./openapi.json": "./openapi.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/schema.d.ts dist/schema.d.ts",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

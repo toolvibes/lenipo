@@ -1,3 +1,4 @@
+import { createTaskloreClient } from '@tasklore/sdk';
 import type { Problem } from '@tasklore/shared';
 
 /** A failed API call, carrying the server's problem details (RFC 9457). */
@@ -11,24 +12,17 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Minimal JSON client for the Tasklore API using the session cookie.
- * Replaced by the generated openapi-fetch client once the OpenAPI document exists (E-22).
- */
-export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`/api/v1${path}`, {
-    method,
-    credentials: 'same-origin',
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (response.status === 204) {
-    return undefined as T;
-  }
-  const data: unknown = await response.json().catch(() => undefined);
+/** Typed client generated from the OpenAPI document (E-22); the browser authenticates with the session cookie. */
+export const client = createTaskloreClient();
+
+/** Returns the response body or throws an ApiError with the problem details. */
+export async function unwrap<T>(
+  call: Promise<{ data?: T; error?: unknown; response: Response }>,
+): Promise<T> {
+  const { data, error, response } = await call;
   if (!response.ok) {
     throw new ApiError(
-      (data as Problem | undefined) ?? {
+      (error as Problem | undefined) ?? {
         type: 'about:blank',
         title: response.statusText,
         status: response.status,

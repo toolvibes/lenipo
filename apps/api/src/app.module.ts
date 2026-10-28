@@ -8,6 +8,7 @@ import type { Logger } from './core/logger.js';
 import type { DatabaseHandle } from './db/client.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { OpenApiController } from './openapi/openapi.controller.js';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -26,6 +27,7 @@ export class AppModule {
         HealthModule,
         IdentityModule,
       ],
+      controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],
     };
   }

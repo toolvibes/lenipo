@@ -11,16 +11,12 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import {
-  type CreatedToken,
-  CreateTokenRequest,
-  type Me,
-  type SessionInfo,
-  type TokenInfo,
-} from '@tasklore/shared';
+import { CreatedToken, CreateTokenRequest, Me, SessionInfo, TokenInfo } from '@tasklore/shared';
 import type { Request } from 'express';
+import { z } from 'zod';
 import { AuditService } from '../audit/audit.service.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { clientOf } from './request-guards.js';
 import { SessionService } from './session.service.js';
@@ -43,11 +39,17 @@ export class MeController {
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
+  @Endpoint({ tag: 'Me', summary: 'Get the signed-in user', response: Me })
   @Get()
   me(@CurrentPrincipal() principal: Principal): Promise<Me> {
     return this.users.me(principal.userId, principal.via);
   }
 
+  @Endpoint({
+    tag: 'Me',
+    summary: 'List the signed-in user’s active sessions',
+    response: z.array(SessionInfo),
+  })
   @Get('sessions')
   listSessions(@CurrentPrincipal() principal: Principal): Promise<SessionInfo[]> {
     requireSession(principal);
@@ -55,6 +57,7 @@ export class MeController {
     return this.sessions.listForUser(principal.userId, current);
   }
 
+  @Endpoint({ tag: 'Me', summary: 'End one of the signed-in user’s sessions' })
   @Delete('sessions/:id')
   @HttpCode(204)
   async revokeSession(
@@ -76,11 +79,21 @@ export class MeController {
     });
   }
 
+  @Endpoint({
+    tag: 'Me',
+    summary: 'List the signed-in user’s personal access tokens',
+    response: z.array(TokenInfo),
+  })
   @Get('tokens')
   listTokens(@CurrentPrincipal() principal: Principal): Promise<TokenInfo[]> {
     return this.tokens.list(principal.userId);
   }
 
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Create a personal access token; the secret is returned only once',
+    response: CreatedToken,
+  })
   @Post('tokens')
   @HttpCode(201)
   async createToken(
@@ -102,6 +115,7 @@ export class MeController {
     return token;
   }
 
+  @Endpoint({ tag: 'Me', summary: 'Revoke a personal access token' })
   @Delete('tokens/:id')
   @HttpCode(204)
   async revokeToken(

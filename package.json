@@ -19,7 +19,8 @@
     "db:generate": "pnpm --filter @tasklore/api db:generate",
     "db:migrate": "pnpm --filter @tasklore/api db:migrate",
     "licenses:check": "node scripts/check-licenses.mjs",
-    "design:tokens": "node scripts/build-design-tokens.mjs"
+    "design:tokens": "node scripts/build-design-tokens.mjs",
+    "api:generate": "pnpm --filter @tasklore/shared build && pnpm --filter @tasklore/api build && pnpm --filter @tasklore/api openapi:export && pnpm --filter @tasklore/codegen generate && biome format --write packages/sdk"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
