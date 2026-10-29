@@ -8,6 +8,7 @@ import { ApiError, client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
+import { useCurrentProject, useShortcuts } from '../../lib/shortcuts';
 import {
   commentsQuery,
   historyQuery,
@@ -20,6 +21,7 @@ import { FormError } from '../../ui/FormError';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
 import { CustomFieldRows } from './CustomFields';
+import { useFieldLabel } from './fieldLabel';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
@@ -170,17 +172,9 @@ function Activity({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issue', issueKey] }),
   });
 
-  const customFields = useQuery(trackingMetaQuery).data?.customFields ?? [];
-  /** Custom fields are recorded as `cf:<id>` and named as they are called now (E-50). */
-  const custom = (field: string) =>
-    field.startsWith('cf:') ? customFields.find((entry) => entry.id === field.slice(3)) : undefined;
-  const fieldName = (field: string) => custom(field)?.name ?? t(`issues.field.${field}` as never);
-  const shown = (field: string, value: string | null) => {
-    if (value === null) return t('issues.none');
-    if (custom(field)?.type === 'checkbox')
-      return value === 'true' ? t('common.yes') : t('common.no');
-    return value;
-  };
+  const label = useFieldLabel();
+  const fieldName = label.name;
+  const shown = label.value;
 
   const tabButton = (value: typeof tab, label: string) => (
     <button
@@ -363,6 +357,43 @@ export function IssuePage({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: issueQuery(issueKey).queryKey }),
   });
 
+  useCurrentProject(issue.data?.project.key);
+  // In the panel the list keeps the keyboard; shortcuts belong to the full page (T-VIEW-04).
+  useShortcuts(
+    variant === 'panel'
+      ? []
+      : [
+          {
+            keys: 'a',
+            label: 'shortcuts.assign',
+            group: 'issue',
+            run: () => issue.data?.canAssign && setPickingAssignee(true),
+          },
+          {
+            keys: 'i',
+            label: 'shortcuts.assignMe',
+            group: 'issue',
+            run: () => issue.data?.canAssign && update.mutate({ assigneeId: me.id }),
+          },
+          {
+            keys: 'w',
+            label: 'shortcuts.watch',
+            group: 'issue',
+            run: () => issue.data && watch.mutate(!issue.data.watching),
+          },
+          {
+            keys: 'm',
+            label: 'shortcuts.comment',
+            group: 'issue',
+            run: () =>
+              document
+                .querySelector<HTMLElement>(
+                  `section[aria-label="${t('issues.activity')}"] [contenteditable="true"]`,
+                )
+                ?.focus(),
+          },
+        ],
+  );
   const panel = variant === 'panel' && onClose;
   const bar = panel && <PanelBar issueKey={issueKey} onClose={onClose} />;
   if (issue.error || !issue.data) {

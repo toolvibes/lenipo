@@ -30,6 +30,7 @@ import { client, unwrap } from '../../lib/api';
 import { boardDataQuery } from '../../lib/boards';
 import { formatDate } from '../../lib/format';
 import { useRealtimeRooms } from '../../lib/realtime';
+import { useCurrentProject } from '../../lib/shortcuts';
 import { trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -278,6 +279,7 @@ export function BoardPage({
   const board = data.data?.board;
   const issues = data.data?.issues ?? [];
   // Others' changes on this board and its projects show up live (T-BRD-09).
+  useCurrentProject(board?.project.key);
   useRealtimeRooms([
     `board:${id}`,
     ...(board ? [`project:${board.project.key}`] : []),

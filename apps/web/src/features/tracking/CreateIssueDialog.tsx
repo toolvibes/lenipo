@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { CreateIssueRequest, type ProjectDetails, type RichText } from '@tasklore/shared';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { componentsQuery, trackingMetaQuery } from '../../lib/tracking';
@@ -17,9 +17,17 @@ interface CreateIssueDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   myId: string;
+  /** Shown above the fields, e.g. a project picker for "c" from anywhere. */
+  header?: ReactNode;
 }
 
-export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateIssueDialogProps) {
+export function CreateIssueDialog({
+  project,
+  open,
+  onOpenChange,
+  myId,
+  header,
+}: CreateIssueDialogProps) {
   const { t } = useTranslation();
   const metaName = useMetaName();
   const navigate = useNavigate();
@@ -98,6 +106,7 @@ export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateI
       description={project.name}
     >
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+        {header}
         {create.error && (
           <FormError
             message={create.error instanceof ApiError ? create.error.message : String(create.error)}

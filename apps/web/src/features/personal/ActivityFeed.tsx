@@ -2,20 +2,22 @@ import { Link } from '@tanstack/react-router';
 import type { ActivityEntry } from '@tasklore/shared';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime, formatRelative } from '../../lib/format';
+import { useFieldLabel } from '../tracking/fieldLabel';
 import { Avatar } from '../tracking/UserPicker';
 
 /** "Mira Kaya hat WEB-1 kommentiert" plus what changed, in the UI language. */
 function useEntryText() {
   const { t } = useTranslation();
+  const label = useFieldLabel();
   return (entry: ActivityEntry) => {
     const actor = entry.actor?.displayName ?? t('notifications.someone');
     const changes = entry.items
       .map((item) =>
         item.field === 'description'
           ? t('issues.descriptionChanged')
-          : `${t(`issues.field.${item.field}` as never)}: ${t('issues.changedFrom', {
-              from: item.from ?? t('issues.none'),
-              to: item.to ?? t('issues.none'),
+          : `${label.name(item.field)}: ${t('issues.changedFrom', {
+              from: label.value(item.field, item.from),
+              to: label.value(item.field, item.to),
             })}`,
       )
       .join(' · ');

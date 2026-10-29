@@ -16,14 +16,16 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
+import { CurrentProjectProvider, ShortcutListener } from '../../lib/shortcuts';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { CommandPalette } from './CommandPalette';
+import { GlobalShortcuts } from './Shortcuts';
 
 function NavItem({
   to,
@@ -98,6 +100,8 @@ export function AppShell({ me }: { me: Me }) {
   const queryClient = useQueryClient();
 
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [projectKey, setProjectKey] = useState<string | null>(null);
+  const currentProject = useMemo(() => ({ key: projectKey, set: setProjectKey }), [projectKey]);
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
   useEffect(() => {
@@ -122,81 +126,85 @@ export function AppShell({ me }: { me: Me }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-wrap">
-      <nav
-        aria-label={t('shell.navigation')}
-        className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-4 border-r border-[var(--border)] bg-[var(--surface-2)] px-3 py-4 md:max-w-[var(--sidebar-width)]"
-      >
-        <span className="px-2 font-[family-name:var(--font-serif)] text-[22px] leading-7 font-semibold">
-          {t('common.product')}
-        </span>
-        <button
-          type="button"
-          onClick={() => setPaletteOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-left text-[var(--ink-muted)] hover:text-[var(--ink)]"
+    <CurrentProjectProvider value={currentProject}>
+      <div className="flex min-h-screen flex-wrap">
+        <nav
+          aria-label={t('shell.navigation')}
+          className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-4 border-r border-[var(--border)] bg-[var(--surface-2)] px-3 py-4 md:max-w-[var(--sidebar-width)]"
         >
-          <MagnifyingGlass size={16} aria-hidden />
-          <span className="flex-1">{t('shell.search')}</span>
-          <kbd className="tl-key text-xs">{isMac ? '⌘K' : t('shell.paletteShortcut')}</kbd>
-        </button>
-        <div className="flex flex-col gap-0.5">
-          <NotificationBell />
-          <NavItem to="/" icon={House} label={t('shell.home')} />
-          <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
-          <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
-          <NavItem to="/boards" icon={Kanban} label={t('boards.title')} exact={false} />
-          <NavItem to="/activity" icon={Lightning} label={t('activity.title')} />
-          <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
-        </div>
-        <Favourites />
-        {me.globalPermissions.includes('admin') && (
-          <div className="flex flex-col gap-0.5">
-            <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-              {t('shell.administration')}
-            </span>
-            <NavItem
-              to="/admin/webhooks"
-              icon={WebhooksLogo}
-              label={t('webhooks.title')}
-              exact={false}
-            />
-            <NavItem to="/admin/custom-fields" icon={Textbox} label={t('fields.title')} />
-            <NavItem
-              to="/admin/time-tracking"
-              icon={Timer}
-              label={t('shell.timeTrackingSettings')}
-            />
-          </div>
-        )}
-        <div className="mt-auto flex items-center gap-2 px-2">
-          <span
-            className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white"
-            style={{ backgroundColor: presenceColor(me.id) }}
-            aria-hidden
-          >
-            {initials(me.displayName)}
-          </span>
-          <span
-            className="min-w-0 flex-1 truncate"
-            title={t('shell.signedInAs', { name: me.email })}
-          >
-            {me.displayName}
+          <span className="px-2 font-[family-name:var(--font-serif)] text-[22px] leading-7 font-semibold">
+            {t('common.product')}
           </span>
           <button
             type="button"
-            onClick={signOut}
-            aria-label={t('common.signOut')}
-            title={t('common.signOut')}
-            className="grid size-8 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--ink)]"
+            onClick={() => setPaletteOpen(true)}
+            className="flex h-8 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-left text-[var(--ink-muted)] hover:text-[var(--ink)]"
           >
-            <SignOut size={18} aria-hidden />
+            <MagnifyingGlass size={16} aria-hidden />
+            <span className="flex-1">{t('shell.search')}</span>
+            <kbd className="tl-key text-xs">{isMac ? '⌘K' : t('shell.paletteShortcut')}</kbd>
           </button>
+          <div className="flex flex-col gap-0.5">
+            <NotificationBell />
+            <NavItem to="/" icon={House} label={t('shell.home')} />
+            <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
+            <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
+            <NavItem to="/boards" icon={Kanban} label={t('boards.title')} exact={false} />
+            <NavItem to="/activity" icon={Lightning} label={t('activity.title')} />
+            <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
+          </div>
+          <Favourites />
+          {me.globalPermissions.includes('admin') && (
+            <div className="flex flex-col gap-0.5">
+              <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+                {t('shell.administration')}
+              </span>
+              <NavItem
+                to="/admin/webhooks"
+                icon={WebhooksLogo}
+                label={t('webhooks.title')}
+                exact={false}
+              />
+              <NavItem to="/admin/custom-fields" icon={Textbox} label={t('fields.title')} />
+              <NavItem
+                to="/admin/time-tracking"
+                icon={Timer}
+                label={t('shell.timeTrackingSettings')}
+              />
+            </div>
+          )}
+          <div className="mt-auto flex items-center gap-2 px-2">
+            <span
+              className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white"
+              style={{ backgroundColor: presenceColor(me.id) }}
+              aria-hidden
+            >
+              {initials(me.displayName)}
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate"
+              title={t('shell.signedInAs', { name: me.email })}
+            >
+              {me.displayName}
+            </span>
+            <button
+              type="button"
+              onClick={signOut}
+              aria-label={t('common.signOut')}
+              title={t('common.signOut')}
+              className="grid size-8 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--ink)]"
+            >
+              <SignOut size={18} aria-hidden />
+            </button>
+          </div>
+        </nav>
+        <div className="min-w-0 flex-[999_1_560px]">
+          <Outlet />
         </div>
-      </nav>
-      <div className="min-w-0 flex-[999_1_560px]">
-        <Outlet />
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
+        <ShortcutListener />
+        <GlobalShortcuts me={me} onPalette={() => setPaletteOpen(true)} />
       </div>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
-    </div>
+    </CurrentProjectProvider>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useListColumns, useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
+import { useCurrentProject } from '../../lib/shortcuts';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
@@ -64,6 +65,7 @@ export function ProjectIssuesPage({
   }, [search]);
 
   useRealtimeRooms([`project:${projectKey}`]);
+  useCurrentProject(projectKey);
   const issues = useQuery(
     projectIssuesQuery(projectKey, { ...PRESETS[preset], q: query || undefined, limit }),
   );

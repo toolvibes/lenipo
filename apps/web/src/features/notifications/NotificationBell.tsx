@@ -19,11 +19,13 @@ import {
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { useFieldLabel } from '../tracking/fieldLabel';
 import { Avatar } from '../tracking/UserPicker';
 
 /** One sentence per notification, e.g. "Mira Kaya hat Sie erwähnt". */
 function useDescribe() {
   const { t } = useTranslation();
+  const label = useFieldLabel();
   return (notification: Notification): { title: string; detail: string | null } => {
     const actor = notification.actor?.displayName ?? t('notifications.someone');
     const { details, category } = notification;
@@ -46,9 +48,9 @@ function useDescribe() {
       .map((item) =>
         item.field === 'description'
           ? t('issues.descriptionChanged')
-          : `${t(`issues.field.${item.field}` as never)}: ${t('issues.changedFrom', {
-              from: item.from ?? t('issues.none'),
-              to: item.to ?? t('issues.none'),
+          : `${label.name(item.field)}: ${t('issues.changedFrom', {
+              from: label.value(item.field, item.from),
+              to: label.value(item.field, item.to),
             })}`,
       )
       .join(' · ');
