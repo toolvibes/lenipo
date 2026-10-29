@@ -1,7 +1,7 @@
 import { CaretDown, Eye, EyeSlash } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
+import type { Comment, Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
@@ -16,6 +16,8 @@ import {
 } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { ComponentsField } from './ComponentsField';
+import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { RichTextEditor, RichTextView } from './RichTextEditor';
 import { Avatar, UserPicker } from './UserPicker';
@@ -141,7 +143,123 @@ function StatusMenu({
   );
 }
 
-function Activity({ issueKey, canComment }: { issueKey: string; canComment: boolean }) {
+/** One comment; own comments can be edited and deleted, administrators delete any (E-42). */
+function CommentItem({
+  comment,
+  issueKey,
+  projectKey,
+}: {
+  comment: Comment;
+  issueKey: string;
+  projectKey: string;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const path = { params: { path: { key: issueKey, commentId: comment.id } } };
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ['issue', issueKey, 'comments'] });
+  const edit = useMutation({
+    mutationFn: (body: RichText) =>
+      unwrap(
+        client.PATCH('/api/v1/issues/{key}/comments/{commentId}', { ...path, body: { body } }),
+      ),
+    onSuccess: async () => {
+      await refresh();
+      setEditing(false);
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () => unwrap(client.DELETE('/api/v1/issues/{key}/comments/{commentId}', path)),
+    onSuccess: refresh,
+  });
+  const action =
+    'text-xs text-[var(--ink-muted)] underline-offset-2 hover:text-[var(--ink)] hover:underline';
+
+  return (
+    <article className="flex gap-3">
+      {comment.author && <Avatar user={comment.author} size={28} />}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <strong className="font-semibold">{comment.author?.displayName}</strong>
+          <span
+            className="text-xs text-[var(--ink-muted)]"
+            title={formatDateTime(comment.createdAt)}
+          >
+            {formatRelative(comment.createdAt)}
+          </span>
+          {comment.edited && (
+            <span
+              className="text-xs text-[var(--ink-muted)]"
+              title={formatDateTime(comment.updatedAt)}
+            >
+              {t('issues.edited')}
+            </span>
+          )}
+          {!editing && comment.canEdit && (
+            <button type="button" className={action} onClick={() => setEditing(true)}>
+              {t('issues.editComment')}
+            </button>
+          )}
+          {!editing && comment.canDelete && (
+            <button type="button" className={action} onClick={() => setConfirming(true)}>
+              {t('issues.deleteComment')}
+            </button>
+          )}
+        </span>
+        {(edit.error ?? remove.error) && (
+          <FormError message={(edit.error ?? remove.error)?.message ?? ''} />
+        )}
+        {confirming && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] bg-[var(--danger-soft)] px-3 py-2"
+          >
+            <span className="flex-1">{t('issues.deleteCommentConfirm')}</span>
+            <Button
+              size="sm"
+              variant="danger"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              {t('issues.deleteComment')}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        )}
+        {editing ? (
+          <RichTextEditor
+            initial={comment.body}
+            placeholder={t('issues.addComment')}
+            submitLabel={t('common.save')}
+            autoFocus
+            busy={edit.isPending}
+            mentionProjectKey={projectKey}
+            onCancel={() => setEditing(false)}
+            onSubmit={(body) => edit.mutate(body)}
+          />
+        ) : (
+          <div className="[&_.tl-prose]:text-[15px] [&_.tl-prose]:leading-6">
+            <RichTextView doc={comment.body} />
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function Activity({
+  issueKey,
+  projectKey,
+  canComment,
+}: {
+  issueKey: string;
+  projectKey: string;
+  canComment: boolean;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'comments' | 'history'>('comments');
@@ -189,6 +307,7 @@ function Activity({ issueKey, canComment }: { issueKey: string; canComment: bool
               onSubmit={(body) => addComment.mutate(body)}
               busy={addComment.isPending}
               clearOnSubmit
+              mentionProjectKey={projectKey}
             />
           )}
           {addComment.error && <FormError message={addComment.error.message} />}
@@ -196,23 +315,12 @@ function Activity({ issueKey, canComment }: { issueKey: string; canComment: bool
             <p className="text-[var(--ink-muted)]">{t('issues.noComments')}</p>
           )}
           {[...(comments.data ?? [])].reverse().map((comment) => (
-            <article key={comment.id} className="flex gap-3">
-              {comment.author && <Avatar user={comment.author} size={28} />}
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span>
-                  <strong className="font-semibold">{comment.author?.displayName}</strong>{' '}
-                  <span
-                    className="text-xs text-[var(--ink-muted)]"
-                    title={formatDateTime(comment.createdAt)}
-                  >
-                    {formatRelative(comment.createdAt)}
-                  </span>
-                </span>
-                <div className="[&_.tl-prose]:text-[15px] [&_.tl-prose]:leading-6">
-                  <RichTextView doc={comment.body} />
-                </div>
-              </div>
-            </article>
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              issueKey={issueKey}
+              projectKey={projectKey}
+            />
           ))}
         </>
       ) : (
@@ -378,6 +486,7 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
                 submitLabel={t('common.save')}
                 autoFocus
                 busy={update.isPending}
+                mentionProjectKey={data.project.key}
                 onCancel={() => setEditingDescription(false)}
                 onSubmit={(description) =>
                   update.mutate({ description }, { onSuccess: () => setEditingDescription(false) })
@@ -426,7 +535,21 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
             </section>
           )}
 
-          <Activity issueKey={data.key} canComment={permissions.has('comment')} />
+          <IssueLinks
+            issue={data}
+            canEdit={canEdit}
+            onChanged={(updated) =>
+              updated
+                ? refresh(updated)
+                : void queryClient.invalidateQueries({ queryKey: ['issue', issueKey] })
+            }
+          />
+
+          <Activity
+            issueKey={data.key}
+            projectKey={data.project.key}
+            canComment={permissions.has('comment')}
+          />
         </div>
 
         <aside className="flex max-w-full min-w-0 flex-[1_1_300px] flex-col gap-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-4">
@@ -502,6 +625,14 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
                 onSave={(value) => update.mutate({ labels: value.split(/\s+/).filter(Boolean) })}
               />
             </Field>
+            <Field label={t('issues.components')}>
+              <ComponentsField
+                projectKey={data.project.key}
+                value={data.components}
+                disabled={!canEdit}
+                onChange={(components) => update.mutate({ components })}
+              />
+            </Field>
             {data.issueType.hierarchyLevel < 1 && (
               <Field label={t('issues.parent')}>
                 <InlineInput
@@ -534,6 +665,7 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
         open={pickingAssignee}
         onOpenChange={setPickingAssignee}
         me={{ id: me.id, displayName: me.displayName }}
+        projectKey={data.project.key}
         onPick={(user) => update.mutate({ assigneeId: user?.id ?? null })}
       />
     </main>

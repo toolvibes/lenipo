@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
+import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueTable } from './IssueTable';
 
@@ -27,6 +28,7 @@ export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: stri
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(50);
   const [creating, setCreating] = useState(false);
+  const [managingComponents, setManagingComponents] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -64,12 +66,19 @@ export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: stri
           </Link>
           <h1 className="tl-heading-xl">{project.data?.name ?? projectKey}</h1>
         </div>
-        {project.data?.permissions.includes('create-issues') && (
-          <Button variant="primary" onClick={() => setCreating(true)}>
-            <Plus size={16} aria-hidden />
-            {t('issues.create')}
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {project.data?.permissions.includes('administer') && (
+            <Button onClick={() => setManagingComponents(true)}>
+              {t('projects.components.title')}
+            </Button>
+          )}
+          {project.data?.permissions.includes('create-issues') && (
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus size={16} aria-hidden />
+              {t('issues.create')}
+            </Button>
+          )}
+        </div>
       </header>
 
       <div
@@ -117,6 +126,11 @@ export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: stri
           {t('issues.loadMore')}
         </Button>
       )}
+      <ComponentsDialog
+        projectKey={projectKey}
+        open={managingComponents}
+        onOpenChange={setManagingComponents}
+      />
       {project.data && (
         <CreateIssueDialog
           project={project.data}

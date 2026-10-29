@@ -26,7 +26,9 @@ export type FieldType =
   | 'number'
   | 'date'
   | 'datetime'
-  | 'issue';
+  | 'issue'
+  | 'component'
+  | 'link-type';
 
 export interface FieldDef {
   /** Canonical name, used in suggestions and by the SQL compiler. */
@@ -139,6 +141,20 @@ export const FIELDS: readonly FieldDef[] = [
     operators: [...EQUALITY, ...EMPTINESS],
     orderable: false,
   },
+  {
+    id: 'component',
+    aliases: ['components'],
+    type: 'component',
+    operators: [...EQUALITY, ...EMPTINESS],
+    orderable: false,
+  },
+  {
+    id: 'issueLinkType',
+    aliases: ['linktype'],
+    type: 'link-type',
+    operators: EQUALITY,
+    orderable: false,
+  },
   { id: 'rank', aliases: [], type: 'text', operators: [], orderable: true },
 ];
 
@@ -159,7 +175,7 @@ export const STATUS_CATEGORY_NAMES: Readonly<Record<'todo' | 'in_progress' | 'do
   done: ['done', 'complete'],
 };
 
-export type FunctionResult = 'user' | 'users' | 'datetime';
+export type FunctionResult = 'user' | 'users' | 'datetime' | 'issues';
 
 export interface FunctionDef {
   name: string;
@@ -173,6 +189,8 @@ export interface FunctionDef {
 export const FUNCTIONS: readonly FunctionDef[] = [
   { name: 'currentUser', result: 'user', minArgs: 0, maxArgs: 0 },
   { name: 'membersOf', result: 'users', minArgs: 1, maxArgs: 1 },
+  /** Issues linked to the given one, optionally only through one link type or direction. */
+  { name: 'linkedIssues', result: 'issues', minArgs: 1, maxArgs: 2 },
   { name: 'now', result: 'datetime', minArgs: 0, maxArgs: 0 },
   { name: 'startOfDay', result: 'datetime', minArgs: 0, maxArgs: 1, defaultUnit: 'd' },
   { name: 'endOfDay', result: 'datetime', minArgs: 0, maxArgs: 1, defaultUnit: 'd' },
@@ -195,6 +213,7 @@ export function functionsFor(field: FieldDef, operator: Operator): FunctionDef[]
   const list = operator === 'in' || operator === 'not in';
   return FUNCTIONS.filter((fn) => {
     if (fn.result === 'datetime') return field.type === 'date' || field.type === 'datetime';
+    if (fn.result === 'issues') return field.type === 'issue' && list;
     if (field.type !== 'user') return false;
     return fn.result === 'user' || list;
   });

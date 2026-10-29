@@ -3,6 +3,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  check,
   customType,
   date,
   index,
@@ -293,5 +294,75 @@ export const issueWatchers = pgTable(
   (table) => [
     primaryKey({ columns: [table.issueId, table.userId] }),
     index('issue_watchers_user_idx').on(table.userId),
+  ],
+);
+
+/** Parts of a project, e.g. "Backend" (T-PRJ-06); the default assignee applies on creation (E-40). */
+export const projectComponents = pgTable(
+  'project_components',
+  {
+    id: uuid().primaryKey(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    leadId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    defaultAssigneeId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('project_components_name_unique').on(table.projectId, sql`lower(${table.name})`),
+  ],
+);
+
+export const issueComponents = pgTable(
+  'issue_components',
+  {
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    componentId: uuid()
+      .notNull()
+      .references(() => projectComponents.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.issueId, table.componentId] }),
+    index('issue_components_component_idx').on(table.componentId),
+  ],
+);
+
+/** Global link types with a name per direction, e.g. "blocks" / "is blocked by" (E-41). */
+export const issueLinkTypes = pgTable('issue_link_types', {
+  id: uuid().primaryKey(),
+  key: text().notNull().unique(),
+  name: text().notNull(),
+  outward: text().notNull(),
+  inward: text().notNull(),
+  builtIn: boolean().notNull().default(false),
+});
+
+/** One link between two issues, stored once and shown from both sides. */
+export const issueLinks = pgTable(
+  'issue_links',
+  {
+    id: uuid().primaryKey(),
+    typeId: uuid()
+      .notNull()
+      .references(() => issueLinkTypes.id),
+    sourceId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    targetId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('issue_links_unique').on(table.typeId, table.sourceId, table.targetId),
+    index('issue_links_source_idx').on(table.sourceId),
+    index('issue_links_target_idx').on(table.targetId),
+    check('issue_links_not_self', sql`${table.sourceId} <> ${table.targetId}`),
   ],
 );

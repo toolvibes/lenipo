@@ -1,11 +1,18 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { UserRef } from '@tasklore/shared';
 import { PROJECT_PERMISSIONS, type ProjectPermission } from '@tasklore/shared';
-import { and, eq, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { groupMembers, projectRoleMembers, projects } from '../db/schema/index.js';
+import {
+  globalPermissionGrants,
+  groupMembers,
+  projectRoleMembers,
+  projects,
+  users,
+} from '../db/schema/index.js';
 
 type Role = (typeof projectRoleMembers.$inferSelect)['role'];
 
@@ -60,6 +67,45 @@ export class ProjectAccessService {
       .from(projectRoleMembers)
       .where(this.memberCondition(userId));
     return and(isNull(projects.archivedAt), inArray(projects.id, memberships)) as SQL;
+  }
+
+  /**
+   * Active users who may browse the project: role members (directly or through a group) and
+   * global administrators. Used for assignees and @-mentions (E-39).
+   */
+  async browsingUsers(projectId: string, query: string, limit: number): Promise<UserRef[]> {
+    const db = this.database.db;
+    const direct = db
+      .select({ userId: projectRoleMembers.userId })
+      .from(projectRoleMembers)
+      .where(eq(projectRoleMembers.projectId, projectId));
+    const viaGroups = db
+      .select({ userId: groupMembers.userId })
+      .from(groupMembers)
+      .innerJoin(projectRoleMembers, eq(projectRoleMembers.groupId, groupMembers.groupId))
+      .where(eq(projectRoleMembers.projectId, projectId));
+    const admins = db
+      .select({ userId: groupMembers.userId })
+      .from(groupMembers)
+      .innerJoin(globalPermissionGrants, eq(globalPermissionGrants.groupId, groupMembers.groupId))
+      .where(inArray(globalPermissionGrants.permission, ['admin', 'system-admin']));
+    const escaped = query.replace(/[\\%_]/g, (char) => `\\${char}`);
+    const pattern = `%${escaped}%`;
+    // Names whose first or a later word starts with the query come first ("Mi" → Mira before Admin).
+    const rank = sql`case when ${users.displayName} ilike ${`${escaped}%`} then 0
+      when ${users.displayName} ilike ${`% ${escaped}%`} then 1 else 2 end`;
+    return db
+      .select({ id: users.id, displayName: users.displayName })
+      .from(users)
+      .where(
+        and(
+          eq(users.status, 'active'),
+          query ? ilike(users.displayName, pattern) : undefined,
+          or(inArray(users.id, direct), inArray(users.id, viaGroups), inArray(users.id, admins)),
+        ),
+      )
+      .orderBy(rank, users.displayName)
+      .limit(limit);
   }
 
   /**

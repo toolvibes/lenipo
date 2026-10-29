@@ -63,3 +63,23 @@ export const historyQuery = (key: string) =>
     queryFn: () =>
       unwrap(client.GET('/api/v1/issues/{key}/history', { params: { path: { key } } })),
   });
+
+export const componentsQuery = (projectKey: string) =>
+  queryOptions({
+    queryKey: ['project', projectKey, 'components'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/components', { params: { path: { key: projectKey } } }),
+      ),
+  });
+
+export const projectUsersQuery = (projectKey: string, query = '') =>
+  queryOptions({
+    queryKey: ['project-users', projectKey, query],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/users', {
+          params: { path: { key: projectKey }, query: { query, limit: 50 } },
+        }),
+      ),
+  });

@@ -76,6 +76,14 @@ export const BUILT_IN_RESOLUTIONS = [
   { key: 'cannot-reproduce', name: 'Nicht reproduzierbar', isDefault: false },
 ] as const;
 
+/** Built-in link types (E-41); the UI translates them by key. */
+export const BUILT_IN_LINK_TYPES = [
+  { key: 'blocks', name: 'Blockiert', outward: 'blockiert', inward: 'wird blockiert von' },
+  { key: 'duplicate', name: 'Duplikat', outward: 'dupliziert', inward: 'wird dupliziert von' },
+  { key: 'relates', name: 'Bezug', outward: 'bezieht sich auf', inward: 'bezieht sich auf' },
+  { key: 'clones', name: 'Klon', outward: 'klont', inward: 'wird geklont von' },
+] as const;
+
 const status = (key: string) => builtInId('status', key);
 
 /** "Simplified" workflows: every status is reachable from every other, one transition per target. */

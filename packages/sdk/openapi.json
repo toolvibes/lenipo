@@ -690,7 +690,7 @@
     "/api/v1/tracking/meta": {
       "get": {
         "operationId": "Issues.trackingMeta",
-        "summary": "List issue types, statuses, priorities and resolutions",
+        "summary": "List issue types, statuses, priorities, resolutions and link types",
         "tags": ["Issues"],
         "responses": {
           "200": {
@@ -1123,6 +1123,191 @@
         }
       }
     },
+    "/api/v1/issues/{key}/comments/{commentId}": {
+      "patch": {
+        "operationId": "Issues.updateComment",
+        "summary": "Edit an own comment",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Issues.deleteComment",
+        "summary": "Delete a comment (own, or any as project administrator)",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/links": {
+      "post": {
+        "operationId": "Issues.addLink",
+        "summary": "Link the issue to another issue",
+        "description": "Requires `edit-issues` on this issue and browse access to the other one.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssueLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/links/{linkId}": {
+      "delete": {
+        "operationId": "Issues.removeLink",
+        "summary": "Remove a link",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "Me.me",
@@ -1509,6 +1694,257 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/users": {
+      "get": {
+        "operationId": "Projects.users",
+        "summary": "Find people who can work in the project",
+        "description": "For assignees and @-mentions: active users who may browse the project. Needs no global `browse-users`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserRef"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/components": {
+      "get": {
+        "operationId": "Projects.listComponents",
+        "summary": "List the components of a project",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Component"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Projects.createComponent",
+        "summary": "Create a component",
+        "description": "Requires the project permission `administer`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateComponentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Component"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/components/{id}": {
+      "patch": {
+        "operationId": "Projects.updateComponent",
+        "summary": "Change a component",
+        "description": "Requires the project permission `administer`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateComponentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Component"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Projects.deleteComponent",
+        "summary": "Delete a component; issues lose it",
+        "description": "Requires the project permission `administer`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -2411,9 +2847,15 @@
             "items": {
               "$ref": "#/components/schemas/ResolutionInfo"
             }
+          },
+          "linkTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueLinkTypeInfo"
+            }
           }
         },
-        "required": ["issueTypes", "statuses", "priorities", "resolutions"],
+        "required": ["issueTypes", "statuses", "priorities", "resolutions", "linkTypes"],
         "additionalProperties": false
       },
       "IssueTypeInfo": {
@@ -2511,6 +2953,30 @@
         "required": ["id", "key", "name"],
         "additionalProperties": false
       },
+      "IssueLinkTypeInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "outward": {
+            "type": "string"
+          },
+          "inward": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "key", "name", "outward", "inward"],
+        "additionalProperties": false
+      },
       "CreateIssueRequest": {
         "type": "object",
         "properties": {
@@ -2595,6 +3061,16 @@
                 "type": "null"
               }
             ]
+          },
+          "components": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         },
         "required": ["projectKey", "issueType", "summary"]
@@ -2759,6 +3235,18 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentRef"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueLink"
+            }
           }
         },
         "required": [
@@ -2783,7 +3271,9 @@
           "createdAt",
           "resolvedAt",
           "watching",
-          "watcherCount"
+          "watcherCount",
+          "components",
+          "links"
         ],
         "additionalProperties": false
       },
@@ -2866,6 +3356,70 @@
         ],
         "additionalProperties": false
       },
+      "ComponentRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"],
+        "additionalProperties": false
+      },
+      "IssueLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "type": {
+            "$ref": "#/components/schemas/IssueLinkTypeInfo"
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["outward", "inward"]
+          },
+          "issue": {
+            "$ref": "#/components/schemas/LinkedIssue"
+          }
+        },
+        "required": ["id", "type", "direction", "issue"],
+        "additionalProperties": false
+      },
+      "LinkedIssue": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "key": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "issueType": {
+            "$ref": "#/components/schemas/IssueTypeInfo"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusInfo"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/PriorityInfo"
+          }
+        },
+        "required": ["id", "key", "summary", "issueType", "status", "priority"],
+        "additionalProperties": false
+      },
       "UpdateIssueRequest": {
         "type": "object",
         "properties": {
@@ -2940,6 +3494,15 @@
                 "type": "null"
               }
             ]
+          },
+          "components": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         }
       },
@@ -3006,9 +3569,27 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
           }
         },
-        "required": ["id", "author", "body", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "author",
+          "body",
+          "createdAt",
+          "updatedAt",
+          "edited",
+          "canEdit",
+          "canDelete"
+        ],
         "additionalProperties": false
       },
       "CreateCommentRequest": {
@@ -3068,6 +3649,35 @@
         },
         "required": ["id", "author", "via", "createdAt", "items"],
         "additionalProperties": false
+      },
+      "UpdateCommentRequest": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/RichText"
+          }
+        },
+        "required": ["body"]
+      },
+      "CreateIssueLinkRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "direction": {
+            "default": "outward",
+            "type": "string",
+            "enum": ["outward", "inward"]
+          },
+          "issueKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          }
+        },
+        "required": ["type", "issueKey"]
       },
       "SessionInfo": {
         "type": "object",
@@ -3418,6 +4028,129 @@
         },
         "required": ["issues", "total"],
         "additionalProperties": false
+      },
+      "Component": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "lead": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "defaultAssignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issueCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["id", "name", "description", "lead", "defaultAssignee", "issueCount"],
+        "additionalProperties": false
+      },
+      "CreateComponentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "leadId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "defaultAssigneeId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdateComponentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "leadId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "defaultAssigneeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       },
       "SearchRequest": {
         "type": "object",

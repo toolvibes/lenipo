@@ -153,6 +153,9 @@ importers:
       '@tiptap/extension-collaboration-caret':
         specifier: 3.32.0
         version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.8)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33))
+      '@tiptap/extension-mention':
+        specifier: 3.32.0
+        version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/suggestion@3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))
       '@tiptap/extensions':
         specifier: 3.32.0
         version: 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
@@ -165,6 +168,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.32.0
         version: 3.32.0
+      '@tiptap/suggestion':
+        specifier: 3.32.0
+        version: 3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
       '@tiptap/y-tiptap':
         specifier: ^3.0.7
         version: 3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.8)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
@@ -1505,6 +1511,13 @@ packages:
       '@tiptap/core': 3.32.0
       '@tiptap/pm': 3.32.0
 
+  '@tiptap/extension-mention@3.32.0':
+    resolution: {integrity: sha512-TMT4exls1VH0QXsLd676s5oGn9Zlc6QHgS/jKRTe+XJcbRTUzc9n70n9uUG2wDwEHGB0128Ojy6663gc05e1Bw==}
+    peerDependencies:
+      '@tiptap/core': 3.32.0
+      '@tiptap/pm': 3.32.0
+      '@tiptap/suggestion': 3.32.0
+
   '@tiptap/extension-ordered-list@3.32.0':
     resolution: {integrity: sha512-htZ5hoMLBkGiDP6M5mGemjOoaBmkrj911wiGoTmMMKzO7qJq9QxUBkLY7ILPaKlUWL8U3ccLdDV2TB/nysp4Jg==}
     peerDependencies:
@@ -1551,6 +1564,13 @@ packages:
 
   '@tiptap/starter-kit@3.32.0':
     resolution: {integrity: sha512-aPYxaevci4PgMrTLsg+baiqI7M1ICd4V9H+zTTdrqs8OUZIbAvj/pNDuHU8uWZyKMu3Dh72t2D6ZdqRu/6aSWw==}
+
+  '@tiptap/suggestion@3.32.0':
+    resolution: {integrity: sha512-5PbouU06zaZ7n4uyYzeNN/jBFVmGsHZ6c56MvN7M33echERAhu1L1X71Up0U6GK/pJfyugX7WbluBehJDPQeSQ==}
+    peerDependencies:
+      '@floating-ui/dom': ^1.0.0
+      '@tiptap/core': 3.32.0
+      '@tiptap/pm': 3.32.0
 
   '@tiptap/y-tiptap@3.0.10':
     resolution: {integrity: sha512-vJtwYVoBBk+e8KyUVoH9WSsfUfKTXf1Uh+tk2UNTlD8wim9j7XVTuc7sakWUYuznB7DkXThT9w5uQTGH2SN0Kg==}
@@ -3395,16 +3415,13 @@ snapshots:
   '@floating-ui/core@1.8.0':
     dependencies:
       '@floating-ui/utils': 0.2.12
-    optional: true
 
   '@floating-ui/dom@1.8.0':
     dependencies:
       '@floating-ui/core': 1.8.0
       '@floating-ui/utils': 0.2.12
-    optional: true
 
-  '@floating-ui/utils@0.2.12':
-    optional: true
+  '@floating-ui/utils@0.2.12': {}
 
   '@fontsource-variable/jetbrains-mono@5.3.0': {}
 
@@ -3976,6 +3993,12 @@ snapshots:
       '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
       '@tiptap/pm': 3.32.0
 
+  '@tiptap/extension-mention@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)(@tiptap/suggestion@3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))':
+    dependencies:
+      '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
+      '@tiptap/pm': 3.32.0
+      '@tiptap/suggestion': 3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
+
   '@tiptap/extension-ordered-list@3.32.0(@tiptap/extension-list@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))':
     dependencies:
       '@tiptap/extension-list': 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
@@ -4059,6 +4082,12 @@ snapshots:
       '@tiptap/extension-text': 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))
       '@tiptap/extension-underline': 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))
       '@tiptap/extensions': 3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)
+      '@tiptap/pm': 3.32.0
+
+  '@tiptap/suggestion@3.32.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0)':
+    dependencies:
+      '@floating-ui/dom': 1.8.0
+      '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
       '@tiptap/pm': 3.32.0
 
   '@tiptap/y-tiptap@3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.8)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)':

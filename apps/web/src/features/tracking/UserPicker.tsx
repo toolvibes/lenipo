@@ -3,8 +3,8 @@ import type { UserRef } from '@tasklore/shared';
 import { Command } from 'cmdk';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { client, unwrap } from '../../lib/api';
 import { initials, presenceColor } from '../../lib/presence';
+import { projectUsersQuery } from '../../lib/tracking';
 import { Dialog } from '../../ui/Dialog';
 
 interface UserPickerProps {
@@ -12,6 +12,8 @@ interface UserPickerProps {
   onOpenChange: (open: boolean) => void;
   onPick: (user: UserRef | null) => void;
   me: UserRef;
+  /** Offers the people who can work in this project (E-39). */
+  projectKey: string;
 }
 
 export function Avatar({ user, size = 24 }: { user: UserRef; size?: number }) {
@@ -32,13 +34,12 @@ export function Avatar({ user, size = 24 }: { user: UserRef; size?: number }) {
   );
 }
 
-/** Searchable people picker (assignee); keyboard-first through cmdk. */
-export function UserPicker({ open, onOpenChange, onPick, me }: UserPickerProps) {
+/** Searchable people picker (assignee) over the project's people; keyboard-first through cmdk. */
+export function UserPicker({ open, onOpenChange, onPick, me, projectKey }: UserPickerProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const results = useQuery({
-    queryKey: ['users', query],
-    queryFn: () => unwrap(client.GET('/api/v1/users', { params: { query: { query, limit: 20 } } })),
+    ...projectUsersQuery(projectKey, query),
     enabled: open,
     placeholderData: (previous) => previous,
   });
@@ -84,7 +85,6 @@ export function UserPicker({ open, onOpenChange, onPick, me }: UserPickerProps) 
               >
                 <Avatar user={user} />
                 <span className="min-w-0 flex-1 truncate">{user.displayName}</span>
-                <span className="truncate text-xs text-[var(--ink-muted)]">{user.email}</span>
               </Command.Item>
             ))}
         </Command.List>

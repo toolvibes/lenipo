@@ -364,6 +364,8 @@ class Parser {
       !parseIncrement(args[0], fn.defaultUnit)
     ) {
       this.report('invalid-increment', span, { value: args[0] });
+    } else if (fn.result === 'issues' && args[0] !== undefined && !ISSUE_KEY.test(args[0])) {
+      this.report('invalid-issue-key', span, { value: args[0] });
     }
     return { kind: 'function', fn, args, span };
   }

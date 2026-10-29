@@ -1,13 +1,26 @@
-import { Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Put } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import {
   ChangeGroup,
   Comment,
   CreateCommentRequest,
+  CreateIssueLinkRequest,
   CreateIssueRequest,
   Issue,
   TrackingMeta,
   Transition,
   TransitionRequest,
+  UpdateCommentRequest,
   UpdateIssueRequest,
 } from '@tasklore/shared';
 import { z } from 'zod';
@@ -16,6 +29,9 @@ import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { IssueService } from './issue.service.js';
 import { MetaService } from './meta.service.js';
+
+/** Unknown and malformed ids of comments and links are both "not found". */
+const ChildId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
 @Controller()
 export class IssuesController {
@@ -26,13 +42,13 @@ export class IssuesController {
 
   @Endpoint({
     tag: 'Issues',
-    summary: 'List issue types, statuses, priorities and resolutions',
+    summary: 'List issue types, statuses, priorities, resolutions and link types',
     response: TrackingMeta,
   })
   @Get('tracking/meta')
   async trackingMeta(): Promise<TrackingMeta> {
-    const { issueTypes, statuses, priorities, resolutions } = await this.meta.load();
-    return { issueTypes, statuses, priorities, resolutions };
+    const { issueTypes, statuses, priorities, resolutions, linkTypes } = await this.meta.load();
+    return { issueTypes, statuses, priorities, resolutions, linkTypes };
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Create an issue', response: Issue })
@@ -134,5 +150,61 @@ export class IssuesController {
   @HttpCode(204)
   unwatch(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<void> {
     return this.issues.setWatching(principal, key, false);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Edit an own comment',
+    response: Comment,
+  })
+  @Patch('issues/:key/comments/:commentId')
+  updateComment(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('commentId', ChildId) commentId: string,
+    @ValidBody(UpdateCommentRequest) body: UpdateCommentRequest,
+  ): Promise<Comment> {
+    return this.issues.updateComment(principal, key, commentId, body);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Delete a comment (own, or any as project administrator)',
+  })
+  @Delete('issues/:key/comments/:commentId')
+  @HttpCode(204)
+  deleteComment(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('commentId', ChildId) commentId: string,
+  ): Promise<void> {
+    return this.issues.deleteComment(principal, key, commentId);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Link the issue to another issue',
+    description: 'Requires `edit-issues` on this issue and browse access to the other one.',
+    response: Issue,
+  })
+  @Post('issues/:key/links')
+  @HttpCode(201)
+  addLink(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(CreateIssueLinkRequest) body: CreateIssueLinkRequest,
+  ): Promise<Issue> {
+    return this.issues.addLink(principal, key, body);
+  }
+
+  @Endpoint({ tag: 'Issues', summary: 'Remove a link' })
+  @Delete('issues/:key/links/:linkId')
+  @HttpCode(204)
+  removeLink(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('linkId', ChildId) linkId: string,
+  ): Promise<void> {
+    return this.issues.removeLink(principal, key, linkId);
   }
 }

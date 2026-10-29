@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type {
+  IssueLinkTypeInfo,
   IssueTypeInfo,
   PriorityInfo,
   ResolutionInfo,
@@ -9,7 +10,13 @@ import type {
 import { desc } from 'drizzle-orm';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { issueTypes, priorities, resolutions, statuses } from '../db/schema/index.js';
+import {
+  issueLinkTypes,
+  issueTypes,
+  priorities,
+  resolutions,
+  statuses,
+} from '../db/schema/index.js';
 
 const CACHE_MS = 30_000;
 
@@ -18,9 +25,10 @@ export interface MetaIndex extends TrackingMeta {
   status: Map<string, StatusInfo>;
   priority: Map<string, PriorityInfo>;
   resolution: Map<string, ResolutionInfo>;
+  linkType: Map<string, IssueLinkTypeInfo>;
 }
 
-/** Issue types, statuses, priorities and resolutions: tiny, rarely changing, cached briefly. */
+/** Issue types, statuses, priorities, resolutions and link types: tiny, rarely changing, cached briefly. */
 @Injectable()
 export class MetaService {
   private cached: { at: number; value: Promise<MetaIndex> } | undefined;
@@ -39,7 +47,7 @@ export class MetaService {
 
   private async read(): Promise<MetaIndex> {
     const db = this.database.db;
-    const [types, statusRows, priorityRows, resolutionRows] = await Promise.all([
+    const [types, statusRows, priorityRows, resolutionRows, linkTypeRows] = await Promise.all([
       db
         .select()
         .from(issueTypes)
@@ -47,6 +55,7 @@ export class MetaService {
       db.select().from(statuses),
       db.select().from(priorities).orderBy(priorities.sequence),
       db.select().from(resolutions),
+      db.select().from(issueLinkTypes).orderBy(issueLinkTypes.name),
     ]);
     const meta: TrackingMeta = {
       issueTypes: types.map(({ id, key, name, icon, hierarchyLevel }) => ({
@@ -65,6 +74,13 @@ export class MetaService {
         sequence,
       })),
       resolutions: resolutionRows.map(({ id, key, name }) => ({ id, key, name })),
+      linkTypes: linkTypeRows.map(({ id, key, name, outward, inward }) => ({
+        id,
+        key,
+        name,
+        outward,
+        inward,
+      })),
     };
     return {
       ...meta,
@@ -72,6 +88,7 @@ export class MetaService {
       status: new Map(meta.statuses.map((entry) => [entry.id, entry])),
       priority: new Map(meta.priorities.map((entry) => [entry.id, entry])),
       resolution: new Map(meta.resolutions.map((entry) => [entry.id, entry])),
+      linkType: new Map(meta.linkTypes.map((entry) => [entry.id, entry])),
     };
   }
 }

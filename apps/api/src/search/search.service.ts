@@ -22,7 +22,7 @@ import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { issues, projects, users } from '../db/schema/index.js';
+import { issues, projectComponents, projects, users } from '../db/schema/index.js';
 import { UserService } from '../identity/user.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
@@ -92,17 +92,26 @@ export class SearchService {
         .where(eq(users.id, principal.userId)),
     ]);
     const timeZone = user && validTimeZone(user.timeZone) ? user.timeZone : DEFAULT_TIME_ZONE;
+    const projectIds = visibleProjects.map((project) => project.id);
+    const components =
+      projectIds.length > 0
+        ? await this.database.db
+            .select({ id: projectComponents.id, name: projectComponents.name })
+            .from(projectComponents)
+            .where(inArray(projectComponents.projectId, projectIds))
+        : [];
     const compiler = new TqlCompiler(this.database.db, {
       userId: principal.userId,
       timeZone,
       meta,
       projects: visibleProjects,
+      components,
     });
     const compiled = await compiler.compile(parsed.query);
     if (compiler.errors.length > 0) {
       throw new QueryException(compiler.errors.sort((a, b) => a.start - b.start));
     }
-    return { ...compiled, projectIds: visibleProjects.map((project) => project.id) };
+    return { ...compiled, projectIds };
   }
 
   async search(principal: Principal, request: SearchRequest): Promise<SearchResult> {
@@ -205,6 +214,41 @@ export class SearchService {
           order by l.label limit ${query.limit}`);
         return [...rows].map((row) => ({ value: row.label, label: row.label }));
       }
+      case 'component': {
+        const visible = await this.browsableProjects(principal.userId);
+        if (visible.length === 0) return [];
+        const rows = await this.database.db
+          .select({ name: projectComponents.name, projectId: projectComponents.projectId })
+          .from(projectComponents)
+          .where(
+            and(
+              inArray(
+                projectComponents.projectId,
+                visible.map((project) => project.id),
+              ),
+              ilike(projectComponents.name, `${escapeLike(prefix)}%`),
+            ),
+          )
+          .orderBy(projectComponents.name)
+          .limit(query.limit);
+        const keyOf = new Map(visible.map((project) => [project.id, project.key]));
+        return rows.map((row) => ({
+          value: row.name,
+          label: row.name,
+          detail: keyOf.get(row.projectId),
+        }));
+      }
+      case 'link-type':
+        // Both direction phrases; the type key or name would match both directions.
+        return meta.linkTypes
+          .flatMap((type) =>
+            [...new Set([type.outward, type.inward])].map((phrase) => ({
+              value: phrase,
+              label: phrase,
+            })),
+          )
+          .filter((entry) => startsWith(entry.value))
+          .slice(0, query.limit);
       case 'issue': {
         const projectIds = (await this.browsableProjects(principal.userId)).map(
           (project) => project.id,

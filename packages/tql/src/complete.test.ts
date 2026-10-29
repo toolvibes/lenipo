@@ -46,6 +46,8 @@ describe('completion', () => {
     expect(at('assignee = |').labels).toEqual(['currentUser()', 'EMPTY']);
     expect(at('assignee in |').labels).toEqual(['(', 'currentUser()', 'membersOf()']);
     expect(at('created > start|').labels).toContain('startOfWeek()');
+    expect(at('key in |').labels).toEqual(['(', 'linkedIssues()']);
+    expect(at('comp|').labels).toEqual(['component']);
   });
 
   it('continues inside lists and quoted values', () => {

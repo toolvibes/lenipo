@@ -7,6 +7,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toolbar } from '../../collab/Toolbar';
 import { Button } from '../../ui/Button';
+import { mentionExtension } from './mention';
 
 interface RichTextEditorProps {
   initial: RichText | null;
@@ -18,6 +19,8 @@ interface RichTextEditorProps {
   /** Empties the editor after submitting (comment composer). */
   clearOnSubmit?: boolean;
   autoFocus?: boolean;
+  /** Enables @-mentions of the people in this project. */
+  mentionProjectKey?: string;
 }
 
 /** Rich text for descriptions and comments; the same document format as wiki pages. */
@@ -30,6 +33,7 @@ export function RichTextEditor({
   busy = false,
   clearOnSubmit = false,
   autoFocus = false,
+  mentionProjectKey,
 }: RichTextEditorProps) {
   const { t } = useTranslation();
   // The shortcut extension is created once, so it calls the latest submit through a ref.
@@ -38,6 +42,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder }),
+      mentionExtension(mentionProjectKey),
       Extension.create({
         name: 'submitShortcut',
         addKeyboardShortcuts: () => ({
@@ -84,9 +89,10 @@ export function RichTextEditor({
 
 /** Read-only rendering of a stored document. */
 export function RichTextView({ doc }: { doc: RichText }) {
-  const editor = useEditor({ extensions: [StarterKit], content: doc as Content, editable: false }, [
-    JSON.stringify(doc),
-  ]);
+  const editor = useEditor(
+    { extensions: [StarterKit, mentionExtension()], content: doc as Content, editable: false },
+    [JSON.stringify(doc)],
+  );
   return (
     <EditorContent
       editor={editor}

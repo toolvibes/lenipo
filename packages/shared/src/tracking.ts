@@ -61,12 +61,19 @@ export const ResolutionInfo = z
   .meta({ id: 'ResolutionInfo' });
 export type ResolutionInfo = z.infer<typeof ResolutionInfo>;
 
+/** A link type with one phrase per direction, e.g. "blocks" / "is blocked by" (E-41). */
+export const IssueLinkTypeInfo = z
+  .object({ id: Id, key: z.string(), name: z.string(), outward: z.string(), inward: z.string() })
+  .meta({ id: 'IssueLinkTypeInfo' });
+export type IssueLinkTypeInfo = z.infer<typeof IssueLinkTypeInfo>;
+
 export const TrackingMeta = z
   .object({
     issueTypes: z.array(IssueTypeInfo),
     statuses: z.array(StatusInfo),
     priorities: z.array(PriorityInfo),
     resolutions: z.array(ResolutionInfo),
+    linkTypes: z.array(IssueLinkTypeInfo),
   })
   .meta({ id: 'TrackingMeta' });
 export type TrackingMeta = z.infer<typeof TrackingMeta>;
@@ -121,6 +128,8 @@ const Labels = z
   .array(z.string().trim().min(1).max(64).regex(/^\S+$/, 'Labels ohne Leerzeichen'))
   .max(30);
 const StoryPoints = z.number().min(0).max(1000).nullable();
+/** Components by id or name (case-insensitive) within the issue's project. */
+const ComponentNames = z.array(z.string().trim().min(1).max(100)).max(20);
 const DueDate = z.iso.date().nullable();
 
 export const CreateIssueRequest = z
@@ -135,6 +144,7 @@ export const CreateIssueRequest = z
     labels: Labels.default([]),
     storyPoints: StoryPoints.default(null),
     dueDate: DueDate.default(null),
+    components: ComponentNames.default([]),
   })
   .meta({ id: 'CreateIssueRequest' });
 export type CreateIssueRequest = z.infer<typeof CreateIssueRequest>;
@@ -150,6 +160,7 @@ export const UpdateIssueRequest = z
     labels: Labels,
     storyPoints: StoryPoints,
     dueDate: DueDate,
+    components: ComponentNames,
   })
   .partial()
   .meta({ id: 'UpdateIssueRequest' });
@@ -175,6 +186,74 @@ export const IssueSummary = z
   .meta({ id: 'IssueSummary' });
 export type IssueSummary = z.infer<typeof IssueSummary>;
 
+export const ComponentRef = z.object({ id: Id, name: z.string() }).meta({ id: 'ComponentRef' });
+export type ComponentRef = z.infer<typeof ComponentRef>;
+
+export const LinkedIssue = IssueSummary.pick({
+  id: true,
+  key: true,
+  summary: true,
+  issueType: true,
+  status: true,
+  priority: true,
+}).meta({ id: 'LinkedIssue' });
+export type LinkedIssue = z.infer<typeof LinkedIssue>;
+
+/** A link as seen from one issue: `direction` says which phrase of the type applies. */
+export const IssueLink = z
+  .object({
+    id: Id,
+    type: IssueLinkTypeInfo,
+    direction: z.enum(['outward', 'inward']),
+    issue: LinkedIssue,
+  })
+  .meta({ id: 'IssueLink' });
+export type IssueLink = z.infer<typeof IssueLink>;
+
+export const CreateIssueLinkRequest = z
+  .object({
+    /** Link type by key or name, e.g. "blocks". */
+    type: z.string().min(1),
+    /** "outward": this issue blocks the other one; "inward": it is blocked by it. */
+    direction: z.enum(['outward', 'inward']).default('outward'),
+    issueKey: z.string().min(1).max(30),
+  })
+  .meta({ id: 'CreateIssueLinkRequest' });
+export type CreateIssueLinkRequest = z.infer<typeof CreateIssueLinkRequest>;
+
+export const Component = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    lead: UserRef.nullable(),
+    defaultAssignee: UserRef.nullable(),
+    issueCount: z.number().int(),
+  })
+  .meta({ id: 'Component' });
+export type Component = z.infer<typeof Component>;
+
+export const CreateComponentRequest = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    description: z.string().max(1_000).default(''),
+    leadId: Id.nullable().default(null),
+    defaultAssigneeId: Id.nullable().default(null),
+  })
+  .meta({ id: 'CreateComponentRequest' });
+export type CreateComponentRequest = z.infer<typeof CreateComponentRequest>;
+
+export const UpdateComponentRequest = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    description: z.string().max(1_000),
+    leadId: Id.nullable(),
+    defaultAssigneeId: Id.nullable(),
+  })
+  .partial()
+  .meta({ id: 'UpdateComponentRequest' });
+export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
+
 export const Issue = IssueSummary.extend({
   project: z.object({ key: z.string(), name: z.string() }),
   description: RichText.nullable(),
@@ -187,6 +266,9 @@ export const Issue = IssueSummary.extend({
   resolvedAt: z.iso.datetime().nullable(),
   watching: z.boolean(),
   watcherCount: z.number().int(),
+  components: z.array(ComponentRef),
+  /** Links to issues the caller can see. */
+  links: z.array(IssueLink),
 }).meta({ id: 'Issue' });
 export type Issue = z.infer<typeof Issue>;
 
@@ -212,6 +294,10 @@ export const Comment = z
     body: RichText,
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
+    /** Changed after it was written (E-42). */
+    edited: z.boolean(),
+    canEdit: z.boolean(),
+    canDelete: z.boolean(),
   })
   .meta({ id: 'Comment' });
 export type Comment = z.infer<typeof Comment>;
@@ -220,6 +306,11 @@ export const CreateCommentRequest = z
   .object({ body: RichText })
   .meta({ id: 'CreateCommentRequest' });
 export type CreateCommentRequest = z.infer<typeof CreateCommentRequest>;
+
+export const UpdateCommentRequest = z
+  .object({ body: RichText })
+  .meta({ id: 'UpdateCommentRequest' });
+export type UpdateCommentRequest = z.infer<typeof UpdateCommentRequest>;
 
 export const ChangeGroup = z
   .object({

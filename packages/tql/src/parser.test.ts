@@ -125,6 +125,17 @@ describe('parse', () => {
     expect(codes('created > startOfWeek(soon)')).toEqual(['invalid-increment']);
   });
 
+  it('supports components, link types and linkedIssues()', () => {
+    expect(codes('component in (Backend, "API Gateway") OR component is EMPTY')).toEqual([]);
+    expect(codes('issueLinkType = blocks')).toEqual([]);
+    expect(codes('key in linkedIssues(WEB-1) AND parent in linkedIssues(WEB-2, blocks)')).toEqual(
+      [],
+    );
+    expect(codes('key = linkedIssues(WEB-1)')).toEqual(['function-not-supported']);
+    expect(codes('key in linkedIssues(nonsense)')).toEqual(['invalid-issue-key']);
+    expect(codes('key in linkedIssues()')).toEqual(['function-arguments']);
+  });
+
   it('accepts functions where they fit', () => {
     expect(codes('assignee in membersOf("team-plattform")')).toEqual([]);
     expect(codes('assignee in (currentUser(), "mira@example.com")')).toEqual([]);

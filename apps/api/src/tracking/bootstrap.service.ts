@@ -2,6 +2,7 @@ import { Inject, Injectable, type OnApplicationBootstrap } from '@nestjs/common'
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import {
+  issueLinkTypes,
   issueTypes,
   priorities,
   resolutions,
@@ -11,6 +12,7 @@ import {
 } from '../db/schema/index.js';
 import {
   BUILT_IN_ISSUE_TYPES,
+  BUILT_IN_LINK_TYPES,
   BUILT_IN_PRIORITIES,
   BUILT_IN_RESOLUTIONS,
   BUILT_IN_STATUSES,
@@ -18,7 +20,7 @@ import {
   builtInId,
 } from './builtins.js';
 
-/** Creates the built-in issue types, statuses, priorities, resolutions and workflows if missing. */
+/** Creates the built-in issue types, statuses, priorities, resolutions, link types and workflows if missing. */
 @Injectable()
 export class TrackingBootstrapService implements OnApplicationBootstrap {
   constructor(@Inject(DATABASE) private readonly database: DatabaseHandle) {}
@@ -58,6 +60,16 @@ export class TrackingBootstrapService implements OnApplicationBootstrap {
           BUILT_IN_RESOLUTIONS.map((entry) => ({
             ...entry,
             id: builtInId('resolution', entry.key),
+          })),
+        )
+        .onConflictDoNothing();
+      await tx
+        .insert(issueLinkTypes)
+        .values(
+          BUILT_IN_LINK_TYPES.map((entry) => ({
+            ...entry,
+            id: builtInId('link-type', entry.key),
+            builtIn: true,
           })),
         )
         .onConflictDoNothing();

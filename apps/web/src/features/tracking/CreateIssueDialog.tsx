@@ -4,7 +4,7 @@ import { CreateIssueRequest, type ProjectDetails, type RichText } from '@tasklor
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { componentsQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -25,6 +25,8 @@ export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateI
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const meta = useQuery(trackingMetaQuery);
+  const components = useQuery({ ...componentsQuery(project.key), enabled: open });
+  const [componentIds, setComponentIds] = useState<string[]>([]);
   const defaultType =
     project.issueTypes.find((type) => type.hierarchyLevel === 0) ?? project.issueTypes[0];
   const [form, setForm] = useState({
@@ -53,6 +55,7 @@ export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateI
         labels: '',
         storyPoints: '',
       }));
+      setComponentIds([]);
       await navigate({ to: '/issues/$key', params: { key: issue.key } });
     },
   });
@@ -70,6 +73,7 @@ export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateI
       labels: form.labels.split(/\s+/).filter(Boolean),
       storyPoints: form.storyPoints === '' ? null : Number(form.storyPoints),
       assigneeId: form.assignToMe ? myId : null,
+      components: componentIds,
     });
     if (!parsed.success) {
       setErrors(
@@ -151,6 +155,36 @@ export function CreateIssueDialog({ project, open, onOpenChange, myId }: CreateI
           onChange={set('labels')}
           error={errors.labels}
         />
+        {components.data && components.data.length > 0 && (
+          <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
+            <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
+              {t('issues.components')}
+            </legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {components.data.map((component) => (
+                <label key={component.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={componentIds.includes(component.id)}
+                    onChange={(event) =>
+                      setComponentIds((current) =>
+                        event.target.checked
+                          ? [...current, component.id]
+                          : current.filter((id) => id !== component.id),
+                      )
+                    }
+                  />
+                  {component.name}
+                  {component.defaultAssignee && (
+                    <span className="text-xs text-[var(--ink-muted)]">
+                      → {component.defaultAssignee.displayName}
+                    </span>
+                  )}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         {canAssign && (
           <label className="flex items-center gap-2">
             <input

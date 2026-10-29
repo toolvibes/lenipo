@@ -9,6 +9,7 @@ import type {
   ChangeGroup,
   Comment,
   CreateCommentRequest,
+  CreateIssueLinkRequest,
   CreateIssueRequest,
   Issue,
   IssueList,
@@ -17,6 +18,7 @@ import type {
   RichText,
   Transition,
   TransitionRequest,
+  UpdateCommentRequest,
   UpdateIssueRequest,
   UserRef,
 } from '@tasklore/shared';
@@ -35,6 +37,9 @@ import {
   users,
 } from '../db/schema/index.js';
 import { builtInId } from './builtins.js';
+import { ComponentService } from './component.service.js';
+import { type Change, displayText, recordChanges } from './history.js';
+import { LinkService } from './link.service.js';
 import { type MetaIndex, MetaService } from './meta.service.js';
 import { type ProjectRow, ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
@@ -45,14 +50,6 @@ import { transitionsFrom } from './workflow.js';
 /** Issue columns without the search vector, which only the database reads. */
 type IssueRow = Omit<typeof issues.$inferSelect, 'searchVector'>;
 
-interface Change {
-  field: string;
-  fromValue: string | null;
-  fromDisplay: string | null;
-  toValue: string | null;
-  toDisplay: string | null;
-}
-
 export interface IssueListFilter {
   statusCategory?: 'todo' | 'in_progress' | 'done' | 'unresolved';
   assignee?: string;
@@ -60,12 +57,6 @@ export interface IssueListFilter {
   query?: string;
   limit: number;
   offset: number;
-}
-
-const HISTORY_TEXT_LIMIT = 1_000;
-
-function displayText(value: string | null): string | null {
-  return value === null ? null : value.slice(0, HISTORY_TEXT_LIMIT);
 }
 
 function escapeLike(value: string): string {
@@ -79,6 +70,8 @@ export class IssueService {
     @Inject(ProjectService) private readonly projectService: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(MetaService) private readonly meta: MetaService,
+    @Inject(ComponentService) private readonly components: ComponentService,
+    @Inject(LinkService) private readonly links: LinkService,
   ) {}
 
   // ---------------------------------------------------------------- reading
@@ -172,10 +165,14 @@ export class IssueService {
       .select({ userId: issueWatchers.userId })
       .from(issueWatchers)
       .where(eq(issueWatchers.issueId, issue.id));
-    const people = await this.userRefs([
-      issue.assigneeId,
-      issue.reporterId,
-      ...children.map((child) => child.assigneeId),
+    const [people, components, links] = await Promise.all([
+      this.userRefs([
+        issue.assigneeId,
+        issue.reporterId,
+        ...children.map((child) => child.assigneeId),
+      ]),
+      this.components.refsFor(issue.id),
+      this.links.linksFor(principal.userId, issue.id),
     ]);
     return {
       ...this.toSummary(issue, meta, people),
@@ -190,6 +187,8 @@ export class IssueService {
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
       watching: watchers.some((watcher) => watcher.userId === principal.userId),
       watcherCount: watchers.length,
+      components,
+      links,
     };
   }
 
@@ -321,6 +320,10 @@ export class IssueService {
       }
       await this.requireAssignable(project.id, request.assigneeId);
     }
+    const components = await this.components.resolve(project.id, request.components);
+    // Without an explicit assignee, the components' default assignee takes over (E-40).
+    const assigneeId =
+      request.assigneeId ?? (await this.components.defaultAssignee(project.id, components));
     const workflow = await this.projectService.workflow(project.workflowVersionId);
     const id = uuidv7();
 
@@ -345,7 +348,7 @@ export class IssueService {
         summary: request.summary,
         description: request.description,
         descriptionText: plainText(request.description),
-        assigneeId: request.assigneeId,
+        assigneeId,
         reporterId: principal.userId,
         parentId: parent?.id ?? null,
         labels: [...new Set(request.labels)],
@@ -354,9 +357,14 @@ export class IssueService {
         rank: rankBetween(last?.rank ?? null, null),
       });
       const watchers = [
-        ...new Set([principal.userId, request.assigneeId].filter((user): user is string => !!user)),
+        ...new Set([principal.userId, assigneeId].filter((user): user is string => !!user)),
       ];
       await tx.insert(issueWatchers).values(watchers.map((userId) => ({ issueId: id, userId })));
+      await this.components.replaceOnIssue(
+        tx,
+        id,
+        components.map((component) => component.id),
+      );
     });
     return this.present(principal, id);
   }
@@ -485,6 +493,15 @@ export class IssueService {
       track('dueDate', issue.dueDate, request.dueDate);
       patch.dueDate = request.dueDate;
     }
+    let componentIds: string[] | undefined;
+    if (request.components !== undefined) {
+      const next = await this.components.resolve(project.id, request.components);
+      const current = await this.components.refsFor(issue.id);
+      const names = (list: Array<{ name: string }>) =>
+        list.map((component) => component.name).join(', ') || null;
+      track('components', names(current), names(next));
+      componentIds = next.map((component) => component.id);
+    }
 
     if (changes.length > 0) {
       await this.database.db.transaction(async (tx) => {
@@ -492,7 +509,8 @@ export class IssueService {
           .update(issues)
           .set({ ...patch, updatedAt: sql`now()` })
           .where(eq(issues.id, issue.id));
-        await this.recordChanges(tx, issue.id, principal, changes);
+        if (componentIds) await this.components.replaceOnIssue(tx, issue.id, componentIds);
+        await recordChanges(tx, issue.id, principal, changes);
         if (patch.assigneeId) {
           await tx
             .insert(issueWatchers)
@@ -502,22 +520,6 @@ export class IssueService {
       });
     }
     return this.present(principal, issue.id);
-  }
-
-  private async recordChanges(
-    tx: Executor,
-    issueId: string,
-    principal: Principal,
-    changes: Change[],
-  ) {
-    const [group] = await tx
-      .insert(issueChangeGroups)
-      .values({ issueId, authorId: principal.userId, via: principal.via })
-      .returning({ id: issueChangeGroups.id });
-    if (!group) throw new Error('Change group insert returned no row');
-    await tx
-      .insert(issueChangeItems)
-      .values(changes.map((change) => ({ ...change, groupId: group.id })));
   }
 
   async transitions(principal: Principal, key: string): Promise<Transition[]> {
@@ -591,26 +593,118 @@ export class IssueService {
         .update(issues)
         .set({ ...patch, updatedAt: sql`now()` })
         .where(eq(issues.id, issue.id));
-      await this.recordChanges(tx, issue.id, principal, changes);
+      await recordChanges(tx, issue.id, principal, changes);
     });
     return this.present(principal, issue.id);
   }
 
+  // ---------------------------------------------------------------- links
+
+  async addLink(
+    principal: Principal,
+    key: string,
+    request: CreateIssueLinkRequest,
+  ): Promise<Issue> {
+    const { issue } = await this.load(principal, key, 'edit-issues');
+    await this.links.create(principal, issue, request);
+    return this.present(principal, issue.id);
+  }
+
+  async removeLink(principal: Principal, key: string, linkId: string): Promise<void> {
+    const { issue } = await this.load(principal, key, 'edit-issues');
+    await this.links.delete(principal, issue, linkId);
+  }
+
+  // ---------------------------------------------------------------- comments
+
+  /** Own comments may be edited and deleted; project administrators delete any (E-42). */
+  private presentComment(
+    row: typeof issueComments.$inferSelect,
+    author: UserRef | null,
+    principal: Principal,
+    permissions: Set<ProjectPermission>,
+  ): Comment {
+    const own = row.authorId === principal.userId && permissions.has('comment');
+    return {
+      id: row.id,
+      author,
+      body: row.body as RichText,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      edited: row.updatedAt.getTime() !== row.createdAt.getTime(),
+      canEdit: own,
+      canDelete: own || permissions.has('administer'),
+    };
+  }
+
   async comments(principal: Principal, key: string): Promise<Comment[]> {
-    const { issue } = await this.load(principal, key, 'browse');
+    const { issue, permissions } = await this.load(principal, key, 'browse');
     const rows = await this.database.db
       .select()
       .from(issueComments)
       .where(and(eq(issueComments.issueId, issue.id), isNull(issueComments.deletedAt)))
       .orderBy(asc(issueComments.createdAt));
     const people = await this.userRefs(rows.map((row) => row.authorId));
-    return rows.map((row) => ({
-      id: row.id,
-      author: row.authorId ? (people.get(row.authorId) ?? null) : null,
-      body: row.body as RichText,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    }));
+    return rows.map((row) =>
+      this.presentComment(
+        row,
+        row.authorId ? (people.get(row.authorId) ?? null) : null,
+        principal,
+        permissions,
+      ),
+    );
+  }
+
+  private async loadComment(issueId: string, commentId: string) {
+    const [row] = await this.database.db
+      .select()
+      .from(issueComments)
+      .where(
+        and(
+          eq(issueComments.id, commentId),
+          eq(issueComments.issueId, issueId),
+          isNull(issueComments.deletedAt),
+        ),
+      );
+    if (!row) throw new NotFoundException('Comment not found');
+    return row;
+  }
+
+  async updateComment(
+    principal: Principal,
+    key: string,
+    commentId: string,
+    request: UpdateCommentRequest,
+  ): Promise<Comment> {
+    const { issue, permissions } = await this.load(principal, key, 'comment');
+    const row = await this.loadComment(issue.id, commentId);
+    if (row.authorId !== principal.userId) {
+      throw new ForbiddenException('Only the author can edit this comment');
+    }
+    const text = plainText(request.body);
+    if (!text) throw new BadRequestException('The comment is empty');
+    const [updated] = await this.database.db
+      .update(issueComments)
+      .set({ body: request.body, bodyText: text, updatedAt: sql`now()` })
+      .where(eq(issueComments.id, row.id))
+      .returning();
+    if (!updated) throw new NotFoundException('Comment not found');
+    const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
+    return this.presentComment(updated, author, principal, permissions);
+  }
+
+  async deleteComment(principal: Principal, key: string, commentId: string): Promise<void> {
+    const { issue, permissions } = await this.load(principal, key, 'comment');
+    const row = await this.loadComment(issue.id, commentId);
+    if (row.authorId !== principal.userId && !permissions.has('administer')) {
+      throw new ForbiddenException(
+        'Only the author or a project administrator can delete this comment',
+      );
+    }
+    await this.database.db
+      .update(issueComments)
+      .set({ deletedAt: sql`now()` })
+      .where(eq(issueComments.id, row.id));
   }
 
   async addComment(
@@ -638,7 +732,16 @@ export class IssueService {
     });
     const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
     const now = new Date().toISOString();
-    return { id, author, body: request.body, createdAt: now, updatedAt: now };
+    return {
+      id,
+      author,
+      body: request.body,
+      createdAt: now,
+      updatedAt: now,
+      edited: false,
+      canEdit: true,
+      canDelete: true,
+    };
   }
 
   async history(principal: Principal, key: string): Promise<ChangeGroup[]> {

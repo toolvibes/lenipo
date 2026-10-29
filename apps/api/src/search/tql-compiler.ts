@@ -36,6 +36,7 @@ import {
   groupMembers,
   groups,
   issueComments,
+  issueComponents,
   issues,
   issueWatchers,
   users,
@@ -49,6 +50,8 @@ export interface CompileContext {
   meta: MetaIndex;
   /** Projects the searcher may browse; other projects do not exist for the query. */
   projects: ReadonlyArray<{ id: string; key: string; name: string }>;
+  /** Components of those projects. */
+  components: ReadonlyArray<{ id: string; name: string }>;
 }
 
 export interface CompiledQuery {
@@ -99,6 +102,7 @@ export class TqlCompiler {
   readonly errors: TqlError[] = [];
   private usersByValue = new Map<string, string>();
   private groupsByValue = new Map<string, string>();
+  private issuesByKey = new Map<string, string>();
 
   constructor(
     private readonly db: Executor,
@@ -106,17 +110,18 @@ export class TqlCompiler {
   ) {}
 
   async compile(query: Query): Promise<CompiledQuery> {
-    await this.resolvePeople(query.where);
+    await this.resolveReferences(query.where);
     const where = query.where ? this.expression(query.where) : undefined;
     return { where, orderBy: this.orderBy(query) };
   }
 
-  // ---------------------------------------------------------------- people and groups
+  // ---------------------------------------------------------------- references
 
-  /** Looks up every user and group named in the query in two queries. */
-  private async resolvePeople(expression: Expression | null): Promise<void> {
+  /** Looks up every user, group and linkedIssues() issue named in the query, one query each. */
+  private async resolveReferences(expression: Expression | null): Promise<void> {
     const userValues = new Set<string>();
     const groupValues = new Set<string>();
+    const issueKeys = new Set<string>();
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
@@ -127,9 +132,33 @@ export class TqlCompiler {
             groupValues.add(item.args[0].toLowerCase());
           }
         }
+      } else if (node.field.type === 'issue') {
+        for (const item of items(node.operand)) {
+          if (item.kind === 'function' && item.fn.name === 'linkedIssues' && item.args[0]) {
+            issueKeys.add(item.args[0].toUpperCase());
+          }
+        }
       }
     };
     if (expression) visit(expression);
+
+    if (issueKeys.size > 0 && this.context.projects.length > 0) {
+      // Only issues the searcher can see; others are reported as unknown.
+      const rows = await this.db
+        .select({ id: issues.id, key: issues.key })
+        .from(issues)
+        .where(
+          and(
+            inArray(issues.key, [...issueKeys]),
+            isNull(issues.deletedAt),
+            inArray(
+              issues.projectId,
+              this.context.projects.map((project) => project.id),
+            ),
+          ),
+        );
+      for (const row of rows) this.issuesByKey.set(row.key, row.id);
+    }
 
     if (userValues.size > 0) {
       const values = [...userValues];
@@ -218,6 +247,10 @@ export class TqlCompiler {
         return this.date(clause);
       case 'issue':
         return this.issueKey(clause);
+      case 'component':
+        return this.component(clause);
+      case 'link-type':
+        return this.linkType(clause);
     }
   }
 
@@ -448,18 +481,151 @@ export class TqlCompiler {
     const keys = items(clause.operand).flatMap((item) =>
       item.kind === 'value' ? [item.value.toUpperCase()] : [],
     );
-    if (keys.length === 0) return sql`false`;
-    if (clause.field.id === 'key') {
-      const match = inArray(issues.key, keys);
-      return positive(clause.operator) ? match : not(match);
+    const matches: SQL[] = [];
+    if (keys.length > 0) {
+      if (clause.field.id === 'key') matches.push(inArray(issues.key, keys));
+      else {
+        // An alias, so the subquery does not shadow the outer issues table.
+        const list = sql.join(
+          keys.map((key) => sql`${key}`),
+          sql`, `,
+        );
+        matches.push(
+          sql`${issues.parentId} in (select p.id from issues p where p.key in (${list}))`,
+        );
+      }
     }
-    // An alias, so the subquery does not shadow the outer issues table.
-    const list = sql.join(
-      keys.map((key) => sql`${key}`),
+    for (const item of items(clause.operand)) {
+      if (item.kind !== 'function' || item.fn.name !== 'linkedIssues') continue;
+      const linked = this.linkedIssues(clause.field, item);
+      if (linked) matches.push(sql`${column} in ${linked}`);
+    }
+    if (matches.length === 0) return sql`false`;
+    const match = or(...matches) as SQL;
+    if (positive(clause.operator)) return match;
+    return clause.field.id === 'parent'
+      ? (and(isNotNull(issues.parentId), not(match)) as SQL)
+      : not(match);
+  }
+
+  // ---------------------------------------------------------------- components and links
+
+  private component(clause: Clause): SQL {
+    const anyComponent = exists(
+      this.db
+        .select({ one: sql`1` })
+        .from(issueComponents)
+        .where(eq(issueComponents.issueId, issues.id)),
+    );
+    if (clause.operator === 'is') return not(anyComponent);
+    if (clause.operator === 'is not') return anyComponent;
+    const ids: string[] = [];
+    for (const item of items(clause.operand)) {
+      if (item.kind !== 'value') continue;
+      const wanted = item.value.toLowerCase();
+      const found = this.context.components.filter(
+        (component) => component.id === wanted || component.name.toLowerCase() === wanted,
+      );
+      if (found.length === 0) this.notFound(clause.field, item, item.value);
+      ids.push(...found.map((component) => component.id));
+    }
+    if (ids.length === 0) return sql`false`;
+    const match = exists(
+      this.db
+        .select({ one: sql`1` })
+        .from(issueComponents)
+        .where(
+          and(eq(issueComponents.issueId, issues.id), inArray(issueComponents.componentId, ids)),
+        ),
+    );
+    // Like != elsewhere: issues without any component do not match.
+    return positive(clause.operator) ? match : (and(anyComponent, not(match)) as SQL);
+  }
+
+  /**
+   * Link type ids per direction for a value. A direction phrase ("blockiert", "wird blockiert
+   * von") means that direction; otherwise the type's key or name means both. Phrases win,
+   * because a type's name may equal one of its phrases.
+   */
+  private linkDirections(value: string): { outward: string[]; inward: string[] } | null {
+    const wanted = value.toLowerCase();
+    const types = this.context.meta.linkTypes;
+    const outward = types
+      .filter((type) => type.outward.toLowerCase() === wanted)
+      .map((type) => type.id);
+    const inward = types
+      .filter((type) => type.inward.toLowerCase() === wanted)
+      .map((type) => type.id);
+    if (outward.length + inward.length > 0) return { outward, inward };
+    const whole = types
+      .filter((type) => type.key === wanted || type.name.toLowerCase() === wanted)
+      .map((type) => type.id);
+    return whole.length > 0 ? { outward: whole, inward: whole } : null;
+  }
+
+  private typeFilter(ids: string[] | null): SQL {
+    if (ids === null) return sql``;
+    if (ids.length === 0) return sql` and false`;
+    return sql` and l.type_id in (${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `,
+    )})`;
+  }
+
+  /** Ids of issues linked to the issue named in linkedIssues(key[, type]). */
+  private linkedIssues(field: FieldDef, item: FunctionOperand): SQL | null {
+    const key = (item.args[0] ?? '').toUpperCase();
+    const id = this.issuesByKey.get(key);
+    if (!id) {
+      this.errors.push(tqlError('value-not-found', item.span, { field: field.id, value: key }));
+      return null;
+    }
+    let directions: { outward: string[]; inward: string[] } | null = null;
+    if (item.args[1] !== undefined) {
+      directions = this.linkDirections(item.args[1]);
+      if (!directions) {
+        this.errors.push(
+          tqlError('value-not-found', item.span, { field: 'issueLinkType', value: item.args[1] }),
+        );
+        return null;
+      }
+    }
+    return sql`(select l.target_id from issue_links l where l.source_id = ${id}${this.typeFilter(
+      directions?.outward ?? null,
+    )} union select l.source_id from issue_links l where l.target_id = ${id}${this.typeFilter(
+      directions?.inward ?? null,
+    )})`;
+  }
+
+  /** Issues with a link of the given type to an issue the searcher can see. */
+  private linkType(clause: Clause): SQL {
+    const outward: string[] = [];
+    const inward: string[] = [];
+    for (const item of items(clause.operand)) {
+      if (item.kind !== 'value') continue;
+      const directions = this.linkDirections(item.value);
+      if (!directions) this.notFound(clause.field, item, item.value);
+      outward.push(...(directions?.outward ?? []));
+      inward.push(...(directions?.inward ?? []));
+    }
+    if (outward.length + inward.length === 0 || this.context.projects.length === 0)
+      return sql`false`;
+    const visible = sql.join(
+      this.context.projects.map((project) => sql`${project.id}`),
       sql`, `,
     );
-    const match = sql`${issues.parentId} in (select p.id from issues p where p.key in (${list}))`;
-    return positive(clause.operator) ? match : (and(isNotNull(issues.parentId), not(match)) as SQL);
+    const side = (
+      own: 'source_id' | 'target_id',
+      other: 'source_id' | 'target_id',
+      ids: string[],
+    ) =>
+      ids.length === 0
+        ? sql`false`
+        : sql`exists (select 1 from issue_links l join issues o on o.id = l.${sql.raw(other)}
+            where l.${sql.raw(own)} = ${issues.id}${this.typeFilter(ids)}
+              and o.deleted_at is null and o.project_id in (${visible}))`;
+    const match = sql`(${side('source_id', 'target_id', outward)} or ${side('target_id', 'source_id', inward)})`;
+    return positive(clause.operator) ? match : not(match);
   }
 
   // ---------------------------------------------------------------- dates
