@@ -1,16 +1,24 @@
 import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Me, QueryError, SavedFilter } from '@tasklore/shared';
-import { parse } from '@tasklore/tql';
+import {
+  DEFAULT_ISSUE_COLUMNS,
+  type Me,
+  type QueryError,
+  type SavedFilter,
+} from '@tasklore/shared';
+import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@tasklore/tql';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { issueColumnsQuery } from '../../lib/personal';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { IssueTable } from '../tracking/IssueTable';
+import { BasicSearch } from './BasicSearch';
+import { ColumnPicker } from './ColumnPicker';
 import { SaveFilterDialog } from './SaveFilterDialog';
 import { TqlInput } from './TqlInput';
 
@@ -21,6 +29,31 @@ const PRESETS = {
   recent: 'updated >= -7d ORDER BY updated DESC',
   all: 'ORDER BY created DESC',
 } as const;
+
+type Mode = 'basic' | 'advanced';
+const MODE_KEY = 'tasklore.search.mode';
+
+/** The last chosen search mode of this browser; a convenience, so failures are ignored. */
+function useMode(): [Mode, (mode: Mode) => void] {
+  const [mode, setMode] = useState<Mode>(() => {
+    try {
+      return localStorage.getItem(MODE_KEY) === 'advanced' ? 'advanced' : 'basic';
+    } catch {
+      return 'basic';
+    }
+  });
+  return [
+    mode,
+    (next) => {
+      setMode(next);
+      try {
+        localStorage.setItem(MODE_KEY, next);
+      } catch {
+        // Private windows may refuse storage; the mode then lasts for this page only.
+      }
+    },
+  ];
+}
 
 const SIDEBAR_LINK =
   'block truncate rounded-[var(--radius-md)] px-2 py-1 text-[var(--ink)] no-underline hover:bg-[var(--surface-2)] data-[current=true]:bg-[var(--accent-soft)] data-[current=true]:font-semibold data-[current=true]:text-[var(--accent)]';
@@ -72,6 +105,8 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
   const [checkNow, setCheckNow] = useState(false);
   const [saving, setSaving] = useState<'new' | 'details' | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [mode, setMode] = useMode();
+  const columns = useQuery(issueColumnsQuery).data?.columns ?? DEFAULT_ISSUE_COLUMNS;
 
   useEffect(() => {
     if (applied !== undefined) setDraft(applied);
@@ -103,19 +138,34 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
         : String(results.error)
       : null;
 
-  function run() {
-    setCheckNow(true);
-    if (parse(draft).errors.length > 0) return;
-    setCheckNow(false);
-    if (draft === applied) {
+  /** Shows the results of a query; an open filter stays open, marked as changed. */
+  function apply(query: string) {
+    if (query === applied) {
       void results.refetch();
       return;
     }
     const stored = filter.data?.query;
     void navigate({
       to: '/issues',
-      search: { filter: filterId, q: filterId && draft === stored ? undefined : draft },
+      search: { filter: filterId, q: filterId && query === stored ? undefined : query },
     });
+  }
+
+  function run() {
+    setCheckNow(true);
+    if (parse(draft).errors.length > 0) return;
+    setCheckNow(false);
+    apply(draft);
+  }
+
+  // The basic search shows the applied query when it has the simple form (E-48).
+  const basic = useMemo(() => (applied === undefined ? null : toBasic(applied)), [applied]);
+  const showBasic = mode === 'basic' && basic !== null;
+  const sort = useMemo(() => primarySort(applied ?? ''), [applied]);
+
+  function sortBy(field: string) {
+    const sorted = withSort(applied ?? '', nextSort(sort, field));
+    if (sorted !== null) apply(sorted);
   }
 
   function showError(error: QueryError) {
@@ -284,70 +334,98 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
         {saveQuery.error && <FormError message={saveQuery.error.message} />}
 
         <div className="flex flex-col gap-2">
-          <div className="flex items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <TqlInput
-                id={inputId}
-                value={draft}
-                onChange={(value) => {
-                  setDraft(value);
-                  setCheckNow(false);
-                }}
-                onSubmit={run}
-                errors={errors}
-                errorId={errorId}
-              />
-            </div>
-            <Button variant="primary" onClick={run}>
-              {t('search.run')}
-            </Button>
-          </div>
-          {errors.length > 0 ? (
-            <ul id={errorId} className="flex flex-col gap-1">
-              {errors.slice(0, 3).map((error) => (
-                <li
-                  key={`${error.code}:${error.start}`}
-                  className="flex flex-wrap items-baseline gap-2 text-[var(--danger)]"
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <fieldset className="m-0 inline-flex rounded-[var(--radius-md)] border border-[var(--border-strong)] p-0.5">
+              <legend className="sr-only">{t('search.mode.label')}</legend>
+              {(['basic', 'advanced'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={(option === 'basic') === showBasic}
+                  onClick={() => setMode(option)}
+                  className="h-7 rounded-[var(--radius-sm)] px-3 text-[var(--ink-muted)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
                 >
-                  <span>
-                    {t(`search.errors.${error.code}` as never, {
-                      ...error.params,
-                      defaultValue: error.message,
-                    })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => showError(error)}
-                    className="text-xs text-[var(--ink-muted)] underline"
-                  >
-                    {t('search.showError')}
-                  </button>
-                </li>
+                  {t(`search.mode.${option}`)}
+                </button>
               ))}
-            </ul>
+            </fieldset>
+            {mode === 'basic' && !showBasic && applied !== undefined && (
+              <p role="status" className="m-0 text-xs text-[var(--ink-muted)]">
+                {t('search.mode.tooComplex')}
+              </p>
+            )}
+          </div>
+          {showBasic ? (
+            <BasicSearch value={basic} onChange={(next) => apply(fromBasic(next))} />
           ) : (
-            <p className="text-xs text-[var(--ink-muted)]">{t('search.hint')}</p>
+            <>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <TqlInput
+                    id={inputId}
+                    value={draft}
+                    onChange={(value) => {
+                      setDraft(value);
+                      setCheckNow(false);
+                    }}
+                    onSubmit={run}
+                    errors={errors}
+                    errorId={errorId}
+                  />
+                </div>
+                <Button variant="primary" onClick={run}>
+                  {t('search.run')}
+                </Button>
+              </div>
+              {errors.length > 0 ? (
+                <ul id={errorId} className="flex flex-col gap-1">
+                  {errors.slice(0, 3).map((error) => (
+                    <li
+                      key={`${error.code}:${error.start}`}
+                      className="flex flex-wrap items-baseline gap-2 text-[var(--danger)]"
+                    >
+                      <span>
+                        {t(`search.errors.${error.code}` as never, {
+                          ...error.params,
+                          defaultValue: error.message,
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => showError(error)}
+                        className="text-xs text-[var(--ink-muted)] underline"
+                      >
+                        {t('search.showError')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[var(--ink-muted)]">{t('search.hint')}</p>
+              )}
+            </>
           )}
         </div>
 
         {otherError && <FormError message={otherError} />}
 
-        {page && (
-          <div className="flex items-center justify-between gap-2">
-            {/* An empty result is shown in the table; the live region still announces it. */}
-            <span
-              className={`text-xs text-[var(--ink-muted)] ${page.total === 0 ? 'sr-only' : ''}`}
-              aria-live="polite"
-            >
-              {page.total === 0
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* An empty result is shown in the table; the live region still announces it. */}
+          <span
+            className={`text-xs text-[var(--ink-muted)] ${page?.total === 0 ? 'sr-only' : ''}`}
+            aria-live="polite"
+          >
+            {page &&
+              (page.total === 0
                 ? t('search.noResults')
                 : t('search.range', {
                     from: page.offset + 1,
                     to: page.offset + page.issues.length,
                     total: page.total,
-                  })}
-            </span>
-            {page.total > SEARCH_PAGE_SIZE && (
+                  }))}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {page && page.total > SEARCH_PAGE_SIZE && (
               <nav aria-label={t('search.pagination')} className="flex gap-1">
                 <Button
                   size="sm"
@@ -369,12 +447,16 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
                 </Button>
               </nav>
             )}
+            <ColumnPicker columns={columns} />
           </div>
-        )}
+        </div>
 
         <IssueTable
           issues={page?.issues ?? []}
           empty={page && !results.error ? t('search.noResults') : null}
+          columns={columns}
+          sort={sort}
+          onSort={results.error ? undefined : sortBy}
         />
       </div>
 

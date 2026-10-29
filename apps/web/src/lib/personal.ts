@@ -4,7 +4,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { FavouriteKind, RecentKind } from '@tasklore/shared';
+import type { FavouriteKind, IssueColumn, RecentKind } from '@tasklore/shared';
 import { useEffect } from 'react';
 import { client, unwrap } from './api';
 
@@ -62,5 +62,22 @@ export function useFavourite() {
       await queryClient.invalidateQueries({ queryKey: ['filters'] });
       await queryClient.invalidateQueries({ queryKey: ['filter'] });
     },
+  });
+}
+
+export const issueColumnsQuery = queryOptions({
+  queryKey: ['issue-columns'],
+  queryFn: () => unwrap(client.GET('/api/v1/me/issue-columns')),
+  staleTime: Number.POSITIVE_INFINITY,
+});
+
+/** Saves the chosen columns; the table follows at once (E-48). */
+export function useSetIssueColumns() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (columns: IssueColumn[]) =>
+      unwrap(client.PUT('/api/v1/me/issue-columns', { body: { columns } })),
+    onMutate: (columns) => queryClient.setQueryData(issueColumnsQuery.queryKey, { columns }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: issueColumnsQuery.queryKey }),
   });
 }

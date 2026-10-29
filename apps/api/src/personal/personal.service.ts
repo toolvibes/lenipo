@@ -1,16 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Favourite, FavouriteKind, RecentItem, RecentKind } from '@tasklore/shared';
+import {
+  DEFAULT_ISSUE_COLUMNS,
+  type Favourite,
+  type FavouriteKind,
+  IssueColumns,
+  type RecentItem,
+  type RecentKind,
+} from '@tasklore/shared';
 import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { favourites, issues, projects, recentItems } from '../db/schema/index.js';
+import { favourites, issues, projects, recentItems, userPreferences } from '../db/schema/index.js';
 import { FilterService } from '../search/filter.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 
 const RECENT_KEEP = 50;
+const ISSUE_COLUMNS = 'issue-columns';
 
 /** Favourites and recently viewed items of the caller (P-GEN-05, E-46). */
 @Injectable()
@@ -161,5 +169,31 @@ export class PersonalService {
       if (items.length >= limit) break;
     }
     return items;
+  }
+
+  // ---------------------------------------------------------------- preferences
+
+  /** The caller's columns for issue result lists; the default until they choose (E-48). */
+  async issueColumns(principal: Principal): Promise<IssueColumns> {
+    const [row] = await this.database.db
+      .select({ value: userPreferences.value })
+      .from(userPreferences)
+      .where(
+        and(eq(userPreferences.userId, principal.userId), eq(userPreferences.key, ISSUE_COLUMNS)),
+      );
+    // A stored value from an older version may name columns that no longer exist.
+    const stored = row ? IssueColumns.safeParse(row.value) : null;
+    return stored?.success ? stored.data : { columns: DEFAULT_ISSUE_COLUMNS };
+  }
+
+  async setIssueColumns(principal: Principal, value: IssueColumns): Promise<IssueColumns> {
+    await this.database.db
+      .insert(userPreferences)
+      .values({ userId: principal.userId, key: ISSUE_COLUMNS, value })
+      .onConflictDoUpdate({
+        target: [userPreferences.userId, userPreferences.key],
+        set: { value, updatedAt: sql`now()` },
+      });
+    return value;
   }
 }

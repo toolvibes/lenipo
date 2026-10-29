@@ -1,11 +1,13 @@
 import type {
   ActivityPage,
   Favourite,
+  IssueColumns,
   NotificationList,
   ProjectDetails,
   ProjectSummary,
   RecentItem,
   SavedFilter,
+  SearchResult,
 } from '@tasklore/shared';
 import { and, count, eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -225,5 +227,41 @@ describe('mentions for the home page', () => {
     expect(mentions.body.notifications.map((entry) => entry.category)).toEqual(['mention']);
     const all = await jonas.request<NotificationList>('GET', '/me/notifications');
     expect(all.body.notifications.length).toBeGreaterThan(1);
+  });
+});
+
+describe('result columns', () => {
+  it("keeps each person's choice and starts with the default", async () => {
+    const initial = await jonas.request<IssueColumns>('GET', '/me/issue-columns');
+    expect(initial.body.columns).toEqual(['status', 'assignee', 'updated']);
+    const chosen = await jonas.request<IssueColumns>('PUT', '/me/issue-columns', {
+      columns: ['priority', 'reporter', 'timeSpent'],
+    });
+    expect(chosen.status).toBe(200);
+    expect((await jonas.request<IssueColumns>('GET', '/me/issue-columns')).body.columns).toEqual([
+      'priority',
+      'reporter',
+      'timeSpent',
+    ]);
+    expect((await admin.request<IssueColumns>('GET', '/me/issue-columns')).body.columns).toEqual([
+      'status',
+      'assignee',
+      'updated',
+    ]);
+    for (const columns of [['status', 'status'], ['summary'], ['nonsense']]) {
+      expect((await jonas.request('PUT', '/me/issue-columns', { columns })).status).toBe(400);
+    }
+  });
+
+  it('returns what the columns show with each search result', async () => {
+    const result = await jonas.request<SearchResult>('POST', '/search', { query: 'key = WEB-1' });
+    expect(result.body.issues[0]).toMatchObject({
+      reporter: { displayName: 'Lena Vogt' },
+      resolution: null,
+      dueDate: null,
+      components: [],
+      timeTracking: { originalEstimateSeconds: null, timeSpentSeconds: 0 },
+    });
+    expect(result.body.issues[0]?.createdAt).toEqual(expect.any(String));
   });
 });

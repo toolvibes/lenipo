@@ -4,6 +4,7 @@ import {
   ActivityQuery,
   Favourite,
   FavouriteKind,
+  IssueColumns,
   RecentItem,
   RecordRecentRequest,
 } from '@tasklore/shared';
@@ -85,6 +86,30 @@ export class PersonalController {
     @ValidQuery(RecentQuery) query: RecentQuery,
   ): Promise<RecentItem[]> {
     return this.personal.recent(principal, query.limit);
+  }
+
+  @Endpoint({
+    tag: 'Personal',
+    summary: 'Get the caller’s columns for issue result lists',
+    description: 'Key and summary are always shown; these are the further columns, in order.',
+    response: IssueColumns,
+  })
+  @Get('me/issue-columns')
+  issueColumns(@CurrentPrincipal() principal: Principal): Promise<IssueColumns> {
+    return this.personal.issueColumns(principal);
+  }
+
+  @Endpoint({
+    tag: 'Personal',
+    summary: 'Choose the caller’s columns for issue result lists',
+    response: IssueColumns,
+  })
+  @Put('me/issue-columns')
+  setIssueColumns(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(IssueColumns) body: IssueColumns,
+  ): Promise<IssueColumns> {
+    return this.personal.setIssueColumns(principal, body);
   }
 
   @Endpoint({

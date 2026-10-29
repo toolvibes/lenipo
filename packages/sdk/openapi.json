@@ -2316,6 +2316,73 @@
         }
       }
     },
+    "/api/v1/me/issue-columns": {
+      "get": {
+        "operationId": "Personal.issueColumns",
+        "summary": "Get the caller’s columns for issue result lists",
+        "description": "Key and summary are always shown; these are the further columns, in order.",
+        "tags": ["Personal"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueColumns"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Personal.setIssueColumns",
+        "summary": "Choose the caller’s columns for issue result lists",
+        "tags": ["Personal"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueColumnsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueColumns"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/activity": {
       "get": {
         "operationId": "Personal.stream",
@@ -4505,6 +4572,52 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "reporter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResolutionInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentRef"
+            }
+          },
+          "timeTracking": {
+            "$ref": "#/components/schemas/TimeTracking"
+          },
           "project": {
             "type": "object",
             "properties": {
@@ -4528,26 +4641,6 @@
               }
             ]
           },
-          "resolution": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ResolutionInfo"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "reporter": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "parent": {
             "anyOf": [
               {
@@ -4563,23 +4656,6 @@
             "items": {
               "$ref": "#/components/schemas/IssueSummary"
             }
-          },
-          "dueDate": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "resolvedAt": {
             "anyOf": [
@@ -4601,53 +4677,11 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "components": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ComponentRef"
-            }
-          },
           "links": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/IssueLink"
             }
-          },
-          "timeTracking": {
-            "type": "object",
-            "properties": {
-              "originalEstimateSeconds": {
-                "anyOf": [
-                  {
-                    "type": "integer",
-                    "minimum": -9007199254740991,
-                    "maximum": 9007199254740991
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "remainingEstimateSeconds": {
-                "anyOf": [
-                  {
-                    "type": "integer",
-                    "minimum": -9007199254740991,
-                    "maximum": 9007199254740991
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "timeSpentSeconds": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": ["originalEstimateSeconds", "remainingEstimateSeconds", "timeSpentSeconds"],
-            "additionalProperties": false
           }
         },
         "required": [
@@ -4662,21 +4696,72 @@
           "labels",
           "rank",
           "updatedAt",
-          "project",
-          "description",
-          "resolution",
           "reporter",
-          "parent",
-          "children",
+          "resolution",
           "dueDate",
           "createdAt",
+          "components",
+          "timeTracking",
+          "project",
+          "description",
+          "parent",
+          "children",
           "resolvedAt",
           "watching",
           "watcherCount",
-          "components",
-          "links",
-          "timeTracking"
+          "links"
         ],
+        "additionalProperties": false
+      },
+      "ComponentRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"],
+        "additionalProperties": false
+      },
+      "TimeTracking": {
+        "type": "object",
+        "properties": {
+          "originalEstimateSeconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remainingEstimateSeconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeSpentSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["originalEstimateSeconds", "remainingEstimateSeconds", "timeSpentSeconds"],
         "additionalProperties": false
       },
       "IssueRef": {
@@ -4741,6 +4826,52 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResolutionInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentRef"
+            }
+          },
+          "timeTracking": {
+            "$ref": "#/components/schemas/TimeTracking"
           }
         },
         "required": [
@@ -4754,23 +4885,14 @@
           "storyPoints",
           "labels",
           "rank",
-          "updatedAt"
+          "updatedAt",
+          "reporter",
+          "resolution",
+          "dueDate",
+          "createdAt",
+          "components",
+          "timeTracking"
         ],
-        "additionalProperties": false
-      },
-      "ComponentRef": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": ["id", "name"],
         "additionalProperties": false
       },
       "IssueLink": {
@@ -5650,6 +5772,67 @@
         },
         "required": ["kind", "ref", "name", "viewedAt"],
         "additionalProperties": false
+      },
+      "IssueColumns": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "maxItems": 15,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "issuetype",
+                "status",
+                "priority",
+                "assignee",
+                "reporter",
+                "created",
+                "updated",
+                "due",
+                "resolution",
+                "labels",
+                "component",
+                "storyPoints",
+                "originalEstimate",
+                "remainingEstimate",
+                "timeSpent"
+              ]
+            }
+          }
+        },
+        "required": ["columns"],
+        "additionalProperties": false
+      },
+      "IssueColumnsInput": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "maxItems": 15,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "issuetype",
+                "status",
+                "priority",
+                "assignee",
+                "reporter",
+                "created",
+                "updated",
+                "due",
+                "resolution",
+                "labels",
+                "component",
+                "storyPoints",
+                "originalEstimate",
+                "remainingEstimate",
+                "timeSpent"
+              ]
+            }
+          }
+        },
+        "required": ["columns"]
       },
       "ActivityPage": {
         "type": "object",

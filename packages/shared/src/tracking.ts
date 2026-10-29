@@ -188,6 +188,18 @@ export type UpdateIssueRequest = z.infer<typeof UpdateIssueRequest>;
 export const IssueRef = z.object({ key: z.string(), summary: z.string() }).meta({ id: 'IssueRef' });
 export type IssueRef = z.infer<typeof IssueRef>;
 
+export const ComponentRef = z.object({ id: Id, name: z.string() }).meta({ id: 'ComponentRef' });
+export type ComponentRef = z.infer<typeof ComponentRef>;
+
+export const TimeTracking = z
+  .object({
+    originalEstimateSeconds: z.number().int().nullable(),
+    remainingEstimateSeconds: z.number().int().nullable(),
+    timeSpentSeconds: z.number().int(),
+  })
+  .meta({ id: 'TimeTracking' });
+export type TimeTracking = z.infer<typeof TimeTracking>;
+
 export const IssueSummary = z
   .object({
     id: Id,
@@ -201,12 +213,16 @@ export const IssueSummary = z
     labels: z.array(z.string()),
     rank: z.string(),
     updatedAt: z.iso.datetime(),
+    // For the columns of result lists (T-QRY-08, E-48).
+    reporter: UserRef.nullable(),
+    resolution: ResolutionInfo.nullable(),
+    dueDate: z.iso.date().nullable(),
+    createdAt: z.iso.datetime(),
+    components: z.array(ComponentRef),
+    timeTracking: TimeTracking,
   })
   .meta({ id: 'IssueSummary' });
 export type IssueSummary = z.infer<typeof IssueSummary>;
-
-export const ComponentRef = z.object({ id: Id, name: z.string() }).meta({ id: 'ComponentRef' });
-export type ComponentRef = z.infer<typeof ComponentRef>;
 
 export const LinkedIssue = IssueSummary.pick({
   id: true,
@@ -276,23 +292,13 @@ export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
 export const Issue = IssueSummary.extend({
   project: z.object({ key: z.string(), name: z.string() }),
   description: RichText.nullable(),
-  resolution: ResolutionInfo.nullable(),
-  reporter: UserRef.nullable(),
   parent: IssueRef.nullable(),
   children: z.array(IssueSummary),
-  dueDate: z.iso.date().nullable(),
-  createdAt: z.iso.datetime(),
   resolvedAt: z.iso.datetime().nullable(),
   watching: z.boolean(),
   watcherCount: z.number().int(),
-  components: z.array(ComponentRef),
   /** Links to issues the caller can see. */
   links: z.array(IssueLink),
-  timeTracking: z.object({
-    originalEstimateSeconds: z.number().int().nullable(),
-    remainingEstimateSeconds: z.number().int().nullable(),
-    timeSpentSeconds: z.number().int(),
-  }),
 }).meta({ id: 'Issue' });
 export type Issue = z.infer<typeof Issue>;
 

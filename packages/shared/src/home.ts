@@ -74,3 +74,40 @@ export const RecentItem = z
   })
   .meta({ id: 'RecentItem' });
 export type RecentItem = z.infer<typeof RecentItem>;
+
+// ---------------------------------------------------------------- result columns
+
+/**
+ * Optional columns of issue result lists, named like their TQL field (T-QRY-08, E-48).
+ * Key and summary are always shown.
+ */
+export const IssueColumn = z.enum([
+  'issuetype',
+  'status',
+  'priority',
+  'assignee',
+  'reporter',
+  'created',
+  'updated',
+  'due',
+  'resolution',
+  'labels',
+  'component',
+  'storyPoints',
+  'originalEstimate',
+  'remainingEstimate',
+  'timeSpent',
+]);
+export type IssueColumn = z.infer<typeof IssueColumn>;
+
+export const DEFAULT_ISSUE_COLUMNS: IssueColumn[] = ['status', 'assignee', 'updated'];
+
+export const IssueColumns = z
+  .object({
+    columns: z
+      .array(IssueColumn)
+      .max(IssueColumn.options.length)
+      .refine((columns) => new Set(columns).size === columns.length, 'Columns must be unique'),
+  })
+  .meta({ id: 'IssueColumns' });
+export type IssueColumns = z.infer<typeof IssueColumns>;

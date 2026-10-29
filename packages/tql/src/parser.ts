@@ -125,9 +125,11 @@ class Parser {
       where = this.parseOr();
       this.expect({ type: 'keyword', keyword: 'ORDER BY' });
     }
-    const orderBy = this.isKeyword('order') ? this.parseOrderBy() : [];
+    const orderStart = this.isKeyword('order') ? this.peek().start : null;
+    const orderBy = orderStart !== null ? this.parseOrderBy() : [];
+    const orderSpan = orderStart !== null ? { start: orderStart, end: this.peek(-1).end } : null;
     if (!this.atEnd()) this.fail('unexpected-token');
-    return { where, orderBy };
+    return { where, orderBy, orderSpan };
   }
 
   private expectStartOfExpression(): void {

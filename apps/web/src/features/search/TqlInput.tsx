@@ -14,14 +14,16 @@ import { useTranslation } from 'react-i18next';
 import { valueSuggestionsQuery } from '../../lib/search';
 import { useMetaName } from '../tracking/icons';
 
-const META_KIND: Partial<Record<FieldType, 'issueType' | 'status' | 'priority' | 'resolution'>> = {
+export const META_KIND: Partial<
+  Record<FieldType, 'issueType' | 'status' | 'priority' | 'resolution'>
+> = {
   'issue-type': 'issueType',
   status: 'status',
   priority: 'priority',
   resolution: 'resolution',
 };
 
-function useDebounced<T>(value: T, delay: number): T {
+export function useDebounced<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay);

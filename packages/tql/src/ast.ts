@@ -56,4 +56,6 @@ export interface OrderItem {
 export interface Query {
   where: Expression | null;
   orderBy: OrderItem[];
+  /** From `ORDER` to the last sort key; null without ORDER BY. */
+  orderSpan: Span | null;
 }

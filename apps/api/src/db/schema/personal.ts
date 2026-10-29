@@ -1,4 +1,13 @@
-import { index, pgEnum, pgTable, primaryKey, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 
 export const favouriteKind = pgEnum('favourite_kind', ['project', 'filter']);
@@ -40,4 +49,18 @@ export const recentItems = pgTable(
     primaryKey({ columns: [table.userId, table.kind, table.targetId] }),
     index('recent_items_user_idx').on(table.userId, table.viewedAt),
   ],
+);
+
+/** Settings a person makes in the web app, one JSON value per key (e.g. 'issue-columns', E-48). */
+export const userPreferences = pgTable(
+  'user_preferences',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    key: text().notNull(),
+    value: jsonb().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.key] })],
 );

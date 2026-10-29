@@ -773,6 +773,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/issue-columns': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the caller’s columns for issue result lists
+     * @description Key and summary are always shown; these are the further columns, in order.
+     */
+    get: operations['Personal.issueColumns'];
+    /** Choose the caller’s columns for issue result lists */
+    put: operations['Personal.setIssueColumns'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/activity': {
     parameters: {
       query?: never;
@@ -1455,28 +1476,34 @@ export interface components {
       rank: string;
       /** Format: date-time */
       updatedAt: string;
+      reporter: components['schemas']['UserRef'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      components: components['schemas']['ComponentRef'][];
+      timeTracking: components['schemas']['TimeTracking'];
       project: {
         key: string;
         name: string;
       };
       description: components['schemas']['RichText'] | null;
-      resolution: components['schemas']['ResolutionInfo'] | null;
-      reporter: components['schemas']['UserRef'] | null;
       parent: components['schemas']['IssueRef'] | null;
       children: components['schemas']['IssueSummary'][];
-      dueDate: string | null;
-      /** Format: date-time */
-      createdAt: string;
       resolvedAt: string | null;
       watching: boolean;
       watcherCount: number;
-      components: components['schemas']['ComponentRef'][];
       links: components['schemas']['IssueLink'][];
-      timeTracking: {
-        originalEstimateSeconds: number | null;
-        remainingEstimateSeconds: number | null;
-        timeSpentSeconds: number;
-      };
+    };
+    ComponentRef: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+    };
+    TimeTracking: {
+      originalEstimateSeconds: number | null;
+      remainingEstimateSeconds: number | null;
+      timeSpentSeconds: number;
     };
     IssueRef: {
       key: string;
@@ -1496,11 +1523,13 @@ export interface components {
       rank: string;
       /** Format: date-time */
       updatedAt: string;
-    };
-    ComponentRef: {
-      /** Format: uuid */
-      id: string;
-      name: string;
+      reporter: components['schemas']['UserRef'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      components: components['schemas']['ComponentRef'][];
+      timeTracking: components['schemas']['TimeTracking'];
     };
     IssueLink: {
       /** Format: uuid */
@@ -1743,6 +1772,44 @@ export interface components {
       /** Format: date-time */
       viewedAt: string;
       issue?: components['schemas']['IssueSummary'];
+    };
+    IssueColumns: {
+      columns: (
+        | 'issuetype'
+        | 'status'
+        | 'priority'
+        | 'assignee'
+        | 'reporter'
+        | 'created'
+        | 'updated'
+        | 'due'
+        | 'resolution'
+        | 'labels'
+        | 'component'
+        | 'storyPoints'
+        | 'originalEstimate'
+        | 'remainingEstimate'
+        | 'timeSpent'
+      )[];
+    };
+    IssueColumnsInput: {
+      columns: (
+        | 'issuetype'
+        | 'status'
+        | 'priority'
+        | 'assignee'
+        | 'reporter'
+        | 'created'
+        | 'updated'
+        | 'due'
+        | 'resolution'
+        | 'labels'
+        | 'component'
+        | 'storyPoints'
+        | 'originalEstimate'
+        | 'remainingEstimate'
+        | 'timeSpent'
+      )[];
     };
     ActivityPage: {
       entries: components['schemas']['ActivityEntry'][];
@@ -3839,6 +3906,68 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.issueColumns': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueColumns'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.setIssueColumns': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IssueColumnsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueColumns'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

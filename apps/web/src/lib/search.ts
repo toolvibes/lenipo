@@ -18,13 +18,13 @@ export const searchQuery = (query: string, offset: number) =>
     retry: false,
   });
 
-export const valueSuggestionsQuery = (field: string, prefix: string) =>
+export const valueSuggestionsQuery = (field: string, prefix: string, limit = 15) =>
   queryOptions({
-    queryKey: ['search-suggestions', field, prefix],
+    queryKey: ['search-suggestions', field, prefix, limit],
     queryFn: () =>
       unwrap(
         client.GET('/api/v1/search/suggestions', {
-          params: { query: { field, prefix, limit: 15 } },
+          params: { query: { field, prefix, limit } },
         }),
       ),
     staleTime: 30_000,

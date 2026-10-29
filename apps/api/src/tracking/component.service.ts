@@ -222,6 +222,26 @@ export class ComponentService {
       .orderBy(asc(sql`lower(${projectComponents.name})`));
   }
 
+  /** Components of many issues in one query, keyed by issue id. */
+  async refsForMany(issueIds: string[]): Promise<Map<string, ComponentRef[]>> {
+    const byIssue = new Map<string, ComponentRef[]>();
+    if (issueIds.length === 0) return byIssue;
+    const rows = await this.database.db
+      .select({
+        issueId: issueComponents.issueId,
+        id: projectComponents.id,
+        name: projectComponents.name,
+      })
+      .from(issueComponents)
+      .innerJoin(projectComponents, eq(projectComponents.id, issueComponents.componentId))
+      .where(inArray(issueComponents.issueId, issueIds))
+      .orderBy(asc(sql`lower(${projectComponents.name})`));
+    for (const { issueId, ...ref } of rows) {
+      byIssue.set(issueId, [...(byIssue.get(issueId) ?? []), ref]);
+    }
+    return byIssue;
+  }
+
   async replaceOnIssue(tx: Executor, issueId: string, componentIds: string[]): Promise<void> {
     await tx.delete(issueComponents).where(eq(issueComponents.issueId, issueId));
     if (componentIds.length > 0) {

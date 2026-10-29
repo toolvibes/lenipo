@@ -85,6 +85,13 @@
       "when": 1793257806502,
       "tag": "0011_worklogs",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793259096376,
+      "tag": "0012_user_preferences",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ import {
 import type {
   ChangeGroup,
   Comment,
+  ComponentRef,
   CreateCommentRequest,
   CreateIssueLinkRequest,
   CreateIssueRequest,
@@ -116,7 +117,12 @@ export class IssueService {
     return new Map(rows.map((row) => [row.id, row]));
   }
 
-  private toSummary(row: IssueRow, meta: MetaIndex, people: Map<string, UserRef>): IssueSummary {
+  private toSummary(
+    row: IssueRow,
+    meta: MetaIndex,
+    people: Map<string, UserRef>,
+    components: Map<string, ComponentRef[]>,
+  ): IssueSummary {
     const issueType = meta.issueType.get(row.issueTypeId);
     const status = meta.status.get(row.statusId);
     const priority = meta.priority.get(row.priorityId);
@@ -134,14 +140,27 @@ export class IssueService {
       labels: row.labels,
       rank: row.rank,
       updatedAt: row.updatedAt.toISOString(),
+      reporter: row.reporterId ? (people.get(row.reporterId) ?? null) : null,
+      resolution: row.resolutionId ? (meta.resolution.get(row.resolutionId) ?? null) : null,
+      dueDate: row.dueDate,
+      createdAt: row.createdAt.toISOString(),
+      components: components.get(row.id) ?? [],
+      timeTracking: {
+        originalEstimateSeconds: row.originalEstimateSeconds,
+        remainingEstimateSeconds: row.remainingEstimateSeconds,
+        timeSpentSeconds: row.timeSpentSeconds,
+      },
     };
   }
 
-  /** Summaries of issue rows in their order, with assignees resolved in one query. */
+  /** Summaries of issue rows in their order, with people and components read in one query each. */
   async summarize(rows: IssueRow[]): Promise<IssueSummary[]> {
     const meta = await this.meta.load();
-    const people = await this.userRefs(rows.map((row) => row.assigneeId));
-    return rows.map((row) => this.toSummary(row, meta, people));
+    const [people, components] = await Promise.all([
+      this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
+      this.components.refsForMany(rows.map((row) => row.id)),
+    ]);
+    return rows.map((row) => this.toSummary(row, meta, people, components));
   }
 
   async get(principal: Principal, key: string): Promise<Issue> {
@@ -186,34 +205,20 @@ export class IssueService {
       .from(issueWatchers)
       .where(eq(issueWatchers.issueId, issue.id));
     const [people, components, links] = await Promise.all([
-      this.userRefs([
-        issue.assigneeId,
-        issue.reporterId,
-        ...children.map((child) => child.assigneeId),
-      ]),
-      this.components.refsFor(issue.id),
+      this.userRefs([issue, ...children].flatMap((row) => [row.assigneeId, row.reporterId])),
+      this.components.refsForMany([issue.id, ...children.map((child) => child.id)]),
       this.links.linksFor(viewer, issue.id),
     ]);
     return {
-      ...this.toSummary(issue, meta, people),
+      ...this.toSummary(issue, meta, people, components),
       project: { key: project.key, name: project.name },
       description: (issue.description as RichText | null) ?? null,
-      resolution: issue.resolutionId ? (meta.resolution.get(issue.resolutionId) ?? null) : null,
-      reporter: issue.reporterId ? (people.get(issue.reporterId) ?? null) : null,
       parent: parent ?? null,
-      children: children.map((child) => this.toSummary(child, meta, people)),
-      dueDate: issue.dueDate,
-      createdAt: issue.createdAt.toISOString(),
+      children: children.map((child) => this.toSummary(child, meta, people, components)),
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
       watching: watchers.some((watcher) => watcher.userId === viewer),
       watcherCount: watchers.length,
-      components,
       links,
-      timeTracking: {
-        originalEstimateSeconds: issue.originalEstimateSeconds,
-        remainingEstimateSeconds: issue.remainingEstimateSeconds,
-        timeSpentSeconds: issue.timeSpentSeconds,
-      },
     };
   }
 
@@ -259,9 +264,8 @@ export class IssueService {
         .offset(filter.offset),
       this.database.db.select({ total: count() }).from(issues).where(where),
     ]);
-    const people = await this.userRefs(rows.map((row) => row.assigneeId));
     return {
-      issues: rows.map((row) => this.toSummary(row, meta, people)),
+      issues: await this.summarize(rows),
       total: total?.total ?? 0,
     };
   }

@@ -88,7 +88,10 @@ describe('parse', () => {
   });
 
   it('accepts an empty query', () => {
-    expect(parse('   ')).toEqual({ query: { where: null, orderBy: [] }, errors: [] });
+    expect(parse('   ')).toEqual({
+      query: { where: null, orderBy: [], orderSpan: null },
+      errors: [],
+    });
   });
 
   it('reports syntax errors with their position', () => {
