@@ -242,6 +242,7 @@ export class NotificationService {
         and(
           eq(notifications.userId, userId),
           query.unread ? isNull(notifications.readAt) : undefined,
+          query.category ? eq(notifications.category, query.category) : undefined,
           query.before ? lt(notifications.id, query.before) : undefined,
         ),
       )

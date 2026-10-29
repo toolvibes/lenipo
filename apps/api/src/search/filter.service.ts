@@ -21,7 +21,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import {
-  filterFavourites,
+  favourites as favouritesTable,
   filterShares,
   groupMembers,
   groups,
@@ -114,9 +114,15 @@ export class FilterService {
         .leftJoin(projects, eq(projects.id, filterShares.projectId))
         .where(inArray(filterShares.filterId, ids)),
       db
-        .select({ filterId: filterFavourites.filterId })
-        .from(filterFavourites)
-        .where(and(eq(filterFavourites.userId, userId), inArray(filterFavourites.filterId, ids))),
+        .select({ filterId: favouritesTable.targetId })
+        .from(favouritesTable)
+        .where(
+          and(
+            eq(favouritesTable.userId, userId),
+            eq(favouritesTable.kind, 'filter'),
+            inArray(favouritesTable.targetId, ids),
+          ),
+        ),
     ]);
     const ownerById = new Map(owners.map((owner) => [owner.id, owner]));
     const favourite = new Set(favourites.map((entry) => entry.filterId));
@@ -169,11 +175,12 @@ export class FilterService {
       favourites: exists(
         this.database.db
           .select({ one: sql`1` })
-          .from(filterFavourites)
+          .from(favouritesTable)
           .where(
             and(
-              eq(filterFavourites.filterId, savedFilters.id),
-              eq(filterFavourites.userId, userId),
+              eq(favouritesTable.kind, 'filter'),
+              eq(favouritesTable.targetId, savedFilters.id),
+              eq(favouritesTable.userId, userId),
             ),
           ),
       ),
@@ -280,7 +287,9 @@ export class FilterService {
         });
         await this.replaceShares(tx, id, shares);
         if (request.favourite) {
-          await tx.insert(filterFavourites).values({ userId: principal.userId, filterId: id });
+          await tx
+            .insert(favouritesTable)
+            .values({ userId: principal.userId, kind: 'filter', targetId: id });
         }
       });
     } catch (error) {
@@ -342,7 +351,13 @@ export class FilterService {
     ) {
       throw new ForbiddenException('Only the owner can delete this filter');
     }
-    await this.database.db.delete(savedFilters).where(eq(savedFilters.id, id));
+    await this.database.db.transaction(async (tx) => {
+      await tx.delete(savedFilters).where(eq(savedFilters.id, id));
+      // The generic favourites table has no foreign key to filters (E-46).
+      await tx
+        .delete(favouritesTable)
+        .where(and(eq(favouritesTable.kind, 'filter'), eq(favouritesTable.targetId, id)));
+    });
   }
 
   async setFavourite(principal: Principal, id: string, favourite: boolean): Promise<void> {
@@ -351,14 +366,18 @@ export class FilterService {
     const db = this.database.db;
     if (favourite) {
       await db
-        .insert(filterFavourites)
-        .values({ userId: principal.userId, filterId: id })
+        .insert(favouritesTable)
+        .values({ userId: principal.userId, kind: 'filter', targetId: id })
         .onConflictDoNothing();
     } else {
       await db
-        .delete(filterFavourites)
+        .delete(favouritesTable)
         .where(
-          and(eq(filterFavourites.userId, principal.userId), eq(filterFavourites.filterId, id)),
+          and(
+            eq(favouritesTable.userId, principal.userId),
+            eq(favouritesTable.kind, 'filter'),
+            eq(favouritesTable.targetId, id),
+          ),
         );
     }
   }

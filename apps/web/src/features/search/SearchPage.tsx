@@ -146,6 +146,7 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
       ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['filter', filterId] });
+      await queryClient.invalidateQueries({ queryKey: ['favourites'] });
       await refreshFilters();
     },
   });

@@ -1,19 +1,22 @@
 import {
   FolderSimple,
+  Funnel,
   House,
   type Icon,
+  Lightning,
   ListMagnifyingGlass,
   MagnifyingGlass,
   NotePencil,
   SignOut,
   WebhooksLogo,
 } from '@phosphor-icons/react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
+import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { CommandPalette } from './CommandPalette';
@@ -42,6 +45,45 @@ function NavItem({
         </>
       )}
     </Link>
+  );
+}
+
+/** Starred projects and filters for one-click access (P-GEN-05). */
+function Favourites() {
+  const { t } = useTranslation();
+  const favourites = useQuery(favouritesQuery);
+  if (!favourites.data || favourites.data.length === 0) return null;
+  const item =
+    'flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+        {t('favourites.title')}
+      </span>
+      {favourites.data.map((favourite) =>
+        favourite.kind === 'project' ? (
+          <Link
+            key={`project:${favourite.id}`}
+            to="/projects/$key"
+            params={{ key: favourite.ref }}
+            className={item}
+          >
+            <FolderSimple size={20} aria-hidden />
+            <span className="truncate">{favourite.name}</span>
+          </Link>
+        ) : (
+          <Link
+            key={`filter:${favourite.id}`}
+            to="/issues"
+            search={{ filter: favourite.ref }}
+            className={item}
+          >
+            <Funnel size={20} aria-hidden />
+            <span className="truncate">{favourite.name}</span>
+          </Link>
+        ),
+      )}
+    </div>
   );
 }
 
@@ -94,8 +136,10 @@ export function AppShell({ me }: { me: Me }) {
           <NavItem to="/" icon={House} label={t('shell.home')} />
           <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
           <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
+          <NavItem to="/activity" icon={Lightning} label={t('activity.title')} />
           <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
         </div>
+        <Favourites />
         {me.globalPermissions.includes('admin') && (
           <div className="flex flex-col gap-0.5">
             <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">

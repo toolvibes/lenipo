@@ -11,6 +11,7 @@ import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { PageView } from './features/pages/PageView';
+import { ActivityPage } from './features/personal/ActivityPage';
 import { SearchPage } from './features/search/SearchPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
@@ -127,6 +128,20 @@ const issueRoute = createRoute({
   },
 });
 
+const activityRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/activity',
+  validateSearch: (search: Record<string, unknown>): { project?: string; user?: string } => ({
+    project: typeof search.project === 'string' ? search.project : undefined,
+    user: typeof search.user === 'string' ? search.user : undefined,
+  }),
+  component: function Activity() {
+    const { me } = activityRoute.useRouteContext();
+    const { project, user } = activityRoute.useSearch();
+    return <ActivityPage me={me} project={project} user={user} />;
+  },
+});
+
 /** Administration needs the global permission "admin"; the API checks it again. */
 const adminRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -162,6 +177,7 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     searchRoute,
     issueRoute,
+    activityRoute,
     adminRoute.addChildren([webhooksRoute, webhookRoute]),
   ]),
 ]);

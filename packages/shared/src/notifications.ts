@@ -45,6 +45,8 @@ export type NotificationList = z.infer<typeof NotificationList>;
 
 export const NotificationListQuery = z.object({
   unread: z.stringbool().default(false),
+  /** Only this category, e.g. mentions for the home page. */
+  category: NotificationCategory.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
   /** Older than this notification id, for paging. */
   before: z.coerce.number().int().positive().optional(),

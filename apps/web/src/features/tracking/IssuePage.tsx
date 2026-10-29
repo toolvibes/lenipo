@@ -6,6 +6,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
+import { useRecordView } from '../../lib/personal';
 import {
   commentsQuery,
   historyQuery,
@@ -378,6 +379,8 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
   const meta = useQuery(trackingMetaQuery);
   const [editingDescription, setEditingDescription] = useState(false);
   const [pickingAssignee, setPickingAssignee] = useState(false);
+  // Only once the issue loaded, so missing or hidden issues are not recorded.
+  useRecordView('issue', issue.data?.key);
 
   const refresh = (updated: Issue) => {
     queryClient.setQueryData(issueQuery(issueKey).queryKey, updated);

@@ -3,7 +3,6 @@ import {
   index,
   pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   unique,
@@ -58,18 +57,4 @@ export const filterShares = pgTable(
       .on(table.filterId, table.type, table.userId, table.groupId, table.projectId)
       .nullsNotDistinct(),
   ],
-);
-
-export const filterFavourites = pgTable(
-  'filter_favourites',
-  {
-    userId: uuid()
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    filterId: uuid()
-      .notNull()
-      .references(() => savedFilters.id, { onDelete: 'cascade' }),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [primaryKey({ columns: [table.userId, table.filterId] })],
 );

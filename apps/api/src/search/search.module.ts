@@ -9,5 +9,6 @@ import { SearchService } from './search.service.js';
   imports: [IdentityModule, TrackingModule],
   controllers: [SearchController],
   providers: [SearchService, FilterService],
+  exports: [FilterService],
 })
 export class SearchModule {}

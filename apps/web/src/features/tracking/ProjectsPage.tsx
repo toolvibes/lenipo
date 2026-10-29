@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { projectsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
+import { FavouriteButton } from '../personal/FavouriteButton';
 import { CreateProjectDialog } from './CreateProjectDialog';
 
 export function ProjectsPage({ me }: { me: Me }) {
@@ -42,10 +43,16 @@ export function ProjectsPage({ me }: { me: Me }) {
                 <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)] font-bold text-[var(--on-accent)]">
                   {project.key[0]}
                 </span>
-                <div className="flex min-w-0 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col">
                   <strong className="truncate font-semibold">{project.name}</strong>
                   <span className="tl-key text-[var(--ink-muted)]">{project.key}</span>
                 </div>
+                <FavouriteButton
+                  kind="project"
+                  refId={project.key}
+                  active={project.favourite}
+                  name={project.name}
+                />
               </div>
               <span className="text-xs text-[var(--ink-muted)]">
                 {t('projects.issues', { count: project.issueCount })}

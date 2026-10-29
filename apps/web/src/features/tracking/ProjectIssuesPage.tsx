@@ -4,8 +4,10 @@ import { Link } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRecordView } from '../../lib/personal';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
+import { FavouriteButton } from '../personal/FavouriteButton';
 import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueTable } from './IssueTable';
@@ -23,6 +25,7 @@ const PRESETS: Record<Preset, IssueFilter> = {
 export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: string }) {
   const { t } = useTranslation();
   const project = useQuery(projectQuery(projectKey));
+  useRecordView('project', project.data?.key);
   const [preset, setPreset] = useState<Preset>('open');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -64,7 +67,24 @@ export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: stri
           >
             {t('projects.title')}
           </Link>
-          <h1 className="tl-heading-xl">{project.data?.name ?? projectKey}</h1>
+          <h1 className="tl-heading-xl flex items-center gap-2">
+            {project.data?.name ?? projectKey}
+            {project.data && (
+              <FavouriteButton
+                kind="project"
+                refId={project.data.key}
+                active={project.data.favourite}
+                name={project.data.name}
+              />
+            )}
+          </h1>
+          <Link
+            to="/activity"
+            search={{ project: projectKey }}
+            className="text-xs text-[var(--ink-muted)] no-underline hover:underline"
+          >
+            {t('activity.ofProject')}
+          </Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {project.data?.permissions.includes('administer') && (

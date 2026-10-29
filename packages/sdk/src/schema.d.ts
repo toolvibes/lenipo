@@ -649,6 +649,85 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/favourites': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the caller’s favourites
+     * @description Projects and saved filters; items the caller can no longer see are left out.
+     */
+    get: operations['Personal.favourites'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/favourites/{kind}/{ref}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Star a project (key) or saved filter (id) */
+    put: operations['Personal.star'];
+    post?: never;
+    /** Remove a favourite */
+    delete: operations['Personal.unstar'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/recent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List recently opened issues and projects, newest first */
+    get: operations['Personal.recent'];
+    put?: never;
+    /**
+     * Remember that the caller opened an issue or project
+     * @description Sent by the web app when a page opens; scripts normally do not call it (E-46).
+     */
+    post: operations['Personal.record'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/activity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Activity stream: new issues, changes and comments, newest first
+     * @description Optionally for one project or one person; page with `before` = `next`.
+     */
+    get: operations['Personal.stream'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects': {
     parameters: {
       query?: never;
@@ -1467,6 +1546,8 @@ export interface components {
       lastUsedAt: string | null;
       secret: string;
     };
+    /** @enum {string} */
+    NotificationCategory: 'mention' | 'assigned' | 'comment' | 'status' | 'other';
     NotificationList: {
       notifications: components['schemas']['Notification'][];
       unreadCount: number;
@@ -1484,8 +1565,6 @@ export interface components {
       createdAt: string;
       read: boolean;
     };
-    /** @enum {string} */
-    NotificationCategory: 'mention' | 'assigned' | 'comment' | 'status' | 'other';
     NotificationDetails: {
       /** @enum {string} */
       kind: 'created' | 'updated' | 'commented';
@@ -1513,6 +1592,55 @@ export interface components {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
     };
+    Favourite: {
+      kind: components['schemas']['FavouriteKind'];
+      /** Format: uuid */
+      id: string;
+      ref: string;
+      name: string;
+    };
+    /** @enum {string} */
+    FavouriteKind: 'project' | 'filter';
+    RecordRecentRequest: {
+      kind: components['schemas']['RecentKind'];
+      ref: string;
+    };
+    /** @enum {string} */
+    RecentKind: 'issue' | 'project';
+    RecentItem: {
+      kind: components['schemas']['RecentKind'];
+      ref: string;
+      name: string;
+      /** Format: date-time */
+      viewedAt: string;
+      issue?: components['schemas']['IssueSummary'];
+    };
+    ActivityPage: {
+      entries: components['schemas']['ActivityEntry'][];
+      next: string | null;
+    };
+    ActivityEntry: {
+      id: string;
+      /** @enum {string} */
+      kind: 'created' | 'updated' | 'commented';
+      actor: components['schemas']['UserRef'] | null;
+      issue: {
+        key: string;
+        summary: string;
+      };
+      project: {
+        key: string;
+        name: string;
+      };
+      items: {
+        field: string;
+        from: string | null;
+        to: string | null;
+      }[];
+      excerpt?: string;
+      /** Format: date-time */
+      at: string;
+    };
     ProjectSummary: {
       /** Format: uuid */
       id: string;
@@ -1524,6 +1652,7 @@ export interface components {
       issueCount: number;
       /** Format: date-time */
       createdAt: string;
+      favourite: boolean;
     };
     /** @enum {string} */
     ProjectTemplate: 'scrum' | 'kanban' | 'basic' | 'bugs';
@@ -1545,6 +1674,7 @@ export interface components {
       issueCount: number;
       /** Format: date-time */
       createdAt: string;
+      favourite: boolean;
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
@@ -3092,6 +3222,7 @@ export interface operations {
     parameters: {
       query?: {
         unread?: string;
+        category?: components['schemas']['NotificationCategory'];
         limit?: number;
         before?: number;
       };
@@ -3230,6 +3361,191 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['NotificationSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.favourites': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Favourite'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.star': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kind: string;
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.unstar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kind: string;
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.recent': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecentItem'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.record': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RecordRecentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Personal.stream': {
+    parameters: {
+      query?: {
+        project?: string;
+        user?: string;
+        before?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ActivityPage'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

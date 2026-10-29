@@ -19,6 +19,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, isUniqueViolation } from '../db/client.js';
 import {
+  favourites,
   groups,
   issues,
   projectHiddenIssueTypes,
@@ -112,12 +113,15 @@ export class ProjectService {
         project: projects,
         leadName: users.displayName,
         issueCount: sql<number>`(select count(*)::int from ${issues} where ${issues.projectId} = ${projects.id} and ${issues.deletedAt} is null)`,
+        favourite: sql<boolean>`exists (select 1 from ${favourites} where ${favourites.userId} = ${principal.userId} and ${favourites.kind} = 'project' and ${favourites.targetId} = ${projects.id})`,
       })
       .from(projects)
       .leftJoin(users, eq(users.id, projects.leadId))
       .where(await this.projectAccess.browsableCondition(principal.userId))
       .orderBy(projects.name);
-    return rows.map((row) => this.summary(row.project, row.leadName, row.issueCount));
+    return rows.map((row) =>
+      this.summary(row.project, row.leadName, row.issueCount, row.favourite),
+    );
   }
 
   /** Finds a project the principal may browse; otherwise 404. */
@@ -147,8 +151,18 @@ export class ProjectService {
       .where(and(eq(issues.projectId, project.id), sql`${issues.deletedAt} is null`));
     const definition = await this.workflow(project.workflowVersionId);
     const hidden = new Set(await this.hiddenIssueTypeIds(project.id));
+    const [favourite] = await this.database.db
+      .select({ targetId: favourites.targetId })
+      .from(favourites)
+      .where(
+        and(
+          eq(favourites.userId, principal.userId),
+          eq(favourites.kind, 'project'),
+          eq(favourites.targetId, project.id),
+        ),
+      );
     return {
-      ...this.summary(project, lead?.name ?? null, issueCount?.total ?? 0),
+      ...this.summary(project, lead?.name ?? null, issueCount?.total ?? 0, !!favourite),
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: definition.statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),
@@ -176,6 +190,7 @@ export class ProjectService {
     project: ProjectRow,
     leadName: string | null,
     issueCount: number,
+    favourite: boolean,
   ): ProjectSummary {
     return {
       id: project.id,
@@ -186,6 +201,7 @@ export class ProjectService {
       lead: project.leadId && leadName ? { id: project.leadId, displayName: leadName } : null,
       issueCount,
       createdAt: project.createdAt.toISOString(),
+      favourite,
     };
   }
 }

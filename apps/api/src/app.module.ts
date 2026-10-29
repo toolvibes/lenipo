@@ -10,6 +10,7 @@ import { EventsModule } from './events/events.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
+import { PersonalModule } from './personal/personal.module.js';
 import { SearchModule } from './search/search.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
@@ -34,6 +35,7 @@ export class AppModule {
         TrackingModule,
         SearchModule,
         EventsModule,
+        PersonalModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

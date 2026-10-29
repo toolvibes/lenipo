@@ -64,6 +64,20 @@
       "when": 1793255647557,
       "tag": "0008_webhooks",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793256748810,
+      "tag": "0009_favourites_recent",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793256750572,
+      "tag": "0010_drop_filter_favourites",
+      "breakpoints": true
     }
   ]
 }

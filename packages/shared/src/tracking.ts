@@ -114,6 +114,8 @@ export const ProjectSummary = z
     lead: UserRef.nullable(),
     issueCount: z.number().int(),
     createdAt: z.iso.datetime(),
+    /** Starred by the caller (P-GEN-05). */
+    favourite: z.boolean(),
   })
   .meta({ id: 'ProjectSummary' });
 export type ProjectSummary = z.infer<typeof ProjectSummary>;

@@ -1695,6 +1695,14 @@
             }
           },
           {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/NotificationCategory"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -1851,6 +1859,266 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/favourites": {
+      "get": {
+        "operationId": "Personal.favourites",
+        "summary": "List the caller’s favourites",
+        "description": "Projects and saved filters; items the caller can no longer see are left out.",
+        "tags": ["Personal"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Favourite"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/favourites/{kind}/{ref}": {
+      "put": {
+        "operationId": "Personal.star",
+        "summary": "Star a project (key) or saved filter (id)",
+        "tags": ["Personal"],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Personal.unstar",
+        "summary": "Remove a favourite",
+        "tags": ["Personal"],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/recent": {
+      "post": {
+        "operationId": "Personal.record",
+        "summary": "Remember that the caller opened an issue or project",
+        "description": "Sent by the web app when a page opens; scripts normally do not call it (E-46).",
+        "tags": ["Personal"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordRecentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Personal.recent",
+        "summary": "List recently opened issues and projects, newest first",
+        "tags": ["Personal"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecentItem"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity": {
+      "get": {
+        "operationId": "Personal.stream",
+        "summary": "Activity stream: new issues, changes and comments, newest first",
+        "description": "Optionally for one project or one person; page with `before` = `next`.",
+        "tags": ["Personal"],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20
+            }
+          },
+          {
+            "name": "user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityPage"
                 }
               }
             }
@@ -4651,6 +4919,10 @@
         ],
         "additionalProperties": false
       },
+      "NotificationCategory": {
+        "type": "string",
+        "enum": ["mention", "assigned", "comment", "status", "other"]
+      },
       "NotificationList": {
         "type": "object",
         "properties": {
@@ -4717,10 +4989,6 @@
         },
         "required": ["id", "issue", "actor", "category", "details", "createdAt", "read"],
         "additionalProperties": false
-      },
-      "NotificationCategory": {
-        "type": "string",
-        "enum": ["mention", "assigned", "comment", "status", "other"]
       },
       "NotificationDetails": {
         "type": "object",
@@ -4819,6 +5087,175 @@
         },
         "required": ["emailEnabled", "emailCategories"]
       },
+      "Favourite": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/FavouriteKind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["kind", "id", "ref", "name"],
+        "additionalProperties": false
+      },
+      "FavouriteKind": {
+        "type": "string",
+        "enum": ["project", "filter"]
+      },
+      "RecordRecentRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecentKind"
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": ["kind", "ref"]
+      },
+      "RecentKind": {
+        "type": "string",
+        "enum": ["issue", "project"]
+      },
+      "RecentItem": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecentKind"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "viewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/IssueSummary"
+          }
+        },
+        "required": ["kind", "ref", "name", "viewedAt"],
+        "additionalProperties": false
+      },
+      "ActivityPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEntry"
+            }
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["entries", "next"],
+        "additionalProperties": false
+      },
+      "ActivityEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["created", "updated", "commented"]
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issue": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "summary"],
+            "additionalProperties": false
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "name"],
+            "additionalProperties": false
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": ["string", "null"]
+                },
+                "to": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["field", "from", "to"],
+              "additionalProperties": false
+            }
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": ["id", "kind", "actor", "issue", "project", "items", "at"],
+        "additionalProperties": false
+      },
       "ProjectSummary": {
         "type": "object",
         "properties": {
@@ -4858,6 +5295,9 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "favourite": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -4868,7 +5308,8 @@
           "template",
           "lead",
           "issueCount",
-          "createdAt"
+          "createdAt",
+          "favourite"
         ],
         "additionalProperties": false
       },
@@ -4939,6 +5380,9 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "favourite": {
+            "type": "boolean"
+          },
           "issueTypes": {
             "type": "array",
             "items": {
@@ -4967,6 +5411,7 @@
           "lead",
           "issueCount",
           "createdAt",
+          "favourite",
           "issueTypes",
           "statuses",
           "permissions"
