@@ -7,6 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
+import { ISSUE_KEY } from '@tasklore/tql';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
@@ -95,27 +96,41 @@ const projectsRoute = createRoute({
   },
 });
 
+/** An issue key for the detail beside a list (E-49); anything else is dropped. */
+function selectedKey(value: unknown): string | undefined {
+  return typeof value === 'string' && ISSUE_KEY.test(value) ? value.toUpperCase() : undefined;
+}
+
 const projectRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/projects/$key',
+  validateSearch: (search: Record<string, unknown>): { selected?: string } => ({
+    selected: selectedKey(search.selected),
+  }),
   component: function Project() {
     const { me } = projectRoute.useRouteContext();
     const { key } = projectRoute.useParams();
-    return <ProjectIssuesPage key={key} me={me} projectKey={key.toUpperCase()} />;
+    const { selected } = projectRoute.useSearch();
+    return (
+      <ProjectIssuesPage key={key} me={me} projectKey={key.toUpperCase()} selected={selected} />
+    );
   },
 });
 
 const searchRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/issues',
-  validateSearch: (search: Record<string, unknown>): { q?: string; filter?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { q?: string; filter?: string; selected?: string } => ({
     q: typeof search.q === 'string' ? search.q : undefined,
     filter: typeof search.filter === 'string' ? search.filter : undefined,
+    selected: selectedKey(search.selected),
   }),
   component: function Search() {
     const { me } = searchRoute.useRouteContext();
-    const { q, filter } = searchRoute.useSearch();
-    return <SearchPage me={me} q={q} filterId={filter} />;
+    const { q, filter, selected } = searchRoute.useSearch();
+    return <SearchPage me={me} q={q} filterId={filter} selected={selected} />;
   },
 });
 

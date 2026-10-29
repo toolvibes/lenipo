@@ -4533,6 +4533,19 @@
           "key": {
             "type": "string"
           },
+          "project": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "name"],
+            "additionalProperties": false
+          },
           "summary": {
             "type": "string"
           },
@@ -4618,18 +4631,14 @@
           "timeTracking": {
             "$ref": "#/components/schemas/TimeTracking"
           },
-          "project": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": ["key", "name"],
-            "additionalProperties": false
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canAssign": {
+            "type": "boolean"
+          },
+          "canTransition": {
+            "type": "boolean"
           },
           "description": {
             "anyOf": [
@@ -4687,6 +4696,7 @@
         "required": [
           "id",
           "key",
+          "project",
           "summary",
           "issueType",
           "status",
@@ -4702,7 +4712,9 @@
           "createdAt",
           "components",
           "timeTracking",
-          "project",
+          "canEdit",
+          "canAssign",
+          "canTransition",
           "description",
           "parent",
           "children",
@@ -4788,6 +4800,19 @@
           "key": {
             "type": "string"
           },
+          "project": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "name"],
+            "additionalProperties": false
+          },
           "summary": {
             "type": "string"
           },
@@ -4872,11 +4897,21 @@
           },
           "timeTracking": {
             "$ref": "#/components/schemas/TimeTracking"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canAssign": {
+            "type": "boolean"
+          },
+          "canTransition": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "key",
+          "project",
           "summary",
           "issueType",
           "status",
@@ -4891,7 +4926,10 @@
           "dueDate",
           "createdAt",
           "components",
-          "timeTracking"
+          "timeTracking",
+          "canEdit",
+          "canAssign",
+          "canTransition"
         ],
         "additionalProperties": false
       },

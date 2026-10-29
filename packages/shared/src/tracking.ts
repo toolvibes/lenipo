@@ -204,6 +204,7 @@ export const IssueSummary = z
   .object({
     id: Id,
     key: z.string(),
+    project: z.object({ key: z.string(), name: z.string() }),
     summary: z.string(),
     issueType: IssueTypeInfo,
     status: StatusInfo,
@@ -220,6 +221,10 @@ export const IssueSummary = z
     createdAt: z.iso.datetime(),
     components: z.array(ComponentRef),
     timeTracking: TimeTracking,
+    /** What the caller may change in lists (E-49); the API checks again on every change. */
+    canEdit: z.boolean(),
+    canAssign: z.boolean(),
+    canTransition: z.boolean(),
   })
   .meta({ id: 'IssueSummary' });
 export type IssueSummary = z.infer<typeof IssueSummary>;
@@ -290,7 +295,6 @@ export const UpdateComponentRequest = z
 export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
 
 export const Issue = IssueSummary.extend({
-  project: z.object({ key: z.string(), name: z.string() }),
   description: RichText.nullable(),
   parent: IssueRef.nullable(),
   children: z.array(IssueSummary),

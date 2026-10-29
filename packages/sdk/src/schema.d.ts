@@ -1466,6 +1466,10 @@ export interface components {
       /** Format: uuid */
       id: string;
       key: string;
+      project: {
+        key: string;
+        name: string;
+      };
       summary: string;
       issueType: components['schemas']['IssueTypeInfo'];
       status: components['schemas']['StatusInfo'];
@@ -1483,10 +1487,9 @@ export interface components {
       createdAt: string;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
-      project: {
-        key: string;
-        name: string;
-      };
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
       description: components['schemas']['RichText'] | null;
       parent: components['schemas']['IssueRef'] | null;
       children: components['schemas']['IssueSummary'][];
@@ -1513,6 +1516,10 @@ export interface components {
       /** Format: uuid */
       id: string;
       key: string;
+      project: {
+        key: string;
+        name: string;
+      };
       summary: string;
       issueType: components['schemas']['IssueTypeInfo'];
       status: components['schemas']['StatusInfo'];
@@ -1530,6 +1537,9 @@ export interface components {
       createdAt: string;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
     };
     IssueLink: {
       /** Format: uuid */

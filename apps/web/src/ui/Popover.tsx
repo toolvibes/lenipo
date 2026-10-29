@@ -1,14 +1,21 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import * as RadixPopover from '@radix-ui/react-popover';
+import type { ReactNode } from 'react';
+
+const TRIGGER =
+  'flex h-[var(--control-sm)] max-w-64 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2.5 hover:bg-[var(--surface-2)] data-[active=true]:border-[var(--accent)] data-[active=true]:bg-[var(--accent-soft)] data-[active=true]:text-[var(--accent)]';
 
 /**
- * A button that opens a floating panel below it; a click outside or Escape closes it and
- * Escape returns focus to the button.
+ * A button that opens a floating panel below it, rendered in a portal so table cells and
+ * scroll containers do not clip it; Escape and a click outside close it.
  */
 export function Popover({
   trigger,
   label,
   active = false,
-  align = 'left',
+  align = 'start',
+  disabled = false,
+  triggerClassName = TRIGGER,
+  triggerLabel,
   children,
 }: {
   trigger: ReactNode;
@@ -16,57 +23,36 @@ export function Popover({
   label: string;
   /** Highlights the button, e.g. while a filter is set. */
   active?: boolean;
-  align?: 'left' | 'right';
+  align?: 'start' | 'end';
+  disabled?: boolean;
+  triggerClassName?: string;
+  /** Accessible name of the button when its content does not say it. */
+  triggerLabel?: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const container = useRef<HTMLDivElement>(null);
-  const button = useRef<HTMLButtonElement>(null);
-  const panelId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    const onMouseDown = (event: MouseEvent) => {
-      if (!container.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setOpen(false);
-      button.current?.focus();
-    };
-    document.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
-
   return (
-    <div ref={container} className="relative">
-      <button
-        ref={button}
+    <RadixPopover.Root>
+      <RadixPopover.Trigger
         type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        aria-label={triggerLabel}
         data-active={active}
-        className="flex h-[var(--control-sm)] max-w-64 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2.5 hover:bg-[var(--surface-2)] data-[active=true]:border-[var(--accent)] data-[active=true]:bg-[var(--accent-soft)] data-[active=true]:text-[var(--accent)]"
+        className={triggerClassName}
       >
         {trigger}
-      </button>
-      {open && (
-        <fieldset
-          id={panelId}
-          className={`absolute top-full z-20 m-0 mt-1 flex max-h-80 w-64 flex-col overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] ${
-            align === 'right' ? 'right-0' : 'left-0'
-          }`}
+      </RadixPopover.Trigger>
+      <RadixPopover.Portal>
+        <RadixPopover.Content
+          aria-label={label}
+          align={align}
+          sideOffset={4}
+          collisionPadding={8}
+          className="z-50 flex max-h-[min(20rem,var(--radix-popover-content-available-height))] w-64 flex-col overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] shadow-[var(--shadow-float)]"
         >
-          <legend className="sr-only">{label}</legend>
           {children}
-        </fieldset>
-      )}
-    </div>
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
   );
 }
 

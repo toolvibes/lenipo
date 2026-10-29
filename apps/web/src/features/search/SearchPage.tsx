@@ -16,6 +16,7 @@ import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTable } from '../tracking/IssueTable';
 import { BasicSearch } from './BasicSearch';
 import { ColumnPicker } from './ColumnPicker';
@@ -88,7 +89,17 @@ function FilterList({
 }
 
 /** Issue search with TQL, saved filters and default filters (T-QRY-01 to -06). */
-export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?: string }) {
+export function SearchPage({
+  me,
+  q,
+  filterId,
+  selected,
+}: {
+  me: Me;
+  q?: string;
+  filterId?: string;
+  selected?: string;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -138,6 +149,16 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
         : String(results.error)
       : null;
 
+  const wide = useWideScreen();
+  /** Shows an issue beside the results, or closes it (E-49). */
+  function select(key: string | undefined) {
+    void navigate({
+      to: '/issues',
+      search: (previous) => ({ ...previous, selected: key }),
+      replace: true,
+    });
+  }
+
   /** Shows the results of a query; an open filter stays open, marked as changed. */
   function apply(query: string) {
     if (query === applied) {
@@ -147,7 +168,11 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
     const stored = filter.data?.query;
     void navigate({
       to: '/issues',
-      search: { filter: filterId, q: filterId && query === stored ? undefined : query },
+      search: {
+        filter: filterId,
+        q: filterId && query === stored ? undefined : query,
+        selected,
+      },
     });
   }
 
@@ -409,55 +434,59 @@ export function SearchPage({ me, q, filterId }: { me: Me; q?: string; filterId?:
 
         {otherError && <FormError message={otherError} />}
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* An empty result is shown in the table; the live region still announces it. */}
-          <span
-            className={`text-xs text-[var(--ink-muted)] ${page?.total === 0 ? 'sr-only' : ''}`}
-            aria-live="polite"
-          >
-            {page &&
-              (page.total === 0
-                ? t('search.noResults')
-                : t('search.range', {
-                    from: page.offset + 1,
-                    to: page.offset + page.issues.length,
-                    total: page.total,
-                  }))}
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {page && page.total > SEARCH_PAGE_SIZE && (
-              <nav aria-label={t('search.pagination')} className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={offset === 0}
-                  onClick={() => setOffset(Math.max(0, offset - SEARCH_PAGE_SIZE))}
-                >
-                  <CaretLeft size={14} aria-hidden />
-                  {t('search.previous')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={offset + SEARCH_PAGE_SIZE >= page.total}
-                  onClick={() => setOffset(offset + SEARCH_PAGE_SIZE)}
-                >
-                  {t('search.next')}
-                  <CaretRight size={14} aria-hidden />
-                </Button>
-              </nav>
-            )}
-            <ColumnPicker columns={columns} />
+        <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* An empty result is shown in the table; the live region still announces it. */}
+            <span
+              className={`text-xs text-[var(--ink-muted)] ${page?.total === 0 ? 'sr-only' : ''}`}
+              aria-live="polite"
+            >
+              {page &&
+                (page.total === 0
+                  ? t('search.noResults')
+                  : t('search.range', {
+                      from: page.offset + 1,
+                      to: page.offset + page.issues.length,
+                      total: page.total,
+                    }))}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {page && page.total > SEARCH_PAGE_SIZE && (
+                <nav aria-label={t('search.pagination')} className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={offset === 0}
+                    onClick={() => setOffset(Math.max(0, offset - SEARCH_PAGE_SIZE))}
+                  >
+                    <CaretLeft size={14} aria-hidden />
+                    {t('search.previous')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={offset + SEARCH_PAGE_SIZE >= page.total}
+                    onClick={() => setOffset(offset + SEARCH_PAGE_SIZE)}
+                  >
+                    {t('search.next')}
+                    <CaretRight size={14} aria-hidden />
+                  </Button>
+                </nav>
+              )}
+              <ColumnPicker columns={columns} />
+            </div>
           </div>
-        </div>
 
-        <IssueTable
-          issues={page?.issues ?? []}
-          empty={page && !results.error ? t('search.noResults') : null}
-          columns={columns}
-          sort={sort}
-          onSort={results.error ? undefined : sortBy}
-        />
+          <IssueTable
+            issues={page?.issues ?? []}
+            empty={page && !results.error ? t('search.noResults') : null}
+            columns={columns}
+            sort={sort}
+            onSort={results.error ? undefined : sortBy}
+            selectedKey={selected}
+            onSelect={wide ? select : undefined}
+          />
+        </IssueSplit>
       </div>
 
       <SaveFilterDialog

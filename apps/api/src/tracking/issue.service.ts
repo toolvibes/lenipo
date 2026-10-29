@@ -55,6 +55,14 @@ import { WorkingTimeService } from './working-time.service.js';
 /** Issue columns without the search vector, which only the database reads. */
 type IssueRow = Omit<typeof issues.$inferSelect, 'searchVector'>;
 
+interface SummaryContext {
+  meta: MetaIndex;
+  people: Map<string, UserRef>;
+  components: Map<string, ComponentRef[]>;
+  projects: Map<string, { key: string; name: string }>;
+  rights: Map<string, Set<ProjectPermission>>;
+}
+
 export interface IssueListFilter {
   statusCategory?: 'todo' | 'in_progress' | 'done' | 'unresolved';
   assignee?: string;
@@ -117,20 +125,19 @@ export class IssueService {
     return new Map(rows.map((row) => [row.id, row]));
   }
 
-  private toSummary(
-    row: IssueRow,
-    meta: MetaIndex,
-    people: Map<string, UserRef>,
-    components: Map<string, ComponentRef[]>,
-  ): IssueSummary {
+  private toSummary(row: IssueRow, context: SummaryContext): IssueSummary {
+    const { meta, people, components } = context;
     const issueType = meta.issueType.get(row.issueTypeId);
     const status = meta.status.get(row.statusId);
     const priority = meta.priority.get(row.priorityId);
-    if (!issueType || !status || !priority)
+    const project = context.projects.get(row.projectId);
+    if (!issueType || !status || !priority || !project)
       throw new Error(`Issue ${row.key} references unknown metadata`);
+    const rights = context.rights.get(row.projectId) ?? new Set();
     return {
       id: row.id,
       key: row.key,
+      project,
       summary: row.summary,
       issueType,
       status,
@@ -150,17 +157,53 @@ export class IssueService {
         remainingEstimateSeconds: row.remainingEstimateSeconds,
         timeSpentSeconds: row.timeSpentSeconds,
       },
+      canEdit: rights.has('edit-issues'),
+      canAssign: rights.has('assign-issues'),
+      canTransition: rights.has('transition-issues'),
     };
   }
 
-  /** Summaries of issue rows in their order, with people and components read in one query each. */
-  async summarize(rows: IssueRow[]): Promise<IssueSummary[]> {
-    const meta = await this.meta.load();
-    const [people, components] = await Promise.all([
+  /**
+   * What summaries of these rows need, one query per kind; `viewer` decides the rights
+   * flags (E-49), null (e.g. webhook payloads) has none.
+   */
+  private async summaryContext(viewer: string | null, rows: IssueRow[]): Promise<SummaryContext> {
+    const projectIds = [...new Set(rows.map((row) => row.projectId))];
+    const [meta, people, components, projectRows, rights] = await Promise.all([
+      this.meta.load(),
       this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
       this.components.refsForMany(rows.map((row) => row.id)),
+      projectIds.length > 0
+        ? this.database.db
+            .select({ id: projects.id, key: projects.key, name: projects.name })
+            .from(projects)
+            .where(inArray(projects.id, projectIds))
+        : [],
+      Promise.all(
+        projectIds.map(
+          async (id) =>
+            [
+              id,
+              viewer
+                ? await this.projectAccess.permissions(viewer, id)
+                : new Set<ProjectPermission>(),
+            ] as const,
+        ),
+      ),
     ]);
-    return rows.map((row) => this.toSummary(row, meta, people, components));
+    return {
+      meta,
+      people,
+      components,
+      projects: new Map(projectRows.map(({ id, ...project }) => [id, project])),
+      rights: new Map(rights),
+    };
+  }
+
+  /** Summaries of issue rows in their order, as `viewer` sees them. */
+  async summarize(viewer: string | null, rows: IssueRow[]): Promise<IssueSummary[]> {
+    const context = await this.summaryContext(viewer, rows);
+    return rows.map((row) => this.toSummary(row, context));
   }
 
   async get(principal: Principal, key: string): Promise<Issue> {
@@ -181,14 +224,8 @@ export class IssueService {
   /** `viewer` decides "watching" and which links show; null sees all links. */
   private async presentFor(viewer: string | null, issueId: string): Promise<Issue> {
     const db = this.database.db;
-    const [row] = await db
-      .select({ issue: issues, project: projects })
-      .from(issues)
-      .innerJoin(projects, eq(projects.id, issues.projectId))
-      .where(eq(issues.id, issueId));
-    if (!row) throw new NotFoundException('Issue not found');
-    const { issue, project } = row;
-    const meta = await this.meta.load();
+    const [issue] = await db.select().from(issues).where(eq(issues.id, issueId));
+    if (!issue) throw new NotFoundException('Issue not found');
     const [parent] = issue.parentId
       ? await db
           .select({ key: issues.key, summary: issues.summary })
@@ -204,17 +241,15 @@ export class IssueService {
       .select({ userId: issueWatchers.userId })
       .from(issueWatchers)
       .where(eq(issueWatchers.issueId, issue.id));
-    const [people, components, links] = await Promise.all([
-      this.userRefs([issue, ...children].flatMap((row) => [row.assigneeId, row.reporterId])),
-      this.components.refsForMany([issue.id, ...children.map((child) => child.id)]),
+    const [context, links] = await Promise.all([
+      this.summaryContext(viewer, [issue, ...children]),
       this.links.linksFor(viewer, issue.id),
     ]);
     return {
-      ...this.toSummary(issue, meta, people, components),
-      project: { key: project.key, name: project.name },
+      ...this.toSummary(issue, context),
       description: (issue.description as RichText | null) ?? null,
       parent: parent ?? null,
-      children: children.map((child) => this.toSummary(child, meta, people, components)),
+      children: children.map((child) => this.toSummary(child, context)),
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
       watching: watchers.some((watcher) => watcher.userId === viewer),
       watcherCount: watchers.length,
@@ -265,7 +300,7 @@ export class IssueService {
       this.database.db.select({ total: count() }).from(issues).where(where),
     ]);
     return {
-      issues: await this.summarize(rows),
+      issues: await this.summarize(principal.userId, rows),
       total: total?.total ?? 0,
     };
   }

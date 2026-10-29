@@ -149,7 +149,10 @@ export class PersonalService {
             )
         : [];
     const summaries = new Map(
-      (await this.issues.summarize(issueRows)).map((summary) => [summary.id, summary]),
+      (await this.issues.summarize(principal.userId, issueRows)).map((summary) => [
+        summary.id,
+        summary,
+      ]),
     );
     const projectsById = new Map(
       (await this.projects.list(principal)).map((project) => [project.id, project]),

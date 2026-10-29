@@ -1,8 +1,8 @@
-import { CaretDown, Eye, EyeSlash } from '@phosphor-icons/react';
+import { ArrowsOut, Eye, EyeSlash, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Comment, Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
@@ -13,12 +13,12 @@ import {
   issueQuery,
   projectQuery,
   trackingMetaQuery,
-  transitionsQuery,
 } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
+import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { RichTextEditor, RichTextView } from './RichTextEditor';
@@ -31,118 +31,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <dt className="tl-label pt-1.5 uppercase text-[var(--ink-muted)]">{label}</dt>
       <dd className="m-0 min-w-0">{children}</dd>
     </>
-  );
-}
-
-const inputClass =
-  'h-[var(--control-sm)] w-full rounded-[var(--radius-md)] border border-transparent bg-transparent px-1.5 text-[var(--ink)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] disabled:hover:border-transparent';
-
-/** Text-like field that saves on blur or Enter when the value changed. */
-function InlineInput({
-  value,
-  onSave,
-  disabled,
-  ...props
-}: { value: string; onSave: (value: string) => void; disabled: boolean } & Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  'value' | 'onChange'
->) {
-  const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
-  const commit = () => {
-    if (draft !== value) onSave(draft);
-  };
-  return (
-    <input
-      {...props}
-      value={draft}
-      disabled={disabled}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
-        if (event.key === 'Escape') setDraft(value);
-      }}
-      className={`${inputClass} ${props.className ?? ''}`}
-    />
-  );
-}
-
-function StatusMenu({
-  issue,
-  enabled,
-  onTransition,
-}: {
-  issue: Issue;
-  enabled: boolean;
-  onTransition: (id: string) => void;
-}) {
-  const { t } = useTranslation();
-  const metaName = useMetaName();
-  const [open, setOpen] = useState(false);
-  const container = useRef<HTMLDivElement>(null);
-  const transitions = useQuery({ ...transitionsQuery(issue.key), enabled: open });
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent | KeyboardEvent) => {
-      if (
-        event instanceof KeyboardEvent
-          ? event.key === 'Escape'
-          : !container.current?.contains(event.target as Node)
-      )
-        setOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      document.removeEventListener('keydown', close);
-    };
-  }, [open]);
-
-  return (
-    <div ref={container} className="relative">
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t('issues.changeStatus')}
-        disabled={!enabled}
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded-[var(--radius-sm)] disabled:cursor-default"
-      >
-        <StatusLozenge status={issue.status} />
-        {enabled && <CaretDown size={14} aria-hidden className="text-[var(--ink-muted)]" />}
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute top-full right-0 z-10 mt-1 min-w-48 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-1 shadow-[var(--shadow-float)]"
-        >
-          {transitions.data?.map((transition) => (
-            <button
-              key={transition.id}
-              type="button"
-              role="menuitem"
-              aria-label={metaName('status', transition.to)}
-              onClick={() => {
-                setOpen(false);
-                onTransition(transition.id);
-              }}
-              className="flex w-full items-center rounded-[var(--radius-md)] px-2 py-1.5 text-left hover:bg-[var(--surface-2)]"
-            >
-              <StatusLozenge status={transition.to} />
-            </button>
-          ))}
-          {transitions.data?.length === 0 && (
-            <div className="px-2 py-1.5 text-[var(--ink-muted)]">
-              {metaName('status', issue.status)}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -371,7 +259,47 @@ function Activity({
   );
 }
 
-export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
+/** The panel's bar: open the full page or close the panel (E-49). */
+function PanelBar({ issueKey, onClose }: { issueKey: string; onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Link
+        to="/issues/$key"
+        params={{ key: issueKey }}
+        className="flex h-8 items-center gap-1.5 rounded-[var(--radius-md)] px-2 text-xs text-[var(--ink-muted)] no-underline hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+      >
+        <ArrowsOut size={16} aria-hidden />
+        {t('issues.openFullPage')}
+      </Link>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={t('issues.closeDetail')}
+        title={t('issues.closeDetail')}
+        className="grid size-8 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+      >
+        <X size={16} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * An issue with all its fields, as a full page or as the panel beside a list (T-ISS-15).
+ * In the panel, `onClose` closes it.
+ */
+export function IssuePage({
+  me,
+  issueKey,
+  variant = 'page',
+  onClose,
+}: {
+  me: Me;
+  issueKey: string;
+  variant?: 'page' | 'panel';
+  onClose?: () => void;
+}) {
   const { t } = useTranslation();
   const metaName = useMetaName();
   const queryClient = useQueryClient();
@@ -392,6 +320,7 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
     void queryClient.invalidateQueries({ queryKey: ['issue', issueKey, 'history'] });
     void queryClient.invalidateQueries({ queryKey: ['issue', issueKey, 'transitions'] });
     void queryClient.invalidateQueries({ queryKey: ['project-issues'] });
+    void queryClient.invalidateQueries({ queryKey: ['search'] });
   };
   const update = useMutation({
     mutationFn: (body: UpdateIssueRequest) =>
@@ -418,25 +347,39 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: issueQuery(issueKey).queryKey }),
   });
 
-  if (issue.error) {
+  const panel = variant === 'panel' && onClose;
+  const bar = panel && <PanelBar issueKey={issueKey} onClose={onClose} />;
+  if (issue.error || !issue.data) {
     return (
-      <p className="px-6 py-8 text-[var(--ink-muted)]">
-        {issue.error instanceof ApiError && issue.error.status === 404
-          ? t('issues.notFound')
-          : issue.error.message}
-      </p>
+      <div className={panel ? 'flex flex-col gap-2 p-4' : 'px-6 py-8'}>
+        {bar}
+        <p className="m-0 text-[var(--ink-muted)]">
+          {!issue.error
+            ? t('common.loading')
+            : issue.error instanceof ApiError && issue.error.status === 404
+              ? t('issues.notFound')
+              : issue.error.message}
+        </p>
+      </div>
     );
   }
-  if (!issue.data)
-    return <p className="px-6 py-8 text-[var(--ink-muted)]">{t('common.loading')}</p>;
   const data = issue.data;
+  const Root = panel ? 'section' : 'main';
   const permissions = new Set(project.data?.permissions ?? []);
   const canEdit = permissions.has('edit-issues');
   const error = update.error ?? transition.error;
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <Root
+      aria-label={panel ? t('issues.detail', { key: data.key }) : undefined}
+      className={`flex flex-col gap-4 ${panel ? 'p-4' : 'px-6 py-5'}`}
+    >
+      {bar}
+      <header
+        className={
+          panel ? 'flex flex-col gap-2' : 'flex flex-wrap items-start justify-between gap-3'
+        }
+      >
         <div className="flex min-w-0 max-w-[880px] flex-1 flex-col gap-1.5">
           <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--ink-muted)]">
             <Link
@@ -686,6 +629,6 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
         onPick={(user) => update.mutate({ assigneeId: user?.id ?? null })}
       />
       <LogWorkDialog issueKey={data.key} open={loggingWork} onOpenChange={setLoggingWork} />
-    </main>
+    </Root>
   );
 }

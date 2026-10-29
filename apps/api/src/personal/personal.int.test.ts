@@ -264,4 +264,20 @@ describe('result columns', () => {
     });
     expect(result.body.issues[0]?.createdAt).toEqual(expect.any(String));
   });
+
+  it('says per result what the caller may change', async () => {
+    const asJonas = await jonas.request<SearchResult>('POST', '/search', { query: 'key = WEB-1' });
+    expect(asJonas.body.issues[0]).toMatchObject({
+      project: { key: 'WEB', name: 'Web-Relaunch' },
+      canEdit: false,
+      canAssign: false,
+      canTransition: false,
+    });
+    const asAdmin = await admin.request<SearchResult>('POST', '/search', {
+      query: 'project = WEB',
+    });
+    expect(
+      asAdmin.body.issues.every((issue) => issue.canEdit && issue.canAssign && issue.canTransition),
+    ).toBe(true);
+  });
 });

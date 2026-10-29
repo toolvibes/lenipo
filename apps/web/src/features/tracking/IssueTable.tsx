@@ -1,13 +1,25 @@
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { DEFAULT_ISSUE_COLUMNS, type IssueColumn, type IssueSummary } from '@tasklore/shared';
+import {
+  DEFAULT_ISSUE_COLUMNS,
+  type IssueColumn,
+  type IssueSummary,
+  type UpdateIssueRequest,
+} from '@tasklore/shared';
 import { findField, type SortKey } from '@tasklore/tql';
-import type { ReactNode } from 'react';
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
-import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
+import { meQuery } from '../../lib/queries';
+import { trackingMetaQuery } from '../../lib/tracking';
+import { FormError } from '../../ui/FormError';
+import { ComponentsField } from './ComponentsField';
+import { InlineInput, inputClass, StatusMenu } from './fields';
+import { IssueTypeIcon, PriorityIcon, useMetaName } from './icons';
 import { useDuration } from './TimeTracking';
-import { Avatar } from './UserPicker';
+import { Avatar, UserPicker } from './UserPicker';
 
 type Column = 'key' | 'summary' | IssueColumn;
 
@@ -63,6 +75,39 @@ function Chips({ names }: { names: string[] }) {
   );
 }
 
+/** Changes from list cells; every list showing the issue reloads afterwards (E-49). */
+function useListEdit() {
+  const queryClient = useQueryClient();
+  const refresh = async (key: string) => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['search'] }),
+      queryClient.invalidateQueries({ queryKey: ['project-issues'] }),
+      queryClient.invalidateQueries({ queryKey: ['issue', key] }),
+    ]);
+  };
+  const update = useMutation({
+    mutationFn: ({ key, body }: { key: string; body: UpdateIssueRequest }) =>
+      unwrap(client.PATCH('/api/v1/issues/{key}', { params: { path: { key } }, body })),
+    onSuccess: (issue) => refresh(issue.key),
+  });
+  const transition = useMutation({
+    mutationFn: ({ key, transitionId }: { key: string; transitionId: string }) =>
+      unwrap(
+        client.POST('/api/v1/issues/{key}/transitions', {
+          params: { path: { key } },
+          body: { transitionId },
+        }),
+      ),
+    onSuccess: (issue) => refresh(issue.key),
+  });
+  return { update, transition, error: update.error ?? transition.error };
+}
+
+/** A plain left click; anything else (new tab, copy link) is left to the browser. */
+function plainClick(event: MouseEvent): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
+
 function When({ iso }: { iso: string }) {
   return (
     <span className="text-[var(--ink-muted)]" title={formatDateTime(iso)}>
@@ -110,7 +155,9 @@ function Header({
 
 /**
  * Issue list (design: list view). Key and summary always show; `columns` adds more (T-QRY-08).
- * `empty` is shown for an empty list; pass null while the list is still loading.
+ * `empty` is shown for an empty list; pass null while the list is still loading. With
+ * `onSelect`, a plain click on key or summary selects the issue instead of opening it, and
+ * the arrow keys or j/k move the selection (E-49). Cells the caller may change are editable.
  */
 export function IssueTable({
   issues,
@@ -118,18 +165,53 @@ export function IssueTable({
   columns = DEFAULT_ISSUE_COLUMNS,
   sort,
   onSort,
+  selectedKey,
+  onSelect,
 }: {
   issues: IssueSummary[];
   empty: ReactNode | null;
   columns?: IssueColumn[];
   sort?: SortKey | null;
   onSort?: (field: string) => void;
+  selectedKey?: string;
+  onSelect?: (key: string) => void;
 }) {
   const { t } = useTranslation();
   const metaName = useMetaName();
   const duration = useDuration();
+  const me = useQuery(meQuery).data;
+  const meta = useQuery(trackingMetaQuery).data;
+  const { update, transition, error } = useListEdit();
+  const [assigning, setAssigning] = useState<IssueSummary | null>(null);
+  const body = useRef<HTMLTableSectionElement>(null);
   const shown = new Set(columns);
   const all: Column[] = ['key', 'summary', ...columns];
+  const edit = (issue: IssueSummary, change: UpdateIssueRequest) =>
+    update.mutate({ key: issue.key, body: change });
+  const label = (issue: IssueSummary, column: Column) =>
+    t('issues.editIn', { field: t(`issues.columns.${column}`), key: issue.key });
+
+  const open = (issue: IssueSummary) => (event: MouseEvent) => {
+    if (!onSelect || !plainClick(event)) return;
+    event.preventDefault();
+    onSelect(issue.key);
+  };
+
+  /** Arrow keys and j/k on a row's link move to the next or previous row. */
+  function move(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (target.tagName !== 'A') return;
+    const step = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1 }[event.key];
+    if (!step) return;
+    const row = target.closest('tr');
+    const rows = [...(body.current?.querySelectorAll('tr') ?? [])];
+    const next = rows[rows.indexOf(row as HTMLTableRowElement) + step];
+    if (!next) return;
+    event.preventDefault();
+    next.querySelector<HTMLAnchorElement>('a')?.focus();
+    const key = next.dataset.key;
+    if (key && onSelect && selectedKey) onSelect(key);
+  }
 
   function cell(issue: IssueSummary, column: IssueColumn): ReactNode {
     switch (column) {
@@ -141,16 +223,48 @@ export function IssueTable({
           </span>
         );
       case 'status':
-        return <StatusLozenge status={issue.status} />;
+        return (
+          <StatusMenu
+            issue={issue}
+            enabled={issue.canTransition}
+            onTransition={(transitionId) => transition.mutate({ key: issue.key, transitionId })}
+          />
+        );
       case 'priority':
         return (
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-1">
             <PriorityIcon priority={issue.priority} />
-            <span className="truncate">{metaName('priority', issue.priority)}</span>
+            {issue.canEdit && meta ? (
+              <select
+                aria-label={label(issue, 'priority')}
+                value={issue.priority.key}
+                onChange={(event) => edit(issue, { priority: event.target.value })}
+                className={inputClass}
+              >
+                {meta.priorities.map((priority) => (
+                  <option key={priority.id} value={priority.key}>
+                    {metaName('priority', priority)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="truncate">{metaName('priority', issue.priority)}</span>
+            )}
           </span>
         );
       case 'assignee':
-        return <Person user={issue.assignee} none={t('issues.unassigned')} />;
+        return issue.canAssign ? (
+          <button
+            type="button"
+            aria-label={`${label(issue, 'assignee')}: ${issue.assignee?.displayName ?? t('issues.unassigned')}`}
+            onClick={() => setAssigning(issue)}
+            className={`${inputClass} flex items-center text-left`}
+          >
+            <Person user={issue.assignee} none={t('issues.unassigned')} />
+          </button>
+        ) : (
+          <Person user={issue.assignee} none={t('issues.unassigned')} />
+        );
       case 'reporter':
         return <Person user={issue.reporter} none={t('issues.none')} />;
       case 'created':
@@ -158,7 +272,17 @@ export function IssueTable({
       case 'updated':
         return <When iso={issue.updatedAt} />;
       case 'due':
-        return issue.dueDate ? formatDate(issue.dueDate) : null;
+        return issue.canEdit ? (
+          <InlineInput
+            type="date"
+            aria-label={label(issue, 'due')}
+            value={issue.dueDate ?? ''}
+            disabled={false}
+            onSave={(value) => edit(issue, { dueDate: value || null })}
+          />
+        ) : issue.dueDate ? (
+          formatDate(issue.dueDate)
+        ) : null;
       case 'resolution':
         return issue.resolution ? (
           metaName('resolution', issue.resolution)
@@ -166,11 +290,42 @@ export function IssueTable({
           <span className="text-[var(--ink-muted)]">{t('issues.unresolved')}</span>
         );
       case 'labels':
-        return <Chips names={issue.labels} />;
+        return issue.canEdit ? (
+          <InlineInput
+            aria-label={label(issue, 'labels')}
+            value={issue.labels.join(' ')}
+            disabled={false}
+            onSave={(value) => edit(issue, { labels: value.split(/\s+/).filter(Boolean) })}
+          />
+        ) : (
+          <Chips names={issue.labels} />
+        );
       case 'component':
-        return <Chips names={issue.components.map((component) => component.name)} />;
+        return issue.canEdit ? (
+          <ComponentsField
+            projectKey={issue.project.key}
+            value={issue.components}
+            disabled={false}
+            onChange={(components) => edit(issue, { components })}
+          />
+        ) : (
+          <Chips names={issue.components.map((component) => component.name)} />
+        );
       case 'storyPoints':
-        return issue.storyPoints;
+        return issue.canEdit ? (
+          <InlineInput
+            type="number"
+            min={0}
+            step={0.5}
+            aria-label={label(issue, 'storyPoints')}
+            value={issue.storyPoints?.toString() ?? ''}
+            disabled={false}
+            onSave={(value) => edit(issue, { storyPoints: value === '' ? null : Number(value) })}
+            className="text-right"
+          />
+        ) : (
+          issue.storyPoints
+        );
       case 'originalEstimate':
         return duration(issue.timeTracking.originalEstimateSeconds);
       case 'remainingEstimate':
@@ -183,64 +338,85 @@ export function IssueTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
-      <table
-        className="w-full border-collapse"
-        style={{ minWidth: `${Math.max(760, 360 + columns.length * 140)}px` }}
-      >
-        <thead>
-          <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
-            {all.map((column) => (
-              <Header key={column} column={column} sort={sort} onSort={onSort} />
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {issues.map((issue) => (
-            <tr key={issue.id} className="h-[var(--row-compact)] hover:bg-[var(--surface-2)]">
-              <td className="border-b border-[var(--border)] px-3">
-                <span className="flex items-center gap-2">
-                  {!shown.has('issuetype') && <IssueTypeIcon type={issue.issueType} />}
-                  <Link
-                    to="/issues/$key"
-                    params={{ key: issue.key }}
-                    className="tl-key no-underline hover:underline"
-                  >
-                    {issue.key}
-                  </Link>
-                </span>
-              </td>
-              <td className="max-w-0 border-b border-[var(--border)] px-3">
-                <span className="flex items-center gap-2">
-                  {!shown.has('priority') && <PriorityIcon priority={issue.priority} />}
-                  <Link
-                    to="/issues/$key"
-                    params={{ key: issue.key }}
-                    className="truncate text-[var(--ink)] no-underline hover:underline"
-                  >
-                    {issue.summary}
-                  </Link>
-                  {!shown.has('storyPoints') && issue.storyPoints !== null && (
-                    <span className="ml-auto shrink-0 rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-1.5 text-xs font-semibold">
-                      {issue.storyPoints}
-                    </span>
-                  )}
-                </span>
-              </td>
-              {columns.map((column) => (
-                <td
-                  key={column}
-                  className={`max-w-0 border-b border-[var(--border)] px-3 ${NUMERIC.has(column) ? 'text-right tabular-nums' : ''}`}
-                >
-                  {cell(issue, column)}
-                </td>
+    <div className="flex flex-col gap-2">
+      {error && <FormError message={error.message} />}
+      <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
+        <table
+          onKeyDown={move}
+          className="w-full border-collapse"
+          style={{ minWidth: `${Math.max(760, 360 + columns.length * 140)}px` }}
+        >
+          <thead>
+            <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+              {all.map((column) => (
+                <Header key={column} column={column} sort={sort} onSort={onSort} />
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {issues.length === 0 && empty !== null && (
-        <p className="px-3 py-8 text-center text-[var(--ink-muted)]">{empty}</p>
+          </thead>
+          <tbody ref={body}>
+            {issues.map((issue) => (
+              <tr
+                key={issue.id}
+                data-key={issue.key}
+                data-selected={issue.key === selectedKey}
+                className="h-[var(--row-compact)] hover:bg-[var(--surface-2)] data-[selected=true]:bg-[var(--accent-soft)]"
+              >
+                <td className="border-b border-[var(--border)] px-3">
+                  <span className="flex items-center gap-2">
+                    {!shown.has('issuetype') && <IssueTypeIcon type={issue.issueType} />}
+                    <Link
+                      to="/issues/$key"
+                      params={{ key: issue.key }}
+                      onClick={open(issue)}
+                      aria-current={issue.key === selectedKey ? 'true' : undefined}
+                      className="tl-key no-underline hover:underline"
+                    >
+                      {issue.key}
+                    </Link>
+                  </span>
+                </td>
+                <td className="max-w-0 border-b border-[var(--border)] px-3">
+                  <span className="flex items-center gap-2">
+                    {!shown.has('priority') && <PriorityIcon priority={issue.priority} />}
+                    <Link
+                      to="/issues/$key"
+                      params={{ key: issue.key }}
+                      onClick={open(issue)}
+                      className="truncate text-[var(--ink)] no-underline hover:underline"
+                    >
+                      {issue.summary}
+                    </Link>
+                    {!shown.has('storyPoints') && issue.storyPoints !== null && (
+                      <span className="ml-auto shrink-0 rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-1.5 text-xs font-semibold">
+                        {issue.storyPoints}
+                      </span>
+                    )}
+                  </span>
+                </td>
+                {columns.map((column) => (
+                  <td
+                    key={column}
+                    className={`max-w-0 border-b border-[var(--border)] px-3 ${NUMERIC.has(column) ? 'text-right tabular-nums' : ''}`}
+                  >
+                    {cell(issue, column)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {issues.length === 0 && empty !== null && (
+          <p className="px-3 py-8 text-center text-[var(--ink-muted)]">{empty}</p>
+        )}
+      </div>
+      {assigning && me && (
+        <UserPicker
+          open
+          onOpenChange={(next) => !next && setAssigning(null)}
+          me={{ id: me.id, displayName: me.displayName }}
+          projectKey={assigning.project.key}
+          onPick={(user) => edit(assigning, { assigneeId: user?.id ?? null })}
+        />
       )}
     </div>
   );

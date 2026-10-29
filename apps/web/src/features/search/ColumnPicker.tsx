@@ -22,7 +22,7 @@ export function ColumnPicker({ columns }: { columns: IssueColumn[] }) {
   return (
     <Popover
       label={t('search.columns.title')}
-      align="right"
+      align="end"
       trigger={
         <>
           <Columns size={16} aria-hidden />

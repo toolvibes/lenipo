@@ -138,7 +138,7 @@ export class SearchService {
       this.database.db.select({ total: count() }).from(issues).where(where),
     ]);
     return {
-      issues: await this.issueService.summarize(rows),
+      issues: await this.issueService.summarize(principal.userId, rows),
       total: total?.total ?? 0,
       limit: request.limit,
       offset: request.offset,

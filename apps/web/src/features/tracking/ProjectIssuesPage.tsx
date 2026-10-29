@@ -1,6 +1,6 @@
 import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
+import { IssueSplit, useWideScreen } from './IssueSplit';
 import { IssueTable } from './IssueTable';
 
 type Preset = 'all' | 'mine' | 'open' | 'done';
@@ -22,8 +23,25 @@ const PRESETS: Record<Preset, IssueFilter> = {
 };
 
 /** Issue navigator for one project (design: list view, compact density). */
-export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: string }) {
+export function ProjectIssuesPage({
+  me,
+  projectKey,
+  selected,
+}: {
+  me: Me;
+  projectKey: string;
+  selected?: string;
+}) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const wide = useWideScreen();
+  const select = (key: string | undefined) =>
+    void navigate({
+      to: '/projects/$key',
+      params: { key: projectKey },
+      search: { selected: key },
+      replace: true,
+    });
   const project = useQuery(projectQuery(projectKey));
   useRecordView('project', project.data?.key);
   const [preset, setPreset] = useState<Preset>('open');
@@ -127,25 +145,29 @@ export function ProjectIssuesPage({ me, projectKey }: { me: Me; projectKey: stri
         )}
       </div>
 
-      <IssueTable
-        issues={issues.data?.issues ?? []}
-        empty={
-          !issues.data
-            ? null
-            : project.data?.issueCount === 0
-              ? t('issues.emptyProject')
-              : t('issues.empty')
-        }
-      />
-      {issues.data && issues.data.issues.length < issues.data.total && (
-        <Button
-          className="self-center"
-          onClick={() => setLimit((current) => Math.min(current + 50, 100))}
-          disabled={limit >= 100}
-        >
-          {t('issues.loadMore')}
-        </Button>
-      )}
+      <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
+        <IssueTable
+          selectedKey={selected}
+          onSelect={wide ? select : undefined}
+          issues={issues.data?.issues ?? []}
+          empty={
+            !issues.data
+              ? null
+              : project.data?.issueCount === 0
+                ? t('issues.emptyProject')
+                : t('issues.empty')
+          }
+        />
+        {issues.data && issues.data.issues.length < issues.data.total && (
+          <Button
+            className="self-center"
+            onClick={() => setLimit((current) => Math.min(current + 50, 100))}
+            disabled={limit >= 100}
+          >
+            {t('issues.loadMore')}
+          </Button>
+        )}
+      </IssueSplit>
       <ComponentsDialog
         projectKey={projectKey}
         open={managingComponents}
