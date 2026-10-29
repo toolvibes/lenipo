@@ -125,7 +125,13 @@ export function ImageBar({ editor }: { editor: Editor }) {
         maxLength={500}
         onChange={(event) => setCaption(event.target.value)}
         onBlur={() => update({ caption: caption.trim() })}
-        onKeyDown={(event) => event.key === 'Enter' && update({ caption: caption.trim() })}
+        onKeyDown={(event) => {
+          // The bar sits inside the page form; Enter must not publish the page.
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          update({ caption: caption.trim() });
+          editor.commands.focus();
+        }}
         className={field}
       />
       <input
@@ -135,7 +141,12 @@ export function ImageBar({ editor }: { editor: Editor }) {
         maxLength={500}
         onChange={(event) => setAlt(event.target.value)}
         onBlur={() => update({ alt: alt.trim() || null })}
-        onKeyDown={(event) => event.key === 'Enter' && update({ alt: alt.trim() || null })}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          update({ alt: alt.trim() || null });
+          editor.commands.focus();
+        }}
         className={field}
       />
     </div>
