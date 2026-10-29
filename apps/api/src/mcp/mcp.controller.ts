@@ -13,6 +13,7 @@ import {
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
 import { BoardService } from '../boards/board.service.js';
+import { SprintService } from '../boards/sprint.service.js';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -45,10 +46,12 @@ export class McpController {
     @Inject(UserService) users: UserService,
     @Inject(AuditService) audit: AuditService,
     @Inject(BoardService) boards: BoardService,
+    @Inject(SprintService) sprints: SprintService,
   ) {
     this.services = {
       database,
       boards,
+      sprints,
       issues,
       search,
       projects,

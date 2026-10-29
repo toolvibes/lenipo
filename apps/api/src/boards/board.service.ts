@@ -29,6 +29,8 @@ import {
   boards,
   issues,
   projects,
+  sprintIssues,
+  sprints,
 } from '../db/schema/index.js';
 import { QueryException } from '../search/query-exception.js';
 import { SearchService } from '../search/search.service.js';
@@ -121,6 +123,7 @@ export class BoardService {
       query: board.query,
       swimlanes: board.swimlanes,
       hideDoneAfterDays: board.hideDoneAfterDays,
+      estimation: board.estimation,
       columns: columns.map((column) => ({
         id: column.id,
         name: column.name,
@@ -184,6 +187,11 @@ export class BoardService {
     return this.search.compile(principal, text);
   }
 
+  /** The compiled scope of a board query, e.g. for its backlog. */
+  scopeOf(principal: Principal, query: string) {
+    return this.scope(principal, [query]);
+  }
+
   async issues(principal: Principal, id: string, filters: string[]): Promise<BoardData> {
     const { board, project, canConfigure } = await this.row(principal, id, 'browse');
     const presented = await this.present(board, project, canConfigure);
@@ -195,14 +203,40 @@ export class BoardService {
     });
     const compiled = await this.scope(principal, [board.query, ...extra]);
     const mapped = presented.columns.flatMap((column) => column.statusIds);
-    const empty = { board: presented, issues: [], truncated: false, reachable: {} };
+    // A Scrum board shows the issues of its active sprint (E-55).
+    const [active] =
+      board.type === 'scrum'
+        ? await this.database.db
+            .select()
+            .from(sprints)
+            .where(and(eq(sprints.boardId, board.id), eq(sprints.state, 'active')))
+        : [];
+    const sprint = active
+      ? {
+          id: active.id,
+          boardId: active.boardId,
+          name: active.name,
+          goal: active.goal,
+          state: active.state,
+          startDate: active.startDate,
+          endDate: active.endDate,
+          startedAt: active.startedAt?.toISOString() ?? null,
+          completedAt: active.completedAt?.toISOString() ?? null,
+        }
+      : null;
+    const empty = { board: presented, sprint, issues: [], truncated: false, reachable: {} };
     if (compiled.projectIds.length === 0 || mapped.length === 0) return empty;
+    if (board.type === 'scrum' && !active) return empty;
 
     const conditions: Array<SQL | undefined> = [
       inArray(issues.projectId, compiled.projectIds),
       isNull(issues.deletedAt),
       compiled.where,
       inArray(issues.statusId, mapped),
+      active
+        ? sql`exists (select 1 from ${sprintIssues} si where si.issue_id = ${issues.id}
+            and si.sprint_id = ${active.id} and si.removed_at is null)`
+        : undefined,
     ];
     if (board.type === 'kanban' && board.hideDoneAfterDays) {
       const meta = await this.meta.load();
@@ -245,6 +279,7 @@ export class BoardService {
     }
     return {
       board: presented,
+      sprint,
       issues: summaries,
       truncated: rows.length > BOARD_LIMIT,
       reachable,
@@ -400,6 +435,7 @@ export class BoardService {
             ...(request.hideDoneAfterDays !== undefined
               ? { hideDoneAfterDays: request.hideDoneAfterDays }
               : {}),
+            ...(request.estimation !== undefined ? { estimation: request.estimation } : {}),
             updatedAt: sql`now()`,
           })
           .where(eq(boards.id, id));

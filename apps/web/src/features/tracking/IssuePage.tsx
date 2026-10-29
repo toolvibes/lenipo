@@ -619,6 +619,14 @@ export function IssuePage({
                 />
               </Field>
             )}
+            {data.sprint && (
+              <Field label={t('issues.sprint')}>
+                <span className="block px-1.5 pt-1">
+                  {data.sprint.name}
+                  {data.sprint.state === 'active' && ` · ${t('sprints.active')}`}
+                </span>
+              </Field>
+            )}
             {data.resolution && (
               <Field label={t('issues.resolution')}>
                 <span className="block px-1.5 pt-1">{metaName('resolution', data.resolution)}</span>

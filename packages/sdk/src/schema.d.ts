@@ -1179,6 +1179,119 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/boards/{id}/backlog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The backlog of a Scrum board: open sprints with their issues, then the rest */
+    get: operations['Sprints.backlog'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/boards/{id}/sprints': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the sprints of a board */
+    get: operations['Sprints.list'];
+    put?: never;
+    /** Plan a new sprint on a Scrum board */
+    post: operations['Sprints.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprints/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a planned sprint; its issues go to the backlog */
+    delete: operations['Sprints.delete'];
+    options?: never;
+    head?: never;
+    /** Change name, goal or dates of a sprint */
+    patch: operations['Sprints.update'];
+    trace?: never;
+  };
+  '/api/v1/sprints/{id}/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start a planned sprint
+     * @description One sprint runs per board. The estimates at this moment are the commitment.
+     */
+    post: operations['Sprints.start'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprints/{id}/complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Complete the running sprint
+     * @description Unfinished issues go to the backlog, a new sprint (`"new"`) or a planned sprint (its id).
+     */
+    post: operations['Sprints.complete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprints/move-issues': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move issues into a sprint or (sprintId null) to the backlog
+     * @description Each issue leaves its current open sprint; the change is in its history.
+     */
+    post: operations['Sprints.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/users': {
     parameters: {
       query?: never;
@@ -1544,6 +1657,8 @@ export interface components {
       /** @enum {string} */
       swimlanes: 'none' | 'epic' | 'assignee';
       hideDoneAfterDays: number | null;
+      /** @enum {string} */
+      estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
       columns: components['schemas']['BoardColumn'][];
       quickFilters: components['schemas']['QuickFilter'][];
       canConfigure: boolean;
@@ -1568,6 +1683,8 @@ export interface components {
       /** @enum {string} */
       swimlanes?: 'none' | 'epic' | 'assignee';
       hideDoneAfterDays?: number | null;
+      /** @enum {string} */
+      estimation?: 'storyPoints' | 'originalEstimate' | 'issueCount';
       columns?: {
         /** Format: uuid */
         id?: string;
@@ -1587,11 +1704,26 @@ export interface components {
     };
     BoardData: {
       board: components['schemas']['Board'];
+      sprint: components['schemas']['Sprint'] | null;
       issues: components['schemas']['IssueSummary'][];
       truncated: boolean;
       reachable: {
         [key: string]: string[];
       };
+    };
+    Sprint: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      boardId: string;
+      name: string;
+      goal: string;
+      /** @enum {string} */
+      state: 'future' | 'active' | 'closed';
+      startDate: string | null;
+      endDate: string | null;
+      startedAt: string | null;
+      completedAt: string | null;
     };
     IssueSummary: {
       /** Format: uuid */
@@ -1640,6 +1772,7 @@ export interface components {
             };
       };
       parent: components['schemas']['IssueRef'] | null;
+      sprint: components['schemas']['SprintRef'] | null;
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
@@ -1693,6 +1826,13 @@ export interface components {
     IssueRef: {
       key: string;
       summary: string;
+    };
+    SprintRef: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      state: 'future' | 'active' | 'closed';
     };
     MoveCardRequest: {
       issueKey: string;
@@ -1748,6 +1888,7 @@ export interface components {
             };
       };
       parent: components['schemas']['IssueRef'] | null;
+      sprint: components['schemas']['SprintRef'] | null;
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
@@ -2346,6 +2487,45 @@ export interface components {
         displayName: string;
         password: string;
       };
+    };
+    BacklogData: {
+      board: components['schemas']['Board'];
+      sprints: {
+        sprint: components['schemas']['Sprint'];
+        issues: components['schemas']['IssueSummary'][];
+      }[];
+      backlog: components['schemas']['IssueSummary'][];
+      truncated: boolean;
+    };
+    CreateSprintRequest: {
+      name?: string;
+      /** @default  */
+      goal?: string;
+      /** @default null */
+      startDate?: string | null;
+      /** @default null */
+      endDate?: string | null;
+    };
+    UpdateSprintRequest: {
+      name?: string;
+      goal?: string;
+      startDate?: string | null;
+      endDate?: string | null;
+    };
+    StartSprintRequest: {
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+      goal?: string;
+    };
+    CompleteSprintRequest: {
+      /** @default backlog */
+      moveTo?: 'backlog' | 'new' | string;
+    };
+    MoveToSprintRequest: {
+      issueKeys: string[];
+      sprintId: string | null;
     };
     UserLookup: {
       /** Format: uuid */
@@ -5234,6 +5414,270 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Me'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.backlog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BacklogData'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.list': {
+    parameters: {
+      query?: {
+        state?: 'future' | 'active' | 'closed';
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Sprint'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateSprintRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Sprint'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateSprintRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Sprint'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StartSprintRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Sprint'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompleteSprintRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Sprint'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MoveToSprintRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

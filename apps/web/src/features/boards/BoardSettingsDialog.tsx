@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Plus, Trash, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { Board, SwimlaneMode } from '@tasklore/shared';
+import type { Board, EstimationField, SwimlaneMode } from '@tasklore/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -58,6 +58,7 @@ export function BoardSettingsDialog({
   const [query, setQuery] = useState(board.query);
   const [swimlanes, setSwimlanes] = useState<SwimlaneMode>(board.swimlanes);
   const [hideDone, setHideDone] = useState('');
+  const [estimation, setEstimation] = useState<EstimationField>(board.estimation);
   const [columns, setColumns] = useState<ColumnDraft[]>([]);
   const [filters, setFilters] = useState<FilterDraft[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -68,6 +69,7 @@ export function BoardSettingsDialog({
     setQuery(board.query);
     setSwimlanes(board.swimlanes);
     setHideDone(board.hideDoneAfterDays?.toString() ?? '');
+    setEstimation(board.estimation);
     setColumns(
       board.columns.map((column) => ({
         id: column.id,
@@ -94,7 +96,7 @@ export function BoardSettingsDialog({
             swimlanes,
             ...(board.type === 'kanban'
               ? { hideDoneAfterDays: hideDone.trim() ? Number(hideDone) : null }
-              : {}),
+              : { estimation }),
             columns: columns.map((column) => ({
               ...(column.id ? { id: column.id } : {}),
               name: column.name,
@@ -180,6 +182,22 @@ export function BoardSettingsDialog({
           />
           <span className="text-xs text-[var(--ink-muted)]">{t('boards.queryHelp')}</span>
         </label>
+        {board.type === 'scrum' && (
+          <label className="flex flex-col gap-1.5">
+            <span className="tl-label uppercase text-[var(--ink-muted)]">
+              {t('sprints.estimation')}
+            </span>
+            <select
+              value={estimation}
+              onChange={(event) => setEstimation(event.target.value as EstimationField)}
+              className={`${control} h-[var(--control-md)]`}
+            >
+              <option value="storyPoints">{t('sprints.estimations.storyPoints')}</option>
+              <option value="originalEstimate">{t('sprints.estimations.originalEstimate')}</option>
+              <option value="issueCount">{t('sprints.estimations.issueCount')}</option>
+            </select>
+          </label>
+        )}
         {board.type === 'kanban' && (
           <TextField
             label={t('boards.hideDone')}

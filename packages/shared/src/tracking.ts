@@ -224,6 +224,15 @@ export type TimeTracking = z.infer<typeof TimeTracking>;
 export const IssueRef = z.object({ key: z.string(), summary: z.string() }).meta({ id: 'IssueRef' });
 export type IssueRef = z.infer<typeof IssueRef>;
 
+export const SprintState = z.enum(['future', 'active', 'closed']);
+export type SprintState = z.infer<typeof SprintState>;
+
+/** The open sprint an issue is planned in (E-55). */
+export const SprintRef = z
+  .object({ id: Id, name: z.string(), state: SprintState })
+  .meta({ id: 'SprintRef' });
+export type SprintRef = z.infer<typeof SprintRef>;
+
 export const IssueSummary = z
   .object({
     id: Id,
@@ -249,6 +258,8 @@ export const IssueSummary = z
     customFields: z.record(Id, CustomFieldValue),
     /** The parent (epic or story), e.g. for swimlanes (T-BRD-06). */
     parent: IssueRef.nullable(),
+    /** The open (future or active) sprint the issue is in (E-55). */
+    sprint: SprintRef.nullable(),
     /** What the caller may change in lists (E-49); the API checks again on every change. */
     canEdit: z.boolean(),
     canAssign: z.boolean(),

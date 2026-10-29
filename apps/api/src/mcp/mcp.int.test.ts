@@ -173,6 +173,26 @@ describe('MCP', () => {
     expect(wrong.text).toContain('Columns:');
   });
 
+  it('plans sprints', async () => {
+    const board = await admin.request<{ id: string }>('POST', '/boards', {
+      name: 'Scrum',
+      projectKey: 'WEB',
+      type: 'scrum',
+    });
+    const sprint = await admin.request<{ id: string }>(
+      'POST',
+      `/boards/${board.body.id}/sprints`,
+      {},
+    );
+    const moved = await call(client, 'move_to_sprint', { keys: ['WEB-1'], sprint: sprint.body.id });
+    expect(moved.isError).toBeFalsy();
+    const backlog = await call(client, 'get_backlog', { board: board.body.id });
+    expect(backlog.text).toMatch(/## Scrum Sprint 1 \(future\).*\n- WEB-1/);
+    expect((await call(client, 'get_active_sprint', { board: board.body.id })).text).toContain(
+      'No sprint is running',
+    );
+  });
+
   it('keeps the token’s limits', async () => {
     expect((await call(readOnly, 'search_issues', { query: 'project = WEB' })).text).toContain(
       'WEB-1',

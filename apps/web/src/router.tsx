@@ -13,6 +13,7 @@ import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsP
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
+import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
 import { PageView } from './features/pages/PageView';
@@ -176,6 +177,20 @@ const boardRoute = createRoute({
   },
 });
 
+const backlogRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/boards/$id/backlog',
+  validateSearch: (search: Record<string, unknown>): { selected?: string } => ({
+    selected: selectedKey(search.selected),
+  }),
+  component: function Backlog() {
+    const { me } = backlogRoute.useRouteContext();
+    const { id } = backlogRoute.useParams();
+    const { selected } = backlogRoute.useSearch();
+    return <BacklogPage key={id} me={me} id={id} selected={selected} />;
+  },
+});
+
 const activityRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/activity',
@@ -240,6 +255,7 @@ const routeTree = rootRoute.addChildren([
     activityRoute,
     boardsRoute,
     boardRoute,
+    backlogRoute,
     adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute, customFieldsRoute]),
   ]),
 ]);

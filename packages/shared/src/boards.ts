@@ -1,13 +1,17 @@
 import { z } from 'zod';
 import { Id } from './identity.js';
 import { TqlText } from './search.js';
-import { IssueSummary, ProjectKey } from './tracking.js';
+import { IssueSummary, ProjectKey, SprintState } from './tracking.js';
 
 export const BoardType = z.enum(['kanban', 'scrum']);
 export type BoardType = z.infer<typeof BoardType>;
 
 export const SwimlaneMode = z.enum(['none', 'epic', 'assignee']);
 export type SwimlaneMode = z.infer<typeof SwimlaneMode>;
+
+/** What a Scrum board adds up in the backlog and reports (T-SPR-08). */
+export const EstimationField = z.enum(['storyPoints', 'originalEstimate', 'issueCount']);
+export type EstimationField = z.infer<typeof EstimationField>;
 
 const WipLimit = z.number().int().min(0).max(999).nullable();
 
@@ -44,6 +48,7 @@ export const Board = BoardSummary.extend({
   query: z.string(),
   swimlanes: SwimlaneMode,
   hideDoneAfterDays: z.number().int().nullable(),
+  estimation: EstimationField,
   columns: z.array(BoardColumn),
   quickFilters: z.array(QuickFilter),
   /** The caller administers the location project and may configure the board. */
@@ -70,6 +75,7 @@ export const UpdateBoardRequest = z
     query: TqlText,
     swimlanes: SwimlaneMode,
     hideDoneAfterDays: z.number().int().min(1).max(365).nullable(),
+    estimation: EstimationField,
     /** The full list in display order; entries without id are new columns. */
     columns: z
       .array(
@@ -107,9 +113,91 @@ export const BoardIssuesQuery = z.object({
 });
 export type BoardIssuesQuery = z.infer<typeof BoardIssuesQuery>;
 
+// ---------------------------------------------------------------- sprints (E-55)
+
+export const Sprint = z
+  .object({
+    id: Id,
+    boardId: Id,
+    name: z.string(),
+    goal: z.string(),
+    state: SprintState,
+    startDate: z.iso.date().nullable(),
+    endDate: z.iso.date().nullable(),
+    startedAt: z.iso.datetime().nullable(),
+    completedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'Sprint' });
+export type Sprint = z.infer<typeof Sprint>;
+
+const SprintName = z.string().trim().min(1).max(80);
+
+export const CreateSprintRequest = z
+  .object({
+    /** Defaults to "<board> Sprint <n>". */
+    name: SprintName.optional(),
+    goal: z.string().max(1_000).default(''),
+    startDate: z.iso.date().nullable().default(null),
+    endDate: z.iso.date().nullable().default(null),
+  })
+  .meta({ id: 'CreateSprintRequest' });
+export type CreateSprintRequest = z.infer<typeof CreateSprintRequest>;
+
+export const UpdateSprintRequest = z
+  .object({
+    name: SprintName,
+    goal: z.string().max(1_000),
+    startDate: z.iso.date().nullable(),
+    endDate: z.iso.date().nullable(),
+  })
+  .partial()
+  .meta({ id: 'UpdateSprintRequest' });
+export type UpdateSprintRequest = z.infer<typeof UpdateSprintRequest>;
+
+export const StartSprintRequest = z
+  .object({
+    startDate: z.iso.date(),
+    endDate: z.iso.date(),
+    goal: z.string().max(1_000).optional(),
+  })
+  .refine((value) => value.startDate <= value.endDate, 'The end is before the start')
+  .meta({ id: 'StartSprintRequest' });
+export type StartSprintRequest = z.infer<typeof StartSprintRequest>;
+
+export const CompleteSprintRequest = z
+  .object({
+    /** Where unfinished issues go: the backlog, a new sprint, or a planned sprint by id. */
+    moveTo: z.union([z.literal('backlog'), z.literal('new'), Id]).default('backlog'),
+  })
+  .meta({ id: 'CompleteSprintRequest' });
+export type CompleteSprintRequest = z.infer<typeof CompleteSprintRequest>;
+
+export const MoveToSprintRequest = z
+  .object({
+    issueKeys: z.array(z.string().min(1).max(30)).min(1).max(100),
+    /** null moves the issues to the backlog. */
+    sprintId: Id.nullable(),
+  })
+  .meta({ id: 'MoveToSprintRequest' });
+export type MoveToSprintRequest = z.infer<typeof MoveToSprintRequest>;
+
+export const BacklogData = z
+  .object({
+    board: Board,
+    /** The active sprint first, then the planned ones in creation order. */
+    sprints: z.array(z.object({ sprint: Sprint, issues: z.array(IssueSummary) })),
+    /** Not done, not in an open sprint, in rank order (at most 500). */
+    backlog: z.array(IssueSummary),
+    truncated: z.boolean(),
+  })
+  .meta({ id: 'BacklogData' });
+export type BacklogData = z.infer<typeof BacklogData>;
+
 export const BoardData = z
   .object({
     board: Board,
+    /** Scrum boards show the issues of their active sprint; null if none runs. */
+    sprint: Sprint.nullable(),
     /** Cards in rank order; only issues in a status of some column. */
     issues: z.array(IssueSummary),
     /** More issues match than a board shows (500). */

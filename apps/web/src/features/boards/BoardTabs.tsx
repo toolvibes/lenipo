@@ -1,0 +1,42 @@
+import { Link } from '@tanstack/react-router';
+import type { BoardType } from '@tasklore/shared';
+import { useTranslation } from 'react-i18next';
+
+const TAB =
+  'h-8 border-b-2 border-transparent px-2.5 pt-1 text-[var(--ink-muted)] no-underline aria-[current=page]:border-[var(--accent)] aria-[current=page]:font-semibold aria-[current=page]:text-[var(--accent)]';
+
+/** Board and backlog of a Scrum board (E-55); Kanban boards have no backlog view. */
+export function BoardTabs({
+  id,
+  type,
+  current,
+}: {
+  id: string;
+  type: BoardType;
+  current: 'board' | 'backlog';
+}) {
+  const { t } = useTranslation();
+  if (type !== 'scrum') return null;
+  return (
+    <nav aria-label={t('boards.views')} className="flex gap-1 border-b border-[var(--border)]">
+      <Link
+        to="/boards/$id/backlog"
+        params={{ id }}
+        search={{}}
+        aria-current={current === 'backlog' ? 'page' : undefined}
+        className={TAB}
+      >
+        {t('sprints.backlog')}
+      </Link>
+      <Link
+        to="/boards/$id"
+        params={{ id }}
+        search={{}}
+        aria-current={current === 'board' ? 'page' : undefined}
+        className={TAB}
+      >
+        {t('sprints.activeSprint')}
+      </Link>
+    </nav>
+  );
+}

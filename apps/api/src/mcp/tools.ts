@@ -14,6 +14,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AuditService } from '../audit/audit.service.js';
 import type { BoardService } from '../boards/board.service.js';
+import type { SprintService } from '../boards/sprint.service.js';
 import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
@@ -37,6 +38,7 @@ import {
 export interface ToolServices {
   database: DatabaseHandle;
   boards: BoardService;
+  sprints: SprintService;
   issues: IssueService;
   search: SearchService;
   projects: ProjectService;
@@ -615,6 +617,73 @@ export function registerTools(server: McpServer, principal: Principal, services:
       await issues.rank(principal, key, { afterKey, beforeKey });
       await audited('rank_issue', key);
       return text(`Ranked ${key}.`);
+    },
+  );
+  // ---------------------------------------------------------------- sprints (E-55)
+
+  tool(
+    'get_backlog',
+    {
+      title: 'Backlog of a Scrum board',
+      description: 'Open sprints with their issues, then the backlog, in rank order.',
+      inputSchema: { board: BoardId },
+      readOnly: true,
+    },
+    async ({ board }) => {
+      const data = await services.sprints.backlog(principal, board);
+      const lines: string[] = [];
+      for (const { sprint, issues: members } of data.sprints) {
+        lines.push(
+          `## ${sprint.name} (${sprint.state}${sprint.endDate ? `, ends ${sprint.endDate}` : ''}): id ${sprint.id}`,
+          ...(sprint.goal ? [`Goal: ${sprint.goal}`] : []),
+          ...members.map(issueLine),
+          '',
+        );
+      }
+      lines.push('## Backlog', ...data.backlog.map(issueLine));
+      return text(lines.join('\n'));
+    },
+  );
+
+  tool(
+    'get_active_sprint',
+    {
+      title: 'Active sprint of a board',
+      description: 'The running sprint with goal, dates and its issues by board column.',
+      inputSchema: { board: BoardId },
+      readOnly: true,
+    },
+    async ({ board }) => {
+      const data = await services.boards.issues(principal, board, []);
+      if (!data.sprint) return text('No sprint is running on this board.');
+      const lines = [
+        `# ${data.sprint.name} (${data.sprint.startDate} – ${data.sprint.endDate})`,
+        ...(data.sprint.goal ? [`Goal: ${data.sprint.goal}`] : []),
+      ];
+      for (const column of data.board.columns) {
+        const cards = data.issues.filter((issue) => column.statusIds.includes(issue.status.id));
+        lines.push('', `## ${column.name} (${cards.length})`, ...cards.map(issueLine));
+      }
+      return text(lines.join('\n'), { sprintId: data.sprint.id });
+    },
+  );
+
+  tool(
+    'move_to_sprint',
+    {
+      title: 'Move issues into a sprint',
+      description:
+        'Moves issues into a sprint (id from get_backlog) or, with sprint "backlog", out of their sprint.',
+      inputSchema: {
+        keys: z.array(IssueKey).min(1).max(100),
+        sprint: z.string().min(1).describe('Sprint id or "backlog"'),
+      },
+    },
+    async ({ keys, sprint }) => {
+      const target = sprint.toLowerCase() === 'backlog' ? null : sprint;
+      await services.sprints.moveIssues(principal, keys, target);
+      for (const key of keys) await audited('move_to_sprint', key);
+      return text(`Moved ${keys.join(', ')} ${target ? 'into the sprint' : 'to the backlog'}.`);
     },
   );
 }

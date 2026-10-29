@@ -21,6 +21,7 @@ import type {
   ProjectPermission,
   RichText,
   RichTextInput,
+  SprintRef,
   Transition,
   TransitionRequest,
   UpdateCommentRequest,
@@ -40,6 +41,8 @@ import {
   issues,
   issueWatchers,
   projects,
+  sprintIssues,
+  sprints,
   users,
 } from '../db/schema/index.js';
 import { emitIssueEvent } from '../notifications/events.js';
@@ -69,6 +72,8 @@ interface SummaryContext {
   /** Shown custom field values by issue id (E-50). */
   custom: Map<string, Record<string, CustomFieldValue>>;
   parents: Map<string, { key: string; summary: string }>;
+  /** The open sprint of each issue (E-55). */
+  sprints: Map<string, SprintRef>;
 }
 
 export interface IssueListFilter {
@@ -168,6 +173,7 @@ export class IssueService {
       },
       customFields: context.custom.get(row.id) ?? {},
       parent: row.parentId ? (context.parents.get(row.parentId) ?? null) : null,
+      sprint: context.sprints.get(row.id) ?? null,
       canEdit: rights.has('edit-issues'),
       canAssign: rights.has('assign-issues'),
       canTransition: rights.has('transition-issues'),
@@ -181,37 +187,62 @@ export class IssueService {
   private async summaryContext(viewer: string | null, rows: IssueRow[]): Promise<SummaryContext> {
     const projectIds = [...new Set(rows.map((row) => row.projectId))];
     const parentIds = [...new Set(rows.flatMap((row) => (row.parentId ? [row.parentId] : [])))];
-    const [meta, people, components, projectRows, rights, custom, parents] = await Promise.all([
-      this.meta.load(),
-      this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
-      this.components.refsForMany(rows.map((row) => row.id)),
-      projectIds.length > 0
-        ? this.database.db
-            .select({ id: projects.id, key: projects.key, name: projects.name })
-            .from(projects)
-            .where(inArray(projects.id, projectIds))
-        : [],
-      Promise.all(
-        projectIds.map(
-          async (id) =>
-            [
-              id,
-              viewer
-                ? await this.projectAccess.permissions(viewer, id)
-                : new Set<ProjectPermission>(),
-            ] as const,
+    const [meta, people, components, projectRows, rights, custom, parents, open] =
+      await Promise.all([
+        this.meta.load(),
+        this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
+        this.components.refsForMany(rows.map((row) => row.id)),
+        projectIds.length > 0
+          ? this.database.db
+              .select({ id: projects.id, key: projects.key, name: projects.name })
+              .from(projects)
+              .where(inArray(projects.id, projectIds))
+          : [],
+        Promise.all(
+          projectIds.map(
+            async (id) =>
+              [
+                id,
+                viewer
+                  ? await this.projectAccess.permissions(viewer, id)
+                  : new Set<ProjectPermission>(),
+              ] as const,
+          ),
         ),
-      ),
-      this.customFields.presentAll(
-        rows.map((row) => ({ projectId: row.projectId, values: row.customFields as StoredValues })),
-      ),
-      parentIds.length > 0
-        ? this.database.db
-            .select({ id: issues.id, key: issues.key, summary: issues.summary })
-            .from(issues)
-            .where(inArray(issues.id, parentIds))
-        : [],
-    ]);
+        this.customFields.presentAll(
+          rows.map((row) => ({
+            projectId: row.projectId,
+            values: row.customFields as StoredValues,
+          })),
+        ),
+        parentIds.length > 0
+          ? this.database.db
+              .select({ id: issues.id, key: issues.key, summary: issues.summary })
+              .from(issues)
+              .where(inArray(issues.id, parentIds))
+          : [],
+        rows.length > 0
+          ? this.database.db
+              .select({
+                issueId: sprintIssues.issueId,
+                id: sprints.id,
+                name: sprints.name,
+                state: sprints.state,
+              })
+              .from(sprintIssues)
+              .innerJoin(sprints, eq(sprints.id, sprintIssues.sprintId))
+              .where(
+                and(
+                  inArray(
+                    sprintIssues.issueId,
+                    rows.map((row) => row.id),
+                  ),
+                  isNull(sprintIssues.removedAt),
+                  sql`${sprints.state} <> 'closed'`,
+                ),
+              )
+          : [],
+      ]);
     return {
       meta,
       people,
@@ -220,6 +251,7 @@ export class IssueService {
       rights: new Map(rights),
       custom: new Map(rows.map((row, index) => [row.id, custom[index] ?? {}])),
       parents: new Map(parents.map(({ id, ...parent }) => [id, parent])),
+      sprints: new Map(open.map(({ issueId, ...sprint }) => [issueId, sprint])),
     };
   }
 

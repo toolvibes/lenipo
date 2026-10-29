@@ -28,12 +28,16 @@ import { type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { boardDataQuery } from '../../lib/boards';
+import { formatDate } from '../../lib/format';
+import { trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
 import { BoardSettingsDialog } from './BoardSettingsDialog';
+import { BoardTabs } from './BoardTabs';
+import { CompleteSprintDialog } from './SprintDialogs';
 
 interface Lane {
   id: string;
@@ -244,6 +248,27 @@ export function BoardPage({
   const [active, setActive] = useState<IssueSummary | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [configuring, setConfiguring] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const meta = useQuery(trackingMetaQuery).data;
+  const doneStatusIds = useMemo(
+    () =>
+      new Set(
+        (meta?.statuses ?? [])
+          .filter((status) => status.category === 'done')
+          .map((status) => status.id),
+      ),
+    [meta],
+  );
+  const planned = useQuery({
+    queryKey: ['board', id, 'sprints', 'future'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/boards/{id}/sprints', {
+          params: { path: { id }, query: { state: 'future' } },
+        }),
+      ),
+    enabled: completing,
+  });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -450,6 +475,34 @@ export function BoardPage({
         )}
       </header>
 
+      <BoardTabs id={id} type={board.type} current="board" />
+      {board.type === 'scrum' && data.data?.sprint && (
+        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+          <span className="font-semibold">{data.data.sprint.name}</span>
+          {data.data.sprint.endDate && (
+            <span className="text-xs text-[var(--ink-muted)]">
+              {t('sprints.until', { date: formatDate(data.data.sprint.endDate) })}
+            </span>
+          )}
+          {data.data.sprint.goal && (
+            <span className="min-w-0 flex-1 truncate text-[var(--ink-muted)]">
+              {data.data.sprint.goal}
+            </span>
+          )}
+          <Button size="sm" className="ml-auto" onClick={() => setCompleting(true)}>
+            {t('sprints.complete')}
+          </Button>
+        </div>
+      )}
+      {board.type === 'scrum' && data.data && !data.data.sprint && (
+        <p className="m-0 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] px-4 py-6 text-center text-[var(--ink-muted)]">
+          {t('sprints.noActive')}{' '}
+          <Link to="/boards/$id/backlog" params={{ id }} search={{}}>
+            {t('sprints.toBacklog')}
+          </Link>
+        </p>
+      )}
+
       <div role="toolbar" aria-label={t('boards.quickFilters')} className="flex flex-wrap gap-2">
         {quick.map((filter) => (
           <button
@@ -577,6 +630,16 @@ export function BoardPage({
 
       {board.canConfigure && (
         <BoardSettingsDialog board={board} open={configuring} onOpenChange={setConfiguring} />
+      )}
+      {completing && data.data?.sprint && (
+        <CompleteSprintDialog
+          sprint={data.data.sprint}
+          issues={issues}
+          planned={planned.data ?? []}
+          doneStatusIds={doneStatusIds}
+          open
+          onOpenChange={setCompleting}
+        />
       )}
     </main>
   );

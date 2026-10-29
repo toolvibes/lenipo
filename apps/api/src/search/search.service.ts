@@ -22,7 +22,7 @@ import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { issues, projectComponents, projects, users } from '../db/schema/index.js';
+import { boards, issues, projectComponents, projects, sprints, users } from '../db/schema/index.js';
 import { UserService } from '../identity/user.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
@@ -171,6 +171,25 @@ export class SearchService {
           .filter((option) => !option.archived && startsWith(option.value))
           .slice(0, query.limit)
           .map((option) => ({ value: option.value, label: option.value }));
+      }
+      case 'sprint': {
+        const visible = (await this.browsableProjects(principal.userId)).map(
+          (project) => project.id,
+        );
+        if (visible.length === 0) return [];
+        const rows = await this.database.db
+          .select({ id: sprints.id, name: sprints.name, state: sprints.state })
+          .from(sprints)
+          .innerJoin(boards, eq(boards.id, sprints.boardId))
+          .where(
+            and(
+              inArray(boards.projectId, visible),
+              sql`lower(${sprints.name}) like ${`${escapeLike(prefix)}%`}`,
+            ),
+          )
+          .orderBy(sql`${sprints.state} = 'closed'`, desc(sprints.createdAt))
+          .limit(query.limit);
+        return rows.map((row) => ({ value: row.name, label: row.name, detail: row.state }));
       }
       case 'boolean':
         return ['true', 'false']

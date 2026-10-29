@@ -42,6 +42,8 @@ import {
   issueComponents,
   issues,
   issueWatchers,
+  sprintIssues,
+  sprints,
   users,
 } from '../db/schema/index.js';
 import type { MetaIndex } from '../tracking/meta.service.js';
@@ -115,6 +117,7 @@ export class TqlCompiler {
   private usersByValue = new Map<string, string>();
   private groupsByValue = new Map<string, string>();
   private issuesByKey = new Map<string, string>();
+  private sprintsByValue = new Map<string, string[]>();
 
   constructor(
     private readonly db: Executor,
@@ -134,6 +137,7 @@ export class TqlCompiler {
     const userValues = new Set<string>();
     const groupValues = new Set<string>();
     const issueKeys = new Set<string>();
+    const sprintValues = new Set<string>();
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
@@ -144,6 +148,10 @@ export class TqlCompiler {
             groupValues.add(item.args[0].toLowerCase());
           }
         }
+      } else if (node.field.type === 'sprint') {
+        for (const item of items(node.operand)) {
+          if (item.kind === 'value') sprintValues.add(item.value.toLowerCase());
+        }
       } else if (node.field.type === 'issue') {
         for (const item of items(node.operand)) {
           if (item.kind === 'function' && item.fn.name === 'linkedIssues' && item.args[0]) {
@@ -153,6 +161,25 @@ export class TqlCompiler {
       }
     };
     if (expression) visit(expression);
+
+    if (sprintValues.size > 0) {
+      const values = [...sprintValues];
+      const ids = values.filter((value) => UUID.test(value));
+      const rows = await this.db
+        .select({ id: sprints.id, name: sprints.name })
+        .from(sprints)
+        .where(
+          or(
+            inArray(sql`lower(${sprints.name})`, values),
+            ids.length > 0 ? inArray(sprints.id, ids) : undefined,
+          ),
+        );
+      for (const row of rows) {
+        for (const key of [row.name.toLowerCase(), row.id]) {
+          this.sprintsByValue.set(key, [...(this.sprintsByValue.get(key) ?? []), row.id]);
+        }
+      }
+    }
 
     if (issueKeys.size > 0 && this.context.projects.length > 0) {
       // Only issues the searcher can see; others are reported as unknown.
@@ -266,11 +293,53 @@ export class TqlCompiler {
         return this.linkType(clause);
       case 'duration':
         return this.duration(clause);
+      case 'sprint':
+        return this.sprint(clause);
       case 'option':
       case 'boolean':
         // Only custom fields have these types; they are handled above.
         return sql`false`;
     }
+  }
+
+  // ---------------------------------------------------------------- sprints (E-55)
+
+  /**
+   * An issue is in a sprint while its membership row is open; closed sprints keep the rows of
+   * their issues, also of unfinished ones that moved on, as in JQL.
+   */
+  private sprint(clause: Clause): SQL {
+    const member = (condition: SQL) =>
+      exists(
+        this.db
+          .select({ one: sql`1` })
+          .from(sprintIssues)
+          .innerJoin(sprints, eq(sprints.id, sprintIssues.sprintId))
+          .where(
+            and(eq(sprintIssues.issueId, issues.id), isNull(sprintIssues.removedAt), condition),
+          ),
+      );
+    if (clause.operator === 'is') return not(member(sql`true`));
+    if (clause.operator === 'is not') return member(sql`true`);
+    const conditions: SQL[] = [];
+    for (const item of items(clause.operand)) {
+      if (item.kind === 'function') {
+        const states =
+          item.fn.name === 'openSprints'
+            ? ['active', 'future']
+            : item.fn.name === 'closedSprints'
+              ? ['closed']
+              : ['future'];
+        conditions.push(inArray(sprints.state, states as Array<'active' | 'future' | 'closed'>));
+        continue;
+      }
+      const ids = this.sprintsByValue.get(item.value.toLowerCase()) ?? [];
+      if (ids.length === 0) this.notFound(clause.field, item, item.value);
+      else conditions.push(inArray(sprints.id, ids));
+    }
+    if (conditions.length === 0) return sql`false`;
+    const match = member(or(...conditions) as SQL);
+    return positive(clause.operator) ? match : not(match);
   }
 
   // ---------------------------------------------------------------- custom fields (E-50)
