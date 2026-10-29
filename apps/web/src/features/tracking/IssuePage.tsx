@@ -22,7 +22,7 @@ import { CustomFieldRows } from './CustomFields';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
-import { RichTextEditor, RichTextView } from './RichTextEditor';
+import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
 import { Avatar, UserPicker } from './UserPicker';
 
@@ -124,7 +124,7 @@ function CommentItem({
         )}
         {editing ? (
           <RichTextEditor
-            initial={comment.body}
+            initial={storedDoc(comment.body)}
             placeholder={t('issues.addComment')}
             submitLabel={t('common.save')}
             autoFocus
@@ -135,7 +135,7 @@ function CommentItem({
           />
         ) : (
           <div className="[&_.tl-prose]:text-[15px] [&_.tl-prose]:leading-6">
-            <RichTextView doc={comment.body} />
+            <RichTextView doc={storedDoc(comment.body)} />
           </div>
         )}
       </div>
@@ -444,7 +444,7 @@ export function IssuePage({
             <h2 className="tl-heading-md">{t('issues.description')}</h2>
             {editingDescription ? (
               <RichTextEditor
-                initial={data.description}
+                initial={storedDoc(data.description)}
                 placeholder={t('issues.descriptionPlaceholder')}
                 submitLabel={t('common.save')}
                 autoFocus
@@ -463,7 +463,7 @@ export function IssuePage({
                 className="rounded-[var(--radius-md)] border border-transparent px-4 py-3 text-left hover:border-[var(--border)] disabled:hover:border-transparent"
               >
                 {data.description ? (
-                  <RichTextView doc={data.description} />
+                  <RichTextView doc={storedDoc(data.description)} />
                 ) : (
                   <span className="text-[var(--ink-muted)]">
                     {t('issues.descriptionPlaceholder')}

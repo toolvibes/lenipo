@@ -12,6 +12,8 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 COPY packages/sdk/package.json packages/sdk/
+COPY packages/tql/package.json packages/tql/
+COPY packages/editor/package.json packages/editor/
 COPY tools/codegen/package.json tools/codegen/
 RUN pnpm install --frozen-lockfile
 COPY . .

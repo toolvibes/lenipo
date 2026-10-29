@@ -1,4 +1,4 @@
-import type { RichText } from '@tasklore/shared';
+import type { RichText, RichTextOutput } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -8,6 +8,20 @@ import { useTranslation } from 'react-i18next';
 import { Toolbar } from '../../collab/Toolbar';
 import { Button } from '../../ui/Button';
 import { mentionExtension } from './mention';
+
+/**
+ * The document of a rich text field. The web app always reads JSON; Markdown text (E-51) would
+ * only arrive from a client that asked for it, and is shown as one paragraph to be safe.
+ */
+export function storedDoc(value: RichTextOutput): RichText;
+export function storedDoc(value: RichTextOutput | null): RichText | null;
+export function storedDoc(value: RichTextOutput | null): RichText | null {
+  if (typeof value !== 'string') return value;
+  return {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: value }] }],
+  };
+}
 
 interface RichTextEditorProps {
   initial: RichText | null;

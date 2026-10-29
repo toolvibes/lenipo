@@ -1088,6 +1088,18 @@
         "operationId": "Issues.create",
         "summary": "Create an issue",
         "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1135,6 +1147,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
+            }
           }
         ],
         "responses": {
@@ -1171,6 +1193,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
             }
           }
         ],
@@ -1261,6 +1293,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
+            }
           }
         ],
         "requestBody": {
@@ -1310,6 +1352,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
+            }
           }
         ],
         "responses": {
@@ -1349,6 +1401,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
             }
           }
         ],
@@ -1510,6 +1572,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string",
+              "enum": ["json", "markdown"]
             }
           }
         ],
@@ -4754,7 +4826,7 @@
             "default": null,
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RichText"
+                "$ref": "#/components/schemas/RichTextInput"
               },
               {
                 "type": "null"
@@ -4866,6 +4938,24 @@
           }
         },
         "required": ["projectKey", "issueType", "summary"]
+      },
+      "RichTextInput": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RichText"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "markdown": {
+                "type": "string",
+                "maxLength": 200000
+              }
+            },
+            "required": ["markdown"],
+            "additionalProperties": false
+          }
+        ]
       },
       "RichText": {
         "type": "object",
@@ -5072,7 +5162,7 @@
           "description": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RichText"
+                "$ref": "#/components/schemas/RichTextOutput"
               },
               {
                 "type": "null"
@@ -5205,6 +5295,16 @@
         },
         "required": ["originalEstimateSeconds", "remainingEstimateSeconds", "timeSpentSeconds"],
         "additionalProperties": false
+      },
+      "RichTextOutput": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RichText"
+          },
+          {
+            "type": "string"
+          }
+        ]
       },
       "IssueRef": {
         "type": "object",
@@ -5493,7 +5593,7 @@
           "description": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RichText"
+                "$ref": "#/components/schemas/RichTextInput"
               },
               {
                 "type": "null"
@@ -5678,7 +5778,7 @@
             ]
           },
           "body": {
-            "$ref": "#/components/schemas/RichText"
+            "$ref": "#/components/schemas/RichTextOutput"
           },
           "createdAt": {
             "type": "string",
@@ -5716,7 +5816,7 @@
         "type": "object",
         "properties": {
           "body": {
-            "$ref": "#/components/schemas/RichText"
+            "$ref": "#/components/schemas/RichTextInput"
           }
         },
         "required": ["body"]
@@ -5774,7 +5874,7 @@
         "type": "object",
         "properties": {
           "body": {
-            "$ref": "#/components/schemas/RichText"
+            "$ref": "#/components/schemas/RichTextInput"
           }
         },
         "required": ["body"]

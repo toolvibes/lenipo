@@ -1567,7 +1567,7 @@ export interface components {
       issueType: string;
       summary: string;
       /** @default null */
-      description?: components['schemas']['RichText'] | null;
+      description?: components['schemas']['RichTextInput'] | null;
       priority?: string;
       /** @default null */
       assigneeId?: string | null;
@@ -1586,6 +1586,11 @@ export interface components {
         [key: string]: string | number | boolean | string[] | null;
       };
     };
+    RichTextInput:
+      | components['schemas']['RichText']
+      | {
+          markdown: string;
+        };
     RichText: {
       /** @constant */
       type: 'doc';
@@ -1642,7 +1647,7 @@ export interface components {
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
-      description: components['schemas']['RichText'] | null;
+      description: components['schemas']['RichTextOutput'] | null;
       parent: components['schemas']['IssueRef'] | null;
       children: components['schemas']['IssueSummary'][];
       resolvedAt: string | null;
@@ -1660,6 +1665,7 @@ export interface components {
       remainingEstimateSeconds: number | null;
       timeSpentSeconds: number;
     };
+    RichTextOutput: components['schemas']['RichText'] | string;
     IssueRef: {
       key: string;
       summary: string;
@@ -1733,7 +1739,7 @@ export interface components {
     };
     UpdateIssueRequest: {
       summary?: string;
-      description?: components['schemas']['RichText'] | null;
+      description?: components['schemas']['RichTextInput'] | null;
       issueType?: string;
       priority?: string;
       assigneeId?: string | null;
@@ -1762,7 +1768,7 @@ export interface components {
       /** Format: uuid */
       id: string;
       author: components['schemas']['UserRef'] | null;
-      body: components['schemas']['RichText'];
+      body: components['schemas']['RichTextOutput'];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -1772,7 +1778,7 @@ export interface components {
       canDelete: boolean;
     };
     CreateCommentRequest: {
-      body: components['schemas']['RichText'];
+      body: components['schemas']['RichTextInput'];
     };
     ChangeGroup: {
       id: number;
@@ -1787,7 +1793,7 @@ export interface components {
       }[];
     };
     UpdateCommentRequest: {
-      body: components['schemas']['RichText'];
+      body: components['schemas']['RichTextInput'];
     };
     CreateIssueLinkRequest: {
       type: string;
@@ -3145,7 +3151,9 @@ export interface operations {
   };
   'Issues.create': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3178,7 +3186,9 @@ export interface operations {
   };
   'Issues.get': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;
@@ -3209,7 +3219,9 @@ export interface operations {
   };
   'Issues.update': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;
@@ -3275,7 +3287,9 @@ export interface operations {
   };
   'Issues.transition': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;
@@ -3310,7 +3324,9 @@ export interface operations {
   };
   'Issues.comments': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;
@@ -3341,7 +3357,9 @@ export interface operations {
   };
   'Issues.addComment': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;
@@ -3495,7 +3513,9 @@ export interface operations {
   };
   'Issues.updateComment': {
     parameters: {
-      query?: never;
+      query?: {
+        format?: 'json' | 'markdown';
+      };
       header?: never;
       path: {
         key: string;

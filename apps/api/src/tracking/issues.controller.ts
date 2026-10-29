@@ -17,6 +17,7 @@ import {
   CreateIssueLinkRequest,
   CreateIssueRequest,
   CreateWorklogRequest,
+  FormatQuery,
   Issue,
   TrackingMeta,
   Transition,
@@ -28,10 +29,11 @@ import {
 } from '@tasklore/shared';
 import { z } from 'zod';
 import type { AppConfig } from '../core/config.js';
-import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { CONFIG } from '../core/tokens.js';
+import { commentIn, issueIn } from './content-format.js';
 import { CustomFieldService } from './custom-field.service.js';
 import { IssueService } from './issue.service.js';
 import { MetaService } from './meta.service.js';
@@ -78,14 +80,19 @@ export class IssuesController {
   create(
     @CurrentPrincipal() principal: Principal,
     @ValidBody(CreateIssueRequest) body: CreateIssueRequest,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Issue> {
-    return this.issues.create(principal, body);
+    return this.issues.create(principal, body).then((issue) => issueIn(query.format, issue));
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Get an issue by key', response: Issue })
   @Get('issues/:key')
-  get(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Issue> {
-    return this.issues.get(principal, key);
+  get(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidQuery(FormatQuery) query: FormatQuery,
+  ): Promise<Issue> {
+    return this.issues.get(principal, key).then((issue) => issueIn(query.format, issue));
   }
 
   @Endpoint({
@@ -98,8 +105,9 @@ export class IssuesController {
     @CurrentPrincipal() principal: Principal,
     @Param('key') key: string,
     @ValidBody(UpdateIssueRequest) body: UpdateIssueRequest,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Issue> {
-    return this.issues.update(principal, key, body);
+    return this.issues.update(principal, key, body).then((issue) => issueIn(query.format, issue));
   }
 
   @Endpoint({
@@ -122,8 +130,11 @@ export class IssuesController {
     @CurrentPrincipal() principal: Principal,
     @Param('key') key: string,
     @ValidBody(TransitionRequest) body: TransitionRequest,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Issue> {
-    return this.issues.transition(principal, key, body);
+    return this.issues
+      .transition(principal, key, body)
+      .then((issue) => issueIn(query.format, issue));
   }
 
   @Endpoint({ tag: 'Issues', summary: 'List the comments of an issue', response: z.array(Comment) })
@@ -131,8 +142,11 @@ export class IssuesController {
   comments(
     @CurrentPrincipal() principal: Principal,
     @Param('key') key: string,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Comment[]> {
-    return this.issues.comments(principal, key);
+    return this.issues
+      .comments(principal, key)
+      .then((comments) => comments.map((comment) => commentIn(query.format, comment)));
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Add a comment to an issue', response: Comment })
@@ -142,8 +156,11 @@ export class IssuesController {
     @CurrentPrincipal() principal: Principal,
     @Param('key') key: string,
     @ValidBody(CreateCommentRequest) body: CreateCommentRequest,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Comment> {
-    return this.issues.addComment(principal, key, body);
+    return this.issues
+      .addComment(principal, key, body)
+      .then((comment) => commentIn(query.format, comment));
   }
 
   @Endpoint({
@@ -184,8 +201,11 @@ export class IssuesController {
     @Param('key') key: string,
     @Param('commentId', ChildId) commentId: string,
     @ValidBody(UpdateCommentRequest) body: UpdateCommentRequest,
+    @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<Comment> {
-    return this.issues.updateComment(principal, key, commentId, body);
+    return this.issues
+      .updateComment(principal, key, commentId, body)
+      .then((comment) => commentIn(query.format, comment));
   }
 
   @Endpoint({

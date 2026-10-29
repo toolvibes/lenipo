@@ -99,6 +99,22 @@ export const RichText = z
   .meta({ id: 'RichText' });
 export type RichText = z.infer<typeof RichText>;
 
+/** Rich text as written: a document or Markdown (D-API-09, E-51). */
+export const RichTextInput = z
+  .union([RichText, z.strictObject({ markdown: z.string().max(200_000) })])
+  .meta({ id: 'RichTextInput' });
+export type RichTextInput = z.infer<typeof RichTextInput>;
+
+/** Rich text in a response: the document, or Markdown text with `?format=markdown` (E-51). */
+export const RichTextOutput = z.union([RichText, z.string()]).meta({ id: 'RichTextOutput' });
+export type RichTextOutput = z.infer<typeof RichTextOutput>;
+
+export const ContentFormat = z.enum(['json', 'markdown']);
+export type ContentFormat = z.infer<typeof ContentFormat>;
+
+export const FormatQuery = z.object({ format: ContentFormat.default('json') });
+export type FormatQuery = z.infer<typeof FormatQuery>;
+
 export const ProjectKey = z
   .string()
   .trim()
@@ -159,7 +175,7 @@ export const CreateIssueRequest = z
     projectKey: ProjectKey,
     issueType: z.string().min(1),
     summary: Summary,
-    description: RichText.nullable().default(null),
+    description: RichTextInput.nullable().default(null),
     priority: z.string().min(1).optional(),
     assigneeId: Id.nullable().default(null),
     parentKey: z.string().nullable().default(null),
@@ -175,7 +191,7 @@ export type CreateIssueRequest = z.infer<typeof CreateIssueRequest>;
 export const UpdateIssueRequest = z
   .object({
     summary: Summary,
-    description: RichText.nullable(),
+    description: RichTextInput.nullable(),
     issueType: z.string().min(1),
     priority: z.string().min(1),
     assigneeId: Id.nullable(),
@@ -305,7 +321,7 @@ export const UpdateComponentRequest = z
 export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
 
 export const Issue = IssueSummary.extend({
-  description: RichText.nullable(),
+  description: RichTextOutput.nullable(),
   parent: IssueRef.nullable(),
   children: z.array(IssueSummary),
   resolvedAt: z.iso.datetime().nullable(),
@@ -335,7 +351,7 @@ export const Comment = z
   .object({
     id: Id,
     author: UserRef.nullable(),
-    body: RichText,
+    body: RichTextOutput,
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     /** Changed after it was written (E-42). */
@@ -347,12 +363,12 @@ export const Comment = z
 export type Comment = z.infer<typeof Comment>;
 
 export const CreateCommentRequest = z
-  .object({ body: RichText })
+  .object({ body: RichTextInput })
   .meta({ id: 'CreateCommentRequest' });
 export type CreateCommentRequest = z.infer<typeof CreateCommentRequest>;
 
 export const UpdateCommentRequest = z
-  .object({ body: RichText })
+  .object({ body: RichTextInput })
   .meta({ id: 'UpdateCommentRequest' });
 export type UpdateCommentRequest = z.infer<typeof UpdateCommentRequest>;
 

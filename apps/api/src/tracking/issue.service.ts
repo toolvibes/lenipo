@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { markdownToDoc, reviewMentions } from '@tasklore/editor';
 import type {
   ChangeGroup,
   Comment,
@@ -18,6 +19,7 @@ import type {
   IssueSummary,
   ProjectPermission,
   RichText,
+  RichTextInput,
   Transition,
   TransitionRequest,
   UpdateCommentRequest,
@@ -349,6 +351,29 @@ export class IssueService {
   }
 
   /** Parent rules: sub-tasks sit under standard issues, standard issues under epics. */
+  /**
+   * Rich text as stored: Markdown becomes a document (E-51). Mentions stay only for active
+   * people who can see the project; `@email` finds them by address, others become text.
+   */
+  private async richText<T extends RichTextInput | null>(
+    input: T,
+    projectId: string,
+  ): Promise<Exclude<T, { markdown: string }>> {
+    // A document has `type: "doc"`; the Markdown form is the strict `{ markdown }` object.
+    if (input === null || 'type' in input) return input as Exclude<T, { markdown: string }>;
+    const { markdown } = input as { markdown: string };
+    const doc = await reviewMentions(markdownToDoc(markdown), async ({ id, label }) => {
+      const [person] = await this.database.db
+        .select({ id: users.id, displayName: users.displayName, status: users.status })
+        .from(users)
+        .where(id ? eq(users.id, id) : eq(sql`lower(${users.email})`, label.toLowerCase()));
+      if (person?.status !== 'active') return null;
+      const visible = (await this.projectAccess.permissions(person.id, projectId)).has('browse');
+      return visible ? { id: person.id, label: id ? label : person.displayName } : null;
+    });
+    return doc as Exclude<T, { markdown: string }>;
+  }
+
   private async resolveParent(
     project: ProjectRow,
     childLevel: number,
@@ -380,9 +405,10 @@ export class IssueService {
 
   // ---------------------------------------------------------------- writing
 
-  async create(principal: Principal, request: CreateIssueRequest): Promise<Issue> {
-    const project = await this.projectService.findBrowsable(principal, request.projectKey);
+  async create(principal: Principal, input: CreateIssueRequest): Promise<Issue> {
+    const project = await this.projectService.findBrowsable(principal, input.projectKey);
     const permissions = await this.projectAccess.require(principal, project.id, 'create-issues');
+    const request = { ...input, description: await this.richText(input.description, project.id) };
     const meta = await this.meta.load();
     const type = await this.visibleType(project, request.issueType, meta);
     const priority = this.priorityByKey(meta, request.priority);
@@ -458,6 +484,9 @@ export class IssueService {
       editsFields ? 'edit-issues' : 'assign-issues',
     );
     const meta = await this.meta.load();
+    if (request.description !== undefined) {
+      request.description = await this.richText(request.description, issue.projectId);
+    }
     const changes: Change[] = [];
     const patch: Partial<typeof issues.$inferInsert> = {};
     const track = (
@@ -808,9 +837,10 @@ export class IssueService {
     principal: Principal,
     key: string,
     commentId: string,
-    request: UpdateCommentRequest,
+    input: UpdateCommentRequest,
   ): Promise<Comment> {
     const { issue, permissions } = await this.load(principal, key, 'comment');
+    const request = { body: await this.richText(input.body, issue.projectId) };
     const row = await this.loadComment(issue.id, commentId);
     if (row.authorId !== principal.userId) {
       throw new ForbiddenException('Only the author can edit this comment');
@@ -864,9 +894,10 @@ export class IssueService {
   async addComment(
     principal: Principal,
     key: string,
-    request: CreateCommentRequest,
+    input: CreateCommentRequest,
   ): Promise<Comment> {
     const { issue } = await this.load(principal, key, 'comment');
+    const request = { body: await this.richText(input.body, issue.projectId) };
     const text = plainText(request.body);
     if (!text) throw new BadRequestException('The comment is empty');
     const id = uuidv7();
