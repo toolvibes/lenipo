@@ -11,12 +11,15 @@ import {
   Post,
 } from '@nestjs/common';
 import {
+  DiffQuery,
   FormatQuery,
   MovePageRequest,
   Page,
+  PageDiff,
   PageVersion,
   PageVersionSummary,
   PublishPageRequest,
+  RestoreVersionRequest,
   UpdatePageRequest,
 } from '@tasklore/shared';
 import { z } from 'zod';
@@ -113,6 +116,40 @@ export class PagesController {
     @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<PageVersion> {
     return this.pages.version(principal, id, number, query.format);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
+    summary: 'Compare two published versions of a page',
+    description:
+      'Blocks (headings, paragraphs, list and task items, table rows, images, …) of `to` against `from`: unchanged, added, removed, or changed with the changed words.',
+    response: PageDiff,
+  })
+  @Get(':id/diff')
+  diff(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @ValidQuery(DiffQuery) query: DiffQuery,
+  ): Promise<PageDiff> {
+    return this.pages.diff(principal, id, query.from, query.to);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
+    summary: 'Restore an older version',
+    description:
+      'Publishes the content and title of the version again as the newest version; the live draft follows, also in open editors. Requires the space permission `edit`.',
+    response: Page,
+  })
+  @Post(':id/versions/:number/restore')
+  @HttpCode(200)
+  restoreVersion(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @Param('number', ParseIntPipe) number: number,
+    @ValidBody(RestoreVersionRequest) body: RestoreVersionRequest,
+  ): Promise<Page> {
+    return this.pages.restoreVersion(principal, id, number, body);
   }
 
   @Endpoint({

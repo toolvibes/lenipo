@@ -1,6 +1,6 @@
 import { createServer } from 'node:net';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
@@ -19,6 +19,7 @@ import { SessionService } from '../identity/session.service.js';
 import { UserService } from '../identity/user.service.js';
 import { startTestApp, type TestApp } from '../test/harness.js';
 import { createCollabServer, DRAFT_FIELD } from './collab.server.js';
+import { DRAFT_RESET_CHANNEL } from './document-name.js';
 
 let test: TestApp;
 let collab: ReturnType<typeof createCollabServer>;
@@ -212,6 +213,46 @@ describe('collaboration server', () => {
       '<paragraph>Veröffentlicht</paragraph>',
     );
   });
+
+  it('replaces an open draft live when a version is restored (E-62)', async () => {
+    const client = connect(`page:${publishedPageId}`, { cookie: otherCookie, host: '127.0.0.1' });
+    await client.synced;
+    const draft = client.doc.getXmlFragment(DRAFT_FIELD);
+    await until(() => draft.toString() === '<paragraph>Veröffentlicht</paragraph>');
+    // What the API does when restoring: a new version, then the notification after commit.
+    const db = test.database.db;
+    await db.insert(pageVersions).values({
+      id: uuidv7(),
+      pageId: publishedPageId,
+      number: 2,
+      title: 'Fertig',
+      content: {
+        type: 'doc',
+        content: [
+          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Zurück' }] },
+          { type: 'paragraph', content: [{ type: 'text', text: 'Alter Stand' }] },
+        ],
+      },
+    });
+    await db.update(pages).set({ version: 2 }).where(eq(pages.id, publishedPageId));
+    await db.execute(sql`select pg_notify(${DRAFT_RESET_CHANNEL}, ${`page:${publishedPageId}`})`);
+    await until(
+      () =>
+        draft.toString() ===
+        '<heading level="2">Zurück</heading><paragraph>Alter Stand</paragraph>',
+    );
+
+    // The page reports unpublished changes once the draft moves away from the version.
+    const draftChanged = async () => {
+      const response = await fetch(`${test.baseUrl}/pages/${publishedPageId}`, {
+        headers: { cookie: otherCookie },
+      });
+      return ((await response.json()) as { draftChanged: boolean }).draftChanged;
+    };
+    expect(await draftChanged()).toBe(false);
+    ((draft.get(1) as Y.XmlElement).get(0) as Y.XmlText).insert(0, 'Neu: ');
+    await until(draftChanged, 15_000);
+  }, 25_000);
 
   it('stops taking edits from someone who lost the edit permission', async () => {
     const headers = { host: '127.0.0.1', origin: 'http://127.0.0.1' };

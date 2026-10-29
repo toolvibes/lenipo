@@ -9,7 +9,7 @@ import { client, unwrap } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
-import { pageQuery, pageTreeQuery, pageVersionsQuery } from '../../lib/wiki';
+import { pageQuery, pageTreeQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -46,97 +46,6 @@ export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode
         ))}
       </ol>
     </nav>
-  );
-}
-
-function VersionsDialog({
-  page,
-  open,
-  onOpenChange,
-}: {
-  page: Page;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  const versions = useQuery({ ...pageVersionsQuery(page.id), enabled: open });
-  const [shown, setShown] = useState<number | null>(null);
-  const version = useQuery({
-    queryKey: ['page', page.id, 'versions', shown],
-    queryFn: () =>
-      unwrap(
-        client.GET('/api/v1/pages/{id}/versions/{number}', {
-          params: { path: { id: page.id, number: String(shown ?? 0) }, query: {} },
-        }),
-      ),
-    enabled: open && shown !== null,
-  });
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next);
-        if (!next) setShown(null);
-      }}
-      title={t('wiki.versions')}
-      width={760}
-    >
-      {shown === null ? (
-        <ul className="m-0 flex list-none flex-col p-0">
-          {versions.data?.map((entry) => (
-            <li
-              key={entry.number}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--border)] py-2 last:border-b-0"
-            >
-              <button
-                type="button"
-                onClick={() => setShown(entry.number)}
-                className="font-semibold text-[var(--accent)] hover:underline"
-              >
-                {t('wiki.versionNumber', { number: entry.number })}
-              </button>
-              {entry.number === page.version && (
-                <span className="rounded-[var(--radius-sm)] bg-[var(--accent-soft)] px-1.5 text-xs font-semibold text-[var(--accent)]">
-                  {t('wiki.current')}
-                </span>
-              )}
-              <span className="text-sm">
-                {entry.author?.displayName ?? t('wiki.unknownAuthor')}
-              </span>
-              <span className="text-xs text-[var(--ink-muted)]">
-                {formatDateTime(entry.createdAt)}
-              </span>
-              {entry.comment && (
-                <span className="w-full text-sm text-[var(--ink-muted)]">{entry.comment}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setShown(null)}>
-              {t('wiki.allVersions')}
-            </Button>
-            {version.data && (
-              <span className="text-sm text-[var(--ink-muted)]">
-                {t('wiki.versionBy', {
-                  number: version.data.number,
-                  name: version.data.author?.displayName ?? t('wiki.unknownAuthor'),
-                  date: formatDateTime(version.data.createdAt),
-                })}
-              </span>
-            )}
-          </div>
-          {version.data && (
-            <article className="rounded-[var(--radius-md)] border border-[var(--border)] p-4">
-              <h2 className="tl-heading-lg m-0 mb-3">{version.data.title}</h2>
-              <RichTextView doc={version.data.content as RichText} variant="page" />
-            </article>
-          )}
-        </div>
-      )}
-    </Dialog>
   );
 }
 
@@ -280,7 +189,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const page = useQuery(pageQuery(id));
   useRealtimeRooms([`page:${id}`]);
   useRecordView('page', page.data?.id);
-  const [dialog, setDialog] = useState<'versions' | 'move' | 'delete' | 'child' | null>(null);
+  const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | null>(null);
   const close = (open: boolean) => !open && setDialog(null);
 
   if (page.error) {
@@ -329,10 +238,14 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
             </Link>
           )}
           {data.version > 0 && (
-            <Button variant="ghost" onClick={() => setDialog('versions')}>
+            <Link
+              to="/spaces/$key/pages/$id/history"
+              params={{ key: spaceKey, id: data.id }}
+              className="inline-flex h-[var(--control-md)] items-center gap-2 rounded-[var(--radius-md)] px-3 font-semibold text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]"
+            >
               <ClockCounterClockwise size={16} aria-hidden />
               {t('wiki.versions')}
-            </Button>
+            </Link>
           )}
           {data.canEdit && (
             <DropdownMenu.Root>
@@ -374,7 +287,6 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
         <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('wiki.draftHelp')}</p>
       )}
       <PageAttachments pageId={data.id} canEdit={data.canEdit} />
-      <VersionsDialog page={data} open={dialog === 'versions'} onOpenChange={close} />
       <MoveDialog
         key={`${data.id}:${data.parentId}`}
         page={data}

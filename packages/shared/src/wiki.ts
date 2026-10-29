@@ -113,6 +113,8 @@ export const Page = z
     createdAt: z.iso.datetime(),
     canEdit: z.boolean(),
     favourite: z.boolean(),
+    /** The live draft differs from the published version; only ever true for editors. */
+    draftChanged: z.boolean(),
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;
@@ -153,6 +155,8 @@ export const PageVersionSummary = z
     title: z.string(),
     author: UserRef.nullable(),
     comment: z.string(),
+    /** Set when this version restored an older one (E-62). */
+    restoredFrom: z.number().int().nullable(),
     createdAt: z.iso.datetime(),
   })
   .meta({ id: 'PageVersionSummary' });
@@ -162,6 +166,70 @@ export const PageVersion = PageVersionSummary.extend({
   content: RichTextOutput,
 }).meta({ id: 'PageVersion' });
 export type PageVersion = z.infer<typeof PageVersion>;
+
+/** Publishes the content of an older version again as the newest one (W-PAG-06, E-62). */
+export const RestoreVersionRequest = z
+  .object({ comment: z.string().trim().max(500).default('') })
+  .meta({ id: 'RestoreVersionRequest' });
+export type RestoreVersionRequest = z.infer<typeof RestoreVersionRequest>;
+
+export const DiffQuery = z.object({
+  from: z.coerce.number().int().min(1),
+  to: z.coerce.number().int().min(1),
+});
+export type DiffQuery = z.infer<typeof DiffQuery>;
+
+/** One block of a page as compared: heading, paragraph, list or task item, table row, … */
+export const DiffBlockContent = z
+  .object({
+    type: z.enum([
+      'heading',
+      'paragraph',
+      'listItem',
+      'taskItem',
+      'quote',
+      'codeBlock',
+      'tableRow',
+      'image',
+      'rule',
+    ]),
+    text: z.string(),
+    depth: z.number().int(),
+    level: z.number().int().optional(),
+    checked: z.boolean().optional(),
+    cells: z.array(z.string()).optional(),
+    header: z.boolean().optional(),
+    attachmentId: z.string().optional(),
+  })
+  .meta({ id: 'DiffBlockContent' });
+export type DiffBlockContent = z.infer<typeof DiffBlockContent>;
+
+export const WordChange = z
+  .object({ op: z.enum(['same', 'added', 'removed']), text: z.string() })
+  .meta({ id: 'WordChange' });
+
+export const DiffBlock = z
+  .union([
+    z.object({ op: z.enum(['same', 'added', 'removed']), block: DiffBlockContent }),
+    z.object({
+      op: z.literal('changed'),
+      before: DiffBlockContent,
+      after: DiffBlockContent,
+      words: z.array(WordChange),
+    }),
+  ])
+  .meta({ id: 'DiffBlock' });
+export type DiffBlock = z.infer<typeof DiffBlock>;
+
+/** Two versions compared block by block, with changed words inside changed blocks (W-PAG-05). */
+export const PageDiff = z
+  .object({
+    from: PageVersionSummary,
+    to: PageVersionSummary,
+    blocks: z.array(DiffBlock),
+  })
+  .meta({ id: 'PageDiff' });
+export type PageDiff = z.infer<typeof PageDiff>;
 
 /** A page in the space's trash (W-PAG-13). */
 export const TrashedPage = z

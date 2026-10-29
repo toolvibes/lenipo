@@ -141,6 +141,13 @@
       "when": 1793299651594,
       "tag": "0019_page_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793303434966,
+      "tag": "0020_version_restored_from",
+      "breakpoints": true
     }
   ]
 }

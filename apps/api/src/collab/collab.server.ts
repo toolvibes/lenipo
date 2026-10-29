@@ -1,6 +1,7 @@
 import { Server } from '@hocuspocus/server';
 import { richTextSchema } from '@tasklore/editor';
-import { prosemirrorJSONToYDoc } from '@tiptap/y-tiptap';
+import { prosemirrorJSONToYDoc, updateYFragment } from '@tiptap/y-tiptap';
+import postgres from 'postgres';
 import * as Y from 'yjs';
 import { AccessService } from '../access/access.service.js';
 import type { AppDependencies } from '../app.module.js';
@@ -8,11 +9,10 @@ import { isForeignOrigin } from '../identity/request-guards.js';
 import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
 import { SessionService } from '../identity/session.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
-import { pageIdOf } from './document-name.js';
+import { DRAFT_FIELD, DRAFT_RESET_CHANNEL, pageIdOf } from './document-name.js';
 import { CollabDocumentStore } from './document-store.js';
 
-/** The Yjs fragment the editor's Collaboration extension uses (its default). */
-export const DRAFT_FIELD = 'default';
+export { DRAFT_FIELD } from './document-name.js';
 
 export interface CollabUser {
   id: string;
@@ -34,8 +34,9 @@ export function createCollabServer(
   const sessions = new SessionService(database, config);
   const spaceAccess = new SpaceAccessService(database, new AccessService(database));
   const log = logger.child({ role: 'collab' });
+  let listener: postgres.Sql | undefined;
 
-  return new Server<CollabContext>({
+  const server: Server<CollabContext> = new Server<CollabContext>({
     name: 'tasklore-collab',
     port: config.COLLAB_PORT,
     quiet: true,
@@ -101,5 +102,46 @@ export function createCollabServer(
       await store.save(documentName, state);
       log.debug({ documentName, bytes: state.byteLength }, 'Document stored');
     },
+
+    /** Restored versions replace the draft (E-62); see {@link resetDraft}. */
+    async onListen() {
+      listener = postgres(config.DATABASE_URL, { max: 1, onnotice: () => {} });
+      await listener.listen(DRAFT_RESET_CHANNEL, (documentName) => {
+        resetDraft(documentName).catch((error: unknown) =>
+          log.error({ err: error, documentName }, 'Could not reset the draft'),
+        );
+      });
+    },
+
+    async onDestroy() {
+      await listener?.end({ timeout: 5 });
+    },
   });
+
+  /**
+   * Rewrites the draft to the page's published content in one Yjs transaction: connected
+   * editors receive it as an ordinary change, and their older state cannot bring back what
+   * was replaced. A draft nobody has open is loaded, changed and stored the same way.
+   */
+  async function resetDraft(documentName: string): Promise<void> {
+    const pageId = pageIdOf(documentName);
+    if (!pageId) return;
+    const content = await store.publishedContent(pageId);
+    if (!content) return;
+    const node = richTextSchema.nodeFromJSON(content);
+    const connection = await server.hocuspocus.openDirectConnection(documentName);
+    try {
+      await connection.transact((document) => {
+        updateYFragment(document, document.getXmlFragment(DRAFT_FIELD), node, {
+          mapping: new Map(),
+          isOMark: new Map(),
+        });
+      });
+    } finally {
+      await connection.disconnect();
+    }
+    log.debug({ documentName }, 'Draft reset to the published content');
+  }
+
+  return server;
 }

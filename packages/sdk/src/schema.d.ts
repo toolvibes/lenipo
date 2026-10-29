@@ -1019,6 +1019,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}/diff': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Compare two published versions of a page
+     * @description Blocks (headings, paragraphs, list and task items, table rows, images, …) of `to` against `from`: unchanged, added, removed, or changed with the changed words.
+     */
+    get: operations['Pages.diff'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/versions/{number}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore an older version
+     * @description Publishes the content and title of the version again as the newest version; the live draft follows, also in open editors. Requires the space permission `edit`.
+     */
+    post: operations['Pages.restoreVersion'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/restore': {
     parameters: {
       query?: never;
@@ -2766,6 +2806,7 @@ export interface components {
       createdAt: string;
       canEdit: boolean;
       favourite: boolean;
+      draftChanged: boolean;
     };
     PageRef: {
       /** Format: uuid */
@@ -2790,6 +2831,7 @@ export interface components {
       title: string;
       author: components['schemas']['UserRef'] | null;
       comment: string;
+      restoredFrom: number | null;
       /** Format: date-time */
       createdAt: string;
     };
@@ -2798,9 +2840,57 @@ export interface components {
       title: string;
       author: components['schemas']['UserRef'] | null;
       comment: string;
+      restoredFrom: number | null;
       /** Format: date-time */
       createdAt: string;
       content: components['schemas']['RichTextOutput'];
+    };
+    PageDiff: {
+      from: components['schemas']['PageVersionSummary'];
+      to: components['schemas']['PageVersionSummary'];
+      blocks: components['schemas']['DiffBlock'][];
+    };
+    DiffBlock:
+      | {
+          /** @enum {string} */
+          op: 'same' | 'added' | 'removed';
+          block: components['schemas']['DiffBlockContent'];
+        }
+      | {
+          /** @constant */
+          op: 'changed';
+          before: components['schemas']['DiffBlockContent'];
+          after: components['schemas']['DiffBlockContent'];
+          words: components['schemas']['WordChange'][];
+        };
+    DiffBlockContent: {
+      /** @enum {string} */
+      type:
+        | 'heading'
+        | 'paragraph'
+        | 'listItem'
+        | 'taskItem'
+        | 'quote'
+        | 'codeBlock'
+        | 'tableRow'
+        | 'image'
+        | 'rule';
+      text: string;
+      depth: number;
+      level?: number;
+      checked?: boolean;
+      cells?: string[];
+      header?: boolean;
+      attachmentId?: string;
+    };
+    WordChange: {
+      /** @enum {string} */
+      op: 'same' | 'added' | 'removed';
+      text: string;
+    };
+    RestoreVersionRequest: {
+      /** @default  */
+      comment?: string;
     };
     Favourite: {
       kind: components['schemas']['FavouriteKind'];
@@ -5761,6 +5851,76 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PageVersion'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.diff': {
+    parameters: {
+      query: {
+        from: number;
+        to: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageDiff'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.restoreVersion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RestoreVersionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

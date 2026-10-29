@@ -2,6 +2,7 @@ import type {
   Attachment,
   Favourite,
   Page,
+  PageDiff,
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
@@ -450,5 +451,65 @@ describe('page attachments and images (E-61)', () => {
     expect((await mira.request<Attachment[]>('GET', `/pages/${page.id}/attachments`)).body).toEqual(
       [],
     );
+  });
+});
+
+describe('version diff and restore (E-62)', () => {
+  let page: Page;
+  const text = (...paragraphs: string[]) => ({
+    type: 'doc',
+    content: paragraphs.map((paragraph) => ({
+      type: 'paragraph',
+      content: [{ type: 'text', text: paragraph }],
+    })),
+  });
+
+  it('compares two versions block by block', async () => {
+    page = (await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Ablauf' })).body;
+    await mira.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Ablauf',
+      content: text('Der Sprint dauert zwei Wochen.', 'Planung am Montag.'),
+    });
+    await mira.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Ablauf (neu)',
+      content: text('Der Sprint dauert drei Wochen.', 'Review am Freitag.'),
+      comment: 'Kürzer geplant',
+    });
+    const diff = await olaf.request<PageDiff>('GET', `/pages/${page.id}/diff?from=1&to=2`);
+    expect(diff.status).toBe(200);
+    expect(diff.body.to).toMatchObject({ number: 2, comment: 'Kürzer geplant' });
+    expect(diff.body.blocks.map((block) => block.op)).toEqual(['changed', 'removed', 'added']);
+    const first = diff.body.blocks[0];
+    expect(first?.op === 'changed' && first.words).toEqual([
+      { op: 'same', text: 'Der Sprint dauert ' },
+      { op: 'removed', text: 'zwei ' },
+      { op: 'added', text: 'drei ' },
+      { op: 'same', text: 'Wochen.' },
+    ]);
+    expect((await olaf.request('GET', `/pages/${page.id}/diff?from=1&to=9`)).status).toBe(404);
+  });
+
+  it('restores an older version as a new one', async () => {
+    expect((await olaf.request('POST', `/pages/${page.id}/versions/1/restore`, {})).status).toBe(
+      403,
+    );
+    expect((await mira.request('POST', `/pages/${page.id}/versions/2/restore`, {})).status).toBe(
+      409,
+    );
+    const restored = await mira.request<Page>('POST', `/pages/${page.id}/versions/1/restore`, {
+      comment: 'Zwei Wochen bleiben',
+    });
+    expect(restored.status).toBe(200);
+    expect(restored.body).toMatchObject({ version: 3, title: 'Ablauf' });
+    expect(restored.body.content).toEqual(
+      text('Der Sprint dauert zwei Wochen.', 'Planung am Montag.'),
+    );
+    const versions = await olaf.request<PageVersionSummary[]>('GET', `/pages/${page.id}/versions`);
+    expect(versions.body.map((version) => [version.number, version.restoredFrom])).toEqual([
+      [3, 1],
+      [2, null],
+      [1, null],
+    ]);
+    expect(versions.body[0]?.comment).toBe('Zwei Wochen bleiben');
   });
 });

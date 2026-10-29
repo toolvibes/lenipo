@@ -3166,6 +3166,124 @@
         }
       }
     },
+    "/api/v1/pages/{id}/diff": {
+      "get": {
+        "operationId": "Pages.diff",
+        "summary": "Compare two published versions of a page",
+        "description": "Blocks (headings, paragraphs, list and task items, table rows, images, …) of `to` against `from`: unchanged, added, removed, or changed with the changed words.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDiff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/versions/{number}/restore": {
+      "post": {
+        "operationId": "Pages.restoreVersion",
+        "summary": "Restore an older version",
+        "description": "Publishes the content and title of the version again as the newest version; the live draft follows, also in open editors. Requires the space permission `edit`.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pages/{id}/restore": {
       "post": {
         "operationId": "Pages.restore",
@@ -9213,6 +9331,9 @@
           },
           "favourite": {
             "type": "boolean"
+          },
+          "draftChanged": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -9227,7 +9348,8 @@
           "publishedBy",
           "createdAt",
           "canEdit",
-          "favourite"
+          "favourite",
+          "draftChanged"
         ],
         "additionalProperties": false
       },
@@ -9330,13 +9452,25 @@
           "comment": {
             "type": "string"
           },
+          "restoredFrom": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
-        "required": ["number", "title", "author", "comment", "createdAt"],
+        "required": ["number", "title", "author", "comment", "restoredFrom", "createdAt"],
         "additionalProperties": false
       },
       "PageVersion": {
@@ -9363,6 +9497,18 @@
           "comment": {
             "type": "string"
           },
+          "restoredFrom": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -9372,8 +9518,149 @@
             "$ref": "#/components/schemas/RichTextOutput"
           }
         },
-        "required": ["number", "title", "author", "comment", "createdAt", "content"],
+        "required": [
+          "number",
+          "title",
+          "author",
+          "comment",
+          "restoredFrom",
+          "createdAt",
+          "content"
+        ],
         "additionalProperties": false
+      },
+      "PageDiff": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/PageVersionSummary"
+          },
+          "to": {
+            "$ref": "#/components/schemas/PageVersionSummary"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiffBlock"
+            }
+          }
+        },
+        "required": ["from", "to", "blocks"],
+        "additionalProperties": false
+      },
+      "DiffBlock": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": ["same", "added", "removed"]
+              },
+              "block": {
+                "$ref": "#/components/schemas/DiffBlockContent"
+              }
+            },
+            "required": ["op", "block"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "changed"
+              },
+              "before": {
+                "$ref": "#/components/schemas/DiffBlockContent"
+              },
+              "after": {
+                "$ref": "#/components/schemas/DiffBlockContent"
+              },
+              "words": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WordChange"
+                }
+              }
+            },
+            "required": ["op", "before", "after", "words"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "DiffBlockContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "heading",
+              "paragraph",
+              "listItem",
+              "taskItem",
+              "quote",
+              "codeBlock",
+              "tableRow",
+              "image",
+              "rule"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "level": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "checked": {
+            "type": "boolean"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "header": {
+            "type": "boolean"
+          },
+          "attachmentId": {
+            "type": "string"
+          }
+        },
+        "required": ["type", "text", "depth"],
+        "additionalProperties": false
+      },
+      "WordChange": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["same", "added", "removed"]
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": ["op", "text"],
+        "additionalProperties": false
+      },
+      "RestoreVersionRequest": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        }
       },
       "Favourite": {
         "type": "object",

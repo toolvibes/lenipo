@@ -5,3 +5,12 @@ const DOCUMENT_NAME = /^page:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0
 export function pageIdOf(name: string): string | null {
   return DOCUMENT_NAME.exec(name)?.[1] ?? null;
 }
+
+/** The Yjs fragment holding a page draft; the editor's Collaboration extension uses it. */
+export const DRAFT_FIELD = 'default';
+
+/** The NOTIFY channel that asks the collab service to replace a draft (E-62). */
+export const DRAFT_RESET_CHANNEL = 'tasklore_draft_reset';
+
+/** The collab document name of a page's draft. */
+export const draftName = (pageId: string) => `page:${pageId}`;

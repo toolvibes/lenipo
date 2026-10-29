@@ -25,6 +25,7 @@ import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
 import { PageEditor } from './features/wiki/PageEditor';
+import { PageHistory } from './features/wiki/PageHistory';
 import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
 import { SpaceSettingsPage } from './features/wiki/SpaceSettingsPage';
 import { SpacesPage } from './features/wiki/SpacesPage';
@@ -129,6 +130,28 @@ const pageEditRoute = createRoute({
     const { key, id } = pageEditRoute.useParams();
     // Remount per page, so the editor never mixes two documents.
     return <PageEditor key={id} me={me} spaceKey={key.toUpperCase()} id={id} />;
+  },
+});
+
+const versionNumber = (value: unknown) => {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : undefined;
+};
+
+const pageHistoryRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/pages/$id/history',
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { from?: number; to?: number; view?: number } => ({
+    from: versionNumber(search.from),
+    to: versionNumber(search.to),
+    view: versionNumber(search.view),
+  }),
+  component: function History() {
+    const { key, id } = pageHistoryRoute.useParams();
+    const search = pageHistoryRoute.useSearch();
+    return <PageHistory key={id} spaceKey={key.toUpperCase()} id={id} {...search} />;
   },
 });
 
@@ -325,6 +348,7 @@ const routeTree = rootRoute.addChildren([
       spaceHomeRoute,
       wikiPageRoute,
       pageEditRoute,
+      pageHistoryRoute,
       trashRoute,
       spaceSettingsRoute,
     ]),

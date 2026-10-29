@@ -1,0 +1,1 @@
+ALTER TABLE "page_versions" ADD COLUMN "restored_from" integer;

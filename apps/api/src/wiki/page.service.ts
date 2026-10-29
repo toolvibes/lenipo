@@ -1,25 +1,37 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { imageAttachmentIds, isValidDoc } from '@tasklore/editor';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { diffDocs, imageAttachmentIds, isValidDoc, richTextSchema } from '@tasklore/editor';
 import type {
   ContentFormat,
   CreatePageRequest,
   MovePageRequest,
   Page,
+  PageDiff,
   PageRef,
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
   PublishPageRequest,
+  RestoreVersionRequest,
   RichText,
   SpacePermission,
   TrashedPage,
 } from '@tasklore/shared';
+import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
+import * as Y from 'yjs';
+import { DRAFT_FIELD, DRAFT_RESET_CHANNEL, draftName } from '../collab/document-name.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import {
+  collabDocuments,
   favourites,
   pageAttachments,
   pages,
@@ -39,6 +51,15 @@ type PageRow = typeof pages.$inferSelect;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Pages of a wiki space: tree, drafts, published versions and trash (W-PAG, E-59). */
+/** Key order of JSON objects does not matter when comparing documents. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, entry: unknown) =>
+    entry && typeof entry === 'object' && !Array.isArray(entry)
+      ? Object.fromEntries(Object.entries(entry).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : entry,
+  );
+}
+
 @Injectable()
 export class PageService {
   constructor(
@@ -261,7 +282,32 @@ export class PageService {
       createdAt: page.createdAt.toISOString(),
       canEdit: permissions.has('edit'),
       favourite: await this.starred(principal.userId, page.id),
+      draftChanged: permissions.has('edit') ? await this.draftChanged(page.id, content) : false,
     };
+  }
+
+  /**
+   * Whether the stored draft says something else than the published content (E-62). Both are
+   * normalised through the schema, so default attributes and key order do not count.
+   */
+  private async draftChanged(pageId: string, published: RichText | null): Promise<boolean> {
+    const [row] = await this.database.db
+      .select({ state: collabDocuments.state })
+      .from(collabDocuments)
+      .where(eq(collabDocuments.name, draftName(pageId)));
+    if (!row) return false;
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, row.state);
+    const draft = yXmlFragmentToProsemirrorJSON(doc.getXmlFragment(DRAFT_FIELD));
+    const normalise = (value: unknown) => {
+      try {
+        return canonicalJson(richTextSchema.nodeFromJSON(value).toJSON());
+      } catch {
+        return null;
+      }
+    };
+    const empty = { type: 'doc', content: [{ type: 'paragraph' }] };
+    return normalise(draft) !== normalise(published ?? empty);
   }
 
   private async starred(userId: string, pageId: string): Promise<boolean> {
@@ -287,6 +333,7 @@ export class PageService {
         authorId: pageVersions.authorId,
         authorName: users.displayName,
         comment: pageVersions.comment,
+        restoredFrom: pageVersions.restoredFrom,
         createdAt: pageVersions.createdAt,
       })
       .from(pageVersions)
@@ -299,6 +346,7 @@ export class PageService {
       author:
         row.authorId && row.authorName ? { id: row.authorId, displayName: row.authorName } : null,
       comment: row.comment,
+      restoredFrom: row.restoredFrom,
       createdAt: row.createdAt.toISOString(),
     }));
   }
@@ -314,6 +362,15 @@ export class PageService {
     if (!row) throw new NotFoundException('Version not found');
     const content = row.version.content as RichText;
     return {
+      ...this.versionSummary(row),
+      content: format === 'markdown' ? markdownOf(content) : content,
+    };
+  }
+
+  private versionSummary(
+    row: NonNullable<Awaited<ReturnType<PageService['versionRow']>>>,
+  ): PageVersionSummary {
+    return {
       number: row.version.number,
       title: row.version.title,
       author:
@@ -321,8 +378,23 @@ export class PageService {
           ? { id: row.version.authorId, displayName: row.authorName }
           : null,
       comment: row.version.comment,
+      restoredFrom: row.version.restoredFrom,
       createdAt: row.version.createdAt.toISOString(),
-      content: format === 'markdown' ? markdownOf(content) : content,
+    };
+  }
+
+  /** Two versions compared block by block, words inside changed blocks (W-PAG-05, E-62). */
+  async diff(principal: Principal, id: string, from: number, to: number): Promise<PageDiff> {
+    const { page } = await this.authorize(principal, id, 'view');
+    const [before, after] = await Promise.all([
+      this.versionRow(page.id, from),
+      this.versionRow(page.id, to),
+    ]);
+    if (!before || !after) throw new NotFoundException('Version not found');
+    return {
+      from: this.versionSummary(before),
+      to: this.versionSummary(after),
+      blocks: diffDocs(before.version.content, after.version.content),
     };
   }
 
@@ -356,32 +428,76 @@ export class PageService {
         throw new BadRequestException('Images must be attachments of this page');
       }
     }
+    await this.storeVersion(principal, page.id, space.key, {
+      title: request.title,
+      content: request.content,
+      comment: request.comment,
+      restoredFrom: null,
+    });
+    return this.get(principal, id);
+  }
+
+  /**
+   * Publishes the content of an older version again (W-PAG-06, E-62). History stays linear;
+   * the live draft follows, also in editors that have it open.
+   */
+  async restoreVersion(
+    principal: Principal,
+    id: string,
+    number: number,
+    request: RestoreVersionRequest,
+  ): Promise<Page> {
+    const { page, space } = await this.authorize(principal, id, 'edit');
+    const row = await this.versionRow(page.id, number);
+    if (!row) throw new NotFoundException('Version not found');
+    if (number === page.version) {
+      throw new ConflictException('This version is already the current one');
+    }
+    await this.storeVersion(principal, page.id, space.key, {
+      title: row.version.title,
+      content: row.version.content,
+      comment: request.comment,
+      restoredFrom: number,
+    });
+    return this.get(principal, id);
+  }
+
+  private async storeVersion(
+    principal: Principal,
+    pageId: string,
+    spaceKey: string,
+    version: { title: string; content: unknown; comment: string; restoredFrom: number | null },
+  ): Promise<void> {
     await this.database.db.transaction(async (tx) => {
       const [locked] = await tx
         .select({ version: pages.version })
         .from(pages)
-        .where(eq(pages.id, page.id))
+        .where(eq(pages.id, pageId))
         .for('update');
       const number = (locked?.version ?? 0) + 1;
       const now = new Date();
       await tx.insert(pageVersions).values({
         id: uuidv7(),
-        pageId: page.id,
+        pageId,
         number,
-        title: request.title,
-        content: request.content,
-        text: plainText(request.content),
+        title: version.title,
+        content: version.content,
+        text: plainText(version.content),
         authorId: principal.userId,
-        comment: request.comment,
+        comment: version.comment,
+        restoredFrom: version.restoredFrom,
         createdAt: now,
       });
       await tx
         .update(pages)
-        .set({ title: request.title, version: number, publishedAt: now, updatedAt: now })
-        .where(eq(pages.id, page.id));
-      await signal(tx, { type: 'page', pageId: page.id, spaceKey: space.key });
+        .set({ title: version.title, version: number, publishedAt: now, updatedAt: now })
+        .where(eq(pages.id, pageId));
+      if (version.restoredFrom !== null) {
+        // After commit the collab service replaces the draft with the restored content.
+        await tx.execute(sql`select pg_notify(${DRAFT_RESET_CHANNEL}, ${draftName(pageId)})`);
+      }
+      await signal(tx, { type: 'page', pageId, spaceKey });
     });
-    return this.get(principal, id);
   }
 
   /** Moves a page within its space (W-PAG-01, -02); never below itself. */

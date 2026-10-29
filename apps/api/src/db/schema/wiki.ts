@@ -115,6 +115,8 @@ export const pageVersions = pgTable(
     text: text().notNull().default(''),
     authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     comment: text().notNull().default(''),
+    /** The number of the version this one restored (E-62). */
+    restoredFrom: integer(),
     createdAt: timestamp({ withTimezone: true }).notNull().default(sql`now()`),
   },
   (table) => [uniqueIndex('page_versions_page_number_unique').on(table.pageId, table.number)],
