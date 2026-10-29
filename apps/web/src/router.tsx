@@ -7,6 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
+import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { PageView } from './features/pages/PageView';
@@ -126,6 +127,31 @@ const issueRoute = createRoute({
   },
 });
 
+/** Administration needs the global permission "admin"; the API checks it again. */
+const adminRoute = createRoute({
+  getParentRoute: () => appRoute,
+  id: 'admin',
+  beforeLoad: ({ context }) => {
+    if (!context.me.globalPermissions.includes('admin')) throw redirect({ to: '/' });
+  },
+  component: Outlet,
+});
+
+const webhooksRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/webhooks',
+  component: WebhooksPage,
+});
+
+const webhookRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/webhooks/$id',
+  component: function Webhook() {
+    const { id } = webhookRoute.useParams();
+    return <WebhookPage key={id} id={id} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   setupRoute,
   loginRoute,
@@ -136,6 +162,7 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     searchRoute,
     issueRoute,
+    adminRoute.addChildren([webhooksRoute, webhookRoute]),
   ]),
 ]);
 

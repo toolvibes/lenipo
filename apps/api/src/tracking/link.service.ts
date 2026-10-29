@@ -31,8 +31,8 @@ export class LinkService {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
   ) {}
 
-  /** Links of an issue to issues the user can see; links to hidden issues are left out. */
-  async linksFor(userId: string, issueId: string): Promise<IssueLink[]> {
+  /** Links of an issue to issues the user can see (all for null); hidden ones are left out. */
+  async linksFor(userId: string | null, issueId: string): Promise<IssueLink[]> {
     const db = this.database.db;
     const rows = await db
       .select()
@@ -40,10 +40,12 @@ export class LinkService {
       .where(or(eq(issueLinks.sourceId, issueId), eq(issueLinks.targetId, issueId)));
     if (rows.length === 0) return [];
     const otherIds = rows.map((row) => (row.sourceId === issueId ? row.targetId : row.sourceId));
-    const visibleProjects = db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(await this.projectAccess.browsableCondition(userId));
+    const visibleProjects = userId
+      ? db
+          .select({ id: projects.id })
+          .from(projects)
+          .where(await this.projectAccess.browsableCondition(userId))
+      : null;
     const others = await db
       .select()
       .from(issues)
@@ -51,7 +53,7 @@ export class LinkService {
         and(
           inArray(issues.id, otherIds),
           isNull(issues.deletedAt),
-          inArray(issues.projectId, visibleProjects),
+          visibleProjects ? inArray(issues.projectId, visibleProjects) : undefined,
         ),
       );
     const meta = await this.meta.load();

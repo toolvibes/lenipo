@@ -8,6 +8,7 @@ import type {
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { users } from '../db/schema/index.js';
+import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 import { docFromText } from '../tracking/rich-text.js';
@@ -39,8 +40,7 @@ function mention(text: string, userId: string, label: string): RichText {
 
 /** Lets the worker do its job now instead of on its timer. */
 async function work(): Promise<void> {
-  const notifications = test.app.get(NotificationService);
-  while ((await notifications.processPendingEvents()) > 0);
+  await test.app.get(EventProcessor).drain();
 }
 
 async function inbox(client: TestClient): Promise<NotificationList> {

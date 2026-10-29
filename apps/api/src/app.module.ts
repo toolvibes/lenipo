@@ -6,9 +6,9 @@ import { CoreModule } from './core/core.module.js';
 import { ProblemFilter } from './core/http/problem.filter.js';
 import type { Logger } from './core/logger.js';
 import type { DatabaseHandle } from './db/client.js';
+import { EventsModule } from './events/events.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
-import { NotificationsModule } from './notifications/notifications.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { SearchModule } from './search/search.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -33,7 +33,7 @@ export class AppModule {
         IdentityModule,
         TrackingModule,
         SearchModule,
-        NotificationsModule,
+        EventsModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

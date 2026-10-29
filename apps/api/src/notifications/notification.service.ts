@@ -30,7 +30,6 @@ import { Mailer } from './mailer.js';
 
 type EventRow = typeof domainEvents.$inferSelect;
 
-const MAX_ATTEMPTS = 5;
 const STATUS_FIELDS = new Set(['status', 'resolution']);
 
 function issueEvent(row: EventRow): IssueEvent {
@@ -55,49 +54,19 @@ export class NotificationService {
     @Inject(Mailer) private readonly mailer: Mailer,
   ) {}
 
-  // ---------------------------------------------------------------- processing events
+  // ---------------------------------------------------------------- events
 
-  /** Handles a batch of outbox events; returns how many were taken. Safe with several workers. */
-  async processPendingEvents(limit = 50): Promise<number> {
-    return this.database.db.transaction(async (tx) => {
-      const rows = await tx
-        .select()
-        .from(domainEvents)
-        .where(isNull(domainEvents.processedAt))
-        .orderBy(asc(domainEvents.id))
-        .limit(limit)
-        .for('update', { skipLocked: true });
-      for (const row of rows) {
-        try {
-          await tx.transaction((savepoint) => this.handle(savepoint, row));
-          await tx
-            .update(domainEvents)
-            .set({ processedAt: sql`now()` })
-            .where(eq(domainEvents.id, row.id));
-        } catch (error) {
-          const attempts = row.attempts + 1;
-          this.logger.error({ err: error, event: row.id, attempts }, 'Processing an event failed');
-          await tx
-            .update(domainEvents)
-            .set({
-              attempts,
-              lastError: String(error).slice(0, 1000),
-              // Give up after a few attempts, so one broken event does not block the rest.
-              ...(attempts >= MAX_ATTEMPTS ? { processedAt: sql`now()` } : {}),
-            })
-            .where(eq(domainEvents.id, row.id));
-        }
-      }
-      return rows.length;
-    });
-  }
-
-  /** Watchers plus mentioned people, minus the actor; only who may still see the issue. */
-  private async handle(tx: Executor, row: EventRow): Promise<void> {
+  /**
+   * Turns one outbox event into notifications (called by the EventProcessor in its transaction):
+   * watchers plus mentioned people, minus the actor; only who may still see the issue.
+   */
+  async handle(tx: Executor, row: EventRow): Promise<void> {
     if (!row.issueId) return;
     const [issue] = await tx.select().from(issues).where(eq(issues.id, row.issueId));
     if (!issue || issue.deletedAt) return;
     const event = issueEvent(row);
+    // Deleted comments are of interest to webhooks only.
+    if (event.type === 'issue.comment_deleted') return;
     const mentions = new Set(event.mentions);
 
     let candidates: string[];

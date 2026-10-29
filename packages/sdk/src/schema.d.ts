@@ -865,6 +865,144 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/webhooks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List webhooks
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Webhooks.list'];
+    put?: never;
+    /**
+     * Create a webhook
+     * @description Deliveries are signed per Standard Webhooks (headers `webhook-id`, `webhook-timestamp`, `webhook-signature`). The secret is only returned here and when rotated.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Webhooks.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/webhooks/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a webhook
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Webhooks.get'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a webhook and its delivery log
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Webhooks.delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Change a webhook
+     * @description Enabling a webhook the system switched off also clears its failure state.
+     *
+     *     Requires the global permission `admin`.
+     */
+    patch: operations['Webhooks.update'];
+    trace?: never;
+  };
+  '/api/v1/admin/webhooks/{id}/rotate-secret': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Replace the signing secret
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Webhooks.rotate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/webhooks/{id}/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send a test message now
+     * @description Returns the delivery with the receiver’s answer.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Webhooks.test'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/webhooks/{id}/deliveries': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List recent deliveries of a webhook (kept 30 days)
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Webhooks.deliveries'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/webhooks/{id}/deliveries/{deliveryId}/resend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send a delivery again now
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Webhooks.resend'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1487,6 +1625,91 @@ export interface components {
       id: string;
       displayName: string;
       email: string;
+    };
+    Webhook: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      url: string;
+      events: components['schemas']['WebhookEventType'][];
+      projectKeys: string[];
+      enabled: boolean;
+      disabledReason: string | null;
+      failingSince: string | null;
+      lastDelivery: {
+        /** @enum {string} */
+        status: 'pending' | 'succeeded' | 'failed';
+        responseStatus: number | null;
+        /** Format: date-time */
+        at: string;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** @enum {string} */
+    WebhookEventType:
+      | 'issue.created'
+      | 'issue.updated'
+      | 'issue.transitioned'
+      | 'comment.created'
+      | 'comment.updated'
+      | 'comment.deleted';
+    CreateWebhookRequest: {
+      name: string;
+      /** Format: uri */
+      url: string;
+      events: components['schemas']['WebhookEventType'][];
+      /** @default [] */
+      projectKeys?: string[];
+      /** @default true */
+      enabled?: boolean;
+    };
+    CreatedWebhook: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      url: string;
+      events: components['schemas']['WebhookEventType'][];
+      projectKeys: string[];
+      enabled: boolean;
+      disabledReason: string | null;
+      failingSince: string | null;
+      lastDelivery: {
+        /** @enum {string} */
+        status: 'pending' | 'succeeded' | 'failed';
+        responseStatus: number | null;
+        /** Format: date-time */
+        at: string;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      secret: string;
+    };
+    UpdateWebhookRequest: {
+      name?: string;
+      /** Format: uri */
+      url?: string;
+      events?: components['schemas']['WebhookEventType'][];
+      projectKeys?: string[];
+      enabled?: boolean;
+    };
+    WebhookSecret: {
+      secret: string;
+    };
+    WebhookDelivery: {
+      /** Format: uuid */
+      id: string;
+      type: string;
+      /** @enum {string} */
+      status: 'pending' | 'succeeded' | 'failed';
+      attempts: number;
+      nextAttemptAt: string | null;
+      lastAttemptAt: string | null;
+      responseStatus: number | null;
+      responseBody: string | null;
+      durationMs: number | null;
+      /** Format: date-time */
+      createdAt: string;
     };
   };
   responses: never;
@@ -3464,6 +3687,290 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['UserLookup'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Webhook'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateWebhookRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedWebhook'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Webhook'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateWebhookRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Webhook'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.rotate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebhookSecret'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebhookDelivery'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.deliveries': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebhookDelivery'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Webhooks.resend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        deliveryId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebhookDelivery'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

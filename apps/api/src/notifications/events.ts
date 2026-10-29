@@ -21,7 +21,8 @@ export type IssueEvent =
       mentions: string[];
       /** An edit: only people mentioned for the first time are told. */
       edited: boolean;
-    };
+    }
+  | { type: 'issue.comment_deleted'; commentId: string };
 
 export async function emitIssueEvent(
   tx: Executor,

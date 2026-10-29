@@ -52,6 +52,8 @@ const configSchema = z.object({
   MAIL_FROM: z.string().min(3).default('Tasklore <tasklore@localhost>'),
   /** Notification emails wait this long after the last change to an issue, bundling a burst into one. */
   NOTIFICATION_EMAIL_DELAY_SECONDS: z.coerce.number().int().min(0).default(120),
+  /** Let webhooks reach loopback and private addresses (internal tools); off by default (E-45). */
+  WEBHOOK_ALLOW_PRIVATE_NETWORKS: z.stringbool().default(false),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

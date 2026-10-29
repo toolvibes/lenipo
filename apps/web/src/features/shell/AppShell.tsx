@@ -6,6 +6,7 @@ import {
   MagnifyingGlass,
   NotePencil,
   SignOut,
+  WebhooksLogo,
 } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
@@ -95,6 +96,19 @@ export function AppShell({ me }: { me: Me }) {
           <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
           <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
         </div>
+        {me.globalPermissions.includes('admin') && (
+          <div className="flex flex-col gap-0.5">
+            <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+              {t('shell.administration')}
+            </span>
+            <NavItem
+              to="/admin/webhooks"
+              icon={WebhooksLogo}
+              label={t('webhooks.title')}
+              exact={false}
+            />
+          </div>
+        )}
         <div className="mt-auto flex items-center gap-2 px-2">
           <span
             className="grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white"

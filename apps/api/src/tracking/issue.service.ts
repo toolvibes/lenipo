@@ -146,7 +146,17 @@ export class IssueService {
   }
 
   /** Full issue representation, read fresh from the database. */
-  private async present(principal: Principal, issueId: string): Promise<Issue> {
+  private present(principal: Principal, issueId: string): Promise<Issue> {
+    return this.presentFor(principal.userId, issueId);
+  }
+
+  /** The issue as the API shows it to administrators, e.g. for webhook payloads (E-45). */
+  snapshot(issueId: string): Promise<Issue> {
+    return this.presentFor(null, issueId);
+  }
+
+  /** `viewer` decides "watching" and which links show; null sees all links. */
+  private async presentFor(viewer: string | null, issueId: string): Promise<Issue> {
     const db = this.database.db;
     const [row] = await db
       .select({ issue: issues, project: projects })
@@ -178,7 +188,7 @@ export class IssueService {
         ...children.map((child) => child.assigneeId),
       ]),
       this.components.refsFor(issue.id),
-      this.links.linksFor(principal.userId, issue.id),
+      this.links.linksFor(viewer, issue.id),
     ]);
     return {
       ...this.toSummary(issue, meta, people),
@@ -191,7 +201,7 @@ export class IssueService {
       dueDate: issue.dueDate,
       createdAt: issue.createdAt.toISOString(),
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
-      watching: watchers.some((watcher) => watcher.userId === principal.userId),
+      watching: watchers.some((watcher) => watcher.userId === viewer),
       watcherCount: watchers.length,
       components,
       links,
@@ -709,15 +719,14 @@ export class IssueService {
         .set({ body: request.body, bodyText: text, updatedAt: sql`now()` })
         .where(eq(issueComments.id, row.id))
         .returning();
-      if (added.length > 0) {
-        await emitIssueEvent(tx, issue.id, principal.userId, {
-          type: 'issue.commented',
-          commentId: row.id,
-          excerpt: text.slice(0, 500),
-          mentions: added,
-          edited: true,
-        });
-      }
+      // Every edit is an event (webhooks); notifications only go to people newly mentioned.
+      await emitIssueEvent(tx, issue.id, principal.userId, {
+        type: 'issue.commented',
+        commentId: row.id,
+        excerpt: text.slice(0, 500),
+        mentions: added,
+        edited: true,
+      });
       return result;
     });
     if (!updated) throw new NotFoundException('Comment not found');
@@ -733,10 +742,16 @@ export class IssueService {
         'Only the author or a project administrator can delete this comment',
       );
     }
-    await this.database.db
-      .update(issueComments)
-      .set({ deletedAt: sql`now()` })
-      .where(eq(issueComments.id, row.id));
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .update(issueComments)
+        .set({ deletedAt: sql`now()` })
+        .where(eq(issueComments.id, row.id));
+      await emitIssueEvent(tx, issue.id, principal.userId, {
+        type: 'issue.comment_deleted',
+        commentId: row.id,
+      });
+    });
   }
 
   async addComment(
