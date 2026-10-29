@@ -10,6 +10,7 @@ import { safeRedirectPath } from '@tasklore/shared';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { PageView } from './features/pages/PageView';
+import { SearchPage } from './features/search/SearchPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
 import { IssuePage } from './features/tracking/IssuePage';
@@ -101,6 +102,20 @@ const projectRoute = createRoute({
   },
 });
 
+const searchRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/issues',
+  validateSearch: (search: Record<string, unknown>): { q?: string; filter?: string } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+    filter: typeof search.filter === 'string' ? search.filter : undefined,
+  }),
+  component: function Search() {
+    const { me } = searchRoute.useRouteContext();
+    const { q, filter } = searchRoute.useSearch();
+    return <SearchPage me={me} q={q} filterId={filter} />;
+  },
+});
+
 const issueRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/issues/$key',
@@ -114,7 +129,14 @@ const issueRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   setupRoute,
   loginRoute,
-  appRoute.addChildren([homeRoute, pageRoute, projectsRoute, projectRoute, issueRoute]),
+  appRoute.addChildren([
+    homeRoute,
+    pageRoute,
+    projectsRoute,
+    projectRoute,
+    searchRoute,
+    issueRoute,
+  ]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

@@ -18,5 +18,6 @@ import { ProjectsController } from './projects.controller.js';
     ProjectService,
     IssueService,
   ],
+  exports: [IssueService, MetaService, ProjectAccessService, ProjectService],
 })
 export class TrackingModule {}

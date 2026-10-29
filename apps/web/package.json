@@ -20,6 +20,7 @@
     "@tanstack/react-router": "1.170.44",
     "@tasklore/sdk": "workspace:*",
     "@tasklore/shared": "workspace:*",
+    "@tasklore/tql": "workspace:*",
     "@tiptap/core": "3.32.0",
     "@tiptap/extension-collaboration": "3.32.0",
     "@tiptap/extension-collaboration-caret": "3.32.0",

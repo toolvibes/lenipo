@@ -3,6 +3,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  customType,
   date,
   index,
   integer,
@@ -17,6 +18,16 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { groups, users } from './identity.js';
+
+/** PostgreSQL full-text vector; only ever written by generated columns. */
+const tsvector = customType<{ data: string }>({
+  dataType: () => 'tsvector',
+});
+
+/** German and English stems of a text column (decision E-36). */
+function searchVector(column: string, weight: 'A' | 'B') {
+  return `setweight(to_tsvector('german'::regconfig, coalesce(${column}, '')), '${weight}') || setweight(to_tsvector('english'::regconfig, coalesce(${column}, '')), '${weight}')`;
+}
 
 export const statusCategory = pgEnum('status_category', ['todo', 'in_progress', 'done']);
 
@@ -184,6 +195,12 @@ export const issues = pgTable(
     remainingEstimateSeconds: integer(),
     timeSpentSeconds: integer().notNull().default(0),
     customFields: jsonb().notNull().default({}),
+    /** Summary (weight A) and description (weight B) for TQL full-text search. */
+    searchVector: tsvector()
+      .notNull()
+      .generatedAlwaysAs(
+        sql.raw(`${searchVector('summary', 'A')} || ${searchVector('description_text', 'B')}`),
+      ),
     /** Global ordering across boards and backlogs (fractional index). */
     rank: text().notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -200,6 +217,9 @@ export const issues = pgTable(
     index('issues_parent_idx').on(table.parentId),
     index('issues_rank_idx').on(table.rank),
     index('issues_labels_idx').using('gin', table.labels),
+    index('issues_search_idx').using('gin', table.searchVector),
+    index('issues_created_idx').on(table.createdAt),
+    index('issues_updated_idx').on(table.updatedAt),
   ],
 );
 
@@ -247,11 +267,17 @@ export const issueComments = pgTable(
     authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     body: jsonb().notNull(),
     bodyText: text().notNull(),
+    searchVector: tsvector()
+      .notNull()
+      .generatedAlwaysAs(sql.raw(searchVector('body_text', 'A'))),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp({ withTimezone: true }),
   },
-  (table) => [index('issue_comments_issue_idx').on(table.issueId, table.createdAt)],
+  (table) => [
+    index('issue_comments_issue_idx').on(table.issueId, table.createdAt),
+    index('issue_comments_search_idx').using('gin', table.searchVector),
+  ],
 );
 
 export const issueWatchers = pgTable(

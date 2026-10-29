@@ -2,6 +2,7 @@ import {
   FolderSimple,
   House,
   type Icon,
+  ListMagnifyingGlass,
   MagnifyingGlass,
   NotePencil,
   SignOut,
@@ -89,6 +90,7 @@ export function AppShell({ me }: { me: Me }) {
         <div className="flex flex-col gap-0.5">
           <NavItem to="/" icon={House} label={t('shell.home')} />
           <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
+          <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
           <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
         </div>
         <div className="mt-auto flex items-center gap-2 px-2">

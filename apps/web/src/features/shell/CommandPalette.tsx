@@ -4,6 +4,7 @@ import {
   FolderSimple,
   House,
   type Icon,
+  ListMagnifyingGlass,
   Moon,
   NotePencil,
   SignOut,
@@ -87,6 +88,11 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: PaletteProps) 
             icon={FolderSimple}
             label={t('shell.projects')}
             onSelect={() => run(() => navigate({ to: '/projects' }))}
+          />
+          <Item
+            icon={ListMagnifyingGlass}
+            label={t('palette.searchIssues')}
+            onSelect={() => run(() => navigate({ to: '/issues' }))}
           />
           <Item
             icon={NotePencil}

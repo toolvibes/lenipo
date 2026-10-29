@@ -9,6 +9,7 @@ import type { DatabaseHandle } from './db/client.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
+import { SearchModule } from './search/search.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
 
 export interface AppDependencies {
@@ -28,6 +29,7 @@ export class AppModule {
         HealthModule,
         IdentityModule,
         TrackingModule,
+        SearchModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

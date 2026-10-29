@@ -29,6 +29,13 @@
       "when": 1793220608780,
       "tag": "0003_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793248548942,
+      "tag": "0004_search",
+      "breakpoints": true
     }
   ]
 }

@@ -57,7 +57,17 @@ export function toProblem(exception: unknown): Problem {
       typeof body === 'object' && body !== null && 'type' in body
         ? String((body as { type: unknown }).type)
         : 'about:blank';
-    return { type, title: titleFor(status), status, detail: message };
+    const queryErrors =
+      typeof body === 'object' && body !== null && 'queryErrors' in body
+        ? (body as Pick<Problem, 'queryErrors'>).queryErrors
+        : undefined;
+    return {
+      type,
+      title: titleFor(status),
+      status,
+      detail: message,
+      ...(queryErrors ? { queryErrors } : {}),
+    };
   }
   return { type: 'about:blank', title: titleFor(500), status: 500 };
 }

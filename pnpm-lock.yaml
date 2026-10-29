@@ -41,6 +41,9 @@ importers:
       '@tasklore/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@tasklore/tql':
+        specifier: workspace:*
+        version: link:../../packages/tql
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(postgres@3.4.9)
@@ -138,6 +141,9 @@ importers:
       '@tasklore/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@tasklore/tql':
+        specifier: workspace:*
+        version: link:../../packages/tql
       '@tiptap/core':
         specifier: 3.32.0
         version: 3.32.0(@tiptap/pm@3.32.0)
@@ -225,6 +231,15 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+
+  packages/tql:
+    devDependencies:
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   tools/codegen:
     devDependencies:

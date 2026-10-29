@@ -42,7 +42,8 @@ import { rankBetween } from './rank.js';
 import { plainText } from './rich-text.js';
 import { transitionsFrom } from './workflow.js';
 
-type IssueRow = typeof issues.$inferSelect;
+/** Issue columns without the search vector, which only the database reads. */
+type IssueRow = Omit<typeof issues.$inferSelect, 'searchVector'>;
 
 interface Change {
   field: string;
@@ -131,6 +132,13 @@ export class IssueService {
       rank: row.rank,
       updatedAt: row.updatedAt.toISOString(),
     };
+  }
+
+  /** Summaries of issue rows in their order, with assignees resolved in one query. */
+  async summarize(rows: IssueRow[]): Promise<IssueSummary[]> {
+    const meta = await this.meta.load();
+    const people = await this.userRefs(rows.map((row) => row.assigneeId));
+    return rows.map((row) => this.toSummary(row, meta, people));
   }
 
   async get(principal: Principal, key: string): Promise<Issue> {

@@ -163,6 +163,64 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/filters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List saved filters the caller can see */
+    get: operations['Filters.list'];
+    put?: never;
+    /**
+     * Save a TQL query as a filter
+     * @description Sharing requires the global permission `share-filters`.
+     */
+    post: operations['Filters.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/filters/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a saved filter */
+    get: operations['Filters.get'];
+    put?: never;
+    post?: never;
+    /** Delete a saved filter (owner or administrator) */
+    delete: operations['Filters.delete'];
+    options?: never;
+    head?: never;
+    /** Change a saved filter (owner only) */
+    patch: operations['Filters.update'];
+    trace?: never;
+  };
+  '/api/v1/filters/{id}/favourite': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark a filter as favourite */
+    put: operations['Filters.favourite'];
+    post?: never;
+    /** Remove a filter from the favourites */
+    delete: operations['Filters.unfavourite'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health/live': {
     parameters: {
       query?: never;
@@ -461,6 +519,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Search issues with TQL
+     * @description Runs a TQL query over the projects the caller can browse. An invalid query answers 400 with `queryErrors` (code, message and position of each error).
+     */
+    post: operations['Search.run'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/search/suggestions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Suggest stored values for a TQL field
+     * @description For autocompletion: `value` is the canonical text to put into the query.
+     */
+    get: operations['Search.suggestions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/setup/status': {
     parameters: {
       query?: never;
@@ -529,6 +627,16 @@ export interface components {
       errors?: {
         [key: string]: string[];
       };
+      queryErrors?: components['schemas']['QueryError'][];
+    };
+    QueryError: {
+      code: string;
+      message: string;
+      start: number;
+      end: number;
+      params: {
+        [key: string]: string;
+      };
     };
     SystemInfo: {
       version: string;
@@ -558,7 +666,7 @@ export interface components {
       displayName: string;
       password: string;
       /** @default [] */
-      groups: string[];
+      groups?: string[];
     };
     GroupSummary: {
       /** Format: uuid */
@@ -580,9 +688,9 @@ export interface components {
     CreateGroupRequest: {
       name: string;
       /** @default  */
-      description: string;
+      description?: string;
       /** @default [] */
-      globalPermissions: components['schemas']['GlobalPermission'][];
+      globalPermissions?: components['schemas']['GlobalPermission'][];
     };
     AddGroupMemberRequest: {
       /** Format: uuid */
@@ -610,6 +718,94 @@ export interface components {
         enabled: boolean;
         displayName: string | null;
       };
+    };
+    SavedFilter: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      query: string;
+      owner: components['schemas']['UserRef'];
+      shares: components['schemas']['FilterShare'][];
+      favourite: boolean;
+      editable: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    UserRef: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+    };
+    FilterShare:
+      | {
+          /** @constant */
+          type: 'user';
+          user: components['schemas']['UserRef'];
+        }
+      | {
+          /** @constant */
+          type: 'group';
+          group: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+          };
+        }
+      | {
+          /** @constant */
+          type: 'project';
+          project: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+          };
+        }
+      | {
+          /** @constant */
+          type: 'authenticated';
+        };
+    CreateFilterRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      query: string;
+      /** @default [] */
+      shares?: components['schemas']['FilterShareInput'][];
+      /** @default true */
+      favourite?: boolean;
+    };
+    FilterShareInput:
+      | {
+          /** @constant */
+          type: 'user';
+          /** Format: uuid */
+          userId: string;
+        }
+      | {
+          /** @constant */
+          type: 'group';
+          /** Format: uuid */
+          groupId: string;
+        }
+      | {
+          /** @constant */
+          type: 'project';
+          /** Format: uuid */
+          projectId: string;
+        }
+      | {
+          /** @constant */
+          type: 'authenticated';
+        };
+    UpdateFilterRequest: {
+      name?: string;
+      description?: string;
+      query?: string;
+      shares?: components['schemas']['FilterShareInput'][];
     };
     HealthStatus: {
       /** @enum {string} */
@@ -659,18 +855,18 @@ export interface components {
       issueType: string;
       summary: string;
       /** @default null */
-      description: components['schemas']['RichText'] | null;
+      description?: components['schemas']['RichText'] | null;
       priority?: string;
       /** @default null */
-      assigneeId: string | null;
+      assigneeId?: string | null;
       /** @default null */
-      parentKey: string | null;
+      parentKey?: string | null;
       /** @default [] */
-      labels: string[];
+      labels?: string[];
       /** @default null */
-      storyPoints: number | null;
+      storyPoints?: number | null;
       /** @default null */
-      dueDate: string | null;
+      dueDate?: string | null;
     };
     RichText: {
       /** @constant */
@@ -708,11 +904,6 @@ export interface components {
       resolvedAt: string | null;
       watching: boolean;
       watcherCount: number;
-    };
-    UserRef: {
-      /** Format: uuid */
-      id: string;
-      displayName: string;
     };
     IssueRef: {
       key: string;
@@ -841,7 +1032,7 @@ export interface components {
       key: string;
       name: string;
       /** @default  */
-      description: string;
+      description?: string;
       template: components['schemas']['ProjectTemplate'];
     };
     ProjectDetails: {
@@ -872,6 +1063,26 @@ export interface components {
     IssueList: {
       issues: components['schemas']['IssueSummary'][];
       total: number;
+    };
+    SearchRequest: {
+      /** @default  */
+      query?: string;
+      /** @default 50 */
+      limit?: number;
+      /** @default 0 */
+      offset?: number;
+    };
+    SearchResult: {
+      issues: components['schemas']['IssueSummary'][];
+      total: number;
+      limit: number;
+      offset: number;
+    };
+    ValueSuggestion: {
+      value: string;
+      label: string;
+      detail?: string;
+      key?: string;
     };
     SetupStatusResponse: {
       required: boolean;
@@ -1194,6 +1405,223 @@ export interface operations {
         content: {
           'application/json': components['schemas']['AuthProviders'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.list': {
+    parameters: {
+      query?: {
+        scope?: 'visible' | 'mine' | 'favourites' | 'shared';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SavedFilter'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateFilterRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SavedFilter'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SavedFilter'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateFilterRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SavedFilter'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.favourite': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.unfavourite': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -1909,6 +2337,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['IssueList'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Search.run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SearchRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Search.suggestions': {
+    parameters: {
+      query: {
+        field: string;
+        prefix?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ValueSuggestion'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */
