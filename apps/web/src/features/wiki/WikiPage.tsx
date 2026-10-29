@@ -7,11 +7,13 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
+import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { pageQuery, pageTreeQuery, pageVersionsQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { FavouriteButton } from '../personal/FavouriteButton';
 import { RichTextView } from '../tracking/RichTextEditor';
 import { CreatePageDialog } from './SpaceLayout';
 
@@ -276,6 +278,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const { t } = useTranslation();
   const page = useQuery(pageQuery(id));
   useRealtimeRooms([`page:${id}`]);
+  useRecordView('page', page.data?.id);
   const [dialog, setDialog] = useState<'versions' | 'move' | 'delete' | 'child' | null>(null);
   const close = (open: boolean) => !open && setDialog(null);
 
@@ -294,7 +297,15 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
       <Breadcrumbs page={data} />
       <header className="flex flex-wrap items-start gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h1 className="tl-heading-xl m-0">{data.title}</h1>
+          <h1 className="tl-heading-xl m-0 flex items-center gap-2">
+            {data.title}
+            <FavouriteButton
+              kind="page"
+              refId={data.id}
+              active={data.favourite}
+              name={data.title}
+            />
+          </h1>
           <span className="text-sm text-[var(--ink-muted)]">
             {data.version === 0
               ? t('wiki.neverPublished')

@@ -1,15 +1,17 @@
-import { BookOpenText, Plus } from '@phosphor-icons/react';
+import { BookOpenText, FileText, FolderSimple, Plus } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CreateSpaceRequest, type Me } from '@tasklore/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { recentQuery } from '../../lib/personal';
 import { spacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { FavouriteButton } from '../personal/FavouriteButton';
 
 /** Suggests a key from the name: initials of several words, else the first letters. */
 function suggestKey(name: string): string {
@@ -115,10 +117,52 @@ function CreateSpaceDialog({
   );
 }
 
-/** The space directory (W-SPC-08). */
+/** Spaces and pages opened lately, as quick links above the directory (W-SPC-08). */
+function RecentlyVisited() {
+  const { t } = useTranslation();
+  const recent = useQuery(recentQuery(50));
+  const items = (recent.data ?? [])
+    .filter((item) => item.kind === 'space' || item.kind === 'page')
+    .slice(0, 8);
+  if (items.length === 0) return null;
+  const chip =
+    'flex h-8 max-w-64 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] px-2 text-sm text-[var(--ink)] no-underline hover:border-[var(--border-strong)]';
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="tl-label m-0 uppercase text-[var(--ink-muted)]">{t('wiki.recent')}</h2>
+      <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+        {items.map((item) => (
+          <li key={`${item.kind}:${item.ref}`}>
+            {item.kind === 'space' ? (
+              <Link to="/spaces/$key" params={{ key: item.ref }} className={chip}>
+                <BookOpenText size={16} className="shrink-0 text-[var(--accent)]" aria-hidden />
+                <span className="truncate">{item.name}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/spaces/$key/pages/$id"
+                params={{ key: item.spaceKey ?? '', id: item.ref }}
+                className={chip}
+              >
+                <FileText size={16} className="shrink-0 text-[var(--ink-muted)]" aria-hidden />
+                <span className="truncate">{item.name}</span>
+                <span className="tl-key text-xs text-[var(--ink-muted)]">{item.spaceKey}</span>
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** The space directory (W-SPC-08): starred spaces first. */
 export function SpacesPage({ me }: { me: Me }) {
   const { t } = useTranslation();
-  const spaces = useQuery(spacesQuery);
+  const spaces = useQuery({
+    ...spacesQuery,
+    select: (list) => [...list].sort((a, b) => Number(b.favourite) - Number(a.favourite)),
+  });
   const [creating, setCreating] = useState(false);
   const canCreate = me.globalPermissions.includes('create-spaces');
 
@@ -133,6 +177,7 @@ export function SpacesPage({ me }: { me: Me }) {
           </Button>
         )}
       </header>
+      <RecentlyVisited />
       {spaces.data?.length === 0 && (
         <p className="max-w-xl text-[var(--ink-muted)]">{t('wiki.noSpaces')}</p>
       )}
@@ -152,10 +197,22 @@ export function SpacesPage({ me }: { me: Me }) {
                   <strong className="truncate font-semibold">{space.name}</strong>
                   <span className="tl-key text-[var(--ink-muted)]">{space.key}</span>
                 </div>
+                <FavouriteButton
+                  kind="space"
+                  refId={space.key}
+                  active={space.favourite}
+                  name={space.name}
+                />
               </div>
               {space.description && (
                 <span className="line-clamp-2 text-sm text-[var(--ink-muted)]">
                   {space.description}
+                </span>
+              )}
+              {space.project && (
+                <span className="mt-auto flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
+                  <FolderSimple size={14} aria-hidden />
+                  {space.project.name}
                 </span>
               )}
             </Link>

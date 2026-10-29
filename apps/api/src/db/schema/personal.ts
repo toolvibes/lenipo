@@ -10,7 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 
-export const favouriteKind = pgEnum('favourite_kind', ['project', 'filter']);
+export const favouriteKind = pgEnum('favourite_kind', ['project', 'filter', 'space', 'page']);
 
 /**
  * Starred items of a person for every kind (P-GEN-05, E-46). No foreign key to the target,
@@ -32,7 +32,7 @@ export const favourites = pgTable(
   ],
 );
 
-export const recentKind = pgEnum('recent_kind', ['issue', 'project']);
+export const recentKind = pgEnum('recent_kind', ['issue', 'project', 'space', 'page']);
 
 /** What a person opened in the web app, newest first; trimmed to 50 per person (E-46). */
 export const recentItems = pgTable(

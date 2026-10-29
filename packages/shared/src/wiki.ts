@@ -26,6 +26,9 @@ export const SpaceSummary = z
     description: z.string(),
     homePageId: Id.nullable(),
     createdAt: z.iso.datetime(),
+    favourite: z.boolean(),
+    /** The linked tracking project; null if none or the caller may not browse it (E-60). */
+    project: z.object({ key: z.string(), name: z.string() }).nullable(),
   })
   .meta({ id: 'SpaceSummary' });
 export type SpaceSummary = z.infer<typeof SpaceSummary>;
@@ -51,6 +54,8 @@ export const UpdateSpaceRequest = z
     name: SpaceName,
     description: z.string().max(2000),
     homePageId: Id.nullable(),
+    /** Links the space with a project, or unlinks it (null); needs administer on both (E-60). */
+    projectKey: z.string().trim().min(1).max(20).nullable(),
   })
   .partial()
   .meta({ id: 'UpdateSpaceRequest' });
@@ -107,6 +112,7 @@ export const Page = z
     publishedBy: UserRef.nullable(),
     createdAt: z.iso.datetime(),
     canEdit: z.boolean(),
+    favourite: z.boolean(),
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;

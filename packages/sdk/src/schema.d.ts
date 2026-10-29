@@ -987,7 +987,7 @@ export interface paths {
     };
     /**
      * List the caller’s favourites
-     * @description Projects and saved filters; items the caller can no longer see are left out.
+     * @description Projects, saved filters, spaces and pages; items the caller can no longer see are left out.
      */
     get: operations['Personal.favourites'];
     put?: never;
@@ -1006,7 +1006,7 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    /** Star a project (key) or saved filter (id) */
+    /** Star a project or space (key), or a saved filter or page (id) */
     put: operations['Personal.star'];
     post?: never;
     /** Remove a favourite */
@@ -1023,11 +1023,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List recently opened issues and projects, newest first */
+    /** List recently opened issues, projects, spaces and pages, newest first */
     get: operations['Personal.recent'];
     put?: never;
     /**
-     * Remember that the caller opened an issue or project
+     * Remember that the caller opened an issue, project, space or page
      * @description Sent by the web app when a page opens; scripts normally do not call it (E-46).
      */
     post: operations['Personal.record'];
@@ -1405,6 +1405,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/spaces': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the spaces linked with a project
+     * @description Only spaces the caller can see; a space is linked with at most one project.
+     */
+    get: operations['Spaces.ofProject'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/spaces': {
     parameters: {
       query?: never;
@@ -1441,8 +1461,8 @@ export interface paths {
     options?: never;
     head?: never;
     /**
-     * Change a space’s name, description or home page
-     * @description Requires the space permission `administer`.
+     * Change a space’s name, description, home page or project
+     * @description Requires the space permission `administer`; linking or unlinking a project also requires `administer` on that project.
      */
     patch: operations['Spaces.update'];
     trace?: never;
@@ -1656,6 +1676,28 @@ export interface paths {
      *     Requires the global permission `browse-users`.
      */
     get: operations['Users.search'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/groups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the groups by name
+     * @description For granting roles; requires the global permission `browse-users`.
+     *
+     *     Requires the global permission `browse-users`.
+     */
+    get: operations['Users.list'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2665,6 +2707,7 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       canEdit: boolean;
+      favourite: boolean;
     };
     PageRef: {
       /** Format: uuid */
@@ -2707,19 +2750,21 @@ export interface components {
       id: string;
       ref: string;
       name: string;
+      spaceKey?: string;
     };
     /** @enum {string} */
-    FavouriteKind: 'project' | 'filter';
+    FavouriteKind: 'project' | 'filter' | 'space' | 'page';
     RecordRecentRequest: {
       kind: components['schemas']['RecentKind'];
       ref: string;
     };
     /** @enum {string} */
-    RecentKind: 'issue' | 'project';
+    RecentKind: 'issue' | 'project' | 'space' | 'page';
     RecentItem: {
       kind: components['schemas']['RecentKind'];
       ref: string;
       name: string;
+      spaceKey?: string;
       /** Format: date-time */
       viewedAt: string;
       issue?: components['schemas']['IssueSummary'];
@@ -2993,6 +3038,11 @@ export interface components {
       homePageId: string | null;
       /** Format: date-time */
       createdAt: string;
+      favourite: boolean;
+      project: {
+        key: string;
+        name: string;
+      } | null;
     };
     CreateSpaceRequest: {
       key: components['schemas']['SpaceKey'];
@@ -3010,6 +3060,11 @@ export interface components {
       homePageId: string | null;
       /** Format: date-time */
       createdAt: string;
+      favourite: boolean;
+      project: {
+        key: string;
+        name: string;
+      } | null;
       permissions: components['schemas']['SpacePermission'][];
     };
     /** @enum {string} */
@@ -3018,6 +3073,7 @@ export interface components {
       name?: string;
       description?: string;
       homePageId?: string | null;
+      projectKey?: string | null;
     };
     SpaceMember: {
       /** Format: uuid */
@@ -3106,6 +3162,11 @@ export interface components {
       id: string;
       displayName: string;
       email: string;
+    };
+    GroupRef: {
+      /** Format: uuid */
+      id: string;
+      name: string;
     };
     Webhook: {
       /** Format: uuid */
@@ -6524,6 +6585,37 @@ export interface operations {
       };
     };
   };
+  'Spaces.ofProject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpaceSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Spaces.list': {
     parameters: {
       query?: never;
@@ -7128,6 +7220,35 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['UserLookup'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Users.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GroupRef'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

@@ -40,7 +40,7 @@ export const activityQuery = (filter: { project?: string; user?: string }, limit
     getNextPageParam: (page) => page.next,
   });
 
-/** Tells the server that the person opened this issue or project (E-46). */
+/** Tells the server that the person opened this issue, project, space or page (E-46, E-60). */
 export function useRecordView(kind: RecentKind, ref: string | undefined) {
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -51,7 +51,7 @@ export function useRecordView(kind: RecentKind, ref: string | undefined) {
   }, [kind, ref, queryClient]);
 }
 
-/** Stars or unstars a project (by key) or saved filter (by id). */
+/** Stars or unstars a project or space (by key), or a saved filter or page (by id). */
 export function useFavourite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -69,6 +69,9 @@ export function useFavourite() {
       await queryClient.invalidateQueries({ queryKey: ['project'] });
       await queryClient.invalidateQueries({ queryKey: ['filters'] });
       await queryClient.invalidateQueries({ queryKey: ['filter'] });
+      await queryClient.invalidateQueries({ queryKey: ['spaces'] });
+      await queryClient.invalidateQueries({ queryKey: ['space'] });
+      await queryClient.invalidateQueries({ queryKey: ['page'] });
     },
   });
 }

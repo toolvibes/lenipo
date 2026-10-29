@@ -151,7 +151,7 @@ export function HomePage({ me }: { me: Me }) {
                     </Link>
                     <StatusLozenge status={item.issue.status} />
                   </>
-                ) : (
+                ) : item.kind === 'project' ? (
                   <Link
                     to="/projects/$key"
                     params={{ key: item.ref }}
@@ -159,6 +159,24 @@ export function HomePage({ me }: { me: Me }) {
                   >
                     {item.name}{' '}
                     <span className="text-xs text-[var(--ink-muted)]">{t('home.project')}</span>
+                  </Link>
+                ) : item.kind === 'space' ? (
+                  <Link
+                    to="/spaces/$key"
+                    params={{ key: item.ref }}
+                    className="min-w-0 flex-1 truncate text-[var(--ink)] no-underline hover:underline"
+                  >
+                    {item.name}{' '}
+                    <span className="text-xs text-[var(--ink-muted)]">{t('home.space')}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/spaces/$key/pages/$id"
+                    params={{ key: item.spaceKey ?? '', id: item.ref }}
+                    className="min-w-0 flex-1 truncate text-[var(--ink)] no-underline hover:underline"
+                  >
+                    {item.name}{' '}
+                    <span className="text-xs text-[var(--ink-muted)]">{t('home.page')}</span>
                   </Link>
                 )}
               </li>

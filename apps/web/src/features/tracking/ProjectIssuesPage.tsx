@@ -1,4 +1,4 @@
-import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { BookOpenText, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
@@ -8,6 +8,7 @@ import { useListColumns, useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
+import { projectSpacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { ColumnPicker } from '../search/ColumnPicker';
@@ -49,6 +50,7 @@ export function ProjectIssuesPage({
       replace: true,
     });
   const project = useQuery(projectQuery(projectKey));
+  const linkedSpaces = useQuery(projectSpacesQuery(projectKey));
   useRecordView('project', project.data?.key);
   const [preset, setPreset] = useState<Preset>('open');
   const [search, setSearch] = useState('');
@@ -106,13 +108,26 @@ export function ProjectIssuesPage({
               />
             )}
           </h1>
-          <Link
-            to="/activity"
-            search={{ project: projectKey }}
-            className="text-xs text-[var(--ink-muted)] no-underline hover:underline"
-          >
-            {t('activity.ofProject')}
-          </Link>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <Link
+              to="/activity"
+              search={{ project: projectKey }}
+              className="text-[var(--ink-muted)] no-underline hover:underline"
+            >
+              {t('activity.ofProject')}
+            </Link>
+            {linkedSpaces.data?.map((space) => (
+              <Link
+                key={space.id}
+                to="/spaces/$key"
+                params={{ key: space.key }}
+                className="flex items-center gap-1 text-[var(--ink-muted)] no-underline hover:underline"
+              >
+                <BookOpenText size={14} aria-hidden />
+                {t('wiki.nav')}: {space.name}
+              </Link>
+            ))}
+          </span>
         </div>
         <div className="flex flex-wrap gap-2">
           {project.data?.permissions.includes('administer') && (

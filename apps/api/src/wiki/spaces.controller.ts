@@ -76,8 +76,9 @@ export class SpacesController {
 
   @Endpoint({
     tag: 'Spaces',
-    summary: 'Change a space’s name, description or home page',
-    description: 'Requires the space permission `administer`.',
+    summary: 'Change a space’s name, description, home page or project',
+    description:
+      'Requires the space permission `administer`; linking or unlinking a project also requires `administer` on that project.',
     response: Space,
   })
   @Patch(':key')

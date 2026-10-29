@@ -1,9 +1,10 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { UserLookup } from '@tasklore/shared';
+import { GroupRef, UserLookup } from '@tasklore/shared';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
+import { GroupService } from './group.service.js';
 import { UserService } from './user.service.js';
 
 const SearchUsersQuery = z.object({
@@ -26,5 +27,22 @@ export class UsersController {
   @Get()
   search(@ValidQuery(SearchUsersQuery) query: SearchUsersQuery): Promise<UserLookup[]> {
     return this.users.search(query.query.trim(), query.limit);
+  }
+}
+
+@Controller('groups')
+export class GroupsController {
+  constructor(@Inject(GroupService) private readonly groups: GroupService) {}
+
+  @Endpoint({
+    tag: 'Users',
+    summary: 'List the groups by name',
+    description: 'For granting roles; requires the global permission `browse-users`.',
+    response: z.array(GroupRef),
+  })
+  @RequireGlobal('browse-users')
+  @Get()
+  async list(): Promise<GroupRef[]> {
+    return (await this.groups.list()).map((group) => ({ id: group.id, name: group.name }));
   }
 }

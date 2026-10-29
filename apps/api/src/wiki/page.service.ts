@@ -19,7 +19,7 @@ import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
-import { pages, pageVersions, spaces, users } from '../db/schema/index.js';
+import { favourites, pages, pageVersions, spaces, users } from '../db/schema/index.js';
 import { signal } from '../realtime/signals.js';
 import { markdownOf } from '../tracking/content-format.js';
 import { rankBetween } from '../tracking/rank.js';
@@ -75,6 +75,47 @@ export class PageService {
     if (permission !== 'view')
       await this.spaceAccess.require(principal, found.space.id, permission);
     return { page: row.page, ...found };
+  }
+
+  /**
+   * Of the given pages, those the user may open, with their space keys: outside the trash,
+   * in a space they can view, and published unless they may edit there.
+   */
+  async visible(
+    userId: string,
+    ids: string[],
+  ): Promise<Map<string, { id: string; title: string; spaceKey: string }>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.database.db
+      .select({
+        id: pages.id,
+        title: pages.title,
+        version: pages.version,
+        spaceId: pages.spaceId,
+        spaceKey: spaces.key,
+      })
+      .from(pages)
+      .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+      .where(
+        and(
+          inArray(pages.id, ids),
+          isNull(pages.deletedAt),
+          await this.spaceAccess.viewableCondition(userId),
+        ),
+      );
+    const editable = new Map<string, boolean>();
+    const result = new Map<string, { id: string; title: string; spaceKey: string }>();
+    for (const row of rows) {
+      if (row.version === 0) {
+        if (!editable.has(row.spaceId)) {
+          const granted = await this.spaceAccess.permissions(userId, row.spaceId);
+          editable.set(row.spaceId, granted.has('edit'));
+        }
+        if (!editable.get(row.spaceId)) continue;
+      }
+      result.set(row.id, { id: row.id, title: row.title, spaceKey: row.spaceKey });
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------- tree
@@ -212,7 +253,22 @@ export class PageService {
           : null,
       createdAt: page.createdAt.toISOString(),
       canEdit: permissions.has('edit'),
+      favourite: await this.starred(principal.userId, page.id),
     };
+  }
+
+  private async starred(userId: string, pageId: string): Promise<boolean> {
+    const [row] = await this.database.db
+      .select({ targetId: favourites.targetId })
+      .from(favourites)
+      .where(
+        and(
+          eq(favourites.userId, userId),
+          eq(favourites.kind, 'page'),
+          eq(favourites.targetId, pageId),
+        ),
+      );
+    return !!row;
   }
 
   async versions(principal: Principal, id: string): Promise<PageVersionSummary[]> {

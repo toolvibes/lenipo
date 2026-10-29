@@ -11,11 +11,21 @@ import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { favourites, issues, projects, recentItems, userPreferences } from '../db/schema/index.js';
+import {
+  favourites,
+  issues,
+  projects,
+  recentItems,
+  spaces,
+  userPreferences,
+} from '../db/schema/index.js';
 import { FilterService } from '../search/filter.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { PageService } from '../wiki/page.service.js';
+import { SpaceService } from '../wiki/space.service.js';
+import { SpaceAccessService } from '../wiki/space-access.service.js';
 
 const RECENT_KEEP = 50;
 const ISSUE_COLUMNS = 'issue-columns';
@@ -29,14 +39,50 @@ export class PersonalService {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(FilterService) private readonly filters: FilterService,
+    @Inject(SpaceService) private readonly spaces: SpaceService,
+    @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
+    @Inject(PageService) private readonly pages: PageService,
   ) {}
 
   // ---------------------------------------------------------------- favourites
 
-  /** Resolves a reference (project key, filter id) to the id of something the caller can see. */
-  private async target(principal: Principal, kind: FavouriteKind, ref: string): Promise<string> {
-    if (kind === 'project') return (await this.projects.findBrowsable(principal, ref)).id;
-    return (await this.filters.get(principal, ref)).id;
+  /** Resolves a reference (key or id) to the id of something the caller can see. */
+  private async target(
+    principal: Principal,
+    kind: FavouriteKind | RecentKind,
+    ref: string,
+  ): Promise<string> {
+    switch (kind) {
+      case 'project':
+        return (await this.projects.findBrowsable(principal, ref)).id;
+      case 'filter':
+        return (await this.filters.get(principal, ref)).id;
+      case 'issue':
+        return (await this.issues.authorize(principal, ref, 'browse')).issue.id;
+      case 'space':
+        return (await this.spaces.find(principal, ref)).space.id;
+      case 'page':
+        return (await this.pages.authorize(principal, ref, 'view')).page.id;
+    }
+  }
+
+  /** Spaces and pages among the rows that the user can still see, by id. */
+  private async wikiTargets(userId: string, rows: { kind: string; targetId: string }[]) {
+    const spaceIds = rows.filter((row) => row.kind === 'space').map((row) => row.targetId);
+    const pageIds = rows.filter((row) => row.kind === 'page').map((row) => row.targetId);
+    const visibleSpaces = new Map(
+      spaceIds.length === 0
+        ? []
+        : (
+            await this.database.db
+              .select({ id: spaces.id, key: spaces.key, name: spaces.name })
+              .from(spaces)
+              .where(
+                and(inArray(spaces.id, spaceIds), await this.spaceAccess.viewableCondition(userId)),
+              )
+          ).map((space) => [space.id, space]),
+    );
+    return { spaces: visibleSpaces, pages: await this.pages.visible(userId, pageIds) };
   }
 
   async setFavourite(
@@ -65,7 +111,7 @@ export class PersonalService {
     }
   }
 
-  /** Starred projects and filters in the order they were starred; hidden ones are skipped. */
+  /** Starred items in the order they were starred; ones the caller can no longer see are skipped. */
   async favourites(principal: Principal): Promise<Favourite[]> {
     const rows = await this.database.db
       .select()
@@ -78,15 +124,40 @@ export class PersonalService {
     const favouriteFilters = new Map(
       (await this.filters.list(principal, 'favourites')).map((filter) => [filter.id, filter]),
     );
+    const wiki = await this.wikiTargets(principal.userId, rows);
     return rows.flatMap((row): Favourite[] => {
-      if (row.kind === 'project') {
-        const project = visibleProjects.get(row.targetId);
-        return project
-          ? [{ kind: 'project', id: project.id, ref: project.key, name: project.name }]
-          : [];
+      switch (row.kind) {
+        case 'project': {
+          const project = visibleProjects.get(row.targetId);
+          return project
+            ? [{ kind: 'project', id: project.id, ref: project.key, name: project.name }]
+            : [];
+        }
+        case 'filter': {
+          const filter = favouriteFilters.get(row.targetId);
+          return filter
+            ? [{ kind: 'filter', id: filter.id, ref: filter.id, name: filter.name }]
+            : [];
+        }
+        case 'space': {
+          const space = wiki.spaces.get(row.targetId);
+          return space ? [{ kind: 'space', id: space.id, ref: space.key, name: space.name }] : [];
+        }
+        default: {
+          const page = wiki.pages.get(row.targetId);
+          return page
+            ? [
+                {
+                  kind: 'page',
+                  id: page.id,
+                  ref: page.id,
+                  name: page.title,
+                  spaceKey: page.spaceKey,
+                },
+              ]
+            : [];
+        }
       }
-      const filter = favouriteFilters.get(row.targetId);
-      return filter ? [{ kind: 'filter', id: filter.id, ref: filter.id, name: filter.name }] : [];
     });
   }
 
@@ -94,10 +165,7 @@ export class PersonalService {
 
   /** Called by the web app when a person opens something; keeps the newest 50. */
   async recordView(principal: Principal, kind: RecentKind, ref: string): Promise<void> {
-    const targetId =
-      kind === 'project'
-        ? (await this.projects.findBrowsable(principal, ref)).id
-        : (await this.issues.authorize(principal, ref, 'browse')).issue.id;
+    const targetId = await this.target(principal, kind, ref);
     const db = this.database.db;
     await db.transaction(async (tx) => {
       await tx
@@ -121,7 +189,7 @@ export class PersonalService {
     });
   }
 
-  /** Recently opened issues and projects the caller can still see, newest first. */
+  /** Recently opened items the caller can still see, newest first. */
   async recent(principal: Principal, limit: number): Promise<RecentItem[]> {
     const db = this.database.db;
     const rows = await db
@@ -157,6 +225,7 @@ export class PersonalService {
     const projectsById = new Map(
       (await this.projects.list(principal)).map((project) => [project.id, project]),
     );
+    const wiki = await this.wikiTargets(principal.userId, rows);
     const items: RecentItem[] = [];
     for (const row of rows) {
       const viewedAt = row.viewedAt.toISOString();
@@ -164,10 +233,23 @@ export class PersonalService {
         const issue = summaries.get(row.targetId);
         if (issue)
           items.push({ kind: 'issue', ref: issue.key, name: issue.summary, viewedAt, issue });
-      } else {
+      } else if (row.kind === 'project') {
         const project = projectsById.get(row.targetId);
         if (project)
           items.push({ kind: 'project', ref: project.key, name: project.name, viewedAt });
+      } else if (row.kind === 'space') {
+        const space = wiki.spaces.get(row.targetId);
+        if (space) items.push({ kind: 'space', ref: space.key, name: space.name, viewedAt });
+      } else {
+        const page = wiki.pages.get(row.targetId);
+        if (page)
+          items.push({
+            kind: 'page',
+            ref: page.id,
+            name: page.title,
+            spaceKey: page.spaceKey,
+            viewedAt,
+          });
       }
       if (items.length >= limit) break;
     }

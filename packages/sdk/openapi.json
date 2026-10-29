@@ -3031,7 +3031,7 @@
       "get": {
         "operationId": "Personal.favourites",
         "summary": "List the caller’s favourites",
-        "description": "Projects and saved filters; items the caller can no longer see are left out.",
+        "description": "Projects, saved filters, spaces and pages; items the caller can no longer see are left out.",
         "tags": ["Personal"],
         "responses": {
           "200": {
@@ -3063,7 +3063,7 @@
     "/api/v1/me/favourites/{kind}/{ref}": {
       "put": {
         "operationId": "Personal.star",
-        "summary": "Star a project (key) or saved filter (id)",
+        "summary": "Star a project or space (key), or a saved filter or page (id)",
         "tags": ["Personal"],
         "parameters": [
           {
@@ -3141,7 +3141,7 @@
     "/api/v1/me/recent": {
       "post": {
         "operationId": "Personal.record",
-        "summary": "Remember that the caller opened an issue or project",
+        "summary": "Remember that the caller opened an issue, project, space or page",
         "description": "Sent by the web app when a page opens; scripts normally do not call it (E-46).",
         "tags": ["Personal"],
         "requestBody": {
@@ -3172,7 +3172,7 @@
       },
       "get": {
         "operationId": "Personal.recent",
-        "summary": "List recently opened issues and projects, newest first",
+        "summary": "List recently opened issues, projects, spaces and pages, newest first",
         "tags": ["Personal"],
         "parameters": [
           {
@@ -4398,6 +4398,49 @@
         }
       }
     },
+    "/api/v1/projects/{key}/spaces": {
+      "get": {
+        "operationId": "Spaces.ofProject",
+        "summary": "List the spaces linked with a project",
+        "description": "Only spaces the caller can see; a space is linked with at most one project.",
+        "tags": ["Spaces"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpaceSummary"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/spaces": {
       "get": {
         "operationId": "Spaces.list",
@@ -4508,8 +4551,8 @@
       },
       "patch": {
         "operationId": "Spaces.update",
-        "summary": "Change a space’s name, description or home page",
-        "description": "Requires the space permission `administer`.",
+        "summary": "Change a space’s name, description, home page or project",
+        "description": "Requires the space permission `administer`; linking or unlinking a project also requires `administer` on that project.",
         "tags": ["Spaces"],
         "parameters": [
           {
@@ -5209,6 +5252,39 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/UserLookup"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups": {
+      "get": {
+        "operationId": "Users.list",
+        "summary": "List the groups by name",
+        "description": "For granting roles; requires the global permission `browse-users`.\n\nRequires the global permission `browse-users`.",
+        "tags": ["Users"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupRef"
                   }
                 }
               }
@@ -8956,6 +9032,9 @@
           },
           "canEdit": {
             "type": "boolean"
+          },
+          "favourite": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -8969,7 +9048,8 @@
           "publishedAt",
           "publishedBy",
           "createdAt",
-          "canEdit"
+          "canEdit",
+          "favourite"
         ],
         "additionalProperties": false
       },
@@ -9133,6 +9213,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "spaceKey": {
+            "type": "string"
           }
         },
         "required": ["kind", "id", "ref", "name"],
@@ -9140,7 +9223,7 @@
       },
       "FavouriteKind": {
         "type": "string",
-        "enum": ["project", "filter"]
+        "enum": ["project", "filter", "space", "page"]
       },
       "RecordRecentRequest": {
         "type": "object",
@@ -9158,7 +9241,7 @@
       },
       "RecentKind": {
         "type": "string",
-        "enum": ["issue", "project"]
+        "enum": ["issue", "project", "space", "page"]
       },
       "RecentItem": {
         "type": "object",
@@ -9170,6 +9253,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "spaceKey": {
             "type": "string"
           },
           "viewedAt": {
@@ -10170,9 +10256,41 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "favourite": {
+            "type": "boolean"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": ["id", "key", "name", "description", "homePageId", "createdAt"],
+        "required": [
+          "id",
+          "key",
+          "name",
+          "description",
+          "homePageId",
+          "createdAt",
+          "favourite",
+          "project"
+        ],
         "additionalProperties": false
       },
       "CreateSpaceRequest": {
@@ -10232,6 +10350,29 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "favourite": {
+            "type": "boolean"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "permissions": {
             "type": "array",
             "items": {
@@ -10239,7 +10380,17 @@
             }
           }
         },
-        "required": ["id", "key", "name", "description", "homePageId", "createdAt", "permissions"],
+        "required": [
+          "id",
+          "key",
+          "name",
+          "description",
+          "homePageId",
+          "createdAt",
+          "favourite",
+          "project",
+          "permissions"
+        ],
         "additionalProperties": false
       },
       "SpacePermission": {
@@ -10264,6 +10415,18 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projectKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
               },
               {
                 "type": "null"
@@ -10644,6 +10807,21 @@
           }
         },
         "required": ["id", "displayName", "email"],
+        "additionalProperties": false
+      },
+      "GroupRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"],
         "additionalProperties": false
       },
       "Webhook": {

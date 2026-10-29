@@ -26,6 +26,7 @@ import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
 import { PageEditor } from './features/wiki/PageEditor';
 import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
+import { SpaceSettingsPage } from './features/wiki/SpaceSettingsPage';
 import { SpacesPage } from './features/wiki/SpacesPage';
 import { TrashPage } from './features/wiki/TrashPage';
 import { WikiPage } from './features/wiki/WikiPage';
@@ -136,6 +137,14 @@ const trashRoute = createRoute({
   path: '/trash',
   component: function Trash() {
     return <TrashPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
+  },
+});
+
+const spaceSettingsRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/settings',
+  component: function SpaceSettings() {
+    return <SpaceSettingsPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
   },
 });
 
@@ -312,7 +321,13 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([
     homeRoute,
     spacesRoute,
-    spaceRoute.addChildren([spaceHomeRoute, wikiPageRoute, pageEditRoute, trashRoute]),
+    spaceRoute.addChildren([
+      spaceHomeRoute,
+      wikiPageRoute,
+      pageEditRoute,
+      trashRoute,
+      spaceSettingsRoute,
+    ]),
     projectsRoute,
     projectRoute,
     searchRoute,

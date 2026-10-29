@@ -148,6 +148,10 @@ export const GroupSummary = z
   .meta({ id: 'GroupSummary' });
 export type GroupSummary = z.infer<typeof GroupSummary>;
 
+/** A group as everyone may see it, e.g. to grant it a role. */
+export const GroupRef = z.object({ id: Id, name: z.string() }).meta({ id: 'GroupRef' });
+export type GroupRef = z.infer<typeof GroupRef>;
+
 export const CreateGroupRequest = z
   .object({
     name: GroupName,

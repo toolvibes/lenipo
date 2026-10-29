@@ -13,6 +13,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { groups, users } from './identity.js';
+import { projects } from './tracking.js';
 
 export const spaceRole = pgEnum('space_role', [
   'administrators',
@@ -35,8 +36,13 @@ export const spaces = pgTable(
     createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
+    /** The tracking project this space documents; a project may have several (E-60). */
+    projectId: uuid().references(() => projects.id, { onDelete: 'set null' }),
   },
-  (table) => [uniqueIndex('spaces_key_unique').on(table.key)],
+  (table) => [
+    uniqueIndex('spaces_key_unique').on(table.key),
+    index('spaces_project_idx').on(table.projectId),
+  ],
 );
 
 /** Who holds which role in a space: a single user or a whole group (W-SPC-03). */

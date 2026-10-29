@@ -38,7 +38,7 @@ export const ActivityQuery = z.object({
 });
 export type ActivityQuery = z.infer<typeof ActivityQuery>;
 
-export const FAVOURITE_KINDS = ['project', 'filter'] as const;
+export const FAVOURITE_KINDS = ['project', 'filter', 'space', 'page'] as const;
 export const FavouriteKind = z.enum(FAVOURITE_KINDS).meta({ id: 'FavouriteKind' });
 export type FavouriteKind = z.infer<typeof FavouriteKind>;
 
@@ -47,14 +47,16 @@ export const Favourite = z
   .object({
     kind: FavouriteKind,
     id: z.uuid(),
-    /** Project key, or filter id for filters. */
+    /** Project or space key; id for filters and pages. */
     ref: z.string(),
     name: z.string(),
+    /** For pages: the key of their space. */
+    spaceKey: z.string().optional(),
   })
   .meta({ id: 'Favourite' });
 export type Favourite = z.infer<typeof Favourite>;
 
-export const RECENT_KINDS = ['issue', 'project'] as const;
+export const RECENT_KINDS = ['issue', 'project', 'space', 'page'] as const;
 export const RecentKind = z.enum(RECENT_KINDS).meta({ id: 'RecentKind' });
 export type RecentKind = z.infer<typeof RecentKind>;
 
@@ -66,9 +68,11 @@ export type RecordRecentRequest = z.infer<typeof RecordRecentRequest>;
 export const RecentItem = z
   .object({
     kind: RecentKind,
-    /** Issue or project key. */
+    /** Issue, project or space key; id for pages. */
     ref: z.string(),
     name: z.string(),
+    /** For pages: the key of their space. */
+    spaceKey: z.string().optional(),
     viewedAt: z.iso.datetime(),
     issue: IssueSummary.optional(),
   })

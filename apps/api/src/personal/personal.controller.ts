@@ -28,7 +28,8 @@ export class PersonalController {
   @Endpoint({
     tag: 'Personal',
     summary: 'List the caller’s favourites',
-    description: 'Projects and saved filters; items the caller can no longer see are left out.',
+    description:
+      'Projects, saved filters, spaces and pages; items the caller can no longer see are left out.',
     response: z.array(Favourite),
   })
   @Get('me/favourites')
@@ -38,7 +39,7 @@ export class PersonalController {
 
   @Endpoint({
     tag: 'Personal',
-    summary: 'Star a project (key) or saved filter (id)',
+    summary: 'Star a project or space (key), or a saved filter or page (id)',
   })
   @Put('me/favourites/:kind/:ref')
   @HttpCode(204)
@@ -63,7 +64,7 @@ export class PersonalController {
 
   @Endpoint({
     tag: 'Personal',
-    summary: 'Remember that the caller opened an issue or project',
+    summary: 'Remember that the caller opened an issue, project, space or page',
     description: 'Sent by the web app when a page opens; scripts normally do not call it (E-46).',
   })
   @Post('me/recent')
@@ -77,7 +78,7 @@ export class PersonalController {
 
   @Endpoint({
     tag: 'Personal',
-    summary: 'List recently opened issues and projects, newest first',
+    summary: 'List recently opened issues, projects, spaces and pages, newest first',
     response: z.array(RecentItem),
   })
   @Get('me/recent')

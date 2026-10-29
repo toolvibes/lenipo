@@ -1,15 +1,39 @@
-import { CaretDown, CaretRight, Plus, Trash } from '@phosphor-icons/react';
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragMoveEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  CaretDown,
+  CaretRight,
+  FolderSimple,
+  GearSix,
+  Kanban,
+  Plus,
+  Trash,
+} from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, Outlet, useNavigate, useParams } from '@tanstack/react-router';
+import type { MovePageRequest, PageTreeEntry } from '@tasklore/shared';
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { boardsQuery } from '../../lib/boards';
+import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { nest, pageTreeQuery, spaceQuery, type TreeNode } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { FavouriteButton } from '../personal/FavouriteButton';
 
 /** Asks for a title, creates the page as a draft and opens it for editing (W-PAG-02, -03). */
 export function CreatePageDialog({
@@ -83,6 +107,13 @@ export function CreatePageDialog({
   );
 }
 
+type DropPosition = 'before' | 'after' | 'into';
+
+interface DropTarget {
+  id: string;
+  position: DropPosition;
+}
+
 function TreeItem({
   node,
   spaceKey,
@@ -91,6 +122,8 @@ function TreeItem({
   toggle,
   canEdit,
   onCreateChild,
+  drop,
+  dragging,
 }: {
   node: TreeNode;
   spaceKey: string;
@@ -99,16 +132,33 @@ function TreeItem({
   toggle: (id: string) => void;
   canEdit: boolean;
   onCreateChild: (parentId: string) => void;
+  drop: DropTarget | null;
+  dragging: string | null;
 }) {
   const { t } = useTranslation();
   const { page, children } = node;
   const open = expanded.has(page.id);
   const current = page.id === currentId;
+  const draggable = useDraggable({ id: page.id, disabled: !canEdit });
+  const droppable = useDroppable({ id: page.id, disabled: !canEdit });
+  const position = drop?.id === page.id ? drop.position : null;
   return (
     <li>
       <div
-        className={`group flex min-h-8 items-center gap-0.5 rounded-[var(--radius-sm)] pr-1 ${current ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-1)]'}`}
+        ref={(element) => {
+          draggable.setNodeRef(element);
+          droppable.setNodeRef(element);
+        }}
+        // Pointer only: keyboard users move pages with the "Move" dialog.
+        {...draggable.listeners}
+        className={`group relative flex min-h-8 items-center gap-0.5 rounded-[var(--radius-sm)] pr-1 ${current ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-1)]'} ${position === 'into' ? 'outline-2 outline-[var(--accent)]' : ''} ${dragging === page.id ? 'opacity-40' : ''}`}
       >
+        {position === 'before' && (
+          <span className="pointer-events-none absolute -top-px right-0 left-6 h-0.5 bg-[var(--accent)]" />
+        )}
+        {position === 'after' && (
+          <span className="pointer-events-none absolute right-0 -bottom-px left-6 h-0.5 bg-[var(--accent)]" />
+        )}
         {children.length > 0 ? (
           <button
             type="button"
@@ -130,6 +180,7 @@ function TreeItem({
           to="/spaces/$key/pages/$id"
           params={{ key: spaceKey, id: page.id }}
           aria-current={current ? 'page' : undefined}
+          draggable={false}
           className={`min-w-0 flex-1 truncate py-1 no-underline ${current ? 'font-semibold text-[var(--accent)]' : 'text-[var(--ink)]'} ${page.published ? '' : 'italic'}`}
         >
           {page.title}
@@ -162,6 +213,8 @@ function TreeItem({
               toggle={toggle}
               canEdit={canEdit}
               onCreateChild={onCreateChild}
+              drop={drop}
+              dragging={dragging}
             />
           ))}
         </ul>
@@ -170,17 +223,73 @@ function TreeItem({
   );
 }
 
+/** Where a drop on a row lands: its upper quarter before it, the lower quarter after, else inside. */
+function dropPosition(event: DragMoveEvent): DropPosition | null {
+  const { over, activatorEvent, delta } = event;
+  if (!over || !('clientY' in activatorEvent)) return null;
+  const y = (activatorEvent as PointerEvent).clientY + delta.y - over.rect.top;
+  const share = y / over.rect.height;
+  return share < 0.25 ? 'before' : share > 0.75 ? 'after' : 'into';
+}
+
+/** Turns a drop into the move request: new parent and the sibling to land before. */
+function moveRequest(
+  entries: PageTreeEntry[],
+  pageId: string,
+  target: DropTarget,
+): MovePageRequest | null {
+  const over = entries.find((entry) => entry.id === target.id);
+  if (!over) return null;
+  if (target.position === 'into') return { parentId: over.id, beforeId: null };
+  if (target.position === 'before') return { parentId: over.parentId, beforeId: over.id };
+  const siblings = entries.filter(
+    (entry) => entry.parentId === over.parentId && entry.id !== pageId,
+  );
+  const next = siblings[siblings.findIndex((entry) => entry.id === over.id) + 1];
+  return { parentId: over.parentId, beforeId: next?.id ?? null };
+}
+
+/** The linked project's issues and boards, if the caller may see them (W-SPC-04, E-60). */
+function ProjectLinks({ project }: { project: { key: string; name: string } }) {
+  const { t } = useTranslation();
+  const boards = useQuery(boardsQuery(project.key));
+  const item =
+    'flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">{t('wiki.project')}</span>
+      <Link to="/projects/$key" params={{ key: project.key }} className={item}>
+        <FolderSimple size={16} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{project.name}</span>
+        <span className="text-xs text-[var(--ink-muted)]">{t('wiki.projectIssues')}</span>
+      </Link>
+      {boards.data?.map((board) => (
+        <Link key={board.id} to="/boards/$id" params={{ id: board.id }} className={item}>
+          <Kanban size={16} aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{board.name}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 /** A space: its page tree beside the page shown (W-SPC-05, W-PAG-01). */
 export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const params = useParams({ strict: false }) as { id?: string };
   const space = useQuery(spaceQuery(spaceKey));
   const tree = useQuery(pageTreeQuery(spaceKey));
   useRealtimeRooms([`space:${spaceKey}`]);
+  useRecordView('space', space.data?.key);
   const [toggled, setToggled] = useState<Map<string, boolean>>(new Map());
   const [creatingUnder, setCreatingUnder] = useState<string | null | undefined>(undefined);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [drop, setDrop] = useState<DropTarget | null>(null);
   const canEdit = space.data?.permissions.includes('edit') ?? false;
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
+  const entries = tree.data ?? [];
   const roots = useMemo(() => nest(tree.data ?? []), [tree.data]);
   // Ancestors of the current page are open unless closed by hand; everything else is closed.
   const expanded = useMemo(() => {
@@ -200,6 +309,45 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
   const toggle = (id: string) =>
     setToggled((current) => new Map(current).set(id, !expanded.has(id)));
 
+  // The dragged page and everything below it cannot take it.
+  const blocked = useMemo(() => {
+    const result = new Set<string>();
+    if (!dragging) return result;
+    result.add(dragging);
+    for (const entry of tree.data ?? []) {
+      if (entry.parentId && result.has(entry.parentId)) result.add(entry.id);
+    }
+    return result;
+  }, [dragging, tree.data]);
+
+  const move = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: MovePageRequest }) =>
+      unwrap(client.POST('/api/v1/pages/{id}/move', { params: { path: { id } }, body })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['space', spaceKey, 'pages'] }),
+  });
+
+  function onDragMove(event: DragMoveEvent) {
+    const position = dropPosition(event);
+    const id = event.over ? String(event.over.id) : null;
+    setDrop(id && position && !blocked.has(id) ? { id, position } : null);
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    const id = String(event.active.id);
+    const target = drop;
+    setDragging(null);
+    setDrop(null);
+    if (!target) return;
+    const body = moveRequest(entries, id, target);
+    const page = entries.find((entry) => entry.id === id);
+    if (!body || !page) return;
+    const siblings = entries.filter((entry) => entry.parentId === page.parentId);
+    const next = siblings[siblings.findIndex((entry) => entry.id === id) + 1];
+    if (body.parentId === page.parentId && (body.beforeId ?? null) === (next?.id ?? null)) return;
+    if (target.position === 'into') setToggled((current) => new Map(current).set(target.id, true));
+    move.mutate({ id, body });
+  }
+
   if (space.error) {
     return (
       <main className="px-6 py-6">
@@ -208,20 +356,32 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
     );
   }
 
+  const draggedTitle = entries.find((entry) => entry.id === dragging)?.title;
   return (
     <div className="flex min-h-full flex-wrap">
       <aside
         aria-label={t('wiki.pageTree')}
         className="flex w-full flex-col gap-3 border-b border-[var(--border)] bg-[var(--surface-2)] px-2 py-4 md:w-64 md:border-r md:border-b-0"
       >
-        <Link
-          to="/spaces/$key"
-          params={{ key: spaceKey }}
-          className="flex flex-col px-2 text-[var(--ink)] no-underline"
-        >
-          <strong className="truncate">{space.data?.name ?? spaceKey}</strong>
-          <span className="tl-key text-[var(--ink-muted)]">{spaceKey}</span>
-        </Link>
+        <div className="flex items-start gap-1">
+          <Link
+            to="/spaces/$key"
+            params={{ key: spaceKey }}
+            className="flex min-w-0 flex-1 flex-col px-2 text-[var(--ink)] no-underline"
+          >
+            <strong className="truncate">{space.data?.name ?? spaceKey}</strong>
+            <span className="tl-key text-[var(--ink-muted)]">{spaceKey}</span>
+          </Link>
+          {space.data && (
+            <FavouriteButton
+              kind="space"
+              refId={space.data.key}
+              active={space.data.favourite}
+              name={space.data.name}
+            />
+          )}
+        </div>
+        {space.data?.project && <ProjectLinks project={space.data.project} />}
         <div className="flex items-center justify-between px-2">
           <span className="tl-label uppercase text-[var(--ink-muted)]">{t('wiki.pages')}</span>
           {canEdit && (
@@ -239,30 +399,70 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
         {tree.data?.length === 0 && (
           <p className="m-0 px-2 text-sm text-[var(--ink-muted)]">{t('wiki.noPages')}</p>
         )}
-        <ul aria-label={t('wiki.pages')} className="m-0 list-none p-0">
-          {roots.map((node) => (
-            <TreeItem
-              key={node.page.id}
-              node={node}
-              spaceKey={spaceKey}
-              currentId={params.id}
-              expanded={expanded}
-              toggle={toggle}
-              canEdit={canEdit}
-              onCreateChild={setCreatingUnder}
-            />
-          ))}
-        </ul>
-        {canEdit && (
-          <Link
-            to="/spaces/$key/trash"
-            params={{ key: spaceKey }}
-            className="mt-auto flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink-muted)] no-underline hover:text-[var(--ink)]"
-          >
-            <Trash size={14} aria-hidden />
-            {t('wiki.trash')}
-          </Link>
+        {move.error && (
+          <p role="alert" className="m-0 px-2 text-sm text-[var(--danger)]">
+            {t('wiki.moveFailed', { message: move.error.message })}
+          </p>
         )}
+        <DndContext
+          sensors={sensors}
+          onDragStart={(event: DragStartEvent) => {
+            move.reset();
+            setDragging(String(event.active.id));
+          }}
+          onDragMove={onDragMove}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => {
+            setDragging(null);
+            setDrop(null);
+          }}
+        >
+          <ul aria-label={t('wiki.pages')} className="m-0 list-none p-0">
+            {roots.map((node) => (
+              <TreeItem
+                key={node.page.id}
+                node={node}
+                spaceKey={spaceKey}
+                currentId={params.id}
+                expanded={expanded}
+                toggle={toggle}
+                canEdit={canEdit}
+                onCreateChild={setCreatingUnder}
+                drop={drop}
+                dragging={dragging}
+              />
+            ))}
+          </ul>
+          <DragOverlay dropAnimation={null}>
+            {draggedTitle && (
+              <div className="w-56 truncate rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-1 shadow-[var(--shadow-float)]">
+                {draggedTitle}
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+        <div className="mt-auto flex flex-col gap-0.5">
+          {canEdit && (
+            <Link
+              to="/spaces/$key/trash"
+              params={{ key: spaceKey }}
+              className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink-muted)] no-underline hover:text-[var(--ink)]"
+            >
+              <Trash size={14} aria-hidden />
+              {t('wiki.trash')}
+            </Link>
+          )}
+          {space.data?.permissions.includes('administer') && (
+            <Link
+              to="/spaces/$key/settings"
+              params={{ key: spaceKey }}
+              className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink-muted)] no-underline hover:text-[var(--ink)]"
+            >
+              <GearSix size={14} aria-hidden />
+              {t('wiki.settingsLink')}
+            </Link>
+          )}
+        </div>
       </aside>
       <div className="min-w-0 flex-1">
         <Outlet />

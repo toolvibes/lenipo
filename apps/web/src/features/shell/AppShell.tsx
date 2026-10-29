@@ -1,5 +1,7 @@
 import {
+  BookOpenText,
   Books,
+  FileText,
   FolderSimple,
   Funnel,
   House,
@@ -15,7 +17,7 @@ import {
 } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate } from '@tanstack/react-router';
-import type { Me } from '@tasklore/shared';
+import type { Favourite, Me } from '@tasklore/shared';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
@@ -54,41 +56,60 @@ function NavItem({
   );
 }
 
-/** Starred projects and filters for one-click access (P-GEN-05). */
+const FAVOURITE_ITEM =
+  'flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
+
+function FavouriteLink({ favourite }: { favourite: Favourite }) {
+  const label = <span className="truncate">{favourite.name}</span>;
+  if (favourite.kind === 'project') {
+    return (
+      <Link to="/projects/$key" params={{ key: favourite.ref }} className={FAVOURITE_ITEM}>
+        <FolderSimple size={20} aria-hidden />
+        {label}
+      </Link>
+    );
+  }
+  if (favourite.kind === 'filter') {
+    return (
+      <Link to="/issues" search={{ filter: favourite.ref }} className={FAVOURITE_ITEM}>
+        <Funnel size={20} aria-hidden />
+        {label}
+      </Link>
+    );
+  }
+  if (favourite.kind === 'space') {
+    return (
+      <Link to="/spaces/$key" params={{ key: favourite.ref }} className={FAVOURITE_ITEM}>
+        <BookOpenText size={20} aria-hidden />
+        {label}
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/spaces/$key/pages/$id"
+      params={{ key: favourite.spaceKey ?? '', id: favourite.ref }}
+      className={FAVOURITE_ITEM}
+    >
+      <FileText size={20} aria-hidden />
+      {label}
+    </Link>
+  );
+}
+
+/** Starred projects, filters, spaces and pages for one-click access (P-GEN-05, E-60). */
 function Favourites() {
   const { t } = useTranslation();
   const favourites = useQuery(favouritesQuery);
   if (!favourites.data || favourites.data.length === 0) return null;
-  const item =
-    'flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
   return (
     <div className="flex flex-col gap-0.5">
       <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
         {t('favourites.title')}
       </span>
-      {favourites.data.map((favourite) =>
-        favourite.kind === 'project' ? (
-          <Link
-            key={`project:${favourite.id}`}
-            to="/projects/$key"
-            params={{ key: favourite.ref }}
-            className={item}
-          >
-            <FolderSimple size={20} aria-hidden />
-            <span className="truncate">{favourite.name}</span>
-          </Link>
-        ) : (
-          <Link
-            key={`filter:${favourite.id}`}
-            to="/issues"
-            search={{ filter: favourite.ref }}
-            className={item}
-          >
-            <Funnel size={20} aria-hidden />
-            <span className="truncate">{favourite.name}</span>
-          </Link>
-        ),
-      )}
+      {favourites.data.map((favourite) => (
+        <FavouriteLink key={`${favourite.kind}:${favourite.id}`} favourite={favourite} />
+      ))}
     </div>
   );
 }

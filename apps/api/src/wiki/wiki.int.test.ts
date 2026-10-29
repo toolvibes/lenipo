@@ -1,14 +1,18 @@
 import type {
+  Favourite,
   Page,
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
+  RecentItem,
   Space,
   SpaceMember,
   SpaceSummary,
   TrashedPage,
 } from '@tasklore/shared';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { groups, projectRoleMembers, projects } from '../db/schema/index.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 
@@ -259,5 +263,81 @@ describe('pages', () => {
     const set = await admin.request<Space>('PATCH', '/spaces/DOCS', { homePageId: home.id });
     expect(set.body.homePageId).toBe(home.id);
     expect((await mira.request('PATCH', '/spaces/DOCS', { name: 'Neu' })).status).toBe(403);
+  });
+});
+
+describe('project link (E-60)', () => {
+  it('needs administer on both sides to link a space with a project', async () => {
+    await admin.request('POST', '/projects', {
+      key: 'WEB',
+      name: 'Web-Relaunch',
+      template: 'basic',
+    });
+    await admin.request('POST', '/spaces/DOCS/members', { role: 'administrators', userId: miraId });
+    // Mira administers the space but only works in the project.
+    expect((await mira.request('PATCH', '/spaces/DOCS', { projectKey: 'WEB' })).status).toBe(403);
+    expect((await admin.request('PATCH', '/spaces/DOCS', { projectKey: 'NOPE' })).status).toBe(404);
+    const linked = await admin.request<Space>('PATCH', '/spaces/DOCS', { projectKey: 'web' });
+    expect(linked.body.project).toEqual({ key: 'WEB', name: 'Web-Relaunch' });
+    expect((await mira.request('PATCH', '/spaces/DOCS', { projectKey: null })).status).toBe(403);
+    const spaces = await olaf.request<SpaceSummary[]>('GET', '/projects/WEB/spaces');
+    expect(spaces.body.map((space) => space.key)).toEqual(['DOCS']);
+  });
+
+  it('shows the link only to those who may see the other side', async () => {
+    const [web] = await test.database.db.select().from(projects).where(eq(projects.key, 'WEB'));
+    const [everyone] = await test.database.db.select().from(groups).where(eq(groups.name, 'users'));
+    await test.database.db
+      .delete(projectRoleMembers)
+      .where(
+        and(
+          eq(projectRoleMembers.projectId, web?.id ?? ''),
+          eq(projectRoleMembers.groupId, everyone?.id ?? ''),
+        ),
+      );
+    expect((await olaf.request<Space>('GET', '/spaces/DOCS')).body.project).toBeNull();
+    expect((await olaf.request('GET', '/projects/WEB/spaces')).status).toBe(404);
+    expect((await admin.request<Space>('GET', '/spaces/DOCS')).body.project?.key).toBe('WEB');
+  });
+});
+
+describe('favourites and recently viewed (E-60)', () => {
+  it('stars spaces and pages the caller can see', async () => {
+    const space = await olaf.request<Space>('GET', '/spaces/DOCS');
+    const home = space.body.homePageId as string;
+    const draft = await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Geheim' });
+    expect((await olaf.request('PUT', '/me/favourites/space/docs')).status).toBe(204);
+    expect((await olaf.request('PUT', `/me/favourites/page/${home}`)).status).toBe(204);
+    expect((await olaf.request('PUT', `/me/favourites/page/${draft.body.id}`)).status).toBe(404);
+    expect((await olaf.request('PUT', '/me/favourites/page/kein-uuid')).status).toBe(404);
+
+    const favourites = await olaf.request<Favourite[]>('GET', '/me/favourites');
+    expect(favourites.body).toEqual([
+      expect.objectContaining({ kind: 'space', ref: 'DOCS', name: 'Dokumentation' }),
+      expect.objectContaining({ kind: 'page', ref: home, spaceKey: 'DOCS' }),
+    ]);
+    expect((await olaf.request<Space>('GET', '/spaces/DOCS')).body.favourite).toBe(true);
+    expect((await olaf.request<Page>('GET', `/pages/${home}`)).body.favourite).toBe(true);
+    expect((await mira.request<Page>('GET', `/pages/${home}`)).body.favourite).toBe(false);
+
+    // Mira may star her draft; it disappears from her list once it is in the trash.
+    await mira.request('PUT', `/me/favourites/page/${draft.body.id}`);
+    const before = await mira.request<Favourite[]>('GET', '/me/favourites');
+    expect(before.body.map((favourite) => favourite.name)).toEqual(['Geheim']);
+    await mira.request('DELETE', `/pages/${draft.body.id}`);
+    expect((await mira.request<Favourite[]>('GET', '/me/favourites')).body).toEqual([]);
+  });
+
+  it('remembers opened spaces and pages, newest first', async () => {
+    const home = (await olaf.request<Space>('GET', '/spaces/DOCS')).body.homePageId as string;
+    expect((await olaf.request('POST', '/me/recent', { kind: 'space', ref: 'DOCS' })).status).toBe(
+      204,
+    );
+    await olaf.request('POST', '/me/recent', { kind: 'page', ref: home });
+    const recent = await olaf.request<RecentItem[]>('GET', '/me/recent');
+    expect(recent.body.map((item) => [item.kind, item.ref, item.spaceKey])).toEqual([
+      ['page', home, 'DOCS'],
+      ['space', 'DOCS', undefined],
+    ]);
   });
 });

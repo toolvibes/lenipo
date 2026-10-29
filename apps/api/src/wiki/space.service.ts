@@ -15,16 +15,26 @@ import type {
   SpaceSummary,
   UpdateSpaceRequest,
 } from '@tasklore/shared';
-import { and, asc, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, isUniqueViolation } from '../db/client.js';
-import { groups, pages, spaceRoleMembers, spaces, users } from '../db/schema/index.js';
+import {
+  favourites,
+  groups,
+  pages,
+  projects,
+  spaceRoleMembers,
+  spaces,
+  users,
+} from '../db/schema/index.js';
 import { USERS_GROUP } from '../identity/group.service.js';
 import { signal } from '../realtime/signals.js';
+import { ProjectService } from '../tracking/project.service.js';
+import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 
 export type SpaceRow = typeof spaces.$inferSelect;
@@ -37,6 +47,8 @@ export class SpaceService {
     @Inject(AccessService) private readonly access: AccessService,
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(ProjectService) private readonly projects: ProjectService,
+    @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
   ) {}
 
   /** The creator administers the space; all signed-in users may edit it. */
@@ -98,7 +110,23 @@ export class SpaceService {
       .from(spaces)
       .where(await this.spaceAccess.viewableCondition(principal.userId))
       .orderBy(asc(spaces.name));
-    return rows.map((row) => this.summary(row));
+    return this.summaries(principal.userId, rows);
+  }
+
+  /** Spaces linked with a project the caller may browse, as far as the caller may view them. */
+  async ofProject(principal: Principal, projectKey: string): Promise<SpaceSummary[]> {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    const rows = await this.database.db
+      .select()
+      .from(spaces)
+      .where(
+        and(
+          eq(spaces.projectId, project.id),
+          await this.spaceAccess.viewableCondition(principal.userId),
+        ),
+      )
+      .orderBy(asc(spaces.name));
+    return this.summaries(principal.userId, rows);
   }
 
   /** Finds a space the principal may use as asked; otherwise 404 or 403. */
@@ -118,7 +146,8 @@ export class SpaceService {
 
   async get(principal: Principal, key: string): Promise<Space> {
     const { space, permissions } = await this.find(principal, key);
-    return { ...this.summary(space), permissions: [...permissions].sort() };
+    const [summary] = await this.summaries(principal.userId, [space]);
+    return { ...(summary as SpaceSummary), permissions: [...permissions].sort() };
   }
 
   async update(principal: Principal, key: string, request: UpdateSpaceRequest): Promise<Space> {
@@ -136,9 +165,44 @@ export class SpaceService {
         );
       if (!home) throw new BadRequestException('The home page must be a page of this space');
     }
-    await this.database.db.update(spaces).set(request).where(eq(spaces.id, space.id));
+    const { projectKey, ...changes } = request;
+    let projectId: string | null | undefined;
+    if (projectKey !== undefined) {
+      projectId = projectKey ? await this.linkableProject(principal, projectKey) : null;
+      // Unlinking needs the project side too, unless the caller cannot see it any more.
+      if (projectId === null && space.projectId) {
+        const granted = await this.projectAccess.permissions(principal.userId, space.projectId);
+        if (granted.has('browse') && !granted.has('administer')) {
+          throw new ForbiddenException('Requires the project permission "administer"');
+        }
+      }
+    }
+    await this.database.db
+      .update(spaces)
+      .set({ ...changes, ...(projectId !== undefined ? { projectId } : {}) })
+      .where(eq(spaces.id, space.id));
+    if (projectId !== undefined && projectId !== space.projectId) {
+      await this.audit.record({
+        action: projectId ? 'space.project-linked' : 'space.project-unlinked',
+        actorId: principal.userId,
+        via: principal.via,
+        targetType: 'space',
+        targetId: space.id,
+        details: { projectKey: projectKey ?? null },
+      });
+    }
     await signal(this.database.db, { type: 'space', spaceKey: space.key });
     return this.get(principal, key);
+  }
+
+  /** A project to link with: the caller must administer it as well (E-60). */
+  private async linkableProject(principal: Principal, projectKey: string): Promise<string> {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    const granted = await this.projectAccess.permissions(principal.userId, project.id);
+    if (!granted.has('administer')) {
+      throw new ForbiddenException('Requires the project permission "administer"');
+    }
+    return project.id;
   }
 
   // ---------------------------------------------------------------- role assignments
@@ -236,14 +300,52 @@ export class SpaceService {
     });
   }
 
-  private summary(space: SpaceRow): SpaceSummary {
-    return {
+  /** Adds the caller's star and the linked project, if the caller may browse it. */
+  private async summaries(userId: string, rows: SpaceRow[]): Promise<SpaceSummary[]> {
+    if (rows.length === 0) return [];
+    const db = this.database.db;
+    const starred = new Set(
+      (
+        await db
+          .select({ targetId: favourites.targetId })
+          .from(favourites)
+          .where(
+            and(
+              eq(favourites.userId, userId),
+              eq(favourites.kind, 'space'),
+              inArray(
+                favourites.targetId,
+                rows.map((row) => row.id),
+              ),
+            ),
+          )
+      ).map((row) => row.targetId),
+    );
+    const projectIds = [...new Set(rows.flatMap((row) => (row.projectId ? [row.projectId] : [])))];
+    const linked = new Map(
+      projectIds.length === 0
+        ? []
+        : (
+            await db
+              .select({ id: projects.id, key: projects.key, name: projects.name })
+              .from(projects)
+              .where(
+                and(
+                  inArray(projects.id, projectIds),
+                  await this.projectAccess.browsableCondition(userId),
+                ),
+              )
+          ).map((project) => [project.id, { key: project.key, name: project.name }]),
+    );
+    return rows.map((space) => ({
       id: space.id,
       key: space.key,
       name: space.name,
       description: space.description,
       homePageId: space.homePageId,
       createdAt: space.createdAt.toISOString(),
-    };
+      favourite: starred.has(space.id),
+      project: (space.projectId && linked.get(space.projectId)) || null,
+    }));
   }
 }

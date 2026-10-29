@@ -20,6 +20,36 @@ export const pageTreeQuery = (key: string) =>
     queryFn: () => unwrap(client.GET('/api/v1/spaces/{key}/pages', { params: { path: { key } } })),
   });
 
+/** Role assignments; only administrators of the space may read them. */
+export const spaceMembersQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['space', key, 'members'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/spaces/{key}/members', { params: { path: { key } } })),
+  });
+
+/** Spaces linked with a project (E-60). */
+export const projectSpacesQuery = (projectKey: string) =>
+  queryOptions({
+    queryKey: ['project', projectKey, 'spaces'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/spaces', { params: { path: { key: projectKey } } }),
+      ),
+  });
+
+export const groupsQuery = queryOptions({
+  queryKey: ['groups'],
+  queryFn: () => unwrap(client.GET('/api/v1/groups')),
+  staleTime: 60_000,
+});
+
+export const userSearchQuery = (query: string) =>
+  queryOptions({
+    queryKey: ['users', query],
+    queryFn: () => unwrap(client.GET('/api/v1/users', { params: { query: { query, limit: 8 } } })),
+  });
+
 export const pageQuery = (id: string) =>
   queryOptions({
     queryKey: ['page', id],
