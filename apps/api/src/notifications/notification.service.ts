@@ -65,8 +65,8 @@ export class NotificationService {
     const [issue] = await tx.select().from(issues).where(eq(issues.id, row.issueId));
     if (!issue || issue.deletedAt) return;
     const event = issueEvent(row);
-    // Deleted comments are of interest to webhooks only.
-    if (event.type === 'issue.comment_deleted') return;
+    // Deleted comments and logged work are of interest to webhooks only.
+    if (event.type === 'issue.comment_deleted' || event.type === 'issue.worklog') return;
     const mentions = new Set(event.mentions);
 
     let candidates: string[];

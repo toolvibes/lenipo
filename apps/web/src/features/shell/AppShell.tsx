@@ -8,6 +8,7 @@ import {
   MagnifyingGlass,
   NotePencil,
   SignOut,
+  Timer,
   WebhooksLogo,
 } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -150,6 +151,11 @@ export function AppShell({ me }: { me: Me }) {
               icon={WebhooksLogo}
               label={t('webhooks.title')}
               exact={false}
+            />
+            <NavItem
+              to="/admin/time-tracking"
+              icon={Timer}
+              label={t('shell.timeTrackingSettings')}
             />
           </div>
         )}

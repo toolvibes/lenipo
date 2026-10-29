@@ -275,6 +275,74 @@
         }
       }
     },
+    "/api/v1/admin/time-tracking": {
+      "get": {
+        "operationId": "Admin.get",
+        "summary": "Get the working time used for durations",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkingTime"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Admin.set",
+        "summary": "Change the working time used for durations",
+        "description": "Stored values stay in seconds; \"1d\" and \"1w\" are read and shown with the new lengths from now on.\n\nRequires the global permission `admin`.",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkingTimeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkingTime"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "Auth.login",
@@ -1462,6 +1530,191 @@
           },
           {
             "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/worklogs": {
+      "get": {
+        "operationId": "Issues.worklogList",
+        "summary": "List the work logged on an issue, newest first",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Worklog"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Issues.logWork",
+        "summary": "Log work on an issue",
+        "description": "Needs `edit-issues`. Durations like \"1d 4h\" use the instance’s working time (`workingTime` in /tracking/meta). The remaining estimate drops by the logged time unless `remaining` says otherwise.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorklogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Worklog"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/worklogs/{worklogId}": {
+      "patch": {
+        "operationId": "Issues.updateWorklog",
+        "summary": "Change an own worklog",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "worklogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorklogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Worklog"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Issues.deleteWorklog",
+        "summary": "Delete a worklog (own, or any as project administrator)",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "worklogId",
             "in": "path",
             "required": true,
             "schema": {
@@ -3458,6 +3711,39 @@
         },
         "required": ["userId"]
       },
+      "WorkingTime": {
+        "type": "object",
+        "properties": {
+          "hoursPerDay": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 24
+          },
+          "daysPerWeek": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          }
+        },
+        "required": ["hoursPerDay", "daysPerWeek"],
+        "additionalProperties": false
+      },
+      "WorkingTimeInput": {
+        "type": "object",
+        "properties": {
+          "hoursPerDay": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 24
+          },
+          "daysPerWeek": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          }
+        },
+        "required": ["hoursPerDay", "daysPerWeek"]
+      },
       "LoginRequest": {
         "type": "object",
         "properties": {
@@ -3921,6 +4207,9 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "workingTime": {
+            "$ref": "#/components/schemas/WorkingTime"
           }
         },
         "required": [
@@ -3929,7 +4218,8 @@
           "priorities",
           "resolutions",
           "linkTypes",
-          "attachmentMaxBytes"
+          "attachmentMaxBytes",
+          "workingTime"
         ],
         "additionalProperties": false
       },
@@ -4322,6 +4612,42 @@
             "items": {
               "$ref": "#/components/schemas/IssueLink"
             }
+          },
+          "timeTracking": {
+            "type": "object",
+            "properties": {
+              "originalEstimateSeconds": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "remainingEstimateSeconds": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timeSpentSeconds": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["originalEstimateSeconds", "remainingEstimateSeconds", "timeSpentSeconds"],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -4348,7 +4674,8 @@
           "watching",
           "watcherCount",
           "components",
-          "links"
+          "links",
+          "timeTracking"
         ],
         "additionalProperties": false
       },
@@ -4578,6 +4905,30 @@
               "minLength": 1,
               "maxLength": 100
             }
+          },
+          "originalEstimate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remainingEstimate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -4753,6 +5104,152 @@
           }
         },
         "required": ["type", "issueKey"]
+      },
+      "Worklog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "timeSpentSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "comment": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "started",
+          "timeSpentSeconds",
+          "comment",
+          "createdAt",
+          "updatedAt",
+          "canEdit",
+          "canDelete"
+        ],
+        "additionalProperties": false
+      },
+      "CreateWorklogRequest": {
+        "type": "object",
+        "properties": {
+          "timeSpent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "comment": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "remaining": {
+            "default": {
+              "mode": "auto"
+            },
+            "$ref": "#/components/schemas/RemainingAdjustment"
+          }
+        },
+        "required": ["timeSpent"]
+      },
+      "RemainingAdjustment": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "auto"
+              }
+            },
+            "required": ["mode"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "leave"
+              }
+            },
+            "required": ["mode"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "set"
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              }
+            },
+            "required": ["mode", "value"]
+          }
+        ]
+      },
+      "UpdateWorklogRequest": {
+        "type": "object",
+        "properties": {
+          "timeSpent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
       },
       "SessionInfo": {
         "type": "object",
@@ -5813,7 +6310,10 @@
           "issue.transitioned",
           "comment.created",
           "comment.updated",
-          "comment.deleted"
+          "comment.deleted",
+          "worklog.created",
+          "worklog.updated",
+          "worklog.deleted"
         ]
       },
       "CreateWebhookRequest": {

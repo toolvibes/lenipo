@@ -22,3 +22,8 @@ export const webhookDeliveriesQuery = (id: string) =>
         }),
       ),
   });
+
+export const timeTrackingSettingsQuery = queryOptions({
+  queryKey: ['admin', 'time-tracking'],
+  queryFn: () => unwrap(client.GET('/api/v1/admin/time-tracking')),
+});

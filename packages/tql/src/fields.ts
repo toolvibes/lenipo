@@ -28,7 +28,8 @@ export type FieldType =
   | 'datetime'
   | 'issue'
   | 'component'
-  | 'link-type';
+  | 'link-type'
+  | 'duration';
 
 export interface FieldDef {
   /** Canonical name, used in suggestions and by the SQL compiler. */
@@ -155,6 +156,21 @@ export const FIELDS: readonly FieldDef[] = [
     operators: EQUALITY,
     orderable: false,
   },
+  {
+    id: 'originalEstimate',
+    aliases: ['timeoriginalestimate'],
+    type: 'duration',
+    operators: [...DATES, ...EMPTINESS],
+    orderable: true,
+  },
+  {
+    id: 'remainingEstimate',
+    aliases: ['timeestimate', 'remaining'],
+    type: 'duration',
+    operators: [...DATES, ...EMPTINESS],
+    orderable: true,
+  },
+  { id: 'timeSpent', aliases: ['timespent'], type: 'duration', operators: DATES, orderable: true },
   { id: 'rank', aliases: [], type: 'text', operators: [], orderable: true },
 ];
 

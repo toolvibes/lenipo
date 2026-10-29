@@ -67,6 +67,15 @@ export const IssueLinkTypeInfo = z
   .meta({ id: 'IssueLinkTypeInfo' });
 export type IssueLinkTypeInfo = z.infer<typeof IssueLinkTypeInfo>;
 
+/** Length of a working day and week for durations like "1d" or "1w" (E-47). */
+export const WorkingTime = z
+  .object({
+    hoursPerDay: z.number().min(1).max(24),
+    daysPerWeek: z.number().int().min(1).max(7),
+  })
+  .meta({ id: 'WorkingTime' });
+export type WorkingTime = z.infer<typeof WorkingTime>;
+
 export const TrackingMeta = z
   .object({
     issueTypes: z.array(IssueTypeInfo),
@@ -76,6 +85,7 @@ export const TrackingMeta = z
     linkTypes: z.array(IssueLinkTypeInfo),
     /** Largest attachment the server accepts, in bytes. */
     attachmentMaxBytes: z.number().int(),
+    workingTime: WorkingTime,
   })
   .meta({ id: 'TrackingMeta' });
 export type TrackingMeta = z.infer<typeof TrackingMeta>;
@@ -132,6 +142,9 @@ const Labels = z
   .array(z.string().trim().min(1).max(64).regex(/^\S+$/, 'Labels ohne Leerzeichen'))
   .max(30);
 const StoryPoints = z.number().min(0).max(1000).nullable();
+/** A duration such as "1w 2d 3h 30m", read with the instance's working time (E-47). */
+const DurationText = z.string().trim().min(1).max(50);
+
 /** Components by id or name (case-insensitive) within the issue's project. */
 const ComponentNames = z.array(z.string().trim().min(1).max(100)).max(20);
 const DueDate = z.iso.date().nullable();
@@ -165,6 +178,8 @@ export const UpdateIssueRequest = z
     storyPoints: StoryPoints,
     dueDate: DueDate,
     components: ComponentNames,
+    originalEstimate: DurationText.nullable(),
+    remainingEstimate: DurationText.nullable(),
   })
   .partial()
   .meta({ id: 'UpdateIssueRequest' });
@@ -273,6 +288,11 @@ export const Issue = IssueSummary.extend({
   components: z.array(ComponentRef),
   /** Links to issues the caller can see. */
   links: z.array(IssueLink),
+  timeTracking: z.object({
+    originalEstimateSeconds: z.number().int().nullable(),
+    remainingEstimateSeconds: z.number().int().nullable(),
+    timeSpentSeconds: z.number().int(),
+  }),
 }).meta({ id: 'Issue' });
 export type Issue = z.infer<typeof Issue>;
 
@@ -331,6 +351,54 @@ export const Attachment = z
   })
   .meta({ id: 'Attachment' });
 export type Attachment = z.infer<typeof Attachment>;
+
+/** Logged work on an issue (T-TIM-02). */
+export const Worklog = z
+  .object({
+    id: Id,
+    author: UserRef.nullable(),
+    /** When the work was done. */
+    started: z.iso.datetime(),
+    timeSpentSeconds: z.number().int(),
+    comment: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    canEdit: z.boolean(),
+    canDelete: z.boolean(),
+  })
+  .meta({ id: 'Worklog' });
+export type Worklog = z.infer<typeof Worklog>;
+
+/** How logging work changes the remaining estimate (E-47). */
+export const RemainingAdjustment = z
+  .discriminatedUnion('mode', [
+    z.object({ mode: z.literal('auto') }),
+    z.object({ mode: z.literal('leave') }),
+    z.object({ mode: z.literal('set'), value: DurationText }),
+  ])
+  .meta({ id: 'RemainingAdjustment' });
+export type RemainingAdjustment = z.infer<typeof RemainingAdjustment>;
+
+export const CreateWorklogRequest = z
+  .object({
+    timeSpent: DurationText,
+    /** Defaults to now. */
+    started: z.iso.datetime({ offset: true }).optional(),
+    comment: z.string().max(2_000).default(''),
+    remaining: RemainingAdjustment.default({ mode: 'auto' }),
+  })
+  .meta({ id: 'CreateWorklogRequest' });
+export type CreateWorklogRequest = z.infer<typeof CreateWorklogRequest>;
+
+export const UpdateWorklogRequest = z
+  .object({
+    timeSpent: DurationText,
+    started: z.iso.datetime({ offset: true }),
+    comment: z.string().max(2_000),
+  })
+  .partial()
+  .meta({ id: 'UpdateWorklogRequest' });
+export type UpdateWorklogRequest = z.infer<typeof UpdateWorklogRequest>;
 
 export const ChangeGroup = z
   .object({

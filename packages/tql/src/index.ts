@@ -1,5 +1,6 @@
 export type * from './ast.js';
 export * from './complete.js';
+export * from './duration.js';
 export * from './errors.js';
 export * from './fields.js';
 export * from './lexer.js';

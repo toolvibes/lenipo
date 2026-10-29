@@ -11,10 +11,18 @@ import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { ProjectsController } from './projects.controller.js';
+import { TimeTrackingController } from './time-tracking.controller.js';
+import { WorkingTimeService } from './working-time.service.js';
+import { WorklogService } from './worklog.service.js';
 
 @Module({
   imports: [IdentityModule],
-  controllers: [ProjectsController, IssuesController, AttachmentsController],
+  controllers: [
+    ProjectsController,
+    IssuesController,
+    AttachmentsController,
+    TimeTrackingController,
+  ],
   providers: [
     TrackingBootstrapService,
     MetaService,
@@ -22,9 +30,11 @@ import { ProjectsController } from './projects.controller.js';
     ProjectService,
     ComponentService,
     LinkService,
+    WorkingTimeService,
     IssueService,
+    WorklogService,
     AttachmentService,
   ],
-  exports: [IssueService, MetaService, ProjectAccessService, ProjectService],
+  exports: [IssueService, MetaService, ProjectAccessService, ProjectService, WorkingTimeService],
 })
 export class TrackingModule {}

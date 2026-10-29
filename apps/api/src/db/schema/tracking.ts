@@ -388,3 +388,26 @@ export const issueAttachments = pgTable(
   },
   (table) => [index('issue_attachments_issue_idx').on(table.issueId, table.createdAt)],
 );
+
+/** Work logged on an issue (T-TIM-02, E-47); the issue keeps the sum in timeSpentSeconds. */
+export const issueWorklogs = pgTable(
+  'issue_worklogs',
+  {
+    id: uuid().primaryKey(),
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** When the work was done. */
+    startedAt: timestamp({ withTimezone: true }).notNull(),
+    timeSpentSeconds: integer().notNull(),
+    comment: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('issue_worklogs_issue_idx').on(table.issueId, table.startedAt),
+    index('issue_worklogs_author_idx').on(table.authorId, table.startedAt),
+    check('issue_worklogs_positive', sql`${table.timeSpentSeconds} > 0`),
+  ],
+);

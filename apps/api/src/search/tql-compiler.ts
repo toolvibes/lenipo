@@ -1,3 +1,4 @@
+import type { WorkingTime } from '@tasklore/shared';
 import {
   type Clause,
   type DateValue,
@@ -8,6 +9,7 @@ import {
   type Operand,
   type Operator,
   parseDateValue,
+  parseDuration,
   parseIncrement,
   type Query,
   STATUS_CATEGORY_NAMES,
@@ -52,6 +54,8 @@ export interface CompileContext {
   projects: ReadonlyArray<{ id: string; key: string; name: string }>;
   /** Components of those projects. */
   components: ReadonlyArray<{ id: string; name: string }>;
+  /** For "1d" and "1w" in time tracking values (E-47). */
+  workingTime: WorkingTime;
 }
 
 export interface CompiledQuery {
@@ -251,6 +255,8 @@ export class TqlCompiler {
         return this.component(clause);
       case 'link-type':
         return this.linkType(clause);
+      case 'duration':
+        return this.duration(clause);
     }
   }
 
@@ -506,6 +512,29 @@ export class TqlCompiler {
     return clause.field.id === 'parent'
       ? (and(isNotNull(issues.parentId), not(match)) as SQL)
       : not(match);
+  }
+
+  // ---------------------------------------------------------------- time tracking
+
+  private duration(clause: Clause): SQL {
+    const column =
+      clause.field.id === 'originalEstimate'
+        ? issues.originalEstimateSeconds
+        : clause.field.id === 'remainingEstimate'
+          ? issues.remainingEstimateSeconds
+          : issues.timeSpentSeconds;
+    if (clause.operator === 'is') return isNull(column);
+    if (clause.operator === 'is not') return isNotNull(column);
+    const values = items(clause.operand).flatMap((item) => {
+      const seconds =
+        item.kind === 'value' ? parseDuration(item.value, this.context.workingTime) : undefined;
+      return seconds === undefined ? [] : [seconds];
+    });
+    if (values.length === 0) return sql`false`;
+    if (clause.operator === 'in') return inArray(column, values);
+    if (clause.operator === 'not in')
+      return and(isNotNull(column), not(inArray(column, values))) as SQL;
+    return sql`${column} ${sql.raw(clause.operator === '!=' ? '<>' : clause.operator)} ${values[0]}`;
   }
 
   // ---------------------------------------------------------------- components and links
@@ -768,6 +797,12 @@ export class TqlCompiler {
         return [sql`split_part(${issues.key}, '-', 1)`, sql`${issues.number}`];
       case 'rank':
         return [sql`${issues.rank}`];
+      case 'originalEstimate':
+        return [sql`${issues.originalEstimateSeconds}`];
+      case 'remainingEstimate':
+        return [sql`${issues.remainingEstimateSeconds}`];
+      case 'timeSpent':
+        return [sql`${issues.timeSpentSeconds}`];
       default:
         return [];
     }

@@ -22,6 +22,7 @@ import { ComponentsField } from './ComponentsField';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { RichTextEditor, RichTextView } from './RichTextEditor';
+import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
 import { Avatar, UserPicker } from './UserPicker';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -264,7 +265,7 @@ function Activity({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<'comments' | 'history'>('comments');
+  const [tab, setTab] = useState<'comments' | 'worklogs' | 'history'>('comments');
   const comments = useQuery(commentsQuery(issueKey));
   const history = useQuery({ ...historyQuery(issueKey), enabled: tab === 'history' });
   const addComment = useMutation({
@@ -297,9 +298,11 @@ function Activity({
           'comments',
           `${t('issues.comments')}${comments.data ? ` · ${comments.data.length}` : ''}`,
         )}
+        {tabButton('worklogs', t('time.worklogs'))}
         {tabButton('history', t('issues.history'))}
       </div>
-      {tab === 'comments' ? (
+      {tab === 'worklogs' && <WorklogList issueKey={issueKey} />}
+      {tab === 'comments' && (
         <>
           {canComment && (
             <RichTextEditor
@@ -325,7 +328,8 @@ function Activity({
             />
           ))}
         </>
-      ) : (
+      )}
+      {tab === 'history' && (
         <ol className="m-0 flex list-none flex-col gap-3 p-0">
           {history.data?.length === 0 && (
             <li className="text-[var(--ink-muted)]">{t('issues.noHistory')}</li>
@@ -379,6 +383,7 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
   const meta = useQuery(trackingMetaQuery);
   const [editingDescription, setEditingDescription] = useState(false);
   const [pickingAssignee, setPickingAssignee] = useState(false);
+  const [loggingWork, setLoggingWork] = useState(false);
   // Only once the issue loaded, so missing or hidden issues are not recorded.
   useRecordView('issue', issue.data?.key);
 
@@ -659,6 +664,12 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
               </Field>
             )}
           </dl>
+          <TimeTrackingPanel
+            issue={data}
+            canEdit={canEdit}
+            onUpdate={(body) => update.mutate(body)}
+            onLogWork={() => setLoggingWork(true)}
+          />
           <p className="m-0 text-xs text-[var(--ink-muted)]">
             {t('issues.created', { date: formatDateTime(data.createdAt) })} ·{' '}
             {t('issues.updated', { date: formatRelative(data.updatedAt) })}
@@ -674,6 +685,7 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
         projectKey={data.project.key}
         onPick={(user) => update.mutate({ assigneeId: user?.id ?? null })}
       />
+      <LogWorkDialog issueKey={data.key} open={loggingWork} onOpenChange={setLoggingWork} />
     </main>
   );
 }

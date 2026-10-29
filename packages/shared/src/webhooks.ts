@@ -8,6 +8,9 @@ export const WEBHOOK_EVENT_TYPES = [
   'comment.created',
   'comment.updated',
   'comment.deleted',
+  'worklog.created',
+  'worklog.updated',
+  'worklog.deleted',
 ] as const;
 export const WebhookEventType = z.enum(WEBHOOK_EVENT_TYPES).meta({ id: 'WebhookEventType' });
 export type WebhookEventType = z.infer<typeof WebhookEventType>;

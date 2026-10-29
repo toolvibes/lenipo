@@ -136,6 +136,14 @@ describe('parse', () => {
     expect(codes('key in linkedIssues()')).toEqual(['function-arguments']);
   });
 
+  it('reads durations for time tracking fields', () => {
+    expect(
+      codes('remainingEstimate > 2h AND timeSpent <= "1d 4h" AND originalEstimate is EMPTY'),
+    ).toEqual([]);
+    expect(codes('timeSpent > lots')).toEqual(['invalid-duration']);
+    expect(codes('timeSpent is EMPTY')).toEqual(['operator-not-supported']);
+  });
+
   it('accepts functions where they fit', () => {
     expect(codes('assignee in membersOf("team-plattform")')).toEqual([]);
     expect(codes('assignee in (currentUser(), "mira@example.com")')).toEqual([]);

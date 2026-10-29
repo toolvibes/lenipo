@@ -7,6 +7,7 @@ import {
   redirect,
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
+import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
@@ -158,6 +159,12 @@ const webhooksRoute = createRoute({
   component: WebhooksPage,
 });
 
+const timeTrackingRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/time-tracking',
+  component: TimeTrackingSettingsPage,
+});
+
 const webhookRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/webhooks/$id',
@@ -178,7 +185,7 @@ const routeTree = rootRoute.addChildren([
     searchRoute,
     issueRoute,
     activityRoute,
-    adminRoute.addChildren([webhooksRoute, webhookRoute]),
+    adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute]),
   ]),
 ]);
 

@@ -9,6 +9,7 @@ import type {
   Span,
   ValueOperand,
 } from './ast.js';
+import { parseDuration } from './duration.js';
 import { type TqlError, type TqlErrorCode, tqlError } from './errors.js';
 import {
   type FieldDef,
@@ -426,6 +427,11 @@ class Parser {
         break;
       case 'issue':
         if (!ISSUE_KEY.test(operand.value)) this.report('invalid-issue-key', operand.span, params);
+        break;
+      case 'duration':
+        if (parseDuration(operand.value) === undefined) {
+          this.report('invalid-duration', operand.span, params);
+        }
         break;
       default:
         break;

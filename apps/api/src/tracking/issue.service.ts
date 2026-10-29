@@ -22,6 +22,7 @@ import type {
   UpdateIssueRequest,
   UserRef,
 } from '@tasklore/shared';
+import { formatDuration } from '@tasklore/tql';
 import { and, asc, count, desc, eq, inArray, isNull, max, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
@@ -39,6 +40,7 @@ import {
 import { emitIssueEvent } from '../notifications/events.js';
 import { builtInId } from './builtins.js';
 import { ComponentService } from './component.service.js';
+import { durationSeconds } from './duration.js';
 import { type Change, displayText, recordChanges } from './history.js';
 import { LinkService } from './link.service.js';
 import { type MetaIndex, MetaService } from './meta.service.js';
@@ -47,6 +49,7 @@ import { ProjectAccessService } from './project-access.service.js';
 import { rankBetween } from './rank.js';
 import { mentionedUserIds, plainText } from './rich-text.js';
 import { transitionsFrom } from './workflow.js';
+import { WorkingTimeService } from './working-time.service.js';
 
 /** Issue columns without the search vector, which only the database reads. */
 type IssueRow = Omit<typeof issues.$inferSelect, 'searchVector'>;
@@ -73,6 +76,7 @@ export class IssueService {
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(ComponentService) private readonly components: ComponentService,
     @Inject(LinkService) private readonly links: LinkService,
+    @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
   ) {}
 
   // ---------------------------------------------------------------- reading
@@ -205,6 +209,11 @@ export class IssueService {
       watcherCount: watchers.length,
       components,
       links,
+      timeTracking: {
+        originalEstimateSeconds: issue.originalEstimateSeconds,
+        remainingEstimateSeconds: issue.remainingEstimateSeconds,
+        timeSpentSeconds: issue.timeSpentSeconds,
+      },
     };
   }
 
@@ -520,6 +529,44 @@ export class IssueService {
             (id) => !mentionedUserIds(issue.description).includes(id),
           )
         : [];
+    if (request.originalEstimate !== undefined || request.remainingEstimate !== undefined) {
+      const time = await this.workingTime.get();
+      const show = (seconds: number | null) =>
+        seconds === null ? null : formatDuration(seconds, time);
+      const parse = (text: string | null, field: string) =>
+        text === null ? null : durationSeconds(text, time, field);
+      if (request.originalEstimate !== undefined) {
+        const next = parse(request.originalEstimate, 'originalEstimate');
+        track(
+          'originalEstimate',
+          issue.originalEstimateSeconds?.toString() ?? null,
+          next?.toString() ?? null,
+          show(issue.originalEstimateSeconds),
+          show(next),
+        );
+        patch.originalEstimateSeconds = next;
+        // A first estimate also becomes the remaining estimate, as in Jira.
+        if (
+          request.remainingEstimate === undefined &&
+          issue.remainingEstimateSeconds === null &&
+          next !== null
+        ) {
+          track('remainingEstimate', null, next.toString(), null, show(next));
+          patch.remainingEstimateSeconds = next;
+        }
+      }
+      if (request.remainingEstimate !== undefined) {
+        const next = parse(request.remainingEstimate, 'remainingEstimate');
+        track(
+          'remainingEstimate',
+          issue.remainingEstimateSeconds?.toString() ?? null,
+          next?.toString() ?? null,
+          show(issue.remainingEstimateSeconds),
+          show(next),
+        );
+        patch.remainingEstimateSeconds = next;
+      }
+    }
     let componentIds: string[] | undefined;
     if (request.components !== undefined) {
       const next = await this.components.resolve(project.id, request.components);

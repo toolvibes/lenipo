@@ -78,6 +78,13 @@
       "when": 1793256750572,
       "tag": "0010_drop_filter_favourites",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793257806502,
+      "tag": "0011_worklogs",
+      "breakpoints": true
     }
   ]
 }

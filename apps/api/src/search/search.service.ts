@@ -27,6 +27,7 @@ import { UserService } from '../identity/user.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { WorkingTimeService } from '../tracking/working-time.service.js';
 import { QueryException } from './query-exception.js';
 import { type CompiledQuery, TqlCompiler } from './tql-compiler.js';
 
@@ -66,6 +67,7 @@ export class SearchService {
     @Inject(IssueService) private readonly issueService: IssueService,
     @Inject(AccessService) private readonly access: AccessService,
     @Inject(UserService) private readonly userService: UserService,
+    @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
   ) {}
 
   private async browsableProjects(userId: string) {
@@ -106,6 +108,7 @@ export class SearchService {
       meta,
       projects: visibleProjects,
       components,
+      workingTime: await this.workingTime.get(),
     });
     const compiled = await compiler.compile(parsed.query);
     if (compiler.errors.length > 0) {

@@ -112,6 +112,32 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/time-tracking': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the working time used for durations
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.get'];
+    /**
+     * Change the working time used for durations
+     * @description Stored values stay in seconds; "1d" and "1w" are read and shown with the new lengths from now on.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Admin.set'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/login': {
     parameters: {
       query?: never;
@@ -489,6 +515,45 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/worklogs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the work logged on an issue, newest first */
+    get: operations['Issues.worklogList'];
+    put?: never;
+    /**
+     * Log work on an issue
+     * @description Needs `edit-issues`. Durations like "1d 4h" use the instance’s working time (`workingTime` in /tracking/meta). The remaining estimate drops by the logged time unless `remaining` says otherwise.
+     */
+    post: operations['Issues.logWork'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/worklogs/{worklogId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a worklog (own, or any as project administrator) */
+    delete: operations['Issues.deleteWorklog'];
+    options?: never;
+    head?: never;
+    /** Change an own worklog */
+    patch: operations['Issues.updateWorklog'];
     trace?: never;
   };
   '/api/v1/me': {
@@ -1163,6 +1228,14 @@ export interface components {
       /** Format: uuid */
       userId: string;
     };
+    WorkingTime: {
+      hoursPerDay: number;
+      daysPerWeek: number;
+    };
+    WorkingTimeInput: {
+      hoursPerDay: number;
+      daysPerWeek: number;
+    };
     LoginRequest: {
       /** Format: email */
       email: string;
@@ -1300,6 +1373,7 @@ export interface components {
       resolutions: components['schemas']['ResolutionInfo'][];
       linkTypes: components['schemas']['IssueLinkTypeInfo'][];
       attachmentMaxBytes: number;
+      workingTime: components['schemas']['WorkingTime'];
     };
     IssueTypeInfo: {
       /** Format: uuid */
@@ -1398,6 +1472,11 @@ export interface components {
       watcherCount: number;
       components: components['schemas']['ComponentRef'][];
       links: components['schemas']['IssueLink'][];
+      timeTracking: {
+        originalEstimateSeconds: number | null;
+        remainingEstimateSeconds: number | null;
+        timeSpentSeconds: number;
+      };
     };
     IssueRef: {
       key: string;
@@ -1451,6 +1530,8 @@ export interface components {
       storyPoints?: number | null;
       dueDate?: string | null;
       components?: string[];
+      originalEstimate?: string | null;
+      remainingEstimate?: string | null;
     };
     Transition: {
       id: string;
@@ -1501,6 +1582,54 @@ export interface components {
        */
       direction?: 'outward' | 'inward';
       issueKey: string;
+    };
+    Worklog: {
+      /** Format: uuid */
+      id: string;
+      author: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      started: string;
+      timeSpentSeconds: number;
+      comment: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      canEdit: boolean;
+      canDelete: boolean;
+    };
+    CreateWorklogRequest: {
+      timeSpent: string;
+      /** Format: date-time */
+      started?: string;
+      /** @default  */
+      comment?: string;
+      /**
+       * @default {
+       *       "mode": "auto"
+       *     }
+       */
+      remaining?: components['schemas']['RemainingAdjustment'];
+    };
+    RemainingAdjustment:
+      | {
+          /** @constant */
+          mode: 'auto';
+        }
+      | {
+          /** @constant */
+          mode: 'leave';
+        }
+      | {
+          /** @constant */
+          mode: 'set';
+          value: string;
+        };
+    UpdateWorklogRequest: {
+      timeSpent?: string;
+      /** Format: date-time */
+      started?: string;
+      comment?: string;
     };
     SessionInfo: {
       id: string;
@@ -1783,7 +1912,10 @@ export interface components {
       | 'issue.transitioned'
       | 'comment.created'
       | 'comment.updated'
-      | 'comment.deleted';
+      | 'comment.deleted'
+      | 'worklog.created'
+      | 'worklog.updated'
+      | 'worklog.deleted';
     CreateWebhookRequest: {
       name: string;
       /** Format: uri */
@@ -2054,6 +2186,68 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkingTime'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.set': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkingTimeInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkingTime'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -3028,6 +3222,138 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.worklogList': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Worklog'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.logWork': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateWorklogRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Worklog'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.deleteWorklog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        worklogId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.updateWorklog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        worklogId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateWorklogRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Worklog'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

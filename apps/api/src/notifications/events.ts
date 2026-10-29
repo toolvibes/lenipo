@@ -22,7 +22,13 @@ export type IssueEvent =
       /** An edit: only people mentioned for the first time are told. */
       edited: boolean;
     }
-  | { type: 'issue.comment_deleted'; commentId: string };
+  | { type: 'issue.comment_deleted'; commentId: string }
+  | {
+      type: 'issue.worklog';
+      action: 'created' | 'updated' | 'deleted';
+      worklogId: string;
+      timeSpentSeconds: number;
+    };
 
 export async function emitIssueEvent(
   tx: Executor,

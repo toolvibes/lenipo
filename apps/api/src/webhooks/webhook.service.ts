@@ -19,6 +19,7 @@ import {
   domainEvents,
   issueComments,
   issues,
+  issueWorklogs,
   projects,
   users,
   webhookDeliveries,
@@ -53,6 +54,8 @@ export function webhookEventType(event: IssueEvent): WebhookEventType {
       return event.edited ? 'comment.updated' : 'comment.created';
     case 'issue.comment_deleted':
       return 'comment.deleted';
+    case 'issue.worklog':
+      return `worklog.${event.action}`;
   }
 }
 
@@ -357,6 +360,20 @@ export class WebhookService {
               createdAt: comment.createdAt.toISOString(),
               updatedAt: comment.updatedAt.toISOString(),
             };
+    }
+    if (event.type === 'issue.worklog') {
+      const [worklog] = await tx
+        .select()
+        .from(issueWorklogs)
+        .where(eq(issueWorklogs.id, event.worklogId));
+      data.worklog = worklog
+        ? {
+            id: worklog.id,
+            started: worklog.startedAt.toISOString(),
+            timeSpentSeconds: worklog.timeSpentSeconds,
+            comment: worklog.comment,
+          }
+        : { id: event.worklogId, timeSpentSeconds: event.timeSpentSeconds };
     }
     const payload = { type, timestamp: row.createdAt.toISOString(), data };
     await tx.insert(webhookDeliveries).values(

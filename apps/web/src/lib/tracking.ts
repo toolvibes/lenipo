@@ -92,3 +92,10 @@ export const attachmentsQuery = (issueKey: string) =>
         client.GET('/api/v1/issues/{key}/attachments', { params: { path: { key: issueKey } } }),
       ),
   });
+
+export const worklogsQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key, 'worklogs'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/worklogs', { params: { path: { key } } })),
+  });

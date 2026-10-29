@@ -16,12 +16,15 @@ import {
   CreateCommentRequest,
   CreateIssueLinkRequest,
   CreateIssueRequest,
+  CreateWorklogRequest,
   Issue,
   TrackingMeta,
   Transition,
   TransitionRequest,
   UpdateCommentRequest,
   UpdateIssueRequest,
+  UpdateWorklogRequest,
+  Worklog,
 } from '@tasklore/shared';
 import { z } from 'zod';
 import type { AppConfig } from '../core/config.js';
@@ -31,6 +34,8 @@ import type { Principal } from '../core/http/principal.js';
 import { CONFIG } from '../core/tokens.js';
 import { IssueService } from './issue.service.js';
 import { MetaService } from './meta.service.js';
+import { WorkingTimeService } from './working-time.service.js';
+import { WorklogService } from './worklog.service.js';
 
 /** Unknown and malformed ids of comments and links are both "not found". */
 const ChildId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
@@ -41,6 +46,8 @@ export class IssuesController {
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(CONFIG) private readonly config: AppConfig,
+    @Inject(WorklogService) private readonly worklogs: WorklogService,
+    @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
   ) {}
 
   @Endpoint({
@@ -58,6 +65,7 @@ export class IssuesController {
       resolutions,
       linkTypes,
       attachmentMaxBytes: Math.floor(this.config.ATTACHMENT_MAX_MB * 1024 * 1024),
+      workingTime: await this.workingTime.get(),
     };
   }
 
@@ -216,5 +224,60 @@ export class IssuesController {
     @Param('linkId', ChildId) linkId: string,
   ): Promise<void> {
     return this.issues.removeLink(principal, key, linkId);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'List the work logged on an issue, newest first',
+    response: z.array(Worklog),
+  })
+  @Get('issues/:key/worklogs')
+  worklogList(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<Worklog[]> {
+    return this.worklogs.list(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Log work on an issue',
+    description:
+      'Needs `edit-issues`. Durations like "1d 4h" use the instance’s working time (`workingTime` in /tracking/meta). The remaining estimate drops by the logged time unless `remaining` says otherwise.',
+    response: Worklog,
+  })
+  @Post('issues/:key/worklogs')
+  @HttpCode(201)
+  logWork(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(CreateWorklogRequest) body: CreateWorklogRequest,
+  ): Promise<Worklog> {
+    return this.worklogs.create(principal, key, body);
+  }
+
+  @Endpoint({ tag: 'Issues', summary: 'Change an own worklog', response: Worklog })
+  @Patch('issues/:key/worklogs/:worklogId')
+  updateWorklog(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('worklogId', ChildId) worklogId: string,
+    @ValidBody(UpdateWorklogRequest) body: UpdateWorklogRequest,
+  ): Promise<Worklog> {
+    return this.worklogs.update(principal, key, worklogId, body);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Delete a worklog (own, or any as project administrator)',
+  })
+  @Delete('issues/:key/worklogs/:worklogId')
+  @HttpCode(204)
+  deleteWorklog(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('worklogId', ChildId) worklogId: string,
+  ): Promise<void> {
+    return this.worklogs.delete(principal, key, worklogId);
   }
 }
