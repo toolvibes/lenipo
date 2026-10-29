@@ -50,7 +50,7 @@ export class ProjectService {
 
   /** Creates a project from a template. The creator administers it; everyone in "users" may work in it. */
   async create(principal: Principal, request: CreateProjectRequest): Promise<ProjectDetails> {
-    if (principal.via === 'token' && !principal.scopes.includes('admin')) {
+    if ('scopes' in principal && !principal.scopes.includes('admin')) {
       throw new ForbiddenException('Creating projects with a token requires the admin scope');
     }
     if (!(await this.access.hasGlobal(principal.userId, 'create-projects'))) {

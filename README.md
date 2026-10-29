@@ -61,6 +61,16 @@ Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dok
 | `pnpm db:migrate` | Migrationen anwenden (passiert auch beim API-Start) |
 | `pnpm licenses:check` | Nur permissive Lizenzen in Produktionsabhängigkeiten |
 
+### KI-Agenten (MCP)
+
+Tasklore hat einen eingebauten MCP-Server unter `/mcp` (E-52). In der Oberfläche unter „Profil → Tokens“ ein Personal Access Token mit `issues:read` und `issues:write` anlegen, dann zum Beispiel in Claude Code:
+
+```bash
+claude mcp add --transport http tasklore http://localhost:4000/mcp --header "Authorization: Bearer <token>"
+```
+
+Der Agent arbeitet mit den Rechten der Person, der das Token gehört; seine Änderungen stehen in der Historie als „über MCP“.
+
 ### Produktion
 
 ```bash

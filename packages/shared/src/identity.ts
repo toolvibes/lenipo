@@ -65,7 +65,7 @@ export const Me = z
     locale: z.string(),
     timeZone: z.string(),
     globalPermissions: z.array(GlobalPermission),
-    authenticatedVia: z.enum(['session', 'token']),
+    authenticatedVia: z.enum(['session', 'token', 'mcp']),
   })
   .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;

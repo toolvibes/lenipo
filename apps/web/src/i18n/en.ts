@@ -154,6 +154,7 @@ export const en: Messages = {
       timeSpent: 'Logged',
     },
     unresolved: 'Unresolved',
+    viaMcp: 'via MCP (AI agent)',
     openFullPage: 'Open full page',
     closeDetail: 'Close details',
     detail: 'Issue {{key}}',

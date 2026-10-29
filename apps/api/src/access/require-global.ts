@@ -33,7 +33,7 @@ export class GlobalPermissionGuard implements CanActivate {
     const principal = context.switchToHttp().getRequest<Request>().principal;
     if (!principal) return false;
     const administrative = permission === 'admin' || permission === 'system-admin';
-    if (principal.via === 'token' && administrative && !principal.scopes.includes('admin')) {
+    if ('scopes' in principal && administrative && !principal.scopes.includes('admin')) {
       throw new ForbiddenException('This token lacks the admin scope');
     }
     if (!(await this.access.hasGlobal(principal.userId, permission))) {

@@ -8,6 +8,7 @@ import type { Logger } from './core/logger.js';
 import type { DatabaseHandle } from './db/client.js';
 import { EventsModule } from './events/events.module.js';
 import { IdentityModule } from './identity/identity.module.js';
+import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { PersonalModule } from './personal/personal.module.js';
@@ -36,6 +37,7 @@ export class AppModule {
         SearchModule,
         EventsModule,
         PersonalModule,
+        McpModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

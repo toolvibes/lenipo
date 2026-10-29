@@ -40,12 +40,14 @@ import { WorklogService } from './worklog.service.js';
     AttachmentService,
   ],
   exports: [
+    ComponentService,
     CustomFieldService,
     IssueService,
     MetaService,
     ProjectAccessService,
     ProjectService,
     WorkingTimeService,
+    WorklogService,
   ],
 })
 export class TrackingModule {}

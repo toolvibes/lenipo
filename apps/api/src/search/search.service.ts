@@ -51,7 +51,7 @@ function escapeLike(value: string): string {
 
 /** Tokens need an issues scope to search, like every other tracking read. */
 export function requireIssueScope(principal: Principal, write = false): void {
-  if (principal.via !== 'token') return;
+  if (!('scopes' in principal)) return;
   const needed = write ? ['issues:write'] : ['issues:read', 'issues:write'];
   if (!principal.scopes.some((scope) => needed.includes(scope))) {
     throw new ForbiddenException(`This token lacks the ${needed.at(-1)} scope`);

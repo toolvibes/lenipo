@@ -117,7 +117,7 @@ export class ProjectAccessService {
     projectId: string,
     permission: ProjectPermission,
   ): Promise<Set<ProjectPermission>> {
-    if (principal.via === 'token') {
+    if ('scopes' in principal) {
       const needed = permission === 'browse' ? ['issues:read', 'issues:write'] : ['issues:write'];
       if (!principal.scopes.some((scope) => needed.includes(scope))) {
         throw new ForbiddenException(`This token lacks the ${needed.at(-1)} scope`);

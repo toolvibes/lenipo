@@ -12,7 +12,8 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
     bufferLogs: true,
   });
   app.useLogger(app.get(NestPinoLogger));
-  app.setGlobalPrefix('api/v1');
+  // MCP clients expect the server at /mcp (D-MCP-01).
+  app.setGlobalPrefix('api/v1', { exclude: ['mcp'] });
   // Behind Caddy or another proxy on the local network: take the client IP from X-Forwarded-For.
   app.set('trust proxy', 'loopback, linklocal, uniquelocal');
   serveApiDocs(app);

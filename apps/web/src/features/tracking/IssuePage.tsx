@@ -244,6 +244,7 @@ function Activity({
                     {group.author?.displayName}
                   </strong>{' '}
                   · {formatRelative(group.createdAt)}
+                  {group.via === 'mcp' && ` · ${t('issues.viaMcp')}`}
                 </span>
                 {/* A change group records each field at most once. */}
                 {group.items.map((item) => (

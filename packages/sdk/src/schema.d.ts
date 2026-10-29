@@ -1397,7 +1397,7 @@ export interface components {
       timeZone: string;
       globalPermissions: components['schemas']['GlobalPermission'][];
       /** @enum {string} */
-      authenticatedVia: 'session' | 'token';
+      authenticatedVia: 'session' | 'token' | 'mcp';
     };
     AuthProviders: {
       password: boolean;

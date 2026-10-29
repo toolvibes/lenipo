@@ -165,6 +165,7 @@ export const de = {
       timeSpent: 'Erfasst',
     },
     unresolved: 'Ungelöst',
+    viaMcp: 'über MCP (KI-Agent)',
     openFullPage: 'Vollseite öffnen',
     closeDetail: 'Detailansicht schließen',
     detail: 'Vorgang {{key}}',

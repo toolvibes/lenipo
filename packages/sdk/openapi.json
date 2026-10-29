@@ -4246,7 +4246,7 @@
           },
           "authenticatedVia": {
             "type": "string",
-            "enum": ["session", "token"]
+            "enum": ["session", "token", "mcp"]
           }
         },
         "required": [
