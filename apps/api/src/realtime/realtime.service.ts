@@ -1,0 +1,149 @@
+import type { Server as HttpServer } from 'node:http';
+import { Inject, Injectable, type OnApplicationShutdown } from '@nestjs/common';
+import postgres from 'postgres';
+import { Server, type Socket } from 'socket.io';
+import { BoardService } from '../boards/board.service.js';
+import type { AppConfig } from '../core/config.js';
+import type { Principal } from '../core/http/principal.js';
+import type { Logger } from '../core/logger.js';
+import { CONFIG, LOGGER } from '../core/tokens.js';
+import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
+import { SessionService } from '../identity/session.service.js';
+import { IssueService } from '../tracking/issue.service.js';
+import { ProjectService } from '../tracking/project.service.js';
+import { CHANGES_CHANNEL, type Signal } from './signals.js';
+
+/** Socket.IO under the API prefix, so the dev proxy and Caddy pass it like the API. */
+export const REALTIME_PATH = '/api/v1/realtime';
+const RECHECK_MS = 5 * 60_000;
+
+interface SocketData {
+  principal: Principal;
+  /** Rooms joined after a permission check, re-checked regularly. */
+  rooms: Set<string>;
+}
+
+/**
+ * Realtime signals for boards, issues and the bell (T-BRD-09, P-NTF-01, E-58): every API
+ * instance listens to PostgreSQL NOTIFY on its own connection and tells its sockets.
+ */
+@Injectable()
+export class RealtimeService implements OnApplicationShutdown {
+  private io?: Server;
+  private listener?: postgres.Sql;
+  private recheck?: NodeJS.Timeout;
+
+  constructor(
+    @Inject(CONFIG) private readonly config: AppConfig,
+    @Inject(LOGGER) private readonly logger: Logger,
+    @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(ProjectService) private readonly projects: ProjectService,
+    @Inject(BoardService) private readonly boards: BoardService,
+    @Inject(IssueService) private readonly issues: IssueService,
+  ) {}
+
+  async attach(server: HttpServer): Promise<void> {
+    const io = new Server(server, {
+      path: REALTIME_PATH,
+      serveClient: false,
+      // A cookie-authenticated socket must not be opened by another site.
+      allowRequest: (request, done) => {
+        const origin = request.headers.origin;
+        done(null, !origin || new URL(origin).host === request.headers.host);
+      },
+    });
+    io.use(async (socket, next) => {
+      const secret = readCookie(socket.handshake.headers.cookie, SESSION_COOKIE);
+      const session = secret ? await this.sessions.authenticate(secret) : null;
+      if (!session) return next(new Error('Authentication required'));
+      socket.data = {
+        principal: { userId: session.userId, via: 'session', sessionId: session.sessionId },
+        rooms: new Set<string>(),
+      } satisfies SocketData;
+      await socket.join(`user:${session.userId}`);
+      next();
+    });
+    io.on('connection', (socket) => this.connected(socket));
+    this.io = io;
+
+    // A dedicated connection: LISTEN must not share a pooled one (E-58).
+    this.listener = postgres(this.config.DATABASE_URL, { max: 1, onnotice: () => {} });
+    await this.listener.listen(CHANGES_CHANNEL, (payload) => this.dispatch(payload));
+    this.recheck = setInterval(() => void this.recheckRooms(), RECHECK_MS);
+  }
+
+  private connected(socket: Socket): void {
+    socket.on('subscribe', async (rooms: unknown, ack?: (result: unknown) => void) => {
+      const wanted = Array.isArray(rooms) ? rooms.filter((room) => typeof room === 'string') : [];
+      const joined: string[] = [];
+      for (const room of wanted.slice(0, 200)) {
+        if (await this.allowed(socket.data as SocketData, room)) {
+          await socket.join(room);
+          (socket.data as SocketData).rooms.add(room);
+          joined.push(room);
+        }
+      }
+      ack?.({ joined });
+    });
+    socket.on('unsubscribe', async (rooms: unknown) => {
+      for (const room of Array.isArray(rooms) ? rooms : []) {
+        if (typeof room !== 'string') continue;
+        await socket.leave(room);
+        (socket.data as SocketData).rooms.delete(room);
+      }
+    });
+  }
+
+  /** May this socket's person see what the room is about? */
+  private async allowed(data: SocketData, room: string): Promise<boolean> {
+    const [kind, id] = room.split(':', 2);
+    if (!id) return false;
+    try {
+      if (kind === 'project') await this.projects.findBrowsable(data.principal, id);
+      else if (kind === 'board') await this.boards.get(data.principal, id);
+      else if (kind === 'issue') await this.issues.authorize(data.principal, id, 'browse');
+      else return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Rights change: rooms are checked again regularly, and left when no longer allowed. */
+  private async recheckRooms(): Promise<void> {
+    for (const socket of this.io?.sockets.sockets.values() ?? []) {
+      const data = socket.data as SocketData;
+      for (const room of [...data.rooms]) {
+        if (!(await this.allowed(data, room))) {
+          await socket.leave(room);
+          data.rooms.delete(room);
+        }
+      }
+    }
+  }
+
+  private dispatch(payload: string): void {
+    let parsed: Signal;
+    try {
+      parsed = JSON.parse(payload) as Signal;
+    } catch {
+      this.logger.warn({ payload }, 'Unreadable realtime signal');
+      return;
+    }
+    const io = this.io;
+    if (!io) return;
+    if (parsed.type === 'issue') {
+      io.to([`project:${parsed.projectKey}`, `issue:${parsed.issueKey}`]).emit('change', parsed);
+    } else if (parsed.type === 'board') {
+      io.to(`board:${parsed.boardId}`).emit('change', parsed);
+    } else if (parsed.type === 'notification') {
+      io.to(`user:${parsed.userId}`).emit('change', parsed);
+    }
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    if (this.recheck) clearInterval(this.recheck);
+    await this.io?.close();
+    await this.listener?.end({ timeout: 2 });
+  }
+}

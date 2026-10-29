@@ -23,6 +23,7 @@ import {
   notifications,
   users,
 } from '../db/schema/index.js';
+import { signal } from '../realtime/signals.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { notificationEmail } from './email.js';
 import type { ChangedItem, IssueEvent } from './events.js';
@@ -134,6 +135,8 @@ export class NotificationService {
         };
       }),
     );
+    // The bells of the recipients update at once (P-NTF-01, E-58).
+    for (const userId of recipients) await signal(tx, { type: 'notification', userId });
   }
 
   // ---------------------------------------------------------------- email

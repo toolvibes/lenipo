@@ -47,6 +47,7 @@ import {
   users,
 } from '../db/schema/index.js';
 import { emitIssueEvent } from '../notifications/events.js';
+import { signalIssue } from '../realtime/signals.js';
 import { builtInId } from './builtins.js';
 import { ComponentService } from './component.service.js';
 import { CustomFieldService, type StoredValues } from './custom-field.service.js';
@@ -803,11 +804,14 @@ export class IssueService {
     if (after !== null && before !== null && after >= before) {
       throw new ConflictException('The order changed meanwhile; reload and try again');
     }
-    await this.database.db
-      .update(issues)
-      // Ranking is ordering, not a change of the issue: `updated` stays.
-      .set({ rank: rankBetween(after, before) })
-      .where(eq(issues.id, issue.id));
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .update(issues)
+        // Ranking is ordering, not a change of the issue: `updated` stays.
+        .set({ rank: rankBetween(after, before) })
+        .where(eq(issues.id, issue.id));
+      await signalIssue(tx, issue.id);
+    });
   }
 
   async transitions(principal: Principal, key: string): Promise<Transition[]> {

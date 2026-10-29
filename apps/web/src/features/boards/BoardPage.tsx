@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { boardDataQuery } from '../../lib/boards';
 import { formatDate } from '../../lib/format';
+import { useRealtimeRooms } from '../../lib/realtime';
 import { trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -276,6 +277,12 @@ export function BoardPage({
 
   const board = data.data?.board;
   const issues = data.data?.issues ?? [];
+  // Others' changes on this board and its projects show up live (T-BRD-09).
+  useRealtimeRooms([
+    `board:${id}`,
+    ...(board ? [`project:${board.project.key}`] : []),
+    ...issues.map((issue) => `project:${issue.project.key}`),
+  ]);
   const lanes = useMemo(
     () =>
       board

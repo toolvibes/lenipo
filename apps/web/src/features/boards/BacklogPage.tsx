@@ -26,6 +26,7 @@ import { type FormEvent, type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate } from '../../lib/format';
+import { useRealtimeRooms } from '../../lib/realtime';
 import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -197,6 +198,14 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const board = data.data?.board;
+  useRealtimeRooms([
+    `board:${id}`,
+    ...(board ? [`project:${board.project.key}`] : []),
+    ...(data.data?.backlog ?? []).map((issue) => `project:${issue.project.key}`),
+    ...(data.data?.sprints ?? []).flatMap((entry) =>
+      entry.issues.map((issue) => `project:${issue.project.key}`),
+    ),
+  ]);
   const estimate = useEstimate(board?.estimation ?? 'storyPoints');
   const doneStatusIds = useMemo(
     () =>

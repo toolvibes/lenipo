@@ -1,5 +1,6 @@
 import type { Executor } from '../db/client.js';
 import { domainEvents } from '../db/schema/index.js';
+import { signalIssue } from '../realtime/signals.js';
 
 /** A changed field with machine values (for rules) and display values (for people). */
 export interface ChangedItem {
@@ -38,4 +39,6 @@ export async function emitIssueEvent(
 ): Promise<void> {
   const { type, ...payload } = event;
   await tx.insert(domainEvents).values({ type, issueId, actorId, payload });
+  // Open boards and issue pages hear about it once this commits (E-58).
+  await signalIssue(tx, issueId);
 }

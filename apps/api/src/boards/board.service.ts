@@ -32,6 +32,7 @@ import {
   sprintIssues,
   sprints,
 } from '../db/schema/index.js';
+import { signal } from '../realtime/signals.js';
 import { QueryException } from '../search/query-exception.js';
 import { SearchService } from '../search/search.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
@@ -460,6 +461,7 @@ export class BoardService {
         throw new ConflictException('Quick filter names must be unique');
       throw error;
     }
+    await signal(this.database.db, { type: 'board', boardId: id });
     await this.audit.record({
       action: 'board.updated',
       actorId: principal.userId,
@@ -474,6 +476,7 @@ export class BoardService {
   async delete(principal: Principal, id: string): Promise<void> {
     await this.row(principal, id, 'administer');
     await this.database.db.delete(boards).where(eq(boards.id, id));
+    await signal(this.database.db, { type: 'board', boardId: id });
     await this.audit.record({
       action: 'board.deleted',
       actorId: principal.userId,

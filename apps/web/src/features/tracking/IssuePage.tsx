@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
+import { useRealtimeRooms } from '../../lib/realtime';
 import {
   commentsQuery,
   historyQuery,
@@ -317,6 +318,8 @@ export function IssuePage({
   const metaName = useMetaName();
   const queryClient = useQueryClient();
   const issue = useQuery(issueQuery(issueKey));
+  // Comments, status and fields from others appear without reloading (E-58).
+  useRealtimeRooms([`issue:${issueKey}`]);
   const project = useQuery({
     ...projectQuery(issue.data?.project.key ?? ''),
     enabled: !!issue.data,

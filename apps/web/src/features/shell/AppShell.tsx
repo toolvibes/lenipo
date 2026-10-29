@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
+import { startRealtime, stopRealtime } from '../../lib/realtime';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { CommandPalette } from './CommandPalette';
 
@@ -110,7 +111,11 @@ export function AppShell({ me }: { me: Me }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // Live signals for the bell, boards and issues while signed in (E-58).
+  useEffect(() => startRealtime(queryClient), [queryClient]);
+
   async function signOut() {
+    stopRealtime();
     await client.POST('/api/v1/auth/logout');
     queryClient.clear();
     await navigate({ to: '/login' });

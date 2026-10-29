@@ -13,6 +13,7 @@ import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { PersonalModule } from './personal/personal.module.js';
+import { RealtimeModule } from './realtime/realtime.module.js';
 import { SearchModule } from './search/search.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
@@ -40,6 +41,7 @@ export class AppModule {
         PersonalModule,
         BoardsModule,
         McpModule,
+        RealtimeModule,
       ],
       controllers: [OpenApiController],
       providers: [{ provide: APP_FILTER, useValue: new ProblemFilter(logger) }],

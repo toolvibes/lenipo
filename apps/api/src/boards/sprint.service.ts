@@ -22,6 +22,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import { boards, issues, sprintIssues, sprints } from '../db/schema/index.js';
+import { signal } from '../realtime/signals.js';
 import { SearchService } from '../search/search.service.js';
 import { recordChanges } from '../tracking/history.js';
 import { IssueService } from '../tracking/issue.service.js';
@@ -146,6 +147,7 @@ export class SprintService {
       })
       .returning();
     if (!row) throw new Error('Sprint insert returned no row');
+    await signal(this.database.db, { type: 'board', boardId });
     return present(row);
   }
 
@@ -157,6 +159,7 @@ export class SprintService {
       .set(request)
       .where(eq(sprints.id, sprintId))
       .returning();
+    await signal(this.database.db, { type: 'board', boardId: sprint.boardId });
     return present(row as SprintRow);
   }
 
@@ -172,6 +175,7 @@ export class SprintService {
         await this.recordSprint(tx, principal, issueId, sprint.name, null);
       }
       await tx.delete(sprints).where(eq(sprints.id, sprintId));
+      await signal(tx, { type: 'board', boardId: sprint.boardId });
     });
   }
 
@@ -280,6 +284,7 @@ export class SprintService {
         .where(eq(sprints.id, sprintId))
         .returning();
     });
+    await signal(this.database.db, { type: 'board', boardId: board.id });
     await this.audit.record({
       action: 'sprint.started',
       actorId: principal.userId,
@@ -364,6 +369,7 @@ export class SprintService {
         .where(eq(sprints.id, sprintId))
         .returning();
     });
+    await signal(this.database.db, { type: 'board', boardId: board.id });
     await this.audit.record({
       action: 'sprint.completed',
       actorId: principal.userId,

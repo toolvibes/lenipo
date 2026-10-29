@@ -2,11 +2,11 @@ import { queryOptions } from '@tanstack/react-query';
 import type { NotificationCategory } from '@tasklore/shared';
 import { client, unwrap } from './api';
 
-/** Polled (E-44): every 30 seconds and whenever the window regains focus. */
+/** Live through realtime signals (E-58); polling every 5 minutes and on focus is the fallback. */
 export const unreadCountQuery = queryOptions({
   queryKey: ['notifications', 'unread-count'],
   queryFn: () => unwrap(client.GET('/api/v1/me/notifications/unread-count')),
-  refetchInterval: 30_000,
+  refetchInterval: 5 * 60_000,
   refetchOnWindowFocus: true,
 });
 

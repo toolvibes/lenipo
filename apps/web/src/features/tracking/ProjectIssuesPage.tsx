@@ -5,6 +5,7 @@ import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useListColumns, useRecordView } from '../../lib/personal';
+import { useRealtimeRooms } from '../../lib/realtime';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
@@ -62,6 +63,7 @@ export function ProjectIssuesPage({
     return () => clearTimeout(timer);
   }, [search]);
 
+  useRealtimeRooms([`project:${projectKey}`]);
   const issues = useQuery(
     projectIssuesQuery(projectKey, { ...PRESETS[preset], q: query || undefined, limit }),
   );

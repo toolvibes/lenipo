@@ -7,6 +7,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { useListColumns } from '../../lib/personal';
+import { useRealtimeRooms } from '../../lib/realtime';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
 import { useFieldCatalogue } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
@@ -125,6 +126,8 @@ export function SearchPage({
     ...searchQuery(applied ?? '', offset),
     enabled: applied !== undefined,
   });
+
+  useRealtimeRooms((results.data?.issues ?? []).map((issue) => `project:${issue.project.key}`));
 
   // Syntax errors appear once typing pauses, or at once when searching.
   const [settledDraft, setSettledDraft] = useState(draft);
