@@ -1,8 +1,9 @@
 import type { RichText } from '@tasklore/shared';
-import type { Content } from '@tiptap/core';
+import { type Content, Extension } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toolbar } from '../../collab/Toolbar';
 import { Button } from '../../ui/Button';
@@ -31,8 +32,22 @@ export function RichTextEditor({
   autoFocus = false,
 }: RichTextEditorProps) {
   const { t } = useTranslation();
+  // The shortcut extension is created once, so it calls the latest submit through a ref.
+  const submitRef = useRef(() => {});
   const editor = useEditor({
-    extensions: [StarterKit, Placeholder.configure({ placeholder })],
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder }),
+      Extension.create({
+        name: 'submitShortcut',
+        addKeyboardShortcuts: () => ({
+          'Mod-Enter': () => {
+            submitRef.current();
+            return true;
+          },
+        }),
+      }),
+    ],
     // RichText is a ProseMirror document produced by this same editor schema.
     content: (initial ?? undefined) as Content | undefined,
     autofocus: autoFocus ? 'end' : false,
@@ -47,20 +62,12 @@ export function RichTextEditor({
     onSubmit(editor.getJSON() as RichText);
     if (clearOnSubmit) editor.commands.clearContent();
   }
+  submitRef.current = submit;
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] focus-within:border-[var(--accent)]">
       <Toolbar editor={editor} />
-      <div
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-            event.preventDefault();
-            submit();
-          }
-        }}
-      >
-        <EditorContent editor={editor} />
-      </div>
+      <EditorContent editor={editor} />
       <div className="flex justify-end gap-2 border-t border-[var(--border)] px-3 py-2">
         {onCancel && (
           <Button size="sm" variant="ghost" onClick={onCancel}>

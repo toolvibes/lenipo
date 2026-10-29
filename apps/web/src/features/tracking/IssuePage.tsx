@@ -111,32 +111,31 @@ function StatusMenu({
         {enabled && <CaretDown size={14} aria-hidden className="text-[var(--ink-muted)]" />}
       </button>
       {open && (
-        <ul
+        <div
           role="menu"
           className="absolute top-full right-0 z-10 mt-1 min-w-48 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-1 shadow-[var(--shadow-float)]"
         >
           {transitions.data?.map((transition) => (
-            <li key={transition.id} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                aria-label={metaName('status', transition.to)}
-                onClick={() => {
-                  setOpen(false);
-                  onTransition(transition.id);
-                }}
-                className="flex w-full items-center rounded-[var(--radius-md)] px-2 py-1.5 text-left hover:bg-[var(--surface-2)]"
-              >
-                <StatusLozenge status={transition.to} />
-              </button>
-            </li>
+            <button
+              key={transition.id}
+              type="button"
+              role="menuitem"
+              aria-label={metaName('status', transition.to)}
+              onClick={() => {
+                setOpen(false);
+                onTransition(transition.id);
+              }}
+              className="flex w-full items-center rounded-[var(--radius-md)] px-2 py-1.5 text-left hover:bg-[var(--surface-2)]"
+            >
+              <StatusLozenge status={transition.to} />
+            </button>
           ))}
           {transitions.data?.length === 0 && (
-            <li className="px-2 py-1.5 text-[var(--ink-muted)]">
+            <div className="px-2 py-1.5 text-[var(--ink-muted)]">
               {metaName('status', issue.status)}
-            </li>
+            </div>
           )}
-        </ul>
+        </div>
       )}
     </div>
   );
@@ -231,8 +230,9 @@ function Activity({ issueKey, canComment }: { issueKey: string; canComment: bool
                   </strong>{' '}
                   · {formatRelative(group.createdAt)}
                 </span>
-                {group.items.map((item, index) => (
-                  <span key={`${group.id}-${index}`} className="min-w-0 break-words">
+                {/* A change group records each field at most once. */}
+                {group.items.map((item) => (
+                  <span key={item.field} className="min-w-0 break-words">
                     {item.field === 'description' ? (
                       t('issues.descriptionChanged')
                     ) : (
