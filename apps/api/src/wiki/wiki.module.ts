@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
 import { PageService } from './page.service.js';
+import { PageAttachmentService } from './page-attachment.service.js';
+import { PageAttachmentsController } from './page-attachments.controller.js';
 import { PagesController } from './pages.controller.js';
 import { ProjectSpacesController } from './project-spaces.controller.js';
 import { SpaceService } from './space.service.js';
@@ -10,8 +12,13 @@ import { SpacesController } from './spaces.controller.js';
 
 @Module({
   imports: [IdentityModule, TrackingModule],
-  controllers: [SpacesController, PagesController, ProjectSpacesController],
-  providers: [SpaceAccessService, SpaceService, PageService],
+  controllers: [
+    SpacesController,
+    PagesController,
+    PageAttachmentsController,
+    ProjectSpacesController,
+  ],
+  providers: [SpaceAccessService, SpaceService, PageService, PageAttachmentService],
   exports: [SpaceAccessService, SpaceService, PageService],
 })
 export class WikiModule {}

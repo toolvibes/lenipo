@@ -1,3 +1,4 @@
+import { blockExtensions } from '@tasklore/editor/schema';
 import type { RichText, RichTextOutput } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
@@ -55,6 +56,7 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      ...blockExtensions({ resizableTables: true }),
       Placeholder.configure({ placeholder }),
       mentionExtension(mentionProjectKey),
       Extension.create({
@@ -114,7 +116,7 @@ export function RichTextView({
 }) {
   const editor = useEditor(
     {
-      extensions: [StarterKit, mentionExtension()],
+      extensions: [StarterKit, ...blockExtensions(), mentionExtension()],
       content: doc as Content,
       editable: false,
       ...(variant === 'page'

@@ -1,4 +1,5 @@
 import type {
+  Attachment,
   Favourite,
   Page,
   PageTreeEntry,
@@ -339,5 +340,115 @@ describe('favourites and recently viewed (E-60)', () => {
       ['page', home, 'DOCS'],
       ['space', 'DOCS', undefined],
     ]);
+  });
+});
+
+describe('page attachments and images (E-61)', () => {
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  let page: Page;
+  let draft: Page;
+  let image: Attachment;
+
+  async function upload(client: TestClient, pageId: string, name: string, content: Buffer) {
+    const form = new FormData();
+    form.append('file', new Blob([content], { type: 'image/png' }), name);
+    const response = await fetch(`${test.baseUrl}/pages/${pageId}/attachments`, {
+      method: 'POST',
+      headers: client.cookie ? { cookie: client.cookie } : {},
+      body: form,
+    });
+    const text = await response.text();
+    return { status: response.status, body: (text ? JSON.parse(text) : undefined) as Attachment };
+  }
+
+  const fetchContent = (client: TestClient, attachment: Attachment) =>
+    fetch(`${test.baseUrl}/page-attachments/${attachment.id}/content`, {
+      headers: client.cookie ? { cookie: client.cookie } : {},
+    });
+
+  const withImage = (attachmentId: string) => ({
+    type: 'doc',
+    content: [
+      { type: 'paragraph', content: [{ type: 'text', text: 'Überblick' }] },
+      {
+        type: 'image',
+        attrs: { attachmentId, alt: 'Diagramm', width: 50, align: 'left', caption: 'Bild 1' },
+      },
+      {
+        type: 'taskList',
+        content: [
+          {
+            type: 'taskItem',
+            attrs: { checked: true },
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'erledigt' }] }],
+          },
+        ],
+      },
+    ],
+  });
+
+  it('lets editors attach files that everyone who sees the page can load', async () => {
+    page = (await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Architektur' })).body;
+    draft = (await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Skizze' })).body;
+    const uploaded = await upload(mira, page.id, 'diagramm.png', PNG);
+    expect(uploaded.status).toBe(201);
+    image = uploaded.body;
+    expect(image).toMatchObject({ fileName: 'diagramm.png', image: true, canDelete: true });
+    await mira.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Architektur',
+      content: { type: 'doc', content: [{ type: 'paragraph' }] },
+    });
+    expect((await upload(olaf, page.id, 'nein.png', PNG)).status).toBe(403);
+    const listed = await olaf.request<Attachment[]>('GET', `/pages/${page.id}/attachments`);
+    expect(listed.body.map((entry) => [entry.fileName, entry.canDelete])).toEqual([
+      ['diagramm.png', false],
+    ]);
+    const content = await fetchContent(olaf, image);
+    expect(content.status).toBe(200);
+    expect(content.headers.get('content-type')).toBe('image/png');
+    expect(content.headers.get('content-security-policy')).toContain('sandbox');
+
+    // Files of a draft stay hidden like the draft itself.
+    const hidden = (await upload(mira, draft.id, 'skizze.png', PNG)).body;
+    expect((await fetchContent(olaf, hidden)).status).toBe(404);
+    expect((await fetchContent(mira, hidden)).status).toBe(200);
+  });
+
+  it('publishes only images that are attachments of the page', async () => {
+    const other = (await mira.request<Attachment[]>('GET', `/pages/${draft.id}/attachments`)).body;
+    const foreign = await mira.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Architektur',
+      content: withImage(other[0]?.id ?? ''),
+    });
+    expect(foreign.status).toBe(400);
+    const published = await mira.request<Page>('POST', `/pages/${page.id}/publish`, {
+      title: 'Architektur',
+      content: withImage(image.id),
+    });
+    expect(published.status).toBe(200);
+    const markdown = await olaf.request<Page>('GET', `/pages/${page.id}?format=markdown`);
+    expect(markdown.body.content).toBe(
+      `Überblick\n\n![Diagramm](attachment:${image.id} "Bild 1")\n\n- [x] erledigt`,
+    );
+  });
+
+  it('lets the uploader or the space administration delete', async () => {
+    expect((await olaf.request('DELETE', `/pages/${page.id}/attachments/${image.id}`)).status).toBe(
+      403,
+    );
+    const second = (await upload(mira, page.id, 'zwei.png', PNG)).body;
+    expect(
+      (await admin.request('DELETE', `/pages/${page.id}/attachments/${second.id}`)).status,
+    ).toBe(204);
+    expect((await mira.request('DELETE', `/pages/${page.id}/attachments/${image.id}`)).status).toBe(
+      204,
+    );
+    expect((await fetchContent(mira, image)).status).toBe(404);
+    expect((await mira.request<Attachment[]>('GET', `/pages/${page.id}/attachments`)).body).toEqual(
+      [],
+    );
   });
 });

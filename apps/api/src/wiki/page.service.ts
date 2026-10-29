@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { isValidDoc } from '@tasklore/editor';
+import { imageAttachmentIds, isValidDoc } from '@tasklore/editor';
 import type {
   ContentFormat,
   CreatePageRequest,
@@ -19,7 +19,14 @@ import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
-import { favourites, pages, pageVersions, spaces, users } from '../db/schema/index.js';
+import {
+  favourites,
+  pageAttachments,
+  pages,
+  pageVersions,
+  spaces,
+  users,
+} from '../db/schema/index.js';
 import { signal } from '../realtime/signals.js';
 import { markdownOf } from '../tracking/content-format.js';
 import { rankBetween } from '../tracking/rank.js';
@@ -338,6 +345,16 @@ export class PageService {
     const { page, space } = await this.authorize(principal, id, 'edit');
     if (!isValidDoc(request.content)) {
       throw new BadRequestException('The content is not a valid document');
+    }
+    const images = imageAttachmentIds(request.content);
+    if (images.length > 0) {
+      const own = await this.database.db
+        .select({ id: pageAttachments.id })
+        .from(pageAttachments)
+        .where(and(eq(pageAttachments.pageId, page.id), inArray(pageAttachments.id, images)));
+      if (own.length !== images.length) {
+        throw new BadRequestException('Images must be attachments of this page');
+      }
     }
     await this.database.db.transaction(async (tx) => {
       const [locked] = await tx

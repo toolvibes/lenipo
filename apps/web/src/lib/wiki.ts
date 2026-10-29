@@ -57,6 +57,13 @@ export const pageQuery = (id: string) =>
       unwrap(client.GET('/api/v1/pages/{id}', { params: { path: { id }, query: {} } })),
   });
 
+export const pageAttachmentsQuery = (id: string) =>
+  queryOptions({
+    queryKey: ['page', id, 'attachments'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/pages/{id}/attachments', { params: { path: { id } } })),
+  });
+
 export const pageVersionsQuery = (id: string) =>
   queryOptions({
     queryKey: ['page', id, 'versions'],

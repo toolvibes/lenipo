@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
     }
   },
   "scripts": {
@@ -20,7 +24,9 @@
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",
+    "@tiptap/extension-list": "3.32.0",
     "@tiptap/extension-mention": "3.32.0",
+    "@tiptap/extension-table": "3.32.0",
     "@tiptap/pm": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",
     "markdown-it": "14.3.3",

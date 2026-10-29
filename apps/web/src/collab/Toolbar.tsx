@@ -1,10 +1,13 @@
 import {
+  CheckSquare,
   Code,
   CodeBlock,
   type Icon,
   ListBullets,
   ListNumbers,
+  Paperclip,
   Quotes,
+  Table,
   TextB,
   TextHOne,
   TextHTwo,
@@ -13,6 +16,7 @@ import {
 } from '@phosphor-icons/react';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { useTranslation } from 'react-i18next';
+import { ImageBar, TableBar } from './BlockBars';
 
 interface ToolbarButtonProps {
   icon: Icon;
@@ -21,7 +25,7 @@ interface ToolbarButtonProps {
   onClick: () => void;
 }
 
-function ToolbarButton({ icon: IconComponent, title, active, onClick }: ToolbarButtonProps) {
+export function ToolbarButton({ icon: IconComponent, title, active, onClick }: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -41,11 +45,12 @@ function ToolbarButton({ icon: IconComponent, title, active, onClick }: ToolbarB
   );
 }
 
-function Separator() {
+export function Separator() {
   return <span className="mx-1 h-5 w-px bg-[var(--border)]" />;
 }
 
-export function Toolbar({ editor }: { editor: Editor }) {
+/** Formatting for the editor; `onInsertFile` adds the upload button (wiki pages, E-61). */
+export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile?: () => void }) {
   const { t } = useTranslation();
   const state = useEditorState({
     editor,
@@ -60,78 +65,106 @@ export function Toolbar({ editor }: { editor: Editor }) {
       orderedList: e.isActive('orderedList'),
       blockquote: e.isActive('blockquote'),
       codeBlock: e.isActive('codeBlock'),
+      taskList: e.isActive('taskList'),
+      table: e.isActive('table'),
+      image: e.isActive('image'),
     }),
   });
   const chain = () => editor.chain().focus();
 
   return (
-    <div
-      role="toolbar"
-      aria-label={t('editor.toolbar')}
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--border)] px-3 py-1.5"
-    >
-      <ToolbarButton
-        icon={TextHOne}
-        title={t('editor.heading1')}
-        active={state.h1}
-        onClick={() => chain().toggleHeading({ level: 1 }).run()}
-      />
-      <ToolbarButton
-        icon={TextHTwo}
-        title={t('editor.heading2')}
-        active={state.h2}
-        onClick={() => chain().toggleHeading({ level: 2 }).run()}
-      />
-      <Separator />
-      <ToolbarButton
-        icon={TextB}
-        title={t('editor.bold')}
-        active={state.bold}
-        onClick={() => chain().toggleBold().run()}
-      />
-      <ToolbarButton
-        icon={TextItalic}
-        title={t('editor.italic')}
-        active={state.italic}
-        onClick={() => chain().toggleItalic().run()}
-      />
-      <ToolbarButton
-        icon={TextStrikethrough}
-        title={t('editor.strike')}
-        active={state.strike}
-        onClick={() => chain().toggleStrike().run()}
-      />
-      <ToolbarButton
-        icon={Code}
-        title={t('editor.code')}
-        active={state.code}
-        onClick={() => chain().toggleCode().run()}
-      />
-      <Separator />
-      <ToolbarButton
-        icon={ListBullets}
-        title={t('editor.bulletList')}
-        active={state.bulletList}
-        onClick={() => chain().toggleBulletList().run()}
-      />
-      <ToolbarButton
-        icon={ListNumbers}
-        title={t('editor.orderedList')}
-        active={state.orderedList}
-        onClick={() => chain().toggleOrderedList().run()}
-      />
-      <ToolbarButton
-        icon={Quotes}
-        title={t('editor.quote')}
-        active={state.blockquote}
-        onClick={() => chain().toggleBlockquote().run()}
-      />
-      <ToolbarButton
-        icon={CodeBlock}
-        title={t('editor.codeBlock')}
-        active={state.codeBlock}
-        onClick={() => chain().toggleCodeBlock().run()}
-      />
+    <div className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface-1)]">
+      <div
+        role="toolbar"
+        aria-label={t('editor.toolbar')}
+        className="flex flex-wrap items-center gap-1 px-3 py-1.5"
+      >
+        <ToolbarButton
+          icon={TextHOne}
+          title={t('editor.heading1')}
+          active={state.h1}
+          onClick={() => chain().toggleHeading({ level: 1 }).run()}
+        />
+        <ToolbarButton
+          icon={TextHTwo}
+          title={t('editor.heading2')}
+          active={state.h2}
+          onClick={() => chain().toggleHeading({ level: 2 }).run()}
+        />
+        <Separator />
+        <ToolbarButton
+          icon={TextB}
+          title={t('editor.bold')}
+          active={state.bold}
+          onClick={() => chain().toggleBold().run()}
+        />
+        <ToolbarButton
+          icon={TextItalic}
+          title={t('editor.italic')}
+          active={state.italic}
+          onClick={() => chain().toggleItalic().run()}
+        />
+        <ToolbarButton
+          icon={TextStrikethrough}
+          title={t('editor.strike')}
+          active={state.strike}
+          onClick={() => chain().toggleStrike().run()}
+        />
+        <ToolbarButton
+          icon={Code}
+          title={t('editor.code')}
+          active={state.code}
+          onClick={() => chain().toggleCode().run()}
+        />
+        <Separator />
+        <ToolbarButton
+          icon={ListBullets}
+          title={t('editor.bulletList')}
+          active={state.bulletList}
+          onClick={() => chain().toggleBulletList().run()}
+        />
+        <ToolbarButton
+          icon={ListNumbers}
+          title={t('editor.orderedList')}
+          active={state.orderedList}
+          onClick={() => chain().toggleOrderedList().run()}
+        />
+        <ToolbarButton
+          icon={Quotes}
+          title={t('editor.quote')}
+          active={state.blockquote}
+          onClick={() => chain().toggleBlockquote().run()}
+        />
+        <ToolbarButton
+          icon={CheckSquare}
+          title={t('editor.taskList')}
+          active={state.taskList}
+          onClick={() => chain().toggleTaskList().run()}
+        />
+        <ToolbarButton
+          icon={CodeBlock}
+          title={t('editor.codeBlock')}
+          active={state.codeBlock}
+          onClick={() => chain().toggleCodeBlock().run()}
+        />
+        <Separator />
+        <ToolbarButton
+          icon={Table}
+          title={t('editor.table')}
+          active={state.table}
+          onClick={() => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+        />
+        {onInsertFile && (
+          <ToolbarButton
+            icon={Paperclip}
+            title={t('editor.insertFile')}
+            active={false}
+            onClick={onInsertFile}
+          />
+        )}
+      </div>
+      {state.table && <TableBar editor={editor} />}
+      {state.image && <ImageBar editor={editor} />}
     </div>
   );
 }

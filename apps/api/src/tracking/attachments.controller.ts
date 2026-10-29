@@ -18,16 +18,11 @@ import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { disposition } from '../storage/disposition.js';
 import { AttachmentService } from './attachment.service.js';
 
 /** Unknown and malformed attachment ids are both "not found". */
 const AttachmentId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
-
-/** RFC 6266 filename with an ASCII fallback and the UTF-8 original (RFC 5987). */
-function disposition(kind: 'inline' | 'attachment', fileName: string): string {
-  const ascii = fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
-  return `${kind}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
-}
 
 @Controller()
 export class AttachmentsController {

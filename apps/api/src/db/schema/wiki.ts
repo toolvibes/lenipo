@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
+  boolean,
   index,
   integer,
   jsonb,
@@ -117,4 +118,26 @@ export const pageVersions = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().default(sql`now()`),
   },
   (table) => [uniqueIndex('page_versions_page_number_unique').on(table.pageId, table.number)],
+);
+
+/** Files of a page, also the source of its images (W-EDT-08, -09, E-61). */
+export const pageAttachments = pgTable(
+  'page_attachments',
+  {
+    id: uuid().primaryKey(),
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    fileName: text().notNull(),
+    /** Detected from the content for images and PDFs, otherwise as declared by the client. */
+    contentType: text().notNull(),
+    size: integer().notNull(),
+    sha256: text().notNull(),
+    /** A raster image recognised by its magic bytes; only these are ever shown inline. */
+    image: boolean().notNull().default(false),
+    storageKey: text().notNull().unique(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('page_attachments_page_idx').on(table.pageId, table.createdAt)],
 );

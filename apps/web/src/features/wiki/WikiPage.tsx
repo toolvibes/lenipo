@@ -15,6 +15,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { RichTextView } from '../tracking/RichTextEditor';
+import { PageAttachments } from './PageAttachments';
 import { CreatePageDialog } from './SpaceLayout';
 
 export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode }) {
@@ -372,6 +373,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
       ) : (
         <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('wiki.draftHelp')}</p>
       )}
+      <PageAttachments pageId={data.id} canEdit={data.canEdit} />
       <VersionsDialog page={data} open={dialog === 'versions'} onOpenChange={close} />
       <MoveDialog
         key={`${data.id}:${data.parentId}`}
