@@ -13,7 +13,7 @@ export function BoardTabs({
 }: {
   id: string;
   type: BoardType;
-  current: 'board' | 'backlog';
+  current: 'board' | 'backlog' | 'reports';
 }) {
   const { t } = useTranslation();
   if (type !== 'scrum') return null;
@@ -23,6 +23,7 @@ export function BoardTabs({
         to="/boards/$id/backlog"
         params={{ id }}
         search={{}}
+        activeOptions={{ exact: true }}
         aria-current={current === 'backlog' ? 'page' : undefined}
         className={TAB}
       >
@@ -32,10 +33,21 @@ export function BoardTabs({
         to="/boards/$id"
         params={{ id }}
         search={{}}
+        activeOptions={{ exact: true }}
         aria-current={current === 'board' ? 'page' : undefined}
         className={TAB}
       >
         {t('sprints.activeSprint')}
+      </Link>
+      <Link
+        to="/boards/$id/reports"
+        params={{ id }}
+        search={{}}
+        activeOptions={{ exact: true }}
+        aria-current={current === 'reports' ? 'page' : undefined}
+        className={TAB}
+      >
+        {t('reports.title')}
       </Link>
     </nav>
   );

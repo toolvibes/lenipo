@@ -3496,6 +3496,123 @@
         }
       }
     },
+    "/api/v1/boards/{id}/velocity": {
+      "get": {
+        "operationId": "Reports.velocity",
+        "summary": "Velocity: committed against completed for the last closed sprints",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Velocity"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sprints/{id}/burndown": {
+      "get": {
+        "operationId": "Reports.burndown",
+        "summary": "Burndown of a started sprint: one step per event (E-56)",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Burndown"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sprints/{id}/report": {
+      "get": {
+        "operationId": "Reports.report",
+        "summary": "Sprint report: completed, not completed, removed; added after start is marked",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/search": {
       "post": {
         "operationId": "Search.run",
@@ -8221,6 +8338,144 @@
           }
         },
         "required": ["fieldIds"]
+      },
+      "Velocity": {
+        "type": "object",
+        "properties": {
+          "estimation": {
+            "type": "string",
+            "enum": ["storyPoints", "originalEstimate", "issueCount"]
+          },
+          "sprints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sprint": {
+                  "$ref": "#/components/schemas/Sprint"
+                },
+                "committed": {
+                  "type": "number"
+                },
+                "completed": {
+                  "type": "number"
+                }
+              },
+              "required": ["sprint", "committed", "completed"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["estimation", "sprints"],
+        "additionalProperties": false
+      },
+      "Burndown": {
+        "type": "object",
+        "properties": {
+          "sprint": {
+            "$ref": "#/components/schemas/Sprint"
+          },
+          "estimation": {
+            "type": "string",
+            "enum": ["storyPoints", "originalEstimate", "issueCount"]
+          },
+          "committed": {
+            "type": "number"
+          },
+          "plannedEnd": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BurndownPoint"
+            }
+          }
+        },
+        "required": ["sprint", "estimation", "committed", "plannedEnd", "points"],
+        "additionalProperties": false
+      },
+      "BurndownPoint": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["start", "added", "removed", "estimate", "done", "reopened", "now"]
+          },
+          "issueKey": {
+            "type": ["string", "null"]
+          },
+          "delta": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          }
+        },
+        "required": ["at", "type", "issueKey", "delta", "remaining"],
+        "additionalProperties": false
+      },
+      "SprintReport": {
+        "type": "object",
+        "properties": {
+          "sprint": {
+            "$ref": "#/components/schemas/Sprint"
+          },
+          "estimation": {
+            "type": "string",
+            "enum": ["storyPoints", "originalEstimate", "issueCount"]
+          },
+          "completed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintReportEntry"
+            }
+          },
+          "notCompleted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintReportEntry"
+            }
+          },
+          "removed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintReportEntry"
+            }
+          }
+        },
+        "required": ["sprint", "estimation", "completed", "notCompleted", "removed"],
+        "additionalProperties": false
+      },
+      "SprintReportEntry": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "$ref": "#/components/schemas/IssueSummary"
+          },
+          "estimate": {
+            "type": ["number", "null"]
+          },
+          "addedAfterStart": {
+            "type": "boolean"
+          }
+        },
+        "required": ["issue", "estimate", "addedAfterStart"],
+        "additionalProperties": false
       },
       "SearchRequest": {
         "type": "object",

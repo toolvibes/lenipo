@@ -1105,6 +1105,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/boards/{id}/velocity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Velocity: committed against completed for the last closed sprints */
+    get: operations['Reports.velocity'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprints/{id}/burndown': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Burndown of a started sprint: one step per event (E-56) */
+    get: operations['Reports.burndown'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprints/{id}/report': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Sprint report: completed, not completed, removed; added after start is marked */
+    get: operations['Reports.report'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -2454,6 +2505,45 @@ export interface components {
     };
     ProjectCustomFieldsRequest: {
       fieldIds: string[];
+    };
+    Velocity: {
+      /** @enum {string} */
+      estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      sprints: {
+        sprint: components['schemas']['Sprint'];
+        committed: number;
+        completed: number;
+      }[];
+    };
+    Burndown: {
+      sprint: components['schemas']['Sprint'];
+      /** @enum {string} */
+      estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      committed: number;
+      plannedEnd: string | null;
+      points: components['schemas']['BurndownPoint'][];
+    };
+    BurndownPoint: {
+      /** Format: date-time */
+      at: string;
+      /** @enum {string} */
+      type: 'start' | 'added' | 'removed' | 'estimate' | 'done' | 'reopened' | 'now';
+      issueKey: string | null;
+      delta: number;
+      remaining: number;
+    };
+    SprintReport: {
+      sprint: components['schemas']['Sprint'];
+      /** @enum {string} */
+      estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      completed: components['schemas']['SprintReportEntry'][];
+      notCompleted: components['schemas']['SprintReportEntry'][];
+      removed: components['schemas']['SprintReportEntry'][];
+    };
+    SprintReportEntry: {
+      issue: components['schemas']['IssueSummary'];
+      estimate: number | null;
+      addedAfterStart: boolean;
     };
     SearchRequest: {
       /** @default  */
@@ -5285,6 +5375,99 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ProjectDetails'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.velocity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Velocity'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.burndown': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Burndown'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.report': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SprintReport'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

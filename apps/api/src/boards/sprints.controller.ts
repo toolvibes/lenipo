@@ -11,18 +11,22 @@ import {
 } from '@nestjs/common';
 import {
   BacklogData,
+  Burndown,
   CompleteSprintRequest,
   CreateSprintRequest,
   MoveToSprintRequest,
   Sprint,
+  SprintReport,
   SprintState,
   StartSprintRequest,
   UpdateSprintRequest,
+  Velocity,
 } from '@tasklore/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { ReportService } from './report.service.js';
 import { SprintService } from './sprint.service.js';
 
 const SprintListQuery = z.object({ state: SprintState.optional() });
@@ -31,7 +35,10 @@ type SprintListQuery = z.infer<typeof SprintListQuery>;
 /** Sprints and backlog of Scrum boards (T-SPR, E-55); planning needs `edit-issues`. */
 @Controller()
 export class SprintsController {
-  constructor(@Inject(SprintService) private readonly sprints: SprintService) {}
+  constructor(
+    @Inject(SprintService) private readonly sprints: SprintService,
+    @Inject(ReportService) private readonly reports: ReportService,
+  ) {}
 
   @Endpoint({
     tag: 'Sprints',
@@ -44,6 +51,45 @@ export class SprintsController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BacklogData> {
     return this.sprints.backlog(principal, id);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Velocity: committed against completed for the last closed sprints',
+    response: Velocity,
+  })
+  @Get('boards/:id/velocity')
+  velocity(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Velocity> {
+    return this.reports.velocity(principal, id);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Burndown of a started sprint: one step per event (E-56)',
+    response: Burndown,
+  })
+  @Get('sprints/:id/burndown')
+  burndown(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Burndown> {
+    return this.reports.burndown(principal, id);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Sprint report: completed, not completed, removed; added after start is marked',
+    response: SprintReport,
+  })
+  @Get('sprints/:id/report')
+  report(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SprintReport> {
+    return this.reports.report(principal, id);
   }
 
   @Endpoint({ tag: 'Sprints', summary: 'List the sprints of a board', response: z.array(Sprint) })

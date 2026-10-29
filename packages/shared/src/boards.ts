@@ -193,6 +193,65 @@ export const BacklogData = z
   .meta({ id: 'BacklogData' });
 export type BacklogData = z.infer<typeof BacklogData>;
 
+// ---------------------------------------------------------------- reports (E-56)
+
+export const BurndownPoint = z
+  .object({
+    at: z.iso.datetime(),
+    type: z.enum(['start', 'added', 'removed', 'estimate', 'done', 'reopened', 'now']),
+    issueKey: z.string().nullable(),
+    /** Change of the remaining value by this event. */
+    delta: z.number(),
+    remaining: z.number(),
+  })
+  .meta({ id: 'BurndownPoint' });
+export type BurndownPoint = z.infer<typeof BurndownPoint>;
+
+export const Burndown = z
+  .object({
+    sprint: Sprint,
+    /** Story points, seconds of original estimate, or issue count. */
+    estimation: EstimationField,
+    /** Remaining at the start: the commitment. */
+    committed: z.number(),
+    /** The planned end, for the guideline. */
+    plannedEnd: z.iso.datetime().nullable(),
+    points: z.array(BurndownPoint),
+  })
+  .meta({ id: 'Burndown' });
+export type Burndown = z.infer<typeof Burndown>;
+
+export const Velocity = z
+  .object({
+    estimation: EstimationField,
+    /** The last closed sprints, oldest first. */
+    sprints: z.array(z.object({ sprint: Sprint, committed: z.number(), completed: z.number() })),
+  })
+  .meta({ id: 'Velocity' });
+export type Velocity = z.infer<typeof Velocity>;
+
+export const SprintReportEntry = z
+  .object({
+    issue: IssueSummary,
+    /** The estimate at completion (closed sprints) or now (running ones). */
+    estimate: z.number().nullable(),
+    addedAfterStart: z.boolean(),
+  })
+  .meta({ id: 'SprintReportEntry' });
+export type SprintReportEntry = z.infer<typeof SprintReportEntry>;
+
+export const SprintReport = z
+  .object({
+    sprint: Sprint,
+    estimation: EstimationField,
+    completed: z.array(SprintReportEntry),
+    notCompleted: z.array(SprintReportEntry),
+    /** Taken out while the sprint was running. */
+    removed: z.array(SprintReportEntry),
+  })
+  .meta({ id: 'SprintReport' });
+export type SprintReport = z.infer<typeof SprintReport>;
+
 export const BoardData = z
   .object({
     board: Board,

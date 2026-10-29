@@ -14,6 +14,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AuditService } from '../audit/audit.service.js';
 import type { BoardService } from '../boards/board.service.js';
+import type { ReportService } from '../boards/report.service.js';
 import type { SprintService } from '../boards/sprint.service.js';
 import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -39,6 +40,7 @@ export interface ToolServices {
   database: DatabaseHandle;
   boards: BoardService;
   sprints: SprintService;
+  reports: ReportService;
   issues: IssueService;
   search: SearchService;
   projects: ProjectService;
@@ -684,6 +686,41 @@ export function registerTools(server: McpServer, principal: Principal, services:
       await services.sprints.moveIssues(principal, keys, target);
       for (const key of keys) await audited('move_to_sprint', key);
       return text(`Moved ${keys.join(', ')} ${target ? 'into the sprint' : 'to the backlog'}.`);
+    },
+  );
+  tool(
+    'get_sprint_report',
+    {
+      title: 'Sprint report',
+      description:
+        'Completed, not completed and removed issues of a started sprint, plus the burndown commitment and current remaining value.',
+      inputSchema: { sprint: z.uuid().describe('Sprint id from get_backlog') },
+      readOnly: true,
+    },
+    async ({ sprint }) => {
+      const [report, burndown] = await Promise.all([
+        services.reports.report(principal, sprint),
+        services.reports.burndown(principal, sprint),
+      ]);
+      const section = (title: string, entries: typeof report.completed) => [
+        `## ${title} (${entries.length})`,
+        ...entries.map(
+          (entry) =>
+            `${issueLine(entry.issue)}${entry.addedAfterStart ? ' [added after start]' : ''}`,
+        ),
+      ];
+      return text(
+        [
+          `# ${report.sprint.name} (${report.sprint.state}), estimation: ${report.estimation}`,
+          `committed: ${burndown.committed}, remaining: ${burndown.points.at(-1)?.remaining ?? 0}`,
+          '',
+          ...section('Completed', report.completed),
+          '',
+          ...section('Not completed', report.notCompleted),
+          '',
+          ...section('Removed during the sprint', report.removed),
+        ].join('\n'),
+      );
     },
   );
 }

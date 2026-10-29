@@ -18,6 +18,7 @@ import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
 import { PageView } from './features/pages/PageView';
 import { ActivityPage } from './features/personal/ActivityPage';
+import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { SearchPage } from './features/search/SearchPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
@@ -191,6 +192,23 @@ const backlogRoute = createRoute({
   },
 });
 
+const reportsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/boards/$id/reports',
+  validateSearch: (search: Record<string, unknown>): { report?: ReportKind; sprint?: string } => ({
+    report:
+      search.report === 'velocity' || search.report === 'sprint' || search.report === 'burndown'
+        ? search.report
+        : undefined,
+    sprint: typeof search.sprint === 'string' ? search.sprint : undefined,
+  }),
+  component: function Reports() {
+    const { id } = reportsRoute.useParams();
+    const { report, sprint } = reportsRoute.useSearch();
+    return <ReportsPage key={id} id={id} report={report ?? 'burndown'} sprintId={sprint} />;
+  },
+});
+
 const activityRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/activity',
@@ -256,6 +274,7 @@ const routeTree = rootRoute.addChildren([
     boardsRoute,
     boardRoute,
     backlogRoute,
+    reportsRoute,
     adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute, customFieldsRoute]),
   ]),
 ]);
