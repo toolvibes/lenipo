@@ -93,6 +93,7 @@ export const IssueColumn = z.enum([
   'resolution',
   'labels',
   'component',
+  'fixVersion',
   'storyPoints',
   'originalEstimate',
   'remainingEstimate',

@@ -42,6 +42,7 @@ const WIDTH: Partial<Record<Column, string>> = {
   resolution: 'w-32',
   labels: 'w-40',
   component: 'w-40',
+  fixVersion: 'w-36',
   storyPoints: 'w-24',
   originalEstimate: 'w-28',
   remainingEstimate: 'w-28',
@@ -378,6 +379,8 @@ export function IssueTable({
         ) : (
           <Chips names={issue.components.map((component) => component.name)} />
         );
+      case 'fixVersion':
+        return <Chips names={issue.fixVersions.map((version) => version.name)} />;
       case 'storyPoints':
         return issue.canEdit ? (
           <InlineInput

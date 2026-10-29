@@ -27,6 +27,7 @@ import type {
   UpdateCommentRequest,
   UpdateIssueRequest,
   UserRef,
+  VersionRef,
 } from '@tasklore/shared';
 import { formatDuration } from '@tasklore/tql';
 import { and, asc, count, desc, eq, inArray, isNull, max, min, type SQL, sql } from 'drizzle-orm';
@@ -57,6 +58,7 @@ import { type ProjectRow, ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { rankBetween } from './rank.js';
 import { mentionedUserIds, plainText } from './rich-text.js';
+import { VERSION_FIELD, VersionService } from './version.service.js';
 import { transitionsFrom } from './workflow.js';
 import { WorkingTimeService } from './working-time.service.js';
 
@@ -74,6 +76,7 @@ interface SummaryContext {
   parents: Map<string, { key: string; summary: string }>;
   /** The open sprint of each issue (E-55). */
   sprints: Map<string, SprintRef>;
+  versions: Map<string, { fix: VersionRef[]; affects: VersionRef[] }>;
 }
 
 export interface IssueListFilter {
@@ -100,6 +103,7 @@ export class IssueService {
     @Inject(LinkService) private readonly links: LinkService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
     @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
+    @Inject(VersionService) private readonly versions: VersionService,
   ) {}
 
   // ---------------------------------------------------------------- reading
@@ -174,6 +178,8 @@ export class IssueService {
       customFields: context.custom.get(row.id) ?? {},
       parent: row.parentId ? (context.parents.get(row.parentId) ?? null) : null,
       sprint: context.sprints.get(row.id) ?? null,
+      fixVersions: context.versions.get(row.id)?.fix ?? [],
+      affectsVersions: context.versions.get(row.id)?.affects ?? [],
       canEdit: rights.has('edit-issues'),
       canAssign: rights.has('assign-issues'),
       canTransition: rights.has('transition-issues'),
@@ -187,7 +193,7 @@ export class IssueService {
   private async summaryContext(viewer: string | null, rows: IssueRow[]): Promise<SummaryContext> {
     const projectIds = [...new Set(rows.map((row) => row.projectId))];
     const parentIds = [...new Set(rows.flatMap((row) => (row.parentId ? [row.parentId] : [])))];
-    const [meta, people, components, projectRows, rights, custom, parents, open] =
+    const [meta, people, components, projectRows, rights, custom, parents, open, versions] =
       await Promise.all([
         this.meta.load(),
         this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
@@ -242,6 +248,7 @@ export class IssueService {
                 ),
               )
           : [],
+        this.versions.refsForMany(rows.map((row) => row.id)),
       ]);
     return {
       meta,
@@ -252,6 +259,7 @@ export class IssueService {
       custom: new Map(rows.map((row, index) => [row.id, custom[index] ?? {}])),
       parents: new Map(parents.map(({ id, ...parent }) => [id, parent])),
       sprints: new Map(open.map(({ issueId, ...sprint }) => [issueId, sprint])),
+      versions,
     };
   }
 
@@ -462,6 +470,8 @@ export class IssueService {
       request.assigneeId ?? (await this.components.defaultAssignee(project.id, components));
     const workflow = await this.projectService.workflow(project.workflowVersionId);
     const custom = await this.customFields.apply(project.id, {}, request.customFields);
+    const fixVersions = await this.versions.resolve(project.id, request.fixVersions);
+    const affectsVersions = await this.versions.resolve(project.id, request.affectsVersions);
     const id = uuidv7();
 
     await this.database.db.transaction(async (tx) => {
@@ -502,6 +512,18 @@ export class IssueService {
         tx,
         id,
         components.map((component) => component.id),
+      );
+      await this.versions.replaceOnIssue(
+        tx,
+        id,
+        'fix',
+        fixVersions.map((version) => version.id),
+      );
+      await this.versions.replaceOnIssue(
+        tx,
+        id,
+        'affects',
+        affectsVersions.map((version) => version.id),
       );
       await emitIssueEvent(tx, id, principal.userId, {
         type: 'issue.created',
@@ -692,6 +714,24 @@ export class IssueService {
       changes.push(...custom.changes);
       patch.customFields = custom.next;
     }
+    const versionIds: Partial<Record<'fix' | 'affects', string[]>> = {};
+    for (const [kind, values] of [
+      ['fix', request.fixVersions],
+      ['affects', request.affectsVersions],
+    ] as const) {
+      if (values === undefined) continue;
+      const current = await this.versions.refsFor(this.database.db, issue.id, kind);
+      const next = await this.versions.resolve(project.id, values, current);
+      const names = (list: VersionRef[]) => list.map((version) => version.name).join(', ') || null;
+      track(
+        VERSION_FIELD[kind],
+        current.map((version) => version.id).join(',') || null,
+        next.map((version) => version.id).join(',') || null,
+        names(current),
+        names(next),
+      );
+      versionIds[kind] = next.map((version) => version.id);
+    }
     let componentIds: string[] | undefined;
     if (request.components !== undefined) {
       const next = await this.components.resolve(project.id, request.components);
@@ -709,6 +749,10 @@ export class IssueService {
           .set({ ...patch, updatedAt: sql`now()` })
           .where(eq(issues.id, issue.id));
         if (componentIds) await this.components.replaceOnIssue(tx, issue.id, componentIds);
+        for (const kind of ['fix', 'affects'] as const) {
+          const ids = versionIds[kind];
+          if (ids) await this.versions.replaceOnIssue(tx, issue.id, kind, ids);
+        }
         await recordChanges(tx, issue.id, principal, changes, newMentions);
         if (patch.assigneeId) {
           await tx

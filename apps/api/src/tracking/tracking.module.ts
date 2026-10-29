@@ -14,6 +14,7 @@ import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { ProjectsController } from './projects.controller.js';
 import { TimeTrackingController } from './time-tracking.controller.js';
+import { VersionService } from './version.service.js';
 import { WorkingTimeService } from './working-time.service.js';
 import { WorklogService } from './worklog.service.js';
 
@@ -35,6 +36,7 @@ import { WorklogService } from './worklog.service.js';
     CustomFieldService,
     LinkService,
     WorkingTimeService,
+    VersionService,
     IssueService,
     WorklogService,
     AttachmentService,
@@ -48,6 +50,7 @@ import { WorklogService } from './worklog.service.js';
     ProjectService,
     WorkingTimeService,
     WorklogService,
+    VersionService,
   ],
 })
 export class TrackingModule {}

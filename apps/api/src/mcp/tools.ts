@@ -26,6 +26,7 @@ import type { ComponentService } from '../tracking/component.service.js';
 import type { CustomFieldService } from '../tracking/custom-field.service.js';
 import type { IssueService } from '../tracking/issue.service.js';
 import type { ProjectService } from '../tracking/project.service.js';
+import type { VersionService } from '../tracking/version.service.js';
 import type { WorklogService } from '../tracking/worklog.service.js';
 import {
   commentsMarkdown,
@@ -41,6 +42,7 @@ export interface ToolServices {
   boards: BoardService;
   sprints: SprintService;
   reports: ReportService;
+  versions: VersionService;
   issues: IssueService;
   search: SearchService;
   projects: ProjectService;
@@ -720,6 +722,26 @@ export function registerTools(server: McpServer, principal: Principal, services:
           '',
           ...section('Removed during the sprint', report.removed),
         ].join('\n'),
+      );
+    },
+  );
+  tool(
+    'list_versions',
+    {
+      title: 'List versions',
+      description: 'Versions of a project with state, release date and issue counts.',
+      inputSchema: { project: ProjectKey },
+      readOnly: true,
+    },
+    async ({ project }) => {
+      const list = await services.versions.list(principal, project);
+      return text(
+        list
+          .map(
+            (version) =>
+              `- ${version.name} (${version.archived ? 'archived' : version.released ? 'released' : 'unreleased'}${version.releaseDate ? `, ${version.releaseDate}` : ''}): ${version.issueCount} issues, ${version.openCount} open`,
+          )
+          .join('\n') || 'No versions.',
       );
     },
   );

@@ -25,6 +25,7 @@ import { ComponentService } from '../tracking/component.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
+import { VersionService } from '../tracking/version.service.js';
 import { WorklogService } from '../tracking/worklog.service.js';
 import { registerTools, type ToolServices } from './tools.js';
 
@@ -49,12 +50,14 @@ export class McpController {
     @Inject(BoardService) boards: BoardService,
     @Inject(SprintService) sprints: SprintService,
     @Inject(ReportService) reports: ReportService,
+    @Inject(VersionService) versions: VersionService,
   ) {
     this.services = {
       database,
       boards,
       sprints,
       reports,
+      versions,
       issues,
       search,
       projects,

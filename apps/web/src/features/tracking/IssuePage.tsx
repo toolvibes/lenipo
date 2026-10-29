@@ -25,6 +25,7 @@ import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons
 import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
 import { Avatar, UserPicker } from './UserPicker';
+import { VersionsField } from './VersionsField';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -597,6 +598,24 @@ export function IssuePage({
                 value={data.components}
                 disabled={!canEdit}
                 onChange={(components) => update.mutate({ components })}
+              />
+            </Field>
+            <Field label={t('versions.fix')}>
+              <VersionsField
+                projectKey={data.project.key}
+                label={t('versions.fix')}
+                value={data.fixVersions}
+                disabled={!canEdit}
+                onChange={(fixVersions) => update.mutate({ fixVersions })}
+              />
+            </Field>
+            <Field label={t('versions.affects')}>
+              <VersionsField
+                projectKey={data.project.key}
+                label={t('versions.affects')}
+                value={data.affectsVersions}
+                disabled={!canEdit}
+                onChange={(affectsVersions) => update.mutate({ affectsVersions })}
               />
             </Field>
             <CustomFieldRows

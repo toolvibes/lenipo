@@ -169,6 +169,8 @@ const DurationText = z.string().trim().min(1).max(50);
 /** Components by id or name (case-insensitive) within the issue's project. */
 const ComponentNames = z.array(z.string().trim().min(1).max(100)).max(20);
 const DueDate = z.iso.date().nullable();
+/** Versions by id or name (case-insensitive) within the issue's project (E-57). */
+const VersionNames = z.array(z.string().trim().min(1).max(100)).max(20);
 
 export const CreateIssueRequest = z
   .object({
@@ -183,6 +185,8 @@ export const CreateIssueRequest = z
     storyPoints: StoryPoints.default(null),
     dueDate: DueDate.default(null),
     components: ComponentNames.default([]),
+    fixVersions: VersionNames.default([]),
+    affectsVersions: VersionNames.default([]),
     customFields: CustomFieldInputs.default({}),
   })
   .meta({ id: 'CreateIssueRequest' });
@@ -200,6 +204,8 @@ export const UpdateIssueRequest = z
     storyPoints: StoryPoints,
     dueDate: DueDate,
     components: ComponentNames,
+    fixVersions: VersionNames,
+    affectsVersions: VersionNames,
     originalEstimate: DurationText.nullable(),
     remainingEstimate: DurationText.nullable(),
     /** Only the given fields change; null clears one (E-50). */
@@ -223,6 +229,12 @@ export type TimeTracking = z.infer<typeof TimeTracking>;
 
 export const IssueRef = z.object({ key: z.string(), summary: z.string() }).meta({ id: 'IssueRef' });
 export type IssueRef = z.infer<typeof IssueRef>;
+
+/** A version as issues show it (E-57). */
+export const VersionRef = z
+  .object({ id: Id, name: z.string(), released: z.boolean() })
+  .meta({ id: 'VersionRef' });
+export type VersionRef = z.infer<typeof VersionRef>;
 
 export const SprintState = z.enum(['future', 'active', 'closed']);
 export type SprintState = z.infer<typeof SprintState>;
@@ -260,6 +272,9 @@ export const IssueSummary = z
     parent: IssueRef.nullable(),
     /** The open (future or active) sprint the issue is in (E-55). */
     sprint: SprintRef.nullable(),
+    /** Versions that ship the issue and versions it affects (E-57). */
+    fixVersions: z.array(VersionRef),
+    affectsVersions: z.array(VersionRef),
     /** What the caller may change in lists (E-49); the API checks again on every change. */
     canEdit: z.boolean(),
     canAssign: z.boolean(),
@@ -460,3 +475,57 @@ export const ChangeGroup = z
   })
   .meta({ id: 'ChangeGroup' });
 export type ChangeGroup = z.infer<typeof ChangeGroup>;
+
+// ---------------------------------------------------------------- versions (E-57)
+
+export const Version = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    startDate: z.iso.date().nullable(),
+    releaseDate: z.iso.date().nullable(),
+    released: z.boolean(),
+    archived: z.boolean(),
+    /** Issues with this fix version, and how many of them are not done. */
+    issueCount: z.number().int(),
+    openCount: z.number().int(),
+  })
+  .meta({ id: 'Version' });
+export type Version = z.infer<typeof Version>;
+
+const VersionName = z.string().trim().min(1).max(100);
+
+export const CreateVersionRequest = z
+  .object({
+    name: VersionName,
+    description: z.string().max(1_000).default(''),
+    startDate: z.iso.date().nullable().default(null),
+    releaseDate: z.iso.date().nullable().default(null),
+  })
+  .meta({ id: 'CreateVersionRequest' });
+export type CreateVersionRequest = z.infer<typeof CreateVersionRequest>;
+
+export const UpdateVersionRequest = z
+  .object({
+    name: VersionName,
+    description: z.string().max(1_000),
+    startDate: z.iso.date().nullable(),
+    releaseDate: z.iso.date().nullable(),
+    /** false takes a release back. */
+    released: z.literal(false),
+    archived: z.boolean(),
+  })
+  .partial()
+  .meta({ id: 'UpdateVersionRequest' });
+export type UpdateVersionRequest = z.infer<typeof UpdateVersionRequest>;
+
+export const ReleaseVersionRequest = z
+  .object({
+    /** Defaults to today. */
+    releaseDate: z.iso.date().optional(),
+    /** Open issues with this fix version move to this unreleased version; null keeps them. */
+    moveOpenTo: Id.nullable().default(null),
+  })
+  .meta({ id: 'ReleaseVersionRequest' });
+export type ReleaseVersionRequest = z.infer<typeof ReleaseVersionRequest>;

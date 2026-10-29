@@ -19,14 +19,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DotsSixVertical, Plus } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { BacklogData, IssueSummary, Me, Sprint } from '@tasklore/shared';
 import { type FormEvent, type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate } from '../../lib/format';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
@@ -186,6 +186,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
   const [checked, setChecked] = useState<string[]>([]);
   const [anchor, setAnchor] = useState<string | null>(null);
   const [epic, setEpic] = useState<string | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
   const [active, setActive] = useState<IssueSummary | null>(null);
   const [editing, setEditing] = useState<{ sprint: Sprint; starting: boolean } | null>(null);
   const [completing, setCompleting] = useState<Sprint | null>(null);
@@ -210,7 +211,11 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
   const sections: Section[] = useMemo(() => {
     if (!data.data) return [];
     const keep = (issues: IssueSummary[]) =>
-      epic ? issues.filter((issue) => issue.parent?.key === epic) : issues;
+      issues.filter(
+        (issue) =>
+          (!epic || issue.parent?.key === epic) &&
+          (!version || issue.fixVersions.some((entry) => entry.id === version)),
+      );
     return [
       ...data.data.sprints.map((entry) => ({
         id: entry.sprint.id,
@@ -219,7 +224,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
       })),
       { id: BACKLOG, sprint: null, issues: keep(data.data.backlog) },
     ];
-  }, [data.data, epic]);
+  }, [data.data, epic, version]);
   const all = sections.flatMap((section) => section.issues);
   const epics = useMemo(() => {
     const found = new Map<string, string>();
@@ -231,6 +236,25 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     }
     return [...found.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [data.data]);
+  // Unreleased versions of the board's projects (E-57): the location and those of its issues.
+  const projectKeys = useMemo(() => {
+    const keys = new Set<string>(board ? [board.project.key] : []);
+    for (const entry of [
+      ...(data.data?.sprints.flatMap((sprint) => sprint.issues) ?? []),
+      ...(data.data?.backlog ?? []),
+    ]) {
+      keys.add(entry.project.key);
+    }
+    return [...keys].sort();
+  }, [board, data.data]);
+  const versionLists = useQueries({
+    queries: projectKeys.map((key) => versionsQuery(key)),
+  });
+  const versions = projectKeys.flatMap((key, index) =>
+    (versionLists[index]?.data ?? [])
+      .filter((entry) => !entry.released && !entry.archived)
+      .map((entry) => ({ ...entry, projectKey: key })),
+  );
   const sectionOf = (key: string) =>
     sections.find((section) => section.issues.some((issue) => issue.key === key));
   const running = data.data?.sprints.some((entry) => entry.sprint.state === 'active') ?? false;
@@ -280,6 +304,30 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           );
         }
         after = key;
+      }
+    },
+    onSuccess: () => {
+      setChecked([]);
+      void refresh();
+    },
+    onError: fail,
+  });
+
+  /** Adds a fix version to the selected issues of its project. */
+  const assignVersion = useMutation({
+    mutationFn: async (versionId: string) => {
+      const target = versions.find((entry) => entry.id === versionId);
+      const chosen = all.filter(
+        (issue) => checked.includes(issue.key) && issue.project.key === target?.projectKey,
+      );
+      for (const issue of chosen) {
+        const ids = [...new Set([...issue.fixVersions.map((entry) => entry.id), versionId])];
+        await unwrap(
+          client.PATCH('/api/v1/issues/{key}', {
+            params: { path: { key: issue.key } },
+            body: { fixVersions: ids },
+          }),
+        );
       }
     },
     onSuccess: () => {
@@ -458,6 +506,22 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
               </option>
             ))}
           </select>
+          {versions.length > 0 && (
+            <select
+              aria-label={t('versions.assign')}
+              value=""
+              onChange={(event) => event.target.value && assignVersion.mutate(event.target.value)}
+              className="h-[var(--control-sm)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+            >
+              <option value="">{t('versions.assign')}</option>
+              {versions.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {projectKeys.length > 1 ? `${entry.projectKey} ` : ''}
+                  {entry.name}
+                </option>
+              ))}
+            </select>
+          )}
           {checkedSection && (
             <>
               <Button
@@ -483,23 +547,52 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
       )}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        {epics.length > 0 && (
-          <nav aria-label={t('sprints.epics')} className="flex shrink-0 flex-col gap-0.5 lg:w-52">
-            <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-              {t('sprints.epics')}
-            </h2>
-            {[[null, t('sprints.allEpics')] as const, ...epics].map(([key, name]) => (
-              <button
-                key={key ?? 'all'}
-                type="button"
-                aria-pressed={epic === key}
-                onClick={() => setEpic(key)}
-                className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
-              >
-                {name}
-              </button>
-            ))}
-          </nav>
+        {(epics.length > 0 || versions.length > 0) && (
+          <div className="flex shrink-0 flex-col gap-4 lg:w-52">
+            {versions.length > 0 && (
+              <nav aria-label={t('versions.panel')} className="flex flex-col gap-0.5">
+                <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+                  {t('versions.panel')}
+                </h2>
+                {[{ id: null, name: t('versions.all'), projectKey: '' }, ...versions].map(
+                  (entry) => (
+                    <button
+                      key={entry.id ?? 'all'}
+                      type="button"
+                      aria-pressed={version === entry.id}
+                      onClick={() => setVersion(entry.id)}
+                      className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+                    >
+                      {entry.name}
+                      {entry.id && projectKeys.length > 1 && (
+                        <span className="ml-1 text-xs text-[var(--ink-muted)]">
+                          {entry.projectKey}
+                        </span>
+                      )}
+                    </button>
+                  ),
+                )}
+              </nav>
+            )}
+            {epics.length > 0 && (
+              <nav aria-label={t('sprints.epics')} className="flex flex-col gap-0.5">
+                <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+                  {t('sprints.epics')}
+                </h2>
+                {[[null, t('sprints.allEpics')] as const, ...epics].map(([key, name]) => (
+                  <button
+                    key={key ?? 'all'}
+                    type="button"
+                    aria-pressed={epic === key}
+                    onClick={() => setEpic(key)}
+                    className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+                  >
+                    {name}
+                  </button>
+                ))}
+              </nav>
+            )}
+          </div>
         )}
         <div className="min-w-0 flex-1">
           <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>

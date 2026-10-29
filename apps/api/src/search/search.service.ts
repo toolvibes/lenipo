@@ -22,7 +22,15 @@ import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { boards, issues, projectComponents, projects, sprints, users } from '../db/schema/index.js';
+import {
+  boards,
+  issues,
+  projectComponents,
+  projects,
+  projectVersions,
+  sprints,
+  users,
+} from '../db/schema/index.js';
 import { UserService } from '../identity/user.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
@@ -171,6 +179,34 @@ export class SearchService {
           .filter((option) => !option.archived && startsWith(option.value))
           .slice(0, query.limit)
           .map((option) => ({ value: option.value, label: option.value }));
+      }
+      case 'version': {
+        const visible = (await this.browsableProjects(principal.userId)).map(
+          (project) => project.id,
+        );
+        if (visible.length === 0) return [];
+        const rows = await this.database.db
+          .select({
+            name: projectVersions.name,
+            released: projectVersions.released,
+            project: projects.key,
+          })
+          .from(projectVersions)
+          .innerJoin(projects, eq(projects.id, projectVersions.projectId))
+          .where(
+            and(
+              inArray(projectVersions.projectId, visible),
+              eq(projectVersions.archived, false),
+              sql`lower(${projectVersions.name}) like ${`${escapeLike(prefix)}%`}`,
+            ),
+          )
+          .orderBy(projectVersions.released, projectVersions.name)
+          .limit(query.limit);
+        return rows.map((row) => ({
+          value: row.name,
+          label: row.name,
+          detail: `${row.project}${row.released ? ' · released' : ''}`,
+        }));
       }
       case 'sprint': {
         const visible = (await this.browsableProjects(principal.userId)).map(

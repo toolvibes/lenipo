@@ -334,6 +334,47 @@ export const issueComponents = pgTable(
   ],
 );
 
+/** Versions of a project (T-REL-01, E-57); archived ones stay on issues but leave pickers. */
+export const projectVersions = pgTable(
+  'project_versions',
+  {
+    id: uuid().primaryKey(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    startDate: date({ mode: 'string' }),
+    releaseDate: date({ mode: 'string' }),
+    released: boolean().notNull().default(false),
+    archived: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('project_versions_name_unique').on(table.projectId, sql`lower(${table.name})`),
+  ],
+);
+
+export const versionKind = pgEnum('version_kind', ['fix', 'affects']);
+
+/** Fix and affects versions of issues, in one table (E-57). */
+export const issueVersions = pgTable(
+  'issue_versions',
+  {
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    versionId: uuid()
+      .notNull()
+      .references(() => projectVersions.id, { onDelete: 'cascade' }),
+    kind: versionKind().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.issueId, table.versionId, table.kind] }),
+    index('issue_versions_version_idx').on(table.versionId, table.kind),
+  ],
+);
+
 /** Global link types with a name per direction, e.g. "blocks" / "is blocked by" (E-41). */
 export const issueLinkTypes = pgTable('issue_link_types', {
   id: uuid().primaryKey(),

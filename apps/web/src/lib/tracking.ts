@@ -110,3 +110,12 @@ export function useFieldCatalogue(): FieldCatalogue {
     [fields],
   );
 }
+
+export const versionsQuery = (projectKey: string) =>
+  queryOptions({
+    queryKey: ['project', projectKey, 'versions'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/versions', { params: { path: { key: projectKey } } }),
+      ),
+  });

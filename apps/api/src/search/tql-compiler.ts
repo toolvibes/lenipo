@@ -41,7 +41,9 @@ import {
   issueComments,
   issueComponents,
   issues,
+  issueVersions,
   issueWatchers,
+  projectVersions,
   sprintIssues,
   sprints,
   users,
@@ -118,6 +120,7 @@ export class TqlCompiler {
   private groupsByValue = new Map<string, string>();
   private issuesByKey = new Map<string, string>();
   private sprintsByValue = new Map<string, string[]>();
+  private versionsByValue = new Map<string, string[]>();
 
   constructor(
     private readonly db: Executor,
@@ -138,6 +141,7 @@ export class TqlCompiler {
     const groupValues = new Set<string>();
     const issueKeys = new Set<string>();
     const sprintValues = new Set<string>();
+    const versionValues = new Set<string>();
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
@@ -147,6 +151,10 @@ export class TqlCompiler {
           else if (item.fn.name === 'membersOf' && item.args[0]) {
             groupValues.add(item.args[0].toLowerCase());
           }
+        }
+      } else if (node.field.type === 'version') {
+        for (const item of items(node.operand)) {
+          if (item.kind === 'value') versionValues.add(item.value.toLowerCase());
         }
       } else if (node.field.type === 'sprint') {
         for (const item of items(node.operand)) {
@@ -161,6 +169,32 @@ export class TqlCompiler {
       }
     };
     if (expression) visit(expression);
+
+    if (versionValues.size > 0 && this.context.projects.length > 0) {
+      // Only versions of projects the searcher sees, so names do not leak (E-57).
+      const values = [...versionValues];
+      const ids = values.filter((value) => UUID.test(value));
+      const rows = await this.db
+        .select({ id: projectVersions.id, name: projectVersions.name })
+        .from(projectVersions)
+        .where(
+          and(
+            inArray(
+              projectVersions.projectId,
+              this.context.projects.map((project) => project.id),
+            ),
+            or(
+              inArray(sql`lower(${projectVersions.name})`, values),
+              ids.length > 0 ? inArray(projectVersions.id, ids) : undefined,
+            ),
+          ),
+        );
+      for (const row of rows) {
+        for (const key of [row.name.toLowerCase(), row.id]) {
+          this.versionsByValue.set(key, [...(this.versionsByValue.get(key) ?? []), row.id]);
+        }
+      }
+    }
 
     if (sprintValues.size > 0) {
       const values = [...sprintValues];
@@ -295,6 +329,8 @@ export class TqlCompiler {
         return this.duration(clause);
       case 'sprint':
         return this.sprint(clause);
+      case 'version':
+        return this.version(clause);
       case 'option':
       case 'boolean':
         // Only custom fields have these types; they are handled above.
@@ -339,6 +375,52 @@ export class TqlCompiler {
     }
     if (conditions.length === 0) return sql`false`;
     const match = member(or(...conditions) as SQL);
+    return positive(clause.operator) ? match : not(match);
+  }
+
+  // ---------------------------------------------------------------- versions (E-57)
+
+  private version(clause: Clause): SQL {
+    const kind = clause.field.id === 'fixVersion' ? 'fix' : 'affects';
+    const has = (condition: SQL) =>
+      exists(
+        this.db
+          .select({ one: sql`1` })
+          .from(issueVersions)
+          .innerJoin(projectVersions, eq(projectVersions.id, issueVersions.versionId))
+          .where(
+            and(eq(issueVersions.issueId, issues.id), eq(issueVersions.kind, kind), condition),
+          ),
+      );
+    if (clause.operator === 'is') return not(has(sql`true`));
+    if (clause.operator === 'is not') return has(sql`true`);
+    const conditions: SQL[] = [];
+    for (const item of items(clause.operand)) {
+      if (item.kind === 'function') {
+        const released = item.fn.name === 'releasedVersions';
+        const key = item.args[0];
+        let scope: SQL | undefined;
+        if (key) {
+          const project = this.context.projects.find(
+            (entry) => entry.key.toLowerCase() === key.toLowerCase(),
+          );
+          if (!project) {
+            this.errors.push(
+              tqlError('value-not-found', item.span, { field: 'project', value: key }),
+            );
+            continue;
+          }
+          scope = eq(projectVersions.projectId, project.id);
+        }
+        conditions.push(and(eq(projectVersions.released, released), scope) as SQL);
+        continue;
+      }
+      const ids = this.versionsByValue.get(item.value.toLowerCase()) ?? [];
+      if (ids.length === 0) this.notFound(clause.field, item, item.value);
+      else conditions.push(inArray(projectVersions.id, ids));
+    }
+    if (conditions.length === 0) return sql`false`;
+    const match = has(or(...conditions) as SQL);
     return positive(clause.operator) ? match : not(match);
   }
 

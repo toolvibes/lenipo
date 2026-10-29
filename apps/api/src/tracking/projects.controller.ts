@@ -14,12 +14,16 @@ import {
   Component,
   CreateComponentRequest,
   CreateProjectRequest,
+  CreateVersionRequest,
   IssueList,
   ProjectCustomFieldsRequest,
   ProjectDetails,
   ProjectSummary,
+  ReleaseVersionRequest,
   UpdateComponentRequest,
+  UpdateVersionRequest,
   UserRef,
+  Version,
 } from '@tasklore/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
@@ -29,6 +33,7 @@ import { ComponentService } from './component.service.js';
 import { IssueService } from './issue.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
+import { VersionService } from './version.service.js';
 
 const ListIssuesQuery = z.object({
   status: z.enum(['todo', 'in_progress', 'done', 'unresolved']).optional(),
@@ -57,6 +62,7 @@ export class ProjectsController {
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(ComponentService) private readonly components: ComponentService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
+    @Inject(VersionService) private readonly versions: VersionService,
   ) {}
 
   @Endpoint({
@@ -180,6 +186,80 @@ export class ProjectsController {
     @ValidBody(UpdateComponentRequest) body: UpdateComponentRequest,
   ): Promise<Component> {
     return this.components.update(principal, key, id, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'List the versions of a project (unreleased first)',
+    response: z.array(Version),
+  })
+  @Get(':key/versions')
+  listVersions(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<Version[]> {
+    return this.versions.list(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Create a version',
+    description: 'Requires the project permission `administer` (E-57).',
+    response: Version,
+  })
+  @Post(':key/versions')
+  @HttpCode(201)
+  createVersion(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(CreateVersionRequest) body: CreateVersionRequest,
+  ): Promise<Version> {
+    return this.versions.create(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Change, archive or unrelease a version',
+    description: 'Requires the project permission `administer`.',
+    response: Version,
+  })
+  @Patch(':key/versions/:id')
+  updateVersion(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('id', ComponentId) id: string,
+    @ValidBody(UpdateVersionRequest) body: UpdateVersionRequest,
+  ): Promise<Version> {
+    return this.versions.update(principal, key, id, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Release a version',
+    description:
+      'Sets the release date (default today); `moveOpenTo` moves unfinished issues to another unreleased version (T-REL-03).',
+    response: Version,
+  })
+  @Post(':key/versions/:id/release')
+  @HttpCode(200)
+  releaseVersion(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('id', ComponentId) id: string,
+    @ValidBody(ReleaseVersionRequest) body: ReleaseVersionRequest,
+  ): Promise<Version> {
+    return this.versions.release(principal, key, id, body);
+  }
+
+  @Endpoint({ tag: 'Projects', summary: 'Delete an unused version (used ones are archived)' })
+  @Delete(':key/versions/:id')
+  @HttpCode(204)
+  deleteVersion(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('id', ComponentId) id: string,
+  ): Promise<void> {
+    return this.versions.delete(principal, key, id);
   }
 
   @Endpoint({

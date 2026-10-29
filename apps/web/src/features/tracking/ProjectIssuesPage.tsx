@@ -14,6 +14,7 @@ import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueSplit, useWideScreen } from './IssueSplit';
 import { IssueTable } from './IssueTable';
 import { ProjectFieldsDialog } from './ProjectFieldsDialog';
+import { VersionsDialog } from './VersionsDialog';
 
 type Preset = 'all' | 'mine' | 'open' | 'done';
 
@@ -54,6 +55,7 @@ export function ProjectIssuesPage({
   const [creating, setCreating] = useState(false);
   const [managingComponents, setManagingComponents] = useState(false);
   const [managingFields, setManagingFields] = useState(false);
+  const [managingVersions, setManagingVersions] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -111,6 +113,7 @@ export function ProjectIssuesPage({
         <div className="flex flex-wrap gap-2">
           {project.data?.permissions.includes('administer') && (
             <>
+              <Button onClick={() => setManagingVersions(true)}>{t('versions.title')}</Button>
               <Button onClick={() => setManagingFields(true)}>{t('fields.project.button')}</Button>
               <Button onClick={() => setManagingComponents(true)}>
                 {t('projects.components.title')}
@@ -183,6 +186,11 @@ export function ProjectIssuesPage({
         projectKey={projectKey}
         open={managingComponents}
         onOpenChange={setManagingComponents}
+      />
+      <VersionsDialog
+        projectKey={projectKey}
+        open={managingVersions}
+        onOpenChange={setManagingVersions}
       />
       {project.data && (
         <ProjectFieldsDialog

@@ -33,7 +33,8 @@ export type FieldType =
   // Custom fields (E-50): select options and checkboxes.
   | 'option'
   | 'boolean'
-  | 'sprint';
+  | 'sprint'
+  | 'version';
 
 export interface FieldDef {
   /** Canonical name, used in suggestions and by the SQL compiler. */
@@ -200,6 +201,20 @@ export const FIELDS: readonly FieldDef[] = [
   { id: 'timeSpent', aliases: ['timespent'], type: 'duration', operators: DATES, orderable: true },
   { id: 'rank', aliases: [], type: 'text', operators: [], orderable: true },
   {
+    id: 'fixVersion',
+    aliases: [],
+    type: 'version',
+    operators: [...EQUALITY, ...EMPTINESS],
+    orderable: false,
+  },
+  {
+    id: 'affectedVersion',
+    aliases: ['affectsVersion'],
+    type: 'version',
+    operators: [...EQUALITY, ...EMPTINESS],
+    orderable: false,
+  },
+  {
     id: 'sprint',
     aliases: [],
     type: 'sprint',
@@ -275,7 +290,7 @@ export const STATUS_CATEGORY_NAMES: Readonly<Record<'todo' | 'in_progress' | 'do
   done: ['done', 'complete'],
 };
 
-export type FunctionResult = 'user' | 'users' | 'datetime' | 'issues' | 'sprints';
+export type FunctionResult = 'user' | 'users' | 'datetime' | 'issues' | 'sprints' | 'versions';
 
 export interface FunctionDef {
   name: string;
@@ -296,6 +311,9 @@ export const FUNCTIONS: readonly FunctionDef[] = [
   { name: 'openSprints', result: 'sprints', minArgs: 0, maxArgs: 0 },
   { name: 'closedSprints', result: 'sprints', minArgs: 0, maxArgs: 0 },
   { name: 'futureSprints', result: 'sprints', minArgs: 0, maxArgs: 0 },
+  /** Versions of all visible projects, or of the project given by key (E-57). */
+  { name: 'releasedVersions', result: 'versions', minArgs: 0, maxArgs: 1 },
+  { name: 'unreleasedVersions', result: 'versions', minArgs: 0, maxArgs: 1 },
   { name: 'startOfDay', result: 'datetime', minArgs: 0, maxArgs: 1, defaultUnit: 'd' },
   { name: 'endOfDay', result: 'datetime', minArgs: 0, maxArgs: 1, defaultUnit: 'd' },
   { name: 'startOfWeek', result: 'datetime', minArgs: 0, maxArgs: 1, defaultUnit: 'w' },
@@ -333,6 +351,7 @@ export function functionsFor(field: FieldDef, operator: Operator): FunctionDef[]
     if (fn.result === 'datetime') return field.type === 'date' || field.type === 'datetime';
     if (fn.result === 'issues') return field.type === 'issue' && list;
     if (fn.result === 'sprints') return field.type === 'sprint' && list;
+    if (fn.result === 'versions') return field.type === 'version' && list;
     if (field.type !== 'user') return false;
     return fn.result === 'user' || list;
   });

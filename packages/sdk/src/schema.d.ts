@@ -1085,6 +1085,68 @@ export interface paths {
     patch: operations['Projects.updateComponent'];
     trace?: never;
   };
+  '/api/v1/projects/{key}/versions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the versions of a project (unreleased first) */
+    get: operations['Projects.listVersions'];
+    put?: never;
+    /**
+     * Create a version
+     * @description Requires the project permission `administer` (E-57).
+     */
+    post: operations['Projects.createVersion'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/versions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an unused version (used ones are archived) */
+    delete: operations['Projects.deleteVersion'];
+    options?: never;
+    head?: never;
+    /**
+     * Change, archive or unrelease a version
+     * @description Requires the project permission `administer`.
+     */
+    patch: operations['Projects.updateVersion'];
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/versions/{id}/release': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Release a version
+     * @description Sets the release date (default today); `moveOpenTo` moves unfinished issues to another unreleased version (T-REL-03).
+     */
+    post: operations['Projects.releaseVersion'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/custom-fields': {
     parameters: {
       query?: never;
@@ -1824,6 +1886,8 @@ export interface components {
       };
       parent: components['schemas']['IssueRef'] | null;
       sprint: components['schemas']['SprintRef'] | null;
+      fixVersions: components['schemas']['VersionRef'][];
+      affectsVersions: components['schemas']['VersionRef'][];
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
@@ -1885,6 +1949,12 @@ export interface components {
       /** @enum {string} */
       state: 'future' | 'active' | 'closed';
     };
+    VersionRef: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      released: boolean;
+    };
     MoveCardRequest: {
       issueKey: string;
       /** Format: uuid */
@@ -1940,6 +2010,8 @@ export interface components {
       };
       parent: components['schemas']['IssueRef'] | null;
       sprint: components['schemas']['SprintRef'] | null;
+      fixVersions: components['schemas']['VersionRef'][];
+      affectsVersions: components['schemas']['VersionRef'][];
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
@@ -2114,6 +2186,10 @@ export interface components {
       dueDate?: string | null;
       /** @default [] */
       components?: string[];
+      /** @default [] */
+      fixVersions?: string[];
+      /** @default [] */
+      affectsVersions?: string[];
       /** @default {} */
       customFields?: {
         [key: string]: string | number | boolean | string[] | null;
@@ -2135,6 +2211,8 @@ export interface components {
       storyPoints?: number | null;
       dueDate?: string | null;
       components?: string[];
+      fixVersions?: string[];
+      affectsVersions?: string[];
       originalEstimate?: string | null;
       remainingEstimate?: string | null;
       customFields?: {
@@ -2370,6 +2448,7 @@ export interface components {
             | 'resolution'
             | 'labels'
             | 'component'
+            | 'fixVersion'
             | 'storyPoints'
             | 'originalEstimate'
             | 'remainingEstimate'
@@ -2392,6 +2471,7 @@ export interface components {
             | 'resolution'
             | 'labels'
             | 'component'
+            | 'fixVersion'
             | 'storyPoints'
             | 'originalEstimate'
             | 'remainingEstimate'
@@ -2502,6 +2582,42 @@ export interface components {
       description?: string;
       leadId?: string | null;
       defaultAssigneeId?: string | null;
+    };
+    Version: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      startDate: string | null;
+      releaseDate: string | null;
+      released: boolean;
+      archived: boolean;
+      issueCount: number;
+      openCount: number;
+    };
+    CreateVersionRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      /** @default null */
+      startDate?: string | null;
+      /** @default null */
+      releaseDate?: string | null;
+    };
+    UpdateVersionRequest: {
+      name?: string;
+      description?: string;
+      startDate?: string | null;
+      releaseDate?: string | null;
+      /** @constant */
+      released?: false;
+      archived?: boolean;
+    };
+    ReleaseVersionRequest: {
+      /** Format: date */
+      releaseDate?: string;
+      /** @default null */
+      moveOpenTo?: string | null;
     };
     ProjectCustomFieldsRequest: {
       fieldIds: string[];
@@ -5340,6 +5456,174 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Component'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.listVersions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Version'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.createVersion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateVersionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Version'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.deleteVersion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.updateVersion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateVersionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Version'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.releaseVersion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReleaseVersionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Version'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
