@@ -4,10 +4,11 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRecordView } from '../../lib/personal';
+import { useListColumns, useRecordView } from '../../lib/personal';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
+import { ColumnPicker } from '../search/ColumnPicker';
 import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueSplit, useWideScreen } from './IssueSplit';
@@ -36,6 +37,7 @@ export function ProjectIssuesPage({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const wide = useWideScreen();
+  const columns = useListColumns();
   const select = (key: string | undefined) =>
     void navigate({
       to: '/projects/$key',
@@ -143,15 +145,19 @@ export function ProjectIssuesPage({
         {chip('mine', t('issues.filterMine'))}
         {chip('done', t('issues.filterDone'))}
         {chip('all', t('issues.filterAll'))}
-        {issues.data && (
-          <span className="ml-auto text-xs text-[var(--ink-muted)]">
-            {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
-          </span>
-        )}
+        <span className="ml-auto flex items-center gap-2">
+          {issues.data && (
+            <span className="text-xs text-[var(--ink-muted)]">
+              {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
+            </span>
+          )}
+          <ColumnPicker columns={columns} />
+        </span>
       </div>
 
       <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
         <IssueTable
+          columns={columns}
           selectedKey={selected}
           onSelect={wide ? select : undefined}
           issues={issues.data?.issues ?? []}

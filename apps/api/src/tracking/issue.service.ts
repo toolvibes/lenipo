@@ -12,6 +12,7 @@ import type {
   CreateCommentRequest,
   CreateIssueLinkRequest,
   CreateIssueRequest,
+  CustomFieldValue,
   Issue,
   IssueList,
   IssueSummary,
@@ -62,6 +63,8 @@ interface SummaryContext {
   components: Map<string, ComponentRef[]>;
   projects: Map<string, { key: string; name: string }>;
   rights: Map<string, Set<ProjectPermission>>;
+  /** Shown custom field values by issue id (E-50). */
+  custom: Map<string, Record<string, CustomFieldValue>>;
 }
 
 export interface IssueListFilter {
@@ -159,6 +162,7 @@ export class IssueService {
         remainingEstimateSeconds: row.remainingEstimateSeconds,
         timeSpentSeconds: row.timeSpentSeconds,
       },
+      customFields: context.custom.get(row.id) ?? {},
       canEdit: rights.has('edit-issues'),
       canAssign: rights.has('assign-issues'),
       canTransition: rights.has('transition-issues'),
@@ -171,7 +175,7 @@ export class IssueService {
    */
   private async summaryContext(viewer: string | null, rows: IssueRow[]): Promise<SummaryContext> {
     const projectIds = [...new Set(rows.map((row) => row.projectId))];
-    const [meta, people, components, projectRows, rights] = await Promise.all([
+    const [meta, people, components, projectRows, rights, custom] = await Promise.all([
       this.meta.load(),
       this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
       this.components.refsForMany(rows.map((row) => row.id)),
@@ -192,6 +196,9 @@ export class IssueService {
             ] as const,
         ),
       ),
+      this.customFields.presentAll(
+        rows.map((row) => ({ projectId: row.projectId, values: row.customFields as StoredValues })),
+      ),
     ]);
     return {
       meta,
@@ -199,6 +206,7 @@ export class IssueService {
       components,
       projects: new Map(projectRows.map(({ id, ...project }) => [id, project])),
       rights: new Map(rights),
+      custom: new Map(rows.map((row, index) => [row.id, custom[index] ?? {}])),
     };
   }
 
@@ -247,16 +255,8 @@ export class IssueService {
       this.summaryContext(viewer, [issue, ...children]),
       this.links.linksFor(viewer, issue.id),
     ]);
-    // Values of fields the project switched off stay stored but are not shown (E-50).
-    const shown = new Set(await this.customFields.projectFieldIds(issue.projectId));
-    const customFields = Object.fromEntries(
-      Object.entries(await this.customFields.present(issue.customFields as StoredValues)).filter(
-        ([id]) => shown.has(id),
-      ),
-    );
     return {
       ...this.toSummary(issue, context),
-      customFields,
       description: (issue.description as RichText | null) ?? null,
       parent: parent ?? null,
       children: children.map((child) => this.toSummary(child, context)),

@@ -4991,67 +4991,6 @@
           "timeTracking": {
             "$ref": "#/components/schemas/TimeTracking"
           },
-          "canEdit": {
-            "type": "boolean"
-          },
-          "canAssign": {
-            "type": "boolean"
-          },
-          "canTransition": {
-            "type": "boolean"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RichText"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IssueRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "children": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IssueSummary"
-            }
-          },
-          "resolvedAt": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "watching": {
-            "type": "boolean"
-          },
-          "watcherCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "links": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IssueLink"
-            }
-          },
           "customFields": {
             "type": "object",
             "propertyNames": {
@@ -5120,6 +5059,67 @@
                 }
               ]
             }
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canAssign": {
+            "type": "boolean"
+          },
+          "canTransition": {
+            "type": "boolean"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RichText"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueSummary"
+            }
+          },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "watching": {
+            "type": "boolean"
+          },
+          "watcherCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueLink"
+            }
           }
         },
         "required": [
@@ -5141,6 +5141,7 @@
           "createdAt",
           "components",
           "timeTracking",
+          "customFields",
           "canEdit",
           "canAssign",
           "canTransition",
@@ -5150,8 +5151,7 @@
           "resolvedAt",
           "watching",
           "watcherCount",
-          "links",
-          "customFields"
+          "links"
         ],
         "additionalProperties": false
       },
@@ -5328,6 +5328,75 @@
           "timeTracking": {
             "$ref": "#/components/schemas/TimeTracking"
           },
+          "customFields": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "value"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "value"],
+                    "additionalProperties": false
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "displayName"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
           "canEdit": {
             "type": "boolean"
           },
@@ -5357,6 +5426,7 @@
           "createdAt",
           "components",
           "timeTracking",
+          "customFields",
           "canEdit",
           "canAssign",
           "canTransition"
@@ -6279,26 +6349,34 @@
         "type": "object",
         "properties": {
           "columns": {
-            "maxItems": 15,
+            "maxItems": 60,
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "issuetype",
-                "status",
-                "priority",
-                "assignee",
-                "reporter",
-                "created",
-                "updated",
-                "due",
-                "resolution",
-                "labels",
-                "component",
-                "storyPoints",
-                "originalEstimate",
-                "remainingEstimate",
-                "timeSpent"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "issuetype",
+                    "status",
+                    "priority",
+                    "assignee",
+                    "reporter",
+                    "created",
+                    "updated",
+                    "due",
+                    "resolution",
+                    "labels",
+                    "component",
+                    "storyPoints",
+                    "originalEstimate",
+                    "remainingEstimate",
+                    "timeSpent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^cf\\[\\d+\\]$"
+                }
               ]
             }
           }
@@ -6310,26 +6388,34 @@
         "type": "object",
         "properties": {
           "columns": {
-            "maxItems": 15,
+            "maxItems": 60,
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "issuetype",
-                "status",
-                "priority",
-                "assignee",
-                "reporter",
-                "created",
-                "updated",
-                "due",
-                "resolution",
-                "labels",
-                "component",
-                "storyPoints",
-                "originalEstimate",
-                "remainingEstimate",
-                "timeSpent"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "issuetype",
+                    "status",
+                    "priority",
+                    "assignee",
+                    "reporter",
+                    "created",
+                    "updated",
+                    "due",
+                    "resolution",
+                    "labels",
+                    "component",
+                    "storyPoints",
+                    "originalEstimate",
+                    "remainingEstimate",
+                    "timeSpent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^cf\\[\\d+\\]$"
+                }
               ]
             }
           }

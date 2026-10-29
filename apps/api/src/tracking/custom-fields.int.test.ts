@@ -2,6 +2,7 @@ import type {
   ChangeGroup,
   CustomField,
   Issue,
+  IssueColumns,
   ProjectDetails,
   SearchResult,
   TrackingMeta,
@@ -201,6 +202,23 @@ describe('values', () => {
       customFields: { [field.Notizen?.id as string]: null },
     });
     expect(cleared.body.customFields[field.Notizen?.id as string]).toBeUndefined();
+  });
+});
+
+describe('result lists', () => {
+  it('carry the values the project shows and accept cf[n] columns', async () => {
+    const result = await admin.request<SearchResult>('POST', '/search', { query: 'key = WEB-1' });
+    expect(result.body.issues[0]?.customFields[field.Kunde?.id as string]).toEqual({
+      id: field.Kunde?.options[0]?.id,
+      value: 'ACME',
+    });
+    const columns = await mira.request<IssueColumns>('PUT', '/me/issue-columns', {
+      columns: ['status', 'cf[1]', 'cf[5]'],
+    });
+    expect(columns.body.columns).toEqual(['status', 'cf[1]', 'cf[5]']);
+    expect((await mira.request('PUT', '/me/issue-columns', { columns: ['cf[x]'] })).status).toBe(
+      400,
+    );
   });
 });
 

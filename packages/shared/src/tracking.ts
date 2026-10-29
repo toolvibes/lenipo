@@ -229,6 +229,8 @@ export const IssueSummary = z
     createdAt: z.iso.datetime(),
     components: z.array(ComponentRef),
     timeTracking: TimeTracking,
+    /** Values of the custom fields the project uses, by field id (E-50). */
+    customFields: z.record(Id, CustomFieldValue),
     /** What the caller may change in lists (E-49); the API checks again on every change. */
     canEdit: z.boolean(),
     canAssign: z.boolean(),
@@ -311,8 +313,6 @@ export const Issue = IssueSummary.extend({
   watcherCount: z.number().int(),
   /** Links to issues the caller can see. */
   links: z.array(IssueLink),
-  /** Values of custom fields by field id (E-50). */
-  customFields: z.record(Id, CustomFieldValue),
 }).meta({ id: 'Issue' });
 export type Issue = z.infer<typeof Issue>;
 

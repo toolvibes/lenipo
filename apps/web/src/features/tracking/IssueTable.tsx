@@ -2,18 +2,22 @@ import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
+  type CustomField,
+  type CustomFieldValue,
   DEFAULT_ISSUE_COLUMNS,
   type IssueColumn,
   type IssueSummary,
+  type ListColumn,
   type UpdateIssueRequest,
+  type UserRef,
 } from '@tasklore/shared';
-import { findField, type SortKey } from '@tasklore/tql';
+import type { SortKey } from '@tasklore/tql';
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
 import { meQuery } from '../../lib/queries';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { trackingMetaQuery, useFieldCatalogue } from '../../lib/tracking';
 import { FormError } from '../../ui/FormError';
 import { ComponentsField } from './ComponentsField';
 import { InlineInput, inputClass, StatusMenu } from './fields';
@@ -21,7 +25,9 @@ import { IssueTypeIcon, PriorityIcon, useMetaName } from './icons';
 import { useDuration } from './TimeTracking';
 import { Avatar, UserPicker } from './UserPicker';
 
-type Column = 'key' | 'summary' | IssueColumn;
+type Column = 'key' | 'summary' | ListColumn;
+
+const isCustom = (column: Column): column is `cf[${number}]` => column.startsWith('cf[');
 
 const WIDTH: Partial<Record<Column, string>> = {
   key: 'w-28',
@@ -108,6 +114,52 @@ function plainClick(event: MouseEvent): boolean {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
+/** A custom field's value, read-only (E-50); editing happens in the issue. */
+function CustomValue({
+  field,
+  value,
+}: {
+  field: CustomField;
+  value: CustomFieldValue | undefined;
+}) {
+  const { t } = useTranslation();
+  if (value === undefined) return null;
+  switch (field.type) {
+    case 'select':
+      return (value as { value: string }).value;
+    case 'multiselect':
+      return <Chips names={(value as Array<{ value: string }>).map((option) => option.value)} />;
+    case 'user':
+      return <Person user={value as UserRef} none="" />;
+    case 'checkbox':
+      return value === true ? t('common.yes') : null;
+    case 'date':
+      return formatDate(value as string);
+    case 'datetime':
+      return formatDateTime(value as string);
+    case 'number':
+      return (value as number).toLocaleString();
+    case 'url':
+      return (
+        <a
+          href={value as string}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block truncate"
+          title={value as string}
+        >
+          {(value as string).replace(/^https?:\/\//, '')}
+        </a>
+      );
+    default:
+      return (
+        <span className="block truncate" title={value as string}>
+          {value as string}
+        </span>
+      );
+  }
+}
+
 function When({ iso }: { iso: string }) {
   return (
     <span className="text-[var(--ink-muted)]" title={formatDateTime(iso)}>
@@ -119,24 +171,26 @@ function When({ iso }: { iso: string }) {
 /** One header cell; a button sorts by its field when the list can be sorted (E-48). */
 function Header({
   column,
+  label,
+  sortable,
   sort,
   onSort,
 }: {
   column: Column;
+  label: string;
+  sortable: boolean;
   sort?: SortKey | null;
   onSort?: (field: string) => void;
 }) {
   const { t } = useTranslation();
-  const label = t(`issues.columns.${column}`);
   const sorted = sort?.field === column ? sort.direction : null;
-  const sortable = onSort && findField(column)?.orderable;
   const Arrow = sorted === 'desc' ? ArrowDown : ArrowUp;
   return (
     <th
       aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-      className={`${WIDTH[column] ?? ''} border-b border-[var(--border)] px-3 py-2 ${NUMERIC.has(column) ? 'text-right' : ''}`}
+      className={`${WIDTH[column as IssueColumn] ?? (isCustom(column) ? 'w-40' : '')} border-b border-[var(--border)] px-3 py-2 ${NUMERIC.has(column) ? 'text-right' : ''}`}
     >
-      {sortable ? (
+      {sortable && onSort ? (
         <button
           type="button"
           onClick={() => onSort(column)}
@@ -170,7 +224,7 @@ export function IssueTable({
 }: {
   issues: IssueSummary[];
   empty: ReactNode | null;
-  columns?: IssueColumn[];
+  columns?: ListColumn[];
   sort?: SortKey | null;
   onSort?: (field: string) => void;
   selectedKey?: string;
@@ -184,12 +238,21 @@ export function IssueTable({
   const { update, transition, error } = useListEdit();
   const [assigning, setAssigning] = useState<IssueSummary | null>(null);
   const body = useRef<HTMLTableSectionElement>(null);
-  const shown = new Set(columns);
+  const catalogue = useFieldCatalogue();
+  const shown = new Set<Column>(columns);
   const all: Column[] = ['key', 'summary', ...columns];
+  const customField = (column: Column) =>
+    isCustom(column)
+      ? meta?.customFields.find((field) => `cf[${field.number}]` === column)
+      : undefined;
+  const columnName = (column: Column) =>
+    isCustom(column)
+      ? (customField(column)?.name ?? column)
+      : t(`issues.columns.${column as Exclude<Column, `cf[${number}]`>}`);
   const edit = (issue: IssueSummary, change: UpdateIssueRequest) =>
     update.mutate({ key: issue.key, body: change });
   const label = (issue: IssueSummary, column: Column) =>
-    t('issues.editIn', { field: t(`issues.columns.${column}`), key: issue.key });
+    t('issues.editIn', { field: columnName(column), key: issue.key });
 
   const open = (issue: IssueSummary) => (event: MouseEvent) => {
     if (!onSelect || !plainClick(event)) return;
@@ -213,7 +276,11 @@ export function IssueTable({
     if (key && onSelect && selectedKey) onSelect(key);
   }
 
-  function cell(issue: IssueSummary, column: IssueColumn): ReactNode {
+  function cell(issue: IssueSummary, column: ListColumn): ReactNode {
+    if (isCustom(column)) {
+      const field = customField(column);
+      return field ? <CustomValue field={field} value={issue.customFields[field.id]} /> : null;
+    }
     switch (column) {
       case 'issuetype':
         return (
@@ -349,7 +416,14 @@ export function IssueTable({
           <thead>
             <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
               {all.map((column) => (
-                <Header key={column} column={column} sort={sort} onSort={onSort} />
+                <Header
+                  key={column}
+                  column={column}
+                  label={columnName(column)}
+                  sortable={!!catalogue.find(column)?.orderable}
+                  sort={sort}
+                  onSort={onSort}
+                />
               ))}
             </tr>
           </thead>

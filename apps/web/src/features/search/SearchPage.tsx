@@ -1,17 +1,12 @@
 import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import {
-  DEFAULT_ISSUE_COLUMNS,
-  type Me,
-  type QueryError,
-  type SavedFilter,
-} from '@tasklore/shared';
+import { type Me, type QueryError, type SavedFilter } from '@tasklore/shared';
 import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@tasklore/tql';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
-import { issueColumnsQuery } from '../../lib/personal';
+import { useListColumns } from '../../lib/personal';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
 import { useFieldCatalogue } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
@@ -119,7 +114,7 @@ export function SearchPage({
   const [deleting, setDeleting] = useState(false);
   const [mode, setMode] = useMode();
   const catalogue = useFieldCatalogue();
-  const columns = useQuery(issueColumnsQuery).data?.columns ?? DEFAULT_ISSUE_COLUMNS;
+  const columns = useListColumns();
 
   useEffect(() => {
     if (applied !== undefined) setDraft(applied);

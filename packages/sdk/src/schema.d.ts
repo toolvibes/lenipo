@@ -1618,16 +1618,6 @@ export interface components {
       createdAt: string;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
-      canEdit: boolean;
-      canAssign: boolean;
-      canTransition: boolean;
-      description: components['schemas']['RichText'] | null;
-      parent: components['schemas']['IssueRef'] | null;
-      children: components['schemas']['IssueSummary'][];
-      resolvedAt: string | null;
-      watching: boolean;
-      watcherCount: number;
-      links: components['schemas']['IssueLink'][];
       customFields: {
         [key: string]:
           | string
@@ -1649,6 +1639,16 @@ export interface components {
               displayName: string;
             };
       };
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
+      description: components['schemas']['RichText'] | null;
+      parent: components['schemas']['IssueRef'] | null;
+      children: components['schemas']['IssueSummary'][];
+      resolvedAt: string | null;
+      watching: boolean;
+      watcherCount: number;
+      links: components['schemas']['IssueLink'][];
     };
     ComponentRef: {
       /** Format: uuid */
@@ -1689,6 +1689,27 @@ export interface components {
       createdAt: string;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
+      customFields: {
+        [key: string]:
+          | string
+          | number
+          | boolean
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }[]
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            };
+      };
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
@@ -1940,40 +1961,46 @@ export interface components {
     };
     IssueColumns: {
       columns: (
-        | 'issuetype'
-        | 'status'
-        | 'priority'
-        | 'assignee'
-        | 'reporter'
-        | 'created'
-        | 'updated'
-        | 'due'
-        | 'resolution'
-        | 'labels'
-        | 'component'
-        | 'storyPoints'
-        | 'originalEstimate'
-        | 'remainingEstimate'
-        | 'timeSpent'
+        | (
+            | 'issuetype'
+            | 'status'
+            | 'priority'
+            | 'assignee'
+            | 'reporter'
+            | 'created'
+            | 'updated'
+            | 'due'
+            | 'resolution'
+            | 'labels'
+            | 'component'
+            | 'storyPoints'
+            | 'originalEstimate'
+            | 'remainingEstimate'
+            | 'timeSpent'
+          )
+        | string
       )[];
     };
     IssueColumnsInput: {
       columns: (
-        | 'issuetype'
-        | 'status'
-        | 'priority'
-        | 'assignee'
-        | 'reporter'
-        | 'created'
-        | 'updated'
-        | 'due'
-        | 'resolution'
-        | 'labels'
-        | 'component'
-        | 'storyPoints'
-        | 'originalEstimate'
-        | 'remainingEstimate'
-        | 'timeSpent'
+        | (
+            | 'issuetype'
+            | 'status'
+            | 'priority'
+            | 'assignee'
+            | 'reporter'
+            | 'created'
+            | 'updated'
+            | 'due'
+            | 'resolution'
+            | 'labels'
+            | 'component'
+            | 'storyPoints'
+            | 'originalEstimate'
+            | 'remainingEstimate'
+            | 'timeSpent'
+          )
+        | string
       )[];
     };
     ActivityPage: {

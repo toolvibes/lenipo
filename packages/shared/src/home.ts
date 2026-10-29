@@ -100,14 +100,20 @@ export const IssueColumn = z.enum([
 ]);
 export type IssueColumn = z.infer<typeof IssueColumn>;
 
+/** A custom field as a column, named like in TQL (E-50). */
+export const CustomColumn = z.string().regex(/^cf\[\d+\]$/);
+export type CustomColumn = `cf[${number}]`;
+
 export const DEFAULT_ISSUE_COLUMNS: IssueColumn[] = ['status', 'assignee', 'updated'];
 
 export const IssueColumns = z
   .object({
     columns: z
-      .array(IssueColumn)
-      .max(IssueColumn.options.length)
+      .array(z.union([IssueColumn, CustomColumn]))
+      .max(60)
       .refine((columns) => new Set(columns).size === columns.length, 'Columns must be unique'),
   })
   .meta({ id: 'IssueColumns' });
 export type IssueColumns = z.infer<typeof IssueColumns>;
+/** A column of result lists: a system column or `cf[n]`. */
+export type ListColumn = IssueColumn | CustomColumn;

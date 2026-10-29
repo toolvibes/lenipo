@@ -280,16 +280,38 @@ export class CustomFieldService {
     return new Map(rows.map((row) => [row.id, row.displayName]));
   }
 
-  /** Stored values as the API shows them, for the fields that are not archived. */
-  async present(stored: StoredValues): Promise<Record<string, CustomFieldValue>> {
-    const fields = (await this.list()).filter((field) => !field.archived);
-    const people = await this.people(fields, [stored]);
-    const result: Record<string, CustomFieldValue> = {};
-    for (const field of fields) {
-      const value = this.show(field, stored[field.id], people);
-      if (value !== undefined) result[field.id] = value;
+  /**
+   * Stored values of many issues as the API shows them, in the same order; only fields that
+   * are not archived and that the issue's project uses (E-50). One query per kind.
+   */
+  async presentAll(
+    entries: ReadonlyArray<{ projectId: string; values: StoredValues }>,
+  ): Promise<Array<Record<string, CustomFieldValue>>> {
+    if (entries.every((entry) => Object.keys(entry.values).length === 0)) {
+      return entries.map(() => ({}));
     }
-    return result;
+    const fields = (await this.list()).filter((field) => !field.archived);
+    const projectIds = [...new Set(entries.map((entry) => entry.projectId))];
+    const [enabledRows, people] = await Promise.all([
+      this.database.db
+        .select({ projectId: projectCustomFields.projectId, fieldId: projectCustomFields.fieldId })
+        .from(projectCustomFields)
+        .where(inArray(projectCustomFields.projectId, projectIds)),
+      this.people(
+        fields,
+        entries.map((entry) => entry.values),
+      ),
+    ]);
+    const enabled = new Set(enabledRows.map((row) => `${row.projectId}:${row.fieldId}`));
+    return entries.map(({ projectId, values }) => {
+      const result: Record<string, CustomFieldValue> = {};
+      for (const field of fields) {
+        if (!enabled.has(`${projectId}:${field.id}`)) continue;
+        const value = this.show(field, values[field.id], people);
+        if (value !== undefined) result[field.id] = value;
+      }
+      return result;
+    });
   }
 
   private show(

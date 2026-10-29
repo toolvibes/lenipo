@@ -1,22 +1,30 @@
 import { Columns } from '@phosphor-icons/react';
-import { DEFAULT_ISSUE_COLUMNS, IssueColumn } from '@tasklore/shared';
+import { useQuery } from '@tanstack/react-query';
+import { DEFAULT_ISSUE_COLUMNS, type ListColumn } from '@tasklore/shared';
 import { useTranslation } from 'react-i18next';
-import { useSetIssueColumns } from '../../lib/personal';
+import { useColumnCatalogue, useSetIssueColumns } from '../../lib/personal';
+import { trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { CheckRow, Popover } from '../../ui/Popover';
 
 /** Chooses the further columns of result lists; saved per person (T-QRY-08, E-48). */
-export function ColumnPicker({ columns }: { columns: IssueColumn[] }) {
+export function ColumnPicker({ columns }: { columns: ListColumn[] }) {
   const { t } = useTranslation();
   const save = useSetIssueColumns();
+  const catalogue = useColumnCatalogue();
+  const fields = useQuery(trackingMetaQuery).data?.customFields ?? [];
   const chosen = new Set(columns);
+  const label = (column: ListColumn) =>
+    column.startsWith('cf[')
+      ? (fields.find((field) => `cf[${field.number}]` === column)?.name ?? column)
+      : t(`issues.columns.${column as Exclude<ListColumn, `cf[${number}]`>}`);
 
   // Columns keep the catalogue's order, so the table looks the same however they were picked.
-  function toggle(column: IssueColumn) {
+  function toggle(column: ListColumn) {
     const next = new Set(chosen);
     if (next.has(column)) next.delete(column);
     else next.add(column);
-    save.mutate(IssueColumn.options.filter((option) => next.has(option)));
+    save.mutate(catalogue.filter((option) => next.has(option)));
   }
 
   return (
@@ -34,9 +42,14 @@ export function ColumnPicker({ columns }: { columns: IssueColumn[] }) {
         {t('search.columns.hint')}
       </p>
       <div className="flex flex-col gap-0.5 overflow-y-auto p-1">
-        {IssueColumn.options.map((column) => (
-          <CheckRow key={column} checked={chosen.has(column)} onChange={() => toggle(column)}>
-            {t(`issues.columns.${column}`)}
+        {catalogue.map((column) => (
+          <CheckRow
+            key={column}
+            checked={chosen.has(column)}
+            onChange={() => toggle(column)}
+            detail={column.startsWith('cf[') ? column : undefined}
+          >
+            {label(column)}
           </CheckRow>
         ))}
       </div>
