@@ -45,7 +45,7 @@ Voraussetzungen: Node 24+, pnpm 11, Docker.
 ```bash
 cp .env.example .env      # Standardwerte passen zu docker-compose.yml
 pnpm install
-pnpm infra:up             # PostgreSQL (5440), Valkey (6380), RustFS als S3-Speicher (9010, Konsole 9011)
+pnpm infra:up             # PostgreSQL (5440), Valkey (6380), RustFS als S3 (9010, Konsole 9011), Mailpit (SMTP 1026, Postfach http://localhost:8026)
 pnpm dev                  # API :4000, Collab-Server :4001, Web :5173
 ```
 

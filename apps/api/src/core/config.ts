@@ -47,6 +47,11 @@ const configSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   /** Largest attachment accepted, in megabytes. */
   ATTACHMENT_MAX_MB: z.coerce.number().positive().max(1024).default(25),
+  /** Outgoing mail server, e.g. smtp://user:password@mail.example.org:587; without it no email is sent. */
+  SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
+  MAIL_FROM: z.string().min(3).default('Tasklore <tasklore@localhost>'),
+  /** Notification emails wait this long after the last change to an issue, bundling a burst into one. */
+  NOTIFICATION_EMAIL_DELAY_SECONDS: z.coerce.number().int().min(0).default(120),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

@@ -1,3 +1,4 @@
+import type { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger as NestPinoLogger } from 'nestjs-pino';
@@ -19,4 +20,14 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
     serveWebApp(app, deps.config.WEB_DIST_DIR);
   }
   return app;
+}
+
+/** The modules without HTTP, for a process that only runs the worker role (MODE=worker). */
+export async function createWorkerContext(deps: AppDependencies): Promise<INestApplicationContext> {
+  const context = await NestFactory.createApplicationContext(AppModule.forRoot(deps), {
+    bufferLogs: true,
+  });
+  context.useLogger(context.get(NestPinoLogger));
+  await context.init();
+  return context;
 }

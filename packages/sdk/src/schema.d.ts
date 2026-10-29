@@ -577,6 +577,78 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the caller’s notifications, newest first */
+    get: operations['Notifications.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/notifications/unread-count': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Count unread notifications
+     * @description Cheap enough to poll; the web app asks every 30 seconds and on focus (E-44).
+     */
+    get: operations['Notifications.unread'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/notifications/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark notifications as read */
+    post: operations['Notifications.read'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/notification-settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the caller’s notification settings */
+    get: operations['Notifications.settings'];
+    /** Change the caller’s notification settings */
+    put: operations['Notifications.updateSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects': {
     parameters: {
       query?: never;
@@ -1256,6 +1328,52 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
       secret: string;
+    };
+    NotificationList: {
+      notifications: components['schemas']['Notification'][];
+      unreadCount: number;
+    };
+    Notification: {
+      id: number;
+      issue: {
+        key: string;
+        summary: string;
+      };
+      actor: components['schemas']['UserRef'] | null;
+      category: components['schemas']['NotificationCategory'];
+      details: components['schemas']['NotificationDetails'];
+      /** Format: date-time */
+      createdAt: string;
+      read: boolean;
+    };
+    /** @enum {string} */
+    NotificationCategory: 'mention' | 'assigned' | 'comment' | 'status' | 'other';
+    NotificationDetails: {
+      /** @enum {string} */
+      kind: 'created' | 'updated' | 'commented';
+      items: {
+        field: string;
+        from: string | null;
+        to: string | null;
+      }[];
+      excerpt?: string;
+    };
+    UnreadCount: {
+      count: number;
+    };
+    MarkNotificationsRead: {
+      ids?: number[];
+      /** @default false */
+      all?: boolean;
+    };
+    NotificationSettings: {
+      emailEnabled: boolean;
+      emailCategories: components['schemas']['NotificationCategory'][];
+      emailAvailable: boolean;
+    };
+    UpdateNotificationSettings: {
+      emailEnabled: boolean;
+      emailCategories: components['schemas']['NotificationCategory'][];
     };
     ProjectSummary: {
       /** Format: uuid */
@@ -2735,6 +2853,161 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.list': {
+    parameters: {
+      query?: {
+        unread?: string;
+        limit?: number;
+        before?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationList'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.unread': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UnreadCount'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MarkNotificationsRead'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.updateSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateNotificationSettings'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationSettings'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

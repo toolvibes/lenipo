@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { createApiApp } from './api-app.js';
+import { createApiApp, createWorkerContext } from './api-app.js';
 import { createCollabServer } from './collab/collab.server.js';
 import { loadConfig, runsRole } from './core/config.js';
 import { createLogger } from './core/logger.js';
@@ -31,8 +31,10 @@ async function start(): Promise<void> {
     closers.push(() => collab.destroy());
   }
 
-  if (runsRole(config, 'worker')) {
-    logger.info('Worker role has no jobs yet');
+  // With the API in the same process, its modules already run the worker jobs.
+  if (runsRole(config, 'worker') && !runsRole(config, 'api')) {
+    const context = await createWorkerContext(deps);
+    closers.push(() => context.close());
   }
 }
 

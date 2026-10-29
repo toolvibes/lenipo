@@ -36,6 +36,7 @@ import {
   projects,
   users,
 } from '../db/schema/index.js';
+import { emitIssueEvent } from '../notifications/events.js';
 import { builtInId } from './builtins.js';
 import { ComponentService } from './component.service.js';
 import { type Change, displayText, recordChanges } from './history.js';
@@ -44,7 +45,7 @@ import { type MetaIndex, MetaService } from './meta.service.js';
 import { type ProjectRow, ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { rankBetween } from './rank.js';
-import { plainText } from './rich-text.js';
+import { mentionedUserIds, plainText } from './rich-text.js';
 import { transitionsFrom } from './workflow.js';
 
 /** Issue columns without the search vector, which only the database reads. */
@@ -370,6 +371,10 @@ export class IssueService {
         id,
         components.map((component) => component.id),
       );
+      await emitIssueEvent(tx, id, principal.userId, {
+        type: 'issue.created',
+        mentions: mentionedUserIds(request.description),
+      });
     });
     return this.present(principal, id);
   }
@@ -498,6 +503,13 @@ export class IssueService {
       track('dueDate', issue.dueDate, request.dueDate);
       patch.dueDate = request.dueDate;
     }
+    // People mentioned in the new description but not in the old one get told (E-38, E-44).
+    const newMentions =
+      request.description !== undefined
+        ? mentionedUserIds(request.description).filter(
+            (id) => !mentionedUserIds(issue.description).includes(id),
+          )
+        : [];
     let componentIds: string[] | undefined;
     if (request.components !== undefined) {
       const next = await this.components.resolve(project.id, request.components);
@@ -515,7 +527,7 @@ export class IssueService {
           .set({ ...patch, updatedAt: sql`now()` })
           .where(eq(issues.id, issue.id));
         if (componentIds) await this.components.replaceOnIssue(tx, issue.id, componentIds);
-        await recordChanges(tx, issue.id, principal, changes);
+        await recordChanges(tx, issue.id, principal, changes, newMentions);
         if (patch.assigneeId) {
           await tx
             .insert(issueWatchers)
@@ -688,11 +700,26 @@ export class IssueService {
     }
     const text = plainText(request.body);
     if (!text) throw new BadRequestException('The comment is empty');
-    const [updated] = await this.database.db
-      .update(issueComments)
-      .set({ body: request.body, bodyText: text, updatedAt: sql`now()` })
-      .where(eq(issueComments.id, row.id))
-      .returning();
+    const added = mentionedUserIds(request.body).filter(
+      (id) => !mentionedUserIds(row.body).includes(id),
+    );
+    const [updated] = await this.database.db.transaction(async (tx) => {
+      const result = await tx
+        .update(issueComments)
+        .set({ body: request.body, bodyText: text, updatedAt: sql`now()` })
+        .where(eq(issueComments.id, row.id))
+        .returning();
+      if (added.length > 0) {
+        await emitIssueEvent(tx, issue.id, principal.userId, {
+          type: 'issue.commented',
+          commentId: row.id,
+          excerpt: text.slice(0, 500),
+          mentions: added,
+          edited: true,
+        });
+      }
+      return result;
+    });
     if (!updated) throw new NotFoundException('Comment not found');
     const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
     return this.presentComment(updated, author, principal, permissions);
@@ -734,6 +761,13 @@ export class IssueService {
         .insert(issueWatchers)
         .values({ issueId: issue.id, userId: principal.userId })
         .onConflictDoNothing();
+      await emitIssueEvent(tx, issue.id, principal.userId, {
+        type: 'issue.commented',
+        commentId: id,
+        excerpt: text.slice(0, 500),
+        mentions: mentionedUserIds(request.body),
+        edited: false,
+      });
     });
     const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
     const now = new Date().toISOString();

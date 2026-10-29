@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { initials, presenceColor } from '../../lib/presence';
+import { NotificationBell } from '../notifications/NotificationBell';
 import { CommandPalette } from './CommandPalette';
 
 function NavItem({
@@ -88,6 +89,7 @@ export function AppShell({ me }: { me: Me }) {
           <kbd className="tl-key text-xs">{isMac ? '⌘K' : t('shell.paletteShortcut')}</kbd>
         </button>
         <div className="flex flex-col gap-0.5">
+          <NotificationBell />
           <NavItem to="/" icon={House} label={t('shell.home')} />
           <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
           <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
