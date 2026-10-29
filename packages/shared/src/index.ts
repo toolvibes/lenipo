@@ -1,5 +1,6 @@
 export const PRODUCT_NAME = 'Tasklore';
 
+export * from './fields.js';
 export * from './home.js';
 export * from './identity.js';
 export * from './notifications.js';

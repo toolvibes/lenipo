@@ -112,6 +112,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/custom-fields': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List custom fields, archived ones included
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.list'];
+    put?: never;
+    /**
+     * Create a custom field
+     * @description Names are unique without regard to case and must not be a system field, TQL function or keyword.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Admin.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/custom-fields/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Change, archive or restore a custom field
+     * @description Options are given as the full list; entries with an id are renamed or archived, entries without one are added, missing ones are archived.
+     *
+     *     Requires the global permission `admin`.
+     */
+    patch: operations['Admin.update'];
+    trace?: never;
+  };
   '/api/v1/admin/time-tracking': {
     parameters: {
       query?: never;
@@ -934,6 +982,26 @@ export interface paths {
     patch: operations['Projects.updateComponent'];
     trace?: never;
   };
+  '/api/v1/projects/{key}/custom-fields': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Choose the custom fields a project uses, in display order
+     * @description Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50).
+     */
+    put: operations['Projects.setCustomFields'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -1249,6 +1317,64 @@ export interface components {
       /** Format: uuid */
       userId: string;
     };
+    CustomField: {
+      /** Format: uuid */
+      id: string;
+      number: number;
+      name: string;
+      description: string;
+      /** @enum {string} */
+      type:
+        | 'text'
+        | 'textarea'
+        | 'number'
+        | 'date'
+        | 'datetime'
+        | 'select'
+        | 'multiselect'
+        | 'user'
+        | 'checkbox'
+        | 'url';
+      options: components['schemas']['CustomFieldOption'][];
+      archived: boolean;
+    };
+    CustomFieldOption: {
+      /** Format: uuid */
+      id: string;
+      value: string;
+      archived: boolean;
+    };
+    CreateCustomFieldRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      /** @enum {string} */
+      type:
+        | 'text'
+        | 'textarea'
+        | 'number'
+        | 'date'
+        | 'datetime'
+        | 'select'
+        | 'multiselect'
+        | 'user'
+        | 'checkbox'
+        | 'url';
+      /** @default [] */
+      options?: string[];
+    };
+    UpdateCustomFieldRequest: {
+      name?: string;
+      description?: string;
+      options?: {
+        /** Format: uuid */
+        id?: string;
+        value: string;
+        /** @default false */
+        archived?: boolean;
+      }[];
+      archived?: boolean;
+    };
     WorkingTime: {
       hoursPerDay: number;
       daysPerWeek: number;
@@ -1395,6 +1521,7 @@ export interface components {
       linkTypes: components['schemas']['IssueLinkTypeInfo'][];
       attachmentMaxBytes: number;
       workingTime: components['schemas']['WorkingTime'];
+      customFields: components['schemas']['CustomField'][];
     };
     IssueTypeInfo: {
       /** Format: uuid */
@@ -1454,6 +1581,10 @@ export interface components {
       dueDate?: string | null;
       /** @default [] */
       components?: string[];
+      /** @default {} */
+      customFields?: {
+        [key: string]: string | number | boolean | string[] | null;
+      };
     };
     RichText: {
       /** @constant */
@@ -1497,6 +1628,27 @@ export interface components {
       watching: boolean;
       watcherCount: number;
       links: components['schemas']['IssueLink'][];
+      customFields: {
+        [key: string]:
+          | string
+          | number
+          | boolean
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }[]
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            };
+      };
     };
     ComponentRef: {
       /** Format: uuid */
@@ -1571,6 +1723,9 @@ export interface components {
       components?: string[];
       originalEstimate?: string | null;
       remainingEstimate?: string | null;
+      customFields?: {
+        [key: string]: string | number | boolean | string[] | null;
+      };
     };
     Transition: {
       id: string;
@@ -1884,6 +2039,7 @@ export interface components {
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
+      customFieldIds: string[];
     };
     /** @enum {string} */
     ProjectPermission:
@@ -1922,6 +2078,9 @@ export interface components {
       description?: string;
       leadId?: string | null;
       defaultAssigneeId?: string | null;
+    };
+    ProjectCustomFieldsRequest: {
+      fieldIds: string[];
     };
     SearchRequest: {
       /** @default  */
@@ -2263,6 +2422,103 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomField'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateCustomFieldRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomField'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateCustomFieldRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomField'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -4308,6 +4564,41 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Component'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.setCustomFields': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProjectCustomFieldsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectDetails'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

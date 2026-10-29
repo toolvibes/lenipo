@@ -12,6 +12,7 @@ import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueSplit, useWideScreen } from './IssueSplit';
 import { IssueTable } from './IssueTable';
+import { ProjectFieldsDialog } from './ProjectFieldsDialog';
 
 type Preset = 'all' | 'mine' | 'open' | 'done';
 
@@ -50,6 +51,7 @@ export function ProjectIssuesPage({
   const [limit, setLimit] = useState(50);
   const [creating, setCreating] = useState(false);
   const [managingComponents, setManagingComponents] = useState(false);
+  const [managingFields, setManagingFields] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -106,9 +108,12 @@ export function ProjectIssuesPage({
         </div>
         <div className="flex flex-wrap gap-2">
           {project.data?.permissions.includes('administer') && (
-            <Button onClick={() => setManagingComponents(true)}>
-              {t('projects.components.title')}
-            </Button>
+            <>
+              <Button onClick={() => setManagingFields(true)}>{t('fields.project.button')}</Button>
+              <Button onClick={() => setManagingComponents(true)}>
+                {t('projects.components.title')}
+              </Button>
+            </>
           )}
           {project.data?.permissions.includes('create-issues') && (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -173,6 +178,13 @@ export function ProjectIssuesPage({
         open={managingComponents}
         onOpenChange={setManagingComponents}
       />
+      {project.data && (
+        <ProjectFieldsDialog
+          project={project.data}
+          open={managingFields}
+          onOpenChange={setManagingFields}
+        />
+      )}
       {project.data && (
         <CreateIssueDialog
           project={project.data}

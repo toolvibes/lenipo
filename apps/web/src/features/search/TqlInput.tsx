@@ -12,6 +12,7 @@ import {
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { valueSuggestionsQuery } from '../../lib/search';
+import { useFieldCatalogue } from '../../lib/tracking';
 import { useMetaName } from '../tracking/icons';
 
 export const META_KIND: Partial<
@@ -85,17 +86,18 @@ export function TqlInput({ id, value, onChange, onSubmit, errors, errorId }: Tql
   const [picked, setPicked] = useState(false);
   const pendingCursor = useRef<number | null>(null);
 
+  const catalogue = useFieldCatalogue();
   const context = useMemo(
-    () => (open ? completionContext(value, Math.min(cursor, value.length)) : null),
-    [open, value, cursor],
+    () => (open ? completionContext(value, Math.min(cursor, value.length), catalogue) : null),
+    [open, value, cursor, catalogue],
   );
   const values = useValueSuggestions(context, open);
   const suggestions = useMemo(() => {
     if (!context) return [];
-    const grammar = staticSuggestions(context);
+    const grammar = staticSuggestions(context, catalogue);
     // Stored values first, then functions and keywords; an exact match adds nothing.
     return [...values, ...grammar].filter((entry) => entry.insert !== context.prefix).slice(0, 30);
-  }, [context, values]);
+  }, [context, values, catalogue]);
   const visible = open && suggestions.length > 0;
 
   // A new list of suggestions starts at its first entry.

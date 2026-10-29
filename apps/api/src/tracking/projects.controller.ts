@@ -8,12 +8,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import {
   Component,
   CreateComponentRequest,
   CreateProjectRequest,
   IssueList,
+  ProjectCustomFieldsRequest,
   ProjectDetails,
   ProjectSummary,
   UpdateComponentRequest,
@@ -178,6 +180,22 @@ export class ProjectsController {
     @ValidBody(UpdateComponentRequest) body: UpdateComponentRequest,
   ): Promise<Component> {
     return this.components.update(principal, key, id, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Choose the custom fields a project uses, in display order',
+    description:
+      'Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50).',
+    response: ProjectDetails,
+  })
+  @Put(':key/custom-fields')
+  setCustomFields(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(ProjectCustomFieldsRequest) body: ProjectCustomFieldsRequest,
+  ): Promise<ProjectDetails> {
+    return this.projects.setCustomFields(principal, key, body.fieldIds);
   }
 
   @Endpoint({

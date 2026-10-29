@@ -1,4 +1,6 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
+import { FieldCatalogue } from '@tasklore/tql';
+import { useMemo } from 'react';
 import { client, unwrap } from './api';
 
 export type IssueFilter = {
@@ -99,3 +101,12 @@ export const worklogsQuery = (key: string) =>
     queryFn: () =>
       unwrap(client.GET('/api/v1/issues/{key}/worklogs', { params: { path: { key } } })),
   });
+
+/** The fields TQL knows here: system fields plus custom fields that are not archived (E-50). */
+export function useFieldCatalogue(): FieldCatalogue {
+  const fields = useQuery(trackingMetaQuery).data?.customFields;
+  return useMemo(
+    () => new FieldCatalogue((fields ?? []).filter((field) => !field.archived)),
+    [fields],
+  );
+}

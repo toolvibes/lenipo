@@ -18,6 +18,7 @@ import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
+import { CustomFieldRows } from './CustomFields';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
@@ -167,6 +168,18 @@ function Activity({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issue', issueKey] }),
   });
 
+  const customFields = useQuery(trackingMetaQuery).data?.customFields ?? [];
+  /** Custom fields are recorded as `cf:<id>` and named as they are called now (E-50). */
+  const custom = (field: string) =>
+    field.startsWith('cf:') ? customFields.find((entry) => entry.id === field.slice(3)) : undefined;
+  const fieldName = (field: string) => custom(field)?.name ?? t(`issues.field.${field}` as never);
+  const shown = (field: string, value: string | null) => {
+    if (value === null) return t('issues.none');
+    if (custom(field)?.type === 'checkbox')
+      return value === 'true' ? t('common.yes') : t('common.no');
+    return value;
+  };
+
   const tabButton = (value: typeof tab, label: string) => (
     <button
       type="button"
@@ -239,12 +252,10 @@ function Activity({
                       t('issues.descriptionChanged')
                     ) : (
                       <>
-                        <span className="text-[var(--ink-muted)]">
-                          {t(`issues.field.${item.field}` as never)}:{' '}
-                        </span>
+                        <span className="text-[var(--ink-muted)]">{fieldName(item.field)}: </span>
                         {t('issues.changedFrom', {
-                          from: item.from ?? t('issues.none'),
-                          to: item.to ?? t('issues.none'),
+                          from: shown(item.field, item.from),
+                          to: shown(item.field, item.to),
                         })}
                       </>
                     )}
@@ -587,6 +598,12 @@ export function IssuePage({
                 onChange={(components) => update.mutate({ components })}
               />
             </Field>
+            <CustomFieldRows
+              issue={data}
+              fieldIds={project.data?.customFieldIds ?? []}
+              disabled={!canEdit}
+              onChange={(fieldId, value) => update.mutate({ customFields: { [fieldId]: value } })}
+            />
             {data.issueType.hierarchyLevel < 1 && (
               <Field label={t('issues.parent')}>
                 <InlineInput

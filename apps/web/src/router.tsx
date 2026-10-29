@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
 import { ISSUE_KEY } from '@tasklore/tql';
+import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
@@ -174,6 +175,12 @@ const webhooksRoute = createRoute({
   component: WebhooksPage,
 });
 
+const customFieldsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/custom-fields',
+  component: CustomFieldsPage,
+});
+
 const timeTrackingRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/time-tracking',
@@ -200,7 +207,7 @@ const routeTree = rootRoute.addChildren([
     searchRoute,
     issueRoute,
     activityRoute,
-    adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute]),
+    adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute, customFieldsRoute]),
   ]),
 ]);
 

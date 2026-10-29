@@ -21,7 +21,8 @@ import {
 const CACHE_MS = 30_000;
 
 /** Stored metadata; attachment limit and working time come from configuration and settings. */
-export interface MetaIndex extends Omit<TrackingMeta, 'attachmentMaxBytes' | 'workingTime'> {
+export interface MetaIndex
+  extends Omit<TrackingMeta, 'attachmentMaxBytes' | 'workingTime' | 'customFields'> {
   issueType: Map<string, IssueTypeInfo>;
   status: Map<string, StatusInfo>;
   priority: Map<string, PriorityInfo>;
@@ -58,7 +59,7 @@ export class MetaService {
       db.select().from(resolutions),
       db.select().from(issueLinkTypes).orderBy(issueLinkTypes.name),
     ]);
-    const meta: Omit<TrackingMeta, 'attachmentMaxBytes' | 'workingTime'> = {
+    const meta: Omit<TrackingMeta, 'attachmentMaxBytes' | 'workingTime' | 'customFields'> = {
       issueTypes: types.map(({ id, key, name, icon, hierarchyLevel }) => ({
         id,
         key,

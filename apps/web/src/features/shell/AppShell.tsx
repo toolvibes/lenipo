@@ -8,6 +8,7 @@ import {
   MagnifyingGlass,
   NotePencil,
   SignOut,
+  Textbox,
   Timer,
   WebhooksLogo,
 } from '@phosphor-icons/react';
@@ -152,6 +153,7 @@ export function AppShell({ me }: { me: Me }) {
               label={t('webhooks.title')}
               exact={false}
             />
+            <NavItem to="/admin/custom-fields" icon={Textbox} label={t('fields.title')} />
             <NavItem
               to="/admin/time-tracking"
               icon={Timer}

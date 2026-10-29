@@ -1,4 +1,5 @@
 export * from './collab.js';
+export * from './fields.js';
 export * from './identity.js';
 export * from './notifications.js';
 export * from './personal.js';

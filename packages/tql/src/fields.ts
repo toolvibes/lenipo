@@ -29,7 +29,10 @@ export type FieldType =
   | 'issue'
   | 'component'
   | 'link-type'
-  | 'duration';
+  | 'duration'
+  // Custom fields (E-50): select options and checkboxes.
+  | 'option'
+  | 'boolean';
 
 export interface FieldDef {
   /** Canonical name, used in suggestions and by the SQL compiler. */
@@ -40,6 +43,29 @@ export interface FieldDef {
   /** Empty for fields that can only be sorted by (rank). */
   operators: readonly Operator[];
   orderable: boolean;
+  /** Set for custom fields (E-50); `id` is then `cf[n]` and the name is the alias. */
+  custom?: CustomFieldInfo;
+}
+
+/** The types of custom fields in Phase 1 (E-50). */
+export type CustomFieldKind =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'datetime'
+  | 'select'
+  | 'multiselect'
+  | 'user'
+  | 'checkbox'
+  | 'url';
+
+/** What the query language needs to know about a custom field. */
+export interface CustomFieldInfo {
+  id: string;
+  number: number;
+  name: string;
+  type: CustomFieldKind;
 }
 
 const EQUALITY: readonly Operator[] = ['=', '!=', 'in', 'not in'];
@@ -174,14 +200,64 @@ export const FIELDS: readonly FieldDef[] = [
   { id: 'rank', aliases: [], type: 'text', operators: [], orderable: true },
 ];
 
-const FIELD_BY_NAME = new Map(
-  FIELDS.flatMap((field) =>
-    [field.id, ...field.aliases].map((name) => [name.toLowerCase(), field] as const),
-  ),
-);
+const CUSTOM_TYPES: Record<
+  CustomFieldKind,
+  { type: FieldType; operators: readonly Operator[]; orderable: boolean }
+> = {
+  text: { type: 'text', operators: [...TEXT, ...EMPTINESS], orderable: true },
+  textarea: { type: 'text', operators: [...TEXT, ...EMPTINESS], orderable: false },
+  url: { type: 'text', operators: [...TEXT, ...EMPTINESS], orderable: true },
+  number: {
+    type: 'number',
+    operators: [...EQUALITY, ...COMPARISON, ...EMPTINESS],
+    orderable: true,
+  },
+  date: { type: 'date', operators: [...DATES, ...EMPTINESS], orderable: true },
+  datetime: { type: 'datetime', operators: [...DATES, ...EMPTINESS], orderable: true },
+  select: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  multiselect: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  user: { type: 'user', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  checkbox: { type: 'boolean', operators: ['=', '!='], orderable: true },
+};
 
+export const CUSTOM_FIELD_ID = /^cf\[(\d+)\]$/i;
+
+export function customFieldDef(info: CustomFieldInfo): FieldDef {
+  return {
+    id: `cf[${info.number}]`,
+    aliases: [info.name],
+    ...CUSTOM_TYPES[info.type],
+    custom: info,
+  };
+}
+
+/**
+ * The fields a query may use: the system fields plus the instance's custom fields (E-50).
+ * System names win; the API refuses custom names that would clash with them.
+ */
+export class FieldCatalogue {
+  readonly fields: readonly FieldDef[];
+  private readonly byName = new Map<string, FieldDef>();
+
+  constructor(custom: readonly CustomFieldInfo[] = []) {
+    const customDefs = custom.map(customFieldDef);
+    this.fields = [...FIELDS, ...customDefs];
+    // System fields are set last, so their names win.
+    for (const field of [...customDefs, ...FIELDS]) {
+      for (const name of [field.id, ...field.aliases]) this.byName.set(name.toLowerCase(), field);
+    }
+  }
+
+  find(name: string): FieldDef | undefined {
+    return this.byName.get(name.toLowerCase());
+  }
+}
+
+export const SYSTEM_FIELDS = new FieldCatalogue();
+
+/** A system field by name or alias; custom fields need a catalogue. */
 export function findField(name: string): FieldDef | undefined {
-  return FIELD_BY_NAME.get(name.toLowerCase());
+  return SYSTEM_FIELDS.find(name);
 }
 
 /** Accepted values of `statusCategory`; the first name of each entry is canonical. */
@@ -222,6 +298,20 @@ const FUNCTION_BY_NAME = new Map(FUNCTIONS.map((fn) => [fn.name.toLowerCase(), f
 
 export function findFunction(name: string): FunctionDef | undefined {
   return FUNCTION_BY_NAME.get(name.toLowerCase());
+}
+
+const KEYWORDS = ['and', 'or', 'not', 'in', 'is', 'empty', 'null', 'order', 'by', 'asc', 'desc'];
+
+/**
+ * Why a custom field cannot have this name, if it cannot: it would clash with a system field,
+ * a function, a keyword or the `cf[n]` form (E-50).
+ */
+export function customFieldNameClash(name: string): 'field' | 'function' | 'keyword' | null {
+  const lower = name.trim().toLowerCase();
+  if (findField(lower) || CUSTOM_FIELD_ID.test(lower)) return 'field';
+  if (findFunction(lower)) return 'function';
+  if (KEYWORDS.includes(lower)) return 'keyword';
+  return null;
 }
 
 /** Functions usable as a value of this field with this operator. */

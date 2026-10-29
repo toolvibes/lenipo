@@ -195,6 +195,7 @@ export const issues = pgTable(
     originalEstimateSeconds: integer(),
     remainingEstimateSeconds: integer(),
     timeSpentSeconds: integer().notNull().default(0),
+    /** Custom field values by field id (E-50). */
     customFields: jsonb().notNull().default({}),
     /** Summary (weight A) and description (weight B) for TQL full-text search. */
     searchVector: tsvector()
@@ -218,6 +219,7 @@ export const issues = pgTable(
     index('issues_parent_idx').on(table.parentId),
     index('issues_rank_idx').on(table.rank),
     index('issues_labels_idx').using('gin', table.labels),
+    index('issues_custom_fields_idx').using('gin', table.customFields),
     index('issues_search_idx').using('gin', table.searchVector),
     index('issues_created_idx').on(table.createdAt),
     index('issues_updated_idx').on(table.updatedAt),

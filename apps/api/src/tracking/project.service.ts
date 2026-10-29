@@ -30,6 +30,7 @@ import {
 } from '../db/schema/index.js';
 import { USERS_GROUP } from '../identity/group.service.js';
 import { builtInId, PROJECT_TEMPLATES } from './builtins.js';
+import { CustomFieldService } from './custom-field.service.js';
 import { MetaService } from './meta.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import type { WorkflowDefinition } from './workflow.js';
@@ -44,6 +45,7 @@ export class ProjectService {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
   /** Creates a project from a template. The creator administers it; everyone in "users" may work in it. */
@@ -166,7 +168,15 @@ export class ProjectService {
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: definition.statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),
+      customFieldIds: await this.customFields.projectFieldIds(project.id),
     };
+  }
+
+  /** Switches custom fields on for a project, in this order (E-50); needs `administer`. */
+  async setCustomFields(principal: Principal, key: string, fieldIds: string[]) {
+    const project = await this.findBrowsable(principal, key);
+    await this.customFields.setProjectFields(principal, project.id, fieldIds);
+    return this.details(principal, key);
   }
 
   async hiddenIssueTypeIds(projectId: string): Promise<string[]> {

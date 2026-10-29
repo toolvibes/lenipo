@@ -1,4 +1,10 @@
-import { FIELDS, type FieldDef, functionsFor, type Operator } from './fields.js';
+import {
+  type FieldCatalogue,
+  type FieldDef,
+  functionsFor,
+  type Operator,
+  SYSTEM_FIELDS,
+} from './fields.js';
 import { type Token, tokenize } from './lexer.js';
 import { type Expectation, expectationsAt } from './parser.js';
 
@@ -58,7 +64,11 @@ export function quoteValue(value: string): string {
 }
 
 /** Finds the word at the cursor and what the grammar allows there. */
-export function completionContext(text: string, cursor: number): CompletionContext {
+export function completionContext(
+  text: string,
+  cursor: number,
+  catalogue: FieldCatalogue = SYSTEM_FIELDS,
+): CompletionContext {
   const tokens = tokenize(text);
   const partial = tokens.find(
     (token) =>
@@ -75,7 +85,7 @@ export function completionContext(text: string, cursor: number): CompletionConte
   if (partial?.kind === 'word') prefix = text.slice(partial.start, cursor);
   else if (partial?.kind === 'string') prefix = partial.value.slice(0, cursor - partial.start - 1);
 
-  const expectations = dedupe(expectationsAt(before));
+  const expectations = dedupe(expectationsAt(before, catalogue));
   const valueExpectation = expectations.find((entry) => entry.type === 'value');
   return {
     from: partial?.start ?? cursor,
@@ -106,21 +116,30 @@ function matches(candidate: string, prefix: string): boolean {
  * Suggestions that follow from the grammar alone: fields, operators, keywords, functions and
  * punctuation. Stored values (statuses, people, …) come from the API for `context.value`.
  */
-export function staticSuggestions(context: CompletionContext): Suggestion[] {
+export function staticSuggestions(
+  context: CompletionContext,
+  catalogue: FieldCatalogue = SYSTEM_FIELDS,
+): Suggestion[] {
   const { prefix } = context;
   const suggestions: Suggestion[] = [];
   for (const expectation of context.expectations) {
     switch (expectation.type) {
       case 'field':
-        for (const field of FIELDS) {
+        for (const field of catalogue.fields) {
           const usable = expectation.orderBy ? field.orderable : field.operators.length > 0;
           const names = [field.id, ...field.aliases];
           if (usable && names.some((name) => matches(name, prefix))) {
-            suggestions.push({
-              kind: 'field',
-              label: field.id,
-              insert: field.id,
-            });
+            // Custom fields are offered by name; `cf[n]` stays as detail (E-50).
+            suggestions.push(
+              field.custom
+                ? {
+                    kind: 'field',
+                    label: field.custom.name,
+                    insert: quoteValue(field.custom.name),
+                    detail: field.id,
+                  }
+                : { kind: 'field', label: field.id, insert: field.id },
+            );
           }
         }
         break;

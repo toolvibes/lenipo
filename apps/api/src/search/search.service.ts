@@ -5,7 +5,7 @@ import type {
   ValueSuggestion,
   ValueSuggestionQuery,
 } from '@tasklore/shared';
-import { findField, parse, STATUS_CATEGORY_NAMES } from '@tasklore/tql';
+import { parse, STATUS_CATEGORY_NAMES } from '@tasklore/tql';
 import {
   and,
   count,
@@ -24,6 +24,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { issues, projectComponents, projects, users } from '../db/schema/index.js';
 import { UserService } from '../identity/user.service.js';
+import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
@@ -68,6 +69,7 @@ export class SearchService {
     @Inject(AccessService) private readonly access: AccessService,
     @Inject(UserService) private readonly userService: UserService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
+    @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
   private async browsableProjects(userId: string) {
@@ -83,7 +85,11 @@ export class SearchService {
     principal: Principal,
     text: string,
   ): Promise<CompiledQuery & { projectIds: string[] }> {
-    const parsed = parse(text);
+    const [catalogue, fields] = await Promise.all([
+      this.customFields.catalogue(),
+      this.customFields.list(),
+    ]);
+    const parsed = parse(text, catalogue);
     if (!parsed.query || parsed.errors.length > 0) throw new QueryException(parsed.errors);
     const [meta, visibleProjects, [user]] = await Promise.all([
       this.meta.load(),
@@ -109,6 +115,7 @@ export class SearchService {
       projects: visibleProjects,
       components,
       workingTime: await this.workingTime.get(),
+      customFields: new Map(fields.map((field) => [field.id, field])),
     });
     const compiled = await compiler.compile(parsed.query);
     if (compiler.errors.length > 0) {
@@ -148,7 +155,7 @@ export class SearchService {
   /** Stored values for completing the value of a field; `value` is what goes into the query. */
   async suggestions(principal: Principal, query: ValueSuggestionQuery): Promise<ValueSuggestion[]> {
     requireIssueScope(principal);
-    const field = findField(query.field);
+    const field = (await this.customFields.catalogue()).find(query.field);
     if (!field) throw new BadRequestException(`The field "${query.field}" does not exist`);
     const prefix = query.prefix.trim().toLowerCase();
     const startsWith = (...names: string[]) =>
@@ -156,6 +163,19 @@ export class SearchService {
     const meta = await this.meta.load();
 
     switch (field.type) {
+      case 'option': {
+        const custom = (await this.customFields.list()).find(
+          (entry) => entry.id === field.custom?.id,
+        );
+        return (custom?.options ?? [])
+          .filter((option) => !option.archived && startsWith(option.value))
+          .slice(0, query.limit)
+          .map((option) => ({ value: option.value, label: option.value }));
+      }
+      case 'boolean':
+        return ['true', 'false']
+          .filter((value) => startsWith(value))
+          .map((value) => ({ value, label: value, key: value }));
       case 'project': {
         const visible = await this.browsableProjects(principal.userId);
         return visible

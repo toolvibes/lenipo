@@ -4,6 +4,8 @@ import { AttachmentService } from './attachment.service.js';
 import { AttachmentsController } from './attachments.controller.js';
 import { TrackingBootstrapService } from './bootstrap.service.js';
 import { ComponentService } from './component.service.js';
+import { CustomFieldService } from './custom-field.service.js';
+import { CustomFieldsController } from './custom-fields.controller.js';
 import { IssueService } from './issue.service.js';
 import { IssuesController } from './issues.controller.js';
 import { LinkService } from './link.service.js';
@@ -22,6 +24,7 @@ import { WorklogService } from './worklog.service.js';
     IssuesController,
     AttachmentsController,
     TimeTrackingController,
+    CustomFieldsController,
   ],
   providers: [
     TrackingBootstrapService,
@@ -29,12 +32,20 @@ import { WorklogService } from './worklog.service.js';
     ProjectAccessService,
     ProjectService,
     ComponentService,
+    CustomFieldService,
     LinkService,
     WorkingTimeService,
     IssueService,
     WorklogService,
     AttachmentService,
   ],
-  exports: [IssueService, MetaService, ProjectAccessService, ProjectService, WorkingTimeService],
+  exports: [
+    CustomFieldService,
+    IssueService,
+    MetaService,
+    ProjectAccessService,
+    ProjectService,
+    WorkingTimeService,
+  ],
 })
 export class TrackingModule {}

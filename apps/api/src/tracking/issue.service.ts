@@ -41,6 +41,7 @@ import {
 import { emitIssueEvent } from '../notifications/events.js';
 import { builtInId } from './builtins.js';
 import { ComponentService } from './component.service.js';
+import { CustomFieldService, type StoredValues } from './custom-field.service.js';
 import { durationSeconds } from './duration.js';
 import { type Change, displayText, recordChanges } from './history.js';
 import { LinkService } from './link.service.js';
@@ -86,6 +87,7 @@ export class IssueService {
     @Inject(ComponentService) private readonly components: ComponentService,
     @Inject(LinkService) private readonly links: LinkService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
+    @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
   // ---------------------------------------------------------------- reading
@@ -245,8 +247,16 @@ export class IssueService {
       this.summaryContext(viewer, [issue, ...children]),
       this.links.linksFor(viewer, issue.id),
     ]);
+    // Values of fields the project switched off stay stored but are not shown (E-50).
+    const shown = new Set(await this.customFields.projectFieldIds(issue.projectId));
+    const customFields = Object.fromEntries(
+      Object.entries(await this.customFields.present(issue.customFields as StoredValues)).filter(
+        ([id]) => shown.has(id),
+      ),
+    );
     return {
       ...this.toSummary(issue, context),
+      customFields,
       description: (issue.description as RichText | null) ?? null,
       parent: parent ?? null,
       children: children.map((child) => this.toSummary(child, context)),
@@ -389,6 +399,7 @@ export class IssueService {
     const assigneeId =
       request.assigneeId ?? (await this.components.defaultAssignee(project.id, components));
     const workflow = await this.projectService.workflow(project.workflowVersionId);
+    const custom = await this.customFields.apply(project.id, {}, request.customFields);
     const id = uuidv7();
 
     await this.database.db.transaction(async (tx) => {
@@ -418,6 +429,7 @@ export class IssueService {
         labels: [...new Set(request.labels)],
         storyPoints: request.storyPoints,
         dueDate: request.dueDate,
+        customFields: custom.next,
         rank: rankBetween(last?.rank ?? null, null),
       });
       const watchers = [
@@ -605,6 +617,15 @@ export class IssueService {
         );
         patch.remainingEstimateSeconds = next;
       }
+    }
+    if (request.customFields !== undefined) {
+      const custom = await this.customFields.apply(
+        project.id,
+        issue.customFields as StoredValues,
+        request.customFields,
+      );
+      changes.push(...custom.changes);
+      patch.customFields = custom.next;
     }
     let componentIds: string[] | undefined;
     if (request.components !== undefined) {

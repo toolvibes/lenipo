@@ -30,6 +30,7 @@ import {
   not,
   or,
   type SQL,
+  type SQLWrapper,
   sql,
 } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
@@ -45,6 +46,11 @@ import {
 } from '../db/schema/index.js';
 import type { MetaIndex } from '../tracking/meta.service.js';
 
+/** A custom field as the compiler needs it: its select options for label lookups. */
+export interface CustomFieldOptions {
+  options: ReadonlyArray<{ id: string; value: string }>;
+}
+
 export interface CompileContext {
   userId: string;
   /** IANA time zone of the searcher; date functions and date literals use it. */
@@ -56,6 +62,8 @@ export interface CompileContext {
   components: ReadonlyArray<{ id: string; name: string }>;
   /** For "1d" and "1w" in time tracking values (E-47). */
   workingTime: WorkingTime;
+  /** Options of select fields by field id, for values written as labels (E-50). */
+  customFields: ReadonlyMap<string, CustomFieldOptions>;
 }
 
 export interface CompiledQuery {
@@ -217,6 +225,7 @@ export class TqlCompiler {
   }
 
   private clause(clause: Clause): SQL {
+    if (clause.field.custom) return this.custom(clause);
     switch (clause.field.type) {
       case 'project':
         return this.byId(clause, issues.projectId, (value) => this.projectIds(value));
@@ -257,6 +266,80 @@ export class TqlCompiler {
         return this.linkType(clause);
       case 'duration':
         return this.duration(clause);
+      case 'option':
+      case 'boolean':
+        // Only custom fields have these types; they are handled above.
+        return sql`false`;
+    }
+  }
+
+  // ---------------------------------------------------------------- custom fields (E-50)
+
+  /** The stored value as text; values are validated on write, so casts are safe. */
+  private customText(id: string): SQL {
+    return sql`(${issues.customFields} ->> ${id})`;
+  }
+
+  private hasValue(id: string): SQL {
+    return sql`(${issues.customFields} ? ${id})`;
+  }
+
+  /** Matches a stored JSON value by containment, which the GIN index serves. */
+  private contains(id: string, value: unknown): SQL {
+    return sql`(${issues.customFields} @> ${JSON.stringify({ [id]: value })}::jsonb)`;
+  }
+
+  private custom(clause: Clause): SQL {
+    const info = clause.field.custom;
+    if (!info) return sql`false`;
+    const { id } = info;
+    if (clause.operator === 'is') return not(this.hasValue(id));
+    if (clause.operator === 'is not') return this.hasValue(id);
+    switch (info.type) {
+      case 'text':
+      case 'textarea':
+      case 'url': {
+        const item = items(clause.operand)[0];
+        if (item?.kind !== 'value') return sql`false`;
+        const pattern = `%${item.value.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+        const match = sql`${this.customText(id)} ilike ${pattern}`;
+        return positive(clause.operator) ? match : (and(this.hasValue(id), not(match)) as SQL);
+      }
+      case 'number':
+        return this.number(clause, sql`${this.customText(id)}::numeric`);
+      case 'date':
+        return this.date(clause, sql`${this.customText(id)}::date`);
+      case 'datetime':
+        return this.date(clause, sql`${this.customText(id)}::timestamptz`);
+      case 'user':
+        return this.user(clause, sql`${this.customText(id)}::uuid`);
+      case 'checkbox': {
+        const item = items(clause.operand)[0];
+        if (item?.kind !== 'value') return sql`false`;
+        // Only ticked boxes are stored, so "false" is every issue without the value.
+        const ticked = this.contains(id, true);
+        const wanted = item.value.toLowerCase() === 'true';
+        return wanted === (clause.operator === '=') ? ticked : not(ticked);
+      }
+      case 'select':
+      case 'multiselect': {
+        const options = this.context.customFields.get(id)?.options ?? [];
+        const matches: SQL[] = [];
+        for (const item of items(clause.operand)) {
+          if (item.kind !== 'value') continue;
+          const wanted = item.value.toLowerCase();
+          const found = options.filter(
+            (option) => option.id === wanted || option.value.toLowerCase() === wanted,
+          );
+          if (found.length === 0) this.notFound(clause.field, item, item.value);
+          for (const option of found) {
+            matches.push(this.contains(id, info.type === 'multiselect' ? [option.id] : option.id));
+          }
+        }
+        if (matches.length === 0) return sql`false`;
+        const match = or(...matches) as SQL;
+        return positive(clause.operator) ? match : (and(this.hasValue(id), not(match)) as SQL);
+      }
     }
   }
 
@@ -315,13 +398,14 @@ export class TqlCompiler {
       .map((status) => status.id);
   }
 
-  private user(clause: Clause): SQL {
-    const column =
-      clause.field.id === 'assignee'
+  private user(clause: Clause, customColumn?: SQL): SQL {
+    const column: SQLWrapper | null =
+      customColumn ??
+      (clause.field.id === 'assignee'
         ? issues.assigneeId
         : clause.field.id === 'reporter'
           ? issues.reporterId
-          : null;
+          : null);
     if (clause.operator === 'is' || clause.operator === 'is not') {
       if (!column) return sql`false`;
       return clause.operator === 'is' ? isNull(column) : isNotNull(column);
@@ -346,7 +430,7 @@ export class TqlCompiler {
       if (id) ids.push(id);
       else this.notFound(clause.field, item, item.value);
     }
-    const matchUser = (target: AnyPgColumn): SQL =>
+    const matchUser = (target: SQLWrapper): SQL =>
       or(
         ids.length > 0 ? inArray(target, ids) : undefined,
         groupIds.length > 0
@@ -466,8 +550,7 @@ export class TqlCompiler {
     return positive(clause.operator) ? match : (and(hasLabels, not(match)) as SQL);
   }
 
-  private number(clause: Clause): SQL {
-    const column = issues.storyPoints;
+  private number(clause: Clause, column: SQLWrapper = issues.storyPoints): SQL {
     if (clause.operator === 'is') return isNull(column);
     if (clause.operator === 'is not') return isNotNull(column);
     const values = items(clause.operand).flatMap((item) =>
@@ -686,15 +769,16 @@ export class TqlCompiler {
     return this.fromLocal(sql`${`${value.date} ${value.time ?? '00:00'}`}::timestamp`);
   }
 
-  private date(clause: Clause): SQL {
-    const column =
-      clause.field.id === 'due'
+  private date(clause: Clause, customColumn?: SQL): SQL {
+    const column: SQLWrapper =
+      customColumn ??
+      (clause.field.id === 'due'
         ? issues.dueDate
         : clause.field.id === 'created'
           ? issues.createdAt
           : clause.field.id === 'updated'
             ? issues.updatedAt
-            : issues.resolvedAt;
+            : issues.resolvedAt);
     if (clause.operator === 'is') return isNull(column);
     if (clause.operator === 'is not') return isNotNull(column);
     const item = items(clause.operand)[0];
@@ -738,6 +822,21 @@ export class TqlCompiler {
 
   private orderExpression(field: FieldDef): SQL[] {
     const { meta } = this.context;
+    if (field.custom) {
+      const value = this.customText(field.custom.id);
+      switch (field.custom.type) {
+        case 'number':
+          return [sql`${value}::numeric`];
+        case 'date':
+          return [sql`${value}::date`];
+        case 'datetime':
+          return [sql`${value}::timestamptz`];
+        case 'checkbox':
+          return [this.hasValue(field.custom.id)];
+        default:
+          return [sql`lower(${value})`];
+      }
+    }
     switch (field.id) {
       case 'project':
         return [sql`split_part(${issues.key}, '-', 1)`];

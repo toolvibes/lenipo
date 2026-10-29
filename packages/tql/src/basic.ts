@@ -1,5 +1,6 @@
 import type { Clause, Expression, Operand } from './ast.js';
 import { quoteValue } from './complete.js';
+import { type FieldCatalogue, SYSTEM_FIELDS } from './fields.js';
 import { parse } from './parser.js';
 
 /** The click filters of the basic search, in display order (T-QRY-05, E-48). */
@@ -121,8 +122,11 @@ export interface SortKey {
 }
 
 /** The first sort key of a query, by canonical field id; null without ORDER BY or when invalid. */
-export function primarySort(query: string): SortKey | null {
-  const first = parse(query).query?.orderBy[0];
+export function primarySort(
+  query: string,
+  catalogue: FieldCatalogue = SYSTEM_FIELDS,
+): SortKey | null {
+  const first = parse(query, catalogue).query?.orderBy[0];
   return first ? { field: first.field.id, direction: first.direction } : null;
 }
 
@@ -130,8 +134,12 @@ export function primarySort(query: string): SortKey | null {
  * The query sorted by one field only, as a click on a column header does: the ORDER BY is
  * replaced (or added), the rest of the text stays as written. Null for a query with errors.
  */
-export function withSort(query: string, sort: SortKey): string | null {
-  const { query: parsed, errors } = parse(query);
+export function withSort(
+  query: string,
+  sort: SortKey,
+  catalogue: FieldCatalogue = SYSTEM_FIELDS,
+): string | null {
+  const { query: parsed, errors } = parse(query, catalogue);
   if (!parsed || errors.length > 0) return null;
   const order = `ORDER BY ${sort.field} ${sort.direction.toUpperCase()}`;
   if (!parsed.orderSpan) return [query.trimEnd(), order].filter(Boolean).join(' ');

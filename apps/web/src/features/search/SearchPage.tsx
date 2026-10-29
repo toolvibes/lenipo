@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { issueColumnsQuery } from '../../lib/personal';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
+import { useFieldCatalogue } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -117,6 +118,7 @@ export function SearchPage({
   const [saving, setSaving] = useState<'new' | 'details' | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [mode, setMode] = useMode();
+  const catalogue = useFieldCatalogue();
   const columns = useQuery(issueColumnsQuery).data?.columns ?? DEFAULT_ISSUE_COLUMNS;
 
   useEffect(() => {
@@ -136,8 +138,8 @@ export function SearchPage({
     return () => clearTimeout(timer);
   }, [draft]);
   const localErrors = useMemo(
-    () => parse(checkNow ? draft : settledDraft).errors,
-    [checkNow, draft, settledDraft],
+    () => parse(checkNow ? draft : settledDraft, catalogue).errors,
+    [checkNow, draft, settledDraft, catalogue],
   );
   const serverErrors: QueryError[] =
     results.error instanceof ApiError ? (results.error.problem.queryErrors ?? []) : [];
@@ -178,7 +180,7 @@ export function SearchPage({
 
   function run() {
     setCheckNow(true);
-    if (parse(draft).errors.length > 0) return;
+    if (parse(draft, catalogue).errors.length > 0) return;
     setCheckNow(false);
     apply(draft);
   }
@@ -186,10 +188,10 @@ export function SearchPage({
   // The basic search shows the applied query when it has the simple form (E-48).
   const basic = useMemo(() => (applied === undefined ? null : toBasic(applied)), [applied]);
   const showBasic = mode === 'basic' && basic !== null;
-  const sort = useMemo(() => primarySort(applied ?? ''), [applied]);
+  const sort = useMemo(() => primarySort(applied ?? '', catalogue), [applied, catalogue]);
 
   function sortBy(field: string) {
-    const sorted = withSort(applied ?? '', nextSort(sort, field));
+    const sorted = withSort(applied ?? '', nextSort(sort, field), catalogue);
     if (sorted !== null) apply(sorted);
   }
 

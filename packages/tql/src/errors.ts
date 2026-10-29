@@ -21,6 +21,7 @@ export type TqlErrorCode =
   | 'invalid-date'
   | 'invalid-issue-key'
   | 'invalid-duration'
+  | 'invalid-boolean'
   // Reported by the API, which knows the stored values.
   | 'value-not-found'
   | 'no-search-terms';
@@ -67,6 +68,7 @@ const MESSAGES: Record<TqlErrorCode, (params: Record<string, string>) => string>
     `"${p.value}" is not a valid date. Use "yyyy-MM-dd", "yyyy-MM-dd HH:mm" or a period such as -7d.`,
   'invalid-issue-key': (p) => `"${p.value}" is not a valid issue key such as WEB-12.`,
   'invalid-duration': (p) => `"${p.value}" is not a duration such as 2h, 1d 4h or 30m.`,
+  'invalid-boolean': (p) => `"${p.field}" is true or false, not "${p.value}".`,
   'value-not-found': (p) => `The value "${p.value}" does not exist for the field "${p.field}".`,
   'no-search-terms': (p) => `"${p.value}" contains no words to search for.`,
 };

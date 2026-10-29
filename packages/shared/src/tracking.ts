@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CustomField, CustomFieldInputs, CustomFieldValue } from './fields.js';
 import { Id } from './identity.js';
 
 export const StatusCategory = z
@@ -86,6 +87,8 @@ export const TrackingMeta = z
     /** Largest attachment the server accepts, in bytes. */
     attachmentMaxBytes: z.number().int(),
     workingTime: WorkingTime,
+    /** All custom fields, archived ones included (E-50). */
+    customFields: z.array(CustomField),
   })
   .meta({ id: 'TrackingMeta' });
 export type TrackingMeta = z.infer<typeof TrackingMeta>;
@@ -134,6 +137,8 @@ export const ProjectDetails = ProjectSummary.extend({
   issueTypes: z.array(IssueTypeInfo),
   statuses: z.array(StatusInfo),
   permissions: z.array(ProjectPermission),
+  /** Custom fields switched on for this project, in display order (E-50). */
+  customFieldIds: z.array(Id),
 }).meta({ id: 'ProjectDetails' });
 export type ProjectDetails = z.infer<typeof ProjectDetails>;
 
@@ -162,6 +167,7 @@ export const CreateIssueRequest = z
     storyPoints: StoryPoints.default(null),
     dueDate: DueDate.default(null),
     components: ComponentNames.default([]),
+    customFields: CustomFieldInputs.default({}),
   })
   .meta({ id: 'CreateIssueRequest' });
 export type CreateIssueRequest = z.infer<typeof CreateIssueRequest>;
@@ -180,6 +186,8 @@ export const UpdateIssueRequest = z
     components: ComponentNames,
     originalEstimate: DurationText.nullable(),
     remainingEstimate: DurationText.nullable(),
+    /** Only the given fields change; null clears one (E-50). */
+    customFields: CustomFieldInputs,
   })
   .partial()
   .meta({ id: 'UpdateIssueRequest' });
@@ -303,6 +311,8 @@ export const Issue = IssueSummary.extend({
   watcherCount: z.number().int(),
   /** Links to issues the caller can see. */
   links: z.array(IssueLink),
+  /** Values of custom fields by field id (E-50). */
+  customFields: z.record(Id, CustomFieldValue),
 }).meta({ id: 'Issue' });
 export type Issue = z.infer<typeof Issue>;
 

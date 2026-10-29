@@ -12,8 +12,8 @@ import type {
 import { parseDuration } from './duration.js';
 import { type TqlError, type TqlErrorCode, tqlError } from './errors.js';
 import {
+  type FieldCatalogue,
   type FieldDef,
-  findField,
   findFunction,
   functionsFor,
   ISSUE_KEY,
@@ -21,6 +21,7 @@ import {
   type Operator,
   parseDateValue,
   parseIncrement,
+  SYSTEM_FIELDS,
 } from './fields.js';
 import { type Token, tokenize } from './lexer.js';
 
@@ -70,6 +71,7 @@ class Parser {
     private readonly tokens: Token[],
     /** In completion mode the input ends at the cursor; the parser records what could follow. */
     private readonly completing: boolean,
+    private readonly catalogue: FieldCatalogue,
   ) {}
 
   // ---------------------------------------------------------------- token helpers
@@ -184,7 +186,7 @@ class Parser {
     const token = this.peek();
     if (token.kind !== 'word' && token.kind !== 'string') this.fail('expected-field');
     this.next();
-    const field = findField(token.value);
+    const field = this.catalogue.find(token.value);
     if (!field) this.report('unknown-field', spanOf(token), { field: token.value });
     return { field: field ?? null, token };
   }
@@ -435,6 +437,11 @@ class Parser {
           this.report('invalid-duration', operand.span, params);
         }
         break;
+      case 'boolean':
+        if (!/^(true|false)$/i.test(operand.value)) {
+          this.report('invalid-boolean', operand.span, params);
+        }
+        break;
       default:
         break;
     }
@@ -448,13 +455,13 @@ export interface ParseResult {
 }
 
 /** Parses a TQL query; the query is usable only when `errors` is empty. */
-export function parse(text: string): ParseResult {
+export function parse(text: string, catalogue: FieldCatalogue = SYSTEM_FIELDS): ParseResult {
   const tokens = tokenize(text);
   const unterminated = tokens.find((token) => token.unterminated);
   if (unterminated) {
     return { query: null, errors: [tqlError('unterminated-string', spanOf(unterminated))] };
   }
-  const parser = new Parser(tokens, false);
+  const parser = new Parser(tokens, false, catalogue);
   try {
     const query = parser.parseQuery();
     return { query, errors: parser.errors };
@@ -468,8 +475,11 @@ export function parse(text: string): ParseResult {
 }
 
 /** Runs the parser over the tokens before the cursor and returns what it expected next. */
-export function expectationsAt(tokens: Token[]): Expectation[] {
-  const parser = new Parser(tokens, true);
+export function expectationsAt(
+  tokens: Token[],
+  catalogue: FieldCatalogue = SYSTEM_FIELDS,
+): Expectation[] {
+  const parser = new Parser(tokens, true, catalogue);
   try {
     parser.parseQuery();
   } catch (error) {

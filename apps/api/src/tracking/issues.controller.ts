@@ -32,6 +32,7 @@ import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { CONFIG } from '../core/tokens.js';
+import { CustomFieldService } from './custom-field.service.js';
 import { IssueService } from './issue.service.js';
 import { MetaService } from './meta.service.js';
 import { WorkingTimeService } from './working-time.service.js';
@@ -48,6 +49,7 @@ export class IssuesController {
     @Inject(CONFIG) private readonly config: AppConfig,
     @Inject(WorklogService) private readonly worklogs: WorklogService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
+    @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
   @Endpoint({
@@ -66,6 +68,7 @@ export class IssuesController {
       linkTypes,
       attachmentMaxBytes: Math.floor(this.config.ATTACHMENT_MAX_MB * 1024 * 1024),
       workingTime: await this.workingTime.get(),
+      customFields: await this.customFields.list(),
     };
   }
 
