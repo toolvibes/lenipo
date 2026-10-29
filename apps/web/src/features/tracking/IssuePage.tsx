@@ -16,6 +16,7 @@ import {
 } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
 import { IssueLinks } from './IssueLinks';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
@@ -534,6 +535,8 @@ export function IssuePage({ me, issueKey }: { me: Me; issueKey: string }) {
               </ul>
             </section>
           )}
+
+          <Attachments issueKey={data.key} canAttach={permissions.has('comment')} />
 
           <IssueLinks
             issue={data}

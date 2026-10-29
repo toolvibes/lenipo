@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
+import { AttachmentService } from './attachment.service.js';
+import { AttachmentsController } from './attachments.controller.js';
 import { TrackingBootstrapService } from './bootstrap.service.js';
 import { ComponentService } from './component.service.js';
 import { IssueService } from './issue.service.js';
@@ -12,7 +14,7 @@ import { ProjectsController } from './projects.controller.js';
 
 @Module({
   imports: [IdentityModule],
-  controllers: [ProjectsController, IssuesController],
+  controllers: [ProjectsController, IssuesController, AttachmentsController],
   providers: [
     TrackingBootstrapService,
     MetaService,
@@ -21,6 +23,7 @@ import { ProjectsController } from './projects.controller.js';
     ComponentService,
     LinkService,
     IssueService,
+    AttachmentService,
   ],
   exports: [IssueService, MetaService, ProjectAccessService, ProjectService],
 })

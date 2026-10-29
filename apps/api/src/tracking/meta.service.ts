@@ -20,7 +20,8 @@ import {
 
 const CACHE_MS = 30_000;
 
-export interface MetaIndex extends TrackingMeta {
+/** Stored metadata; the attachment limit comes from configuration instead. */
+export interface MetaIndex extends Omit<TrackingMeta, 'attachmentMaxBytes'> {
   issueType: Map<string, IssueTypeInfo>;
   status: Map<string, StatusInfo>;
   priority: Map<string, PriorityInfo>;
@@ -57,7 +58,7 @@ export class MetaService {
       db.select().from(resolutions),
       db.select().from(issueLinkTypes).orderBy(issueLinkTypes.name),
     ]);
-    const meta: TrackingMeta = {
+    const meta: Omit<TrackingMeta, 'attachmentMaxBytes'> = {
       issueTypes: types.map(({ id, key, name, icon, hierarchyLevel }) => ({
         id,
         key,

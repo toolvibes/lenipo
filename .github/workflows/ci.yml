@@ -27,8 +27,21 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      # S3-compatible storage, so the attachment tests also run against S3.
+      rustfs:
+        image: rustfs/rustfs:1.0.1
+        env:
+          RUSTFS_VOLUMES: /data
+          RUSTFS_ADDRESS: 0.0.0.0:9000
+          RUSTFS_ACCESS_KEY: tasklore
+          RUSTFS_SECRET_KEY: tasklore-dev-secret
+        ports:
+          - 9000:9000
     env:
       DATABASE_URL: postgres://tasklore:tasklore@localhost:5432/tasklore
+      TEST_S3_ENDPOINT: http://localhost:9000
+      TEST_S3_ACCESS_KEY_ID: tasklore
+      TEST_S3_SECRET_ACCESS_KEY: tasklore-dev-secret
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

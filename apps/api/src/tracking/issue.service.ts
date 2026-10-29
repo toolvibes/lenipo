@@ -76,6 +76,11 @@ export class IssueService {
 
   // ---------------------------------------------------------------- reading
 
+  /** Loads an issue for another tracking service, with the same permission rules. */
+  authorize(principal: Principal, key: string, permission: ProjectPermission) {
+    return this.load(principal, key, permission);
+  }
+
   /** Loads an issue by key and checks the permission; unknown and invisible issues are both 404. */
   private async load(principal: Principal, key: string, permission: ProjectPermission) {
     const [row] = await this.database.db

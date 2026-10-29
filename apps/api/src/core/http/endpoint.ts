@@ -7,6 +7,10 @@ export interface EndpointSpec {
   tag: string;
   /** Success body; omit for 204 responses. */
   response?: z.ZodType;
+  /** multipart/form-data upload with one file in this field. */
+  upload?: string;
+  /** The success response is the raw file content. */
+  binary?: boolean;
 }
 
 export interface EndpointRecord {

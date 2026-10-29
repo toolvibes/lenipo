@@ -10,6 +10,7 @@ import { IdentityModule } from './identity/identity.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { SearchModule } from './search/search.module.js';
+import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
 
 export interface AppDependencies {
@@ -27,6 +28,7 @@ export class AppModule {
         CoreModule.forRoot(config, database, logger),
         LoggerModule.forRoot({ pinoHttp: { logger } }),
         HealthModule,
+        StorageModule,
         IdentityModule,
         TrackingModule,
         SearchModule,

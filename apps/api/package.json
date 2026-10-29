@@ -25,6 +25,8 @@
     "@node-rs/argon2": "2.2.2",
     "@tasklore/shared": "workspace:*",
     "@tasklore/tql": "workspace:*",
+    "aws4fetch": "1.0.20",
+    "busboy": "1.6.0",
     "drizzle-orm": "0.45.4",
     "nestjs-pino": "5.3.1",
     "openid-client": "6.8.8",
@@ -40,6 +42,7 @@
   },
   "devDependencies": {
     "@hocuspocus/provider": "4.7.1",
+    "@types/busboy": "1.5.4",
     "@types/express": "*",
     "@types/node": "24.19.2",
     "@types/ws": "^8.18.2",

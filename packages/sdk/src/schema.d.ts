@@ -255,6 +255,64 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/{key}/attachments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the attachments of an issue */
+    get: operations['Issues.list'];
+    put?: never;
+    /**
+     * Attach a file to an issue
+     * @description multipart/form-data with the file in the field `file`; needs the project permission `comment`. The size limit is `attachmentMaxBytes` from /tracking/meta.
+     */
+    post: operations['Issues.upload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/attachments/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an attachment (own, or any as project administrator) */
+    delete: operations['Issues.delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/attachments/{id}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download the content of an attachment
+     * @description Verified raster images (PNG, JPEG, GIF, WebP) are served inline unless `download=1`; everything else always as a download.
+     */
+    get: operations['Issues.content'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tracking/meta': {
     parameters: {
       query?: never;
@@ -933,12 +991,26 @@ export interface components {
       /** @enum {string} */
       database?: 'ok' | 'unreachable';
     };
+    Attachment: {
+      /** Format: uuid */
+      id: string;
+      fileName: string;
+      contentType: string;
+      size: number;
+      image: boolean;
+      author: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      url: string;
+      canDelete: boolean;
+    };
     TrackingMeta: {
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       priorities: components['schemas']['PriorityInfo'][];
       resolutions: components['schemas']['ResolutionInfo'][];
       linkTypes: components['schemas']['IssueLinkTypeInfo'][];
+      attachmentMaxBytes: number;
     };
     IssueTypeInfo: {
       /** Format: uuid */
@@ -1874,6 +1946,136 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HealthStatus'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Attachment'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.upload': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Attachment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */

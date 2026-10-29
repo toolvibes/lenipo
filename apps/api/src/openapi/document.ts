@@ -139,13 +139,38 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
             },
           }
         : {}),
+      ...(spec.upload
+        ? {
+            requestBody: {
+              required: true,
+              content: {
+                'multipart/form-data': {
+                  schema: {
+                    type: 'object',
+                    properties: { [spec.upload]: { type: 'string', format: 'binary' } },
+                    required: [spec.upload],
+                  },
+                },
+              },
+            },
+          }
+        : {}),
       responses: {
-        [String(status)]: spec.response
+        [String(status)]: spec.binary
           ? {
-              description: 'Success',
-              content: { 'application/json': { schema: components.add(spec.response, 'output') } },
+              description: 'The file content',
+              content: {
+                'application/octet-stream': { schema: { type: 'string', format: 'binary' } },
+              },
             }
-          : { description: 'Success, no content' },
+          : spec.response
+            ? {
+                description: 'Success',
+                content: {
+                  'application/json': { schema: components.add(spec.response, 'output') },
+                },
+              }
+            : { description: 'Success, no content' },
         default: {
           description: 'Error (RFC 9457 problem details)',
           content: { 'application/problem+json': { schema: problemRef } },

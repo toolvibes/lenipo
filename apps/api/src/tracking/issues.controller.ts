@@ -24,9 +24,11 @@ import {
   UpdateIssueRequest,
 } from '@tasklore/shared';
 import { z } from 'zod';
+import type { AppConfig } from '../core/config.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { CONFIG } from '../core/tokens.js';
 import { IssueService } from './issue.service.js';
 import { MetaService } from './meta.service.js';
 
@@ -38,6 +40,7 @@ export class IssuesController {
   constructor(
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(MetaService) private readonly meta: MetaService,
+    @Inject(CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Endpoint({
@@ -48,7 +51,14 @@ export class IssuesController {
   @Get('tracking/meta')
   async trackingMeta(): Promise<TrackingMeta> {
     const { issueTypes, statuses, priorities, resolutions, linkTypes } = await this.meta.load();
-    return { issueTypes, statuses, priorities, resolutions, linkTypes };
+    return {
+      issueTypes,
+      statuses,
+      priorities,
+      resolutions,
+      linkTypes,
+      attachmentMaxBytes: Math.floor(this.config.ATTACHMENT_MAX_MB * 1024 * 1024),
+    };
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Create an issue', response: Issue })

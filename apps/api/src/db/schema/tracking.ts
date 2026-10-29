@@ -366,3 +366,25 @@ export const issueLinks = pgTable(
     check('issue_links_not_self', sql`${table.sourceId} <> ${table.targetId}`),
   ],
 );
+
+/** Files attached to an issue (T-ISS-06); contents live in the file store (E-43). */
+export const issueAttachments = pgTable(
+  'issue_attachments',
+  {
+    id: uuid().primaryKey(),
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    fileName: text().notNull(),
+    /** Detected from the content for images and PDFs, otherwise as declared by the client. */
+    contentType: text().notNull(),
+    size: integer().notNull(),
+    sha256: text().notNull(),
+    /** A raster image recognised by its magic bytes; only these are ever shown inline. */
+    image: boolean().notNull().default(false),
+    storageKey: text().notNull().unique(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('issue_attachments_issue_idx').on(table.issueId, table.createdAt)],
+);

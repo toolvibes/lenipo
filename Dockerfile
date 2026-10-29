@@ -23,8 +23,11 @@ ENV NODE_ENV=production \
     MODE=all \
     API_PORT=4000 \
     COLLAB_PORT=4001 \
-    WEB_DIST_DIR=/app/web
+    WEB_DIST_DIR=/app/web \
+    STORAGE_LOCAL_DIR=/var/lib/tasklore/files
 WORKDIR /app
+# Attachments with STORAGE_DRIVER=local; mount a volume here.
+RUN mkdir -p /var/lib/tasklore/files && chown -R node:node /var/lib/tasklore
 COPY --from=build --chown=node:node /out/api ./api
 COPY --from=build --chown=node:node /repo/apps/web/dist ./web
 USER node

@@ -35,6 +35,18 @@ const configSchema = z.object({
     .default(14 * 24),
   /** A session ends this many days after login, active or not. */
   SESSION_MAX_DAYS: z.coerce.number().int().positive().default(30),
+  /** Where attachments live: a local directory or an S3-compatible bucket (RustFS, AWS, …). */
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  /** Directory for STORAGE_DRIVER=local; relative paths start at the working directory. */
+  STORAGE_LOCAL_DIR: z.string().min(1).default('./data/files'),
+  /** S3 endpoint, e.g. http://localhost:9010 for the RustFS from docker-compose.yml. */
+  S3_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  S3_BUCKET: z.string().min(3).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  /** Largest attachment accepted, in megabytes. */
+  ATTACHMENT_MAX_MB: z.coerce.number().positive().max(1024).default(25),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;
@@ -45,6 +57,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       message: 'PUBLIC_URL is required for OIDC sign-in (it forms the redirect URI)',
       path: ['PUBLIC_URL'],
     })
+    .refine(
+      (config) =>
+        config.STORAGE_DRIVER !== 's3' ||
+        (config.S3_ENDPOINT &&
+          config.S3_BUCKET &&
+          config.S3_ACCESS_KEY_ID &&
+          config.S3_SECRET_ACCESS_KEY),
+      {
+        message:
+          'STORAGE_DRIVER=s3 needs S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY',
+        path: ['STORAGE_DRIVER'],
+      },
+    )
     .safeParse(env);
   if (!result.success) {
     throw new Error(`Invalid configuration:\n${z.prettifyError(result.error)}`);

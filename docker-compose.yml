@@ -32,6 +32,23 @@ services:
       timeout: 3s
       retries: 10
 
+  # S3-compatible object storage for attachments (RustFS, Apache-2.0), used with STORAGE_DRIVER=s3.
+  # Console: http://localhost:9011 (tasklore / tasklore-dev-secret).
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_ACCESS_KEY: tasklore
+      RUSTFS_SECRET_KEY: tasklore-dev-secret
+    ports:
+      - "${TASKLORE_S3_PORT:-9010}:9000"
+      - "${TASKLORE_S3_CONSOLE_PORT:-9011}:9001"
+    volumes:
+      - rustfs-data:/data
+
   # Only for testing OIDC sign-in: docker compose --profile oidc up -d keycloak
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.0
@@ -48,3 +65,4 @@ services:
 volumes:
   postgres-data:
   valkey-data:
+  rustfs-data:

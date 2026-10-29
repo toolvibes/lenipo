@@ -7,3 +7,6 @@ dist/
 !.env.example
 .DS_Store
 coverage/
+
+# Attachments of local development (STORAGE_DRIVER=local)
+data/

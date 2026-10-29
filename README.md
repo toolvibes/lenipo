@@ -45,7 +45,7 @@ Voraussetzungen: Node 24+, pnpm 11, Docker.
 ```bash
 cp .env.example .env      # Standardwerte passen zu docker-compose.yml
 pnpm install
-pnpm infra:up             # PostgreSQL (Port 5440) und Valkey (Port 6380)
+pnpm infra:up             # PostgreSQL (5440), Valkey (6380), RustFS als S3-Speicher (9010, Konsole 9011)
 pnpm dev                  # API :4000, Collab-Server :4001, Web :5173
 ```
 
@@ -68,7 +68,7 @@ cd deploy
 POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d --build
 ```
 
-Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
+Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Anhänge landen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, mit `--profile s3` startet zusätzlich RustFS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
 
 ### Aufbau
 

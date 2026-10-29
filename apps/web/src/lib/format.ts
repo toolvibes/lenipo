@@ -28,3 +28,16 @@ export function formatRelative(iso: string): string {
     UNITS[0] ?? ['minute', 60];
   return format.format(Math.round(seconds / size), unit);
 }
+
+/** File sizes in the UI language, e.g. "1,2 MB". */
+export function formatBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const digits = unit === 0 || value >= 10 ? 0 : 1;
+  return `${new Intl.NumberFormat(i18n.language, { maximumFractionDigits: digits }).format(value)} ${units[unit]}`;
+}

@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import postgres from 'postgres';
 import { createApiApp } from '../api-app.js';
@@ -27,10 +30,13 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
   const url = new URL(serverUrl);
   url.pathname = `/${name}`;
 
+  // Attachments of this run go to a throwaway directory.
+  const files = await mkdtemp(join(tmpdir(), 'tasklore-files-'));
   const config = loadConfig({
     DATABASE_URL: url.toString(),
     NODE_ENV: 'test',
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'fatal',
+    STORAGE_LOCAL_DIR: files,
     ...env,
   });
   const database = createDatabase(config.DATABASE_URL);
@@ -49,6 +55,7 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
       await database.sql.end();
       await admin.unsafe(`drop database if exists ${name} with (force)`);
       await admin.end();
+      await rm(files, { recursive: true, force: true });
     },
   };
 }

@@ -74,6 +74,8 @@ export const TrackingMeta = z
     priorities: z.array(PriorityInfo),
     resolutions: z.array(ResolutionInfo),
     linkTypes: z.array(IssueLinkTypeInfo),
+    /** Largest attachment the server accepts, in bytes. */
+    attachmentMaxBytes: z.number().int(),
   })
   .meta({ id: 'TrackingMeta' });
 export type TrackingMeta = z.infer<typeof TrackingMeta>;
@@ -311,6 +313,22 @@ export const UpdateCommentRequest = z
   .object({ body: RichText })
   .meta({ id: 'UpdateCommentRequest' });
 export type UpdateCommentRequest = z.infer<typeof UpdateCommentRequest>;
+
+/** A file attached to an issue; `url` serves its content (inline only for verified images). */
+export const Attachment = z
+  .object({
+    id: Id,
+    fileName: z.string(),
+    contentType: z.string(),
+    size: z.number().int(),
+    image: z.boolean(),
+    author: UserRef.nullable(),
+    createdAt: z.iso.datetime(),
+    url: z.string(),
+    canDelete: z.boolean(),
+  })
+  .meta({ id: 'Attachment' });
+export type Attachment = z.infer<typeof Attachment>;
 
 export const ChangeGroup = z
   .object({

@@ -83,3 +83,12 @@ export const projectUsersQuery = (projectKey: string, query = '') =>
         }),
       ),
   });
+
+export const attachmentsQuery = (issueKey: string) =>
+  queryOptions({
+    queryKey: ['issue', issueKey, 'attachments'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/issues/{key}/attachments', { params: { path: { key: issueKey } } }),
+      ),
+  });
