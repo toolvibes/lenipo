@@ -1,4 +1,5 @@
 import {
+  Books,
   FolderSimple,
   Funnel,
   House,
@@ -7,7 +8,6 @@ import {
   Lightning,
   ListMagnifyingGlass,
   MagnifyingGlass,
-  NotePencil,
   SignOut,
   Textbox,
   Timer,
@@ -151,7 +151,7 @@ export function AppShell({ me }: { me: Me }) {
             <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
             <NavItem to="/boards" icon={Kanban} label={t('boards.title')} exact={false} />
             <NavItem to="/activity" icon={Lightning} label={t('activity.title')} />
-            <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
+            <NavItem to="/spaces" icon={Books} label={t('wiki.nav')} exact={false} />
           </div>
           <Favourites />
           {me.globalPermissions.includes('admin') && (

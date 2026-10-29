@@ -27,6 +27,7 @@
     "@tasklore/editor": "workspace:*",
     "@tasklore/shared": "workspace:*",
     "@tasklore/tql": "workspace:*",
+    "@tiptap/y-tiptap": "3.0.10",
     "aws4fetch": "1.0.20",
     "busboy": "1.6.0",
     "drizzle-orm": "0.45.4",

@@ -16,7 +16,6 @@ import { SetupPage } from './features/auth/SetupPage';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
-import { PageView } from './features/pages/PageView';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { SearchPage } from './features/search/SearchPage';
@@ -25,6 +24,11 @@ import { HomePage } from './features/shell/HomePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
+import { PageEditor } from './features/wiki/PageEditor';
+import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
+import { SpacesPage } from './features/wiki/SpacesPage';
+import { TrashPage } from './features/wiki/TrashPage';
+import { WikiPage } from './features/wiki/WikiPage';
 import { meQuery, setupStatusQuery } from './lib/queries';
 
 interface RouterContext {
@@ -82,14 +86,56 @@ const homeRoute = createRoute({
   },
 });
 
-const pageRoute = createRoute({
+const spacesRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/pages/$pageId',
-  component: function Page() {
-    const { me } = pageRoute.useRouteContext();
-    const { pageId } = pageRoute.useParams();
+  path: '/spaces',
+  component: function Spaces() {
+    return <SpacesPage me={spacesRoute.useRouteContext().me} />;
+  },
+});
+
+const spaceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/spaces/$key',
+  component: function Space() {
+    const { key } = spaceRoute.useParams();
+    return <SpaceLayout key={key} spaceKey={key.toUpperCase()} />;
+  },
+});
+
+const spaceHomeRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/',
+  component: function SpaceIndex() {
+    return <SpaceHome spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
+  },
+});
+
+const wikiPageRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/pages/$id',
+  component: function WikiPageRouteComponent() {
+    const { key, id } = wikiPageRoute.useParams();
+    return <WikiPage key={id} spaceKey={key.toUpperCase()} id={id} />;
+  },
+});
+
+const pageEditRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/pages/$id/edit',
+  component: function PageEdit() {
+    const { me } = pageEditRoute.useRouteContext();
+    const { key, id } = pageEditRoute.useParams();
     // Remount per page, so the editor never mixes two documents.
-    return <PageView key={pageId} me={me} pageId={pageId} />;
+    return <PageEditor key={id} me={me} spaceKey={key.toUpperCase()} id={id} />;
+  },
+});
+
+const trashRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/trash',
+  component: function Trash() {
+    return <TrashPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
   },
 });
 
@@ -265,7 +311,8 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   appRoute.addChildren([
     homeRoute,
-    pageRoute,
+    spacesRoute,
+    spaceRoute.addChildren([spaceHomeRoute, wikiPageRoute, pageEditRoute, trashRoute]),
     projectsRoute,
     projectRoute,
     searchRoute,

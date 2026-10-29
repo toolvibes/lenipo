@@ -17,6 +17,7 @@ import { RealtimeModule } from './realtime/realtime.module.js';
 import { SearchModule } from './search/search.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
+import { WikiModule } from './wiki/wiki.module.js';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -40,6 +41,7 @@ export class AppModule {
         EventsModule,
         PersonalModule,
         BoardsModule,
+        WikiModule,
         McpModule,
         RealtimeModule,
       ],

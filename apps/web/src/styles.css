@@ -24,6 +24,9 @@ body {
   font-size: 17px;
   line-height: 28px;
 }
+.tl-prose-read {
+  min-height: 0;
+}
 .tl-prose > * + * {
   margin-top: 0.75em;
 }

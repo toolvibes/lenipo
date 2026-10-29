@@ -177,6 +177,12 @@ export function GlobalShortcuts({ me, onPalette }: { me: Me; onPalette: () => vo
       run: () => void navigate({ to: '/boards' }),
     },
     {
+      keys: 'g w',
+      label: 'shortcuts.goWiki',
+      group: 'navigation',
+      run: () => void navigate({ to: '/spaces' }),
+    },
+    {
       keys: 'g a',
       label: 'shortcuts.goActivity',
       group: 'navigation',

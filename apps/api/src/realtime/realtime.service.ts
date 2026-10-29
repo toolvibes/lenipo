@@ -11,6 +11,8 @@ import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
 import { SessionService } from '../identity/session.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
+import { PageService } from '../wiki/page.service.js';
+import { SpaceService } from '../wiki/space.service.js';
 import { CHANGES_CHANNEL, type Signal } from './signals.js';
 
 /** Socket.IO under the API prefix, so the dev proxy and Caddy pass it like the API. */
@@ -38,6 +40,8 @@ export class RealtimeService implements OnApplicationShutdown {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(ProjectService) private readonly projects: ProjectService,
+    @Inject(SpaceService) private readonly spaces: SpaceService,
+    @Inject(PageService) private readonly pages: PageService,
     @Inject(BoardService) private readonly boards: BoardService,
     @Inject(IssueService) private readonly issues: IssueService,
   ) {}
@@ -102,6 +106,8 @@ export class RealtimeService implements OnApplicationShutdown {
       if (kind === 'project') await this.projects.findBrowsable(data.principal, id);
       else if (kind === 'board') await this.boards.get(data.principal, id);
       else if (kind === 'issue') await this.issues.authorize(data.principal, id, 'browse');
+      else if (kind === 'space') await this.spaces.find(data.principal, id);
+      else if (kind === 'page') await this.pages.authorize(data.principal, id, 'view');
       else return false;
       return true;
     } catch {
@@ -138,6 +144,10 @@ export class RealtimeService implements OnApplicationShutdown {
       io.to(`board:${parsed.boardId}`).emit('change', parsed);
     } else if (parsed.type === 'notification') {
       io.to(`user:${parsed.userId}`).emit('change', parsed);
+    } else if (parsed.type === 'space') {
+      io.to(`space:${parsed.spaceKey}`).emit('change', parsed);
+    } else if (parsed.type === 'page') {
+      io.to([`space:${parsed.spaceKey}`, `page:${parsed.pageId}`]).emit('change', parsed);
     }
   }
 

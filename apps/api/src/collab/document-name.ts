@@ -1,6 +1,7 @@
-/** Collaborative documents are addressed as `<kind>:<id>`, e.g. `page:3f2a…` or `issue:WEB-12`. */
-const DOCUMENT_NAME = /^(page|issue):[A-Za-z0-9_-]{1,64}$/;
+/** Collaborative documents are wiki page drafts, addressed as `page:<uuid>` (E-59). */
+const DOCUMENT_NAME = /^page:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
 
-export function isValidDocumentName(name: string): boolean {
-  return DOCUMENT_NAME.test(name);
+/** The page id of a document name, or null when the name is not a page draft. */
+export function pageIdOf(name: string): string | null {
+  return DOCUMENT_NAME.exec(name)?.[1] ?? null;
 }

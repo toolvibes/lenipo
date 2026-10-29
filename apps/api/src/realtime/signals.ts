@@ -11,7 +11,9 @@ export const CHANGES_CHANNEL = 'tasklore_changes';
 export type Signal =
   | { type: 'issue'; issueKey: string; projectKey: string }
   | { type: 'board'; boardId: string }
-  | { type: 'notification'; userId: string };
+  | { type: 'notification'; userId: string }
+  | { type: 'space'; spaceKey: string }
+  | { type: 'page'; pageId: string; spaceKey: string };
 
 /** Sends a signal when the transaction commits; outside a transaction at once. */
 export async function signal(db: Executor, payload: Signal): Promise<void> {

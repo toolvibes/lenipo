@@ -6,7 +6,9 @@ import { io, type Socket } from 'socket.io-client';
 type Signal =
   | { type: 'issue'; issueKey: string; projectKey: string }
   | { type: 'board'; boardId: string }
-  | { type: 'notification'; userId: string };
+  | { type: 'notification'; userId: string }
+  | { type: 'space'; spaceKey: string }
+  | { type: 'page'; pageId: string; spaceKey: string };
 
 let socket: Socket | null = null;
 /** Rooms wanted by the pages on screen, counted, so a room is left only when nobody needs it. */
@@ -45,6 +47,12 @@ function keysFor(signal: Signal): QueryKey[] {
     return [['issue', signal.issueKey], ['search'], ['project-issues'], ['board'], ['activity']];
   }
   if (signal.type === 'board') return [['board', signal.boardId], ['boards']];
+  if (signal.type === 'space') return [['space', signal.spaceKey], ['spaces']];
+  if (signal.type === 'page')
+    return [
+      ['page', signal.pageId],
+      ['space', signal.spaceKey],
+    ];
   return [['notifications']];
 }
 

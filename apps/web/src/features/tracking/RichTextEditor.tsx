@@ -101,11 +101,27 @@ export function RichTextEditor({
   );
 }
 
-/** Read-only rendering of a stored document. */
-export function RichTextView({ doc }: { doc: RichText }) {
+/**
+ * Read-only rendering of a stored document. `page` uses the same typography as the
+ * collaborative editor, so a wiki page reads as it was written.
+ */
+export function RichTextView({
+  doc,
+  variant = 'compact',
+}: {
+  doc: RichText;
+  variant?: 'compact' | 'page';
+}) {
   const editor = useEditor(
-    { extensions: [StarterKit, mentionExtension()], content: doc as Content, editable: false },
-    [JSON.stringify(doc)],
+    {
+      extensions: [StarterKit, mentionExtension()],
+      content: doc as Content,
+      editable: false,
+      ...(variant === 'page'
+        ? { editorProps: { attributes: { class: 'tl-prose tl-prose-read' } } }
+        : {}),
+    },
+    [JSON.stringify(doc), variant],
   );
   return (
     <EditorContent

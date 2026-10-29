@@ -1,12 +1,12 @@
 import {
   BookOpenText,
+  Books,
   Desktop,
   FolderSimple,
   House,
   type Icon,
   ListMagnifyingGlass,
   Moon,
-  NotePencil,
   SignOut,
   Sun,
 } from '@phosphor-icons/react';
@@ -95,11 +95,9 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: PaletteProps) 
             onSelect={() => run(() => navigate({ to: '/issues' }))}
           />
           <Item
-            icon={NotePencil}
-            label={t('shell.testPage')}
-            onSelect={() =>
-              run(() => navigate({ to: '/pages/$pageId', params: { pageId: 'spike' } }))
-            }
+            icon={Books}
+            label={t('wiki.nav')}
+            onSelect={() => run(() => navigate({ to: '/spaces' }))}
           />
           <Item
             icon={BookOpenText}

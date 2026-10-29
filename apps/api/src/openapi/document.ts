@@ -79,6 +79,7 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
   const components = new Components();
   const problemRef = components.add(Problem, 'output');
   const paths: Record<string, Record<string, unknown>> = {};
+  const operationIds = new Set<string>();
 
   const sorted = [...endpointRegistry].sort((a, b) => a.spec.tag.localeCompare(b.spec.tag));
   for (const { controller, handler, spec } of sorted) {
@@ -123,9 +124,16 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
       .filter(Boolean)
       .join('\n\n');
 
+    // Generated clients key operations by id; a duplicate would silently merge two endpoints.
+    const operationId = `${spec.tag}.${handler}`;
+    if (operationIds.has(operationId)) {
+      throw new Error(`Duplicate operation id ${operationId} (${verb.toUpperCase()} ${path})`);
+    }
+    operationIds.add(operationId);
+
     paths[path] ??= {};
     paths[path][verb] = {
-      operationId: `${spec.tag}.${handler}`,
+      operationId,
       summary: spec.summary,
       ...(description ? { description } : {}),
       tags: [spec.tag],

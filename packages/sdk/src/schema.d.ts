@@ -865,6 +865,119 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a page: its latest published version
+     * @description Drafts have `version` 0 and no content. `?format=markdown` returns the content as Markdown.
+     */
+    get: operations['Pages.get'];
+    put?: never;
+    post?: never;
+    /** Move a page and the pages below it to the trash */
+    delete: operations['Pages.delete'];
+    options?: never;
+    head?: never;
+    /** Rename a page; links keep working */
+    patch: operations['Pages.rename'];
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a page in its space’s tree
+     * @description Under `parentId` (null: top level), before the sibling `beforeId` or last.
+     */
+    post: operations['Pages.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/publish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Publish a page as its next version
+     * @description Stores the given document (usually the live draft) as an immutable version. The document must fit the editor schema.
+     */
+    post: operations['Pages.publish'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/versions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The published versions of a page, newest first */
+    get: operations['Pages.versions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/versions/{number}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** One published version of a page */
+    get: operations['Pages.version'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore a page from the trash */
+    post: operations['Pages.restore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me/favourites': {
     parameters: {
       query?: never;
@@ -1286,6 +1399,130 @@ export interface paths {
     put?: never;
     /** Create the first administrator with the setup code and sign in */
     post: operations['Setup.complete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the spaces the caller can see */
+    get: operations['Spaces.list'];
+    put?: never;
+    /**
+     * Create a space
+     * @description Requires the global permission `create-spaces`. The creator administers the space; all signed-in users may edit it.
+     */
+    post: operations['Spaces.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a space with the caller’s permissions */
+    get: operations['Spaces.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Change a space’s name, description or home page
+     * @description Requires the space permission `administer`.
+     */
+    patch: operations['Spaces.update'];
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the role assignments of a space
+     * @description Requires the space permission `administer`.
+     */
+    get: operations['Spaces.members'];
+    put?: never;
+    /** Give a user or group a role in a space */
+    post: operations['Spaces.addMember'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/members/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a role assignment; the last administrator stays */
+    delete: operations['Spaces.removeMember'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The space’s page tree in order
+     * @description A flat list in depth-first order; nest it by `parentId`. Drafts that were never published appear for editors only.
+     */
+    get: operations['Spaces.tree'];
+    put?: never;
+    /**
+     * Create a page as a draft
+     * @description Requires the space permission `edit`. The page is visible to readers after its first publish.
+     */
+    post: operations['Spaces.createPage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/trash': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Pages in the space’s trash
+     * @description Each entry was deleted on its own; pages below it come back with it.
+     */
+    get: operations['Spaces.trash'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2411,6 +2648,59 @@ export interface components {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
     };
+    Page: {
+      /** Format: uuid */
+      id: string;
+      space: {
+        key: string;
+        name: string;
+      };
+      parentId: string | null;
+      ancestors: components['schemas']['PageRef'][];
+      title: string;
+      version: number;
+      content: components['schemas']['RichTextOutput'] | null;
+      publishedAt: string | null;
+      publishedBy: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      canEdit: boolean;
+    };
+    PageRef: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+    };
+    UpdatePageRequest: {
+      title: string;
+    };
+    MovePageRequest: {
+      parentId: string | null;
+      beforeId?: string | null;
+    };
+    PublishPageRequest: {
+      title: string;
+      content: components['schemas']['RichText'];
+      /** @default  */
+      comment?: string;
+    };
+    PageVersionSummary: {
+      number: number;
+      title: string;
+      author: components['schemas']['UserRef'] | null;
+      comment: string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    PageVersion: {
+      number: number;
+      title: string;
+      author: components['schemas']['UserRef'] | null;
+      comment: string;
+      /** Format: date-time */
+      createdAt: string;
+      content: components['schemas']['RichTextOutput'];
+    };
     Favourite: {
       kind: components['schemas']['FavouriteKind'];
       /** Format: uuid */
@@ -2693,6 +2983,84 @@ export interface components {
         displayName: string;
         password: string;
       };
+    };
+    SpaceSummary: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      description: string;
+      homePageId: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    CreateSpaceRequest: {
+      key: components['schemas']['SpaceKey'];
+      name: string;
+      /** @default  */
+      description?: string;
+    };
+    SpaceKey: string;
+    Space: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      description: string;
+      homePageId: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      permissions: components['schemas']['SpacePermission'][];
+    };
+    /** @enum {string} */
+    SpacePermission: 'view' | 'comment' | 'edit' | 'administer';
+    UpdateSpaceRequest: {
+      name?: string;
+      description?: string;
+      homePageId?: string | null;
+    };
+    SpaceMember: {
+      /** Format: uuid */
+      id: string;
+      role: components['schemas']['SpaceRole'];
+      user: components['schemas']['UserRef'] | null;
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+    };
+    /** @enum {string} */
+    SpaceRole: 'administrators' | 'editors' | 'commenters' | 'viewers';
+    AddSpaceMemberRequest:
+      | {
+          role: components['schemas']['SpaceRole'];
+          /** Format: uuid */
+          userId: string;
+        }
+      | {
+          role: components['schemas']['SpaceRole'];
+          /** Format: uuid */
+          groupId: string;
+        };
+    PageTreeEntry: {
+      /** Format: uuid */
+      id: string;
+      parentId: string | null;
+      title: string;
+      published: boolean;
+    };
+    CreatePageRequest: {
+      title: string;
+      parentId?: string | null;
+    };
+    TrashedPage: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      /** Format: date-time */
+      deletedAt: string;
+      deletedBy: components['schemas']['UserRef'] | null;
     };
     BacklogData: {
       board: components['schemas']['Board'];
@@ -4925,6 +5293,269 @@ export interface operations {
       };
     };
   };
+  'Pages.get': {
+    parameters: {
+      query?: {
+        format?: 'json' | 'markdown';
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.rename': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MovePageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.publish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublishPageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.versions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageVersionSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.version': {
+    parameters: {
+      query?: {
+        format?: 'json' | 'markdown';
+      };
+      header?: never;
+      path: {
+        id: string;
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageVersion'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Personal.favourites': {
     parameters: {
       query?: never;
@@ -5880,6 +6511,327 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpaceSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateSpaceRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Space'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Space'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateSpaceRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Space'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpaceMember'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.addMember': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddSpaceMemberRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpaceMember'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.removeMember': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.tree': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageTreeEntry'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.createPage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.trash': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrashedPage'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

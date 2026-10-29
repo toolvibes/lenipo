@@ -3,7 +3,7 @@ import type { Comment, ContentFormat, Issue, RichTextOutput } from '@tasklore/sh
 import { plainText } from './rich-text.js';
 
 /** Markdown of a stored document; content the converter does not know falls back to text. */
-function markdownOf(doc: RichTextOutput): string {
+export function markdownOf(doc: RichTextOutput): string {
   if (typeof doc === 'string') return doc;
   try {
     return docToMarkdown(doc);

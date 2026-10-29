@@ -9,3 +9,4 @@ export * from './problem.js';
 export * from './search.js';
 export * from './tracking.js';
 export * from './webhooks.js';
+export * from './wiki.js';
