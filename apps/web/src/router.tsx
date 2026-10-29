@@ -13,6 +13,8 @@ import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsP
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
+import { BoardPage } from './features/boards/BoardPage';
+import { BoardsPage } from './features/boards/BoardsPage';
 import { PageView } from './features/pages/PageView';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { SearchPage } from './features/search/SearchPage';
@@ -145,6 +147,35 @@ const issueRoute = createRoute({
   },
 });
 
+const boardsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/boards',
+  component: BoardsPage,
+});
+
+const boardRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/boards/$id',
+  validateSearch: (search: Record<string, unknown>): { filters?: string; selected?: string } => ({
+    filters: typeof search.filters === 'string' ? search.filters : undefined,
+    selected: selectedKey(search.selected),
+  }),
+  component: function BoardView() {
+    const { me } = boardRoute.useRouteContext();
+    const { id } = boardRoute.useParams();
+    const { filters, selected } = boardRoute.useSearch();
+    return (
+      <BoardPage
+        key={id}
+        me={me}
+        id={id}
+        filters={filters ? filters.split(',').filter(Boolean) : []}
+        selected={selected}
+      />
+    );
+  },
+});
+
 const activityRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/activity',
@@ -207,6 +238,8 @@ const routeTree = rootRoute.addChildren([
     searchRoute,
     issueRoute,
     activityRoute,
+    boardsRoute,
+    boardRoute,
     adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute, customFieldsRoute]),
   ]),
 ]);

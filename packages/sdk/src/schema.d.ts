@@ -237,6 +237,89 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/boards': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List boards in projects the caller can see */
+    get: operations['Boards.list'];
+    put?: never;
+    /**
+     * Create a board located in a project
+     * @description Requires the permission `administer` in that project. Starts with one column per workflow status (E-53).
+     */
+    post: operations['Boards.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/boards/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a board’s configuration */
+    get: operations['Boards.get'];
+    put?: never;
+    post?: never;
+    /** Delete a board; its issues stay */
+    delete: operations['Boards.delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Configure a board: scope, columns, WIP limits, quick filters, swimlanes
+     * @description Columns and quick filters are given as full lists in display order.
+     */
+    patch: operations['Boards.update'];
+    trace?: never;
+  };
+  '/api/v1/boards/{id}/issues': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The board with its cards in rank order (at most 500)
+     * @description `filters` narrows with quick filters: "mine", "recent" or ids of the board’s own, combined with AND.
+     */
+    get: operations['Boards.issues'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/boards/{id}/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a card into a column and between two cards
+     * @description Runs the workflow transition to the first status of the column the issue can reach (409 if none), then ranks it between `afterKey` and `beforeKey`.
+     */
+    post: operations['Boards.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/filters': {
     parameters: {
       query?: never;
@@ -451,6 +534,26 @@ export interface paths {
     put?: never;
     /** Move an issue to another status */
     post: operations['Issues.transition'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/rank': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Rank an issue between two others
+     * @description The rank is global: the order is the same on every board and backlog (T-BRD-10). Needs `edit-issues`.
+     */
+    put: operations['Issues.rank'];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1406,6 +1509,288 @@ export interface components {
         displayName: string | null;
       };
     };
+    BoardSummary: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: 'kanban' | 'scrum';
+      project: {
+        key: string;
+        name: string;
+      };
+    };
+    CreateBoardRequest: {
+      name: string;
+      projectKey: string;
+      /**
+       * @default kanban
+       * @enum {string}
+       */
+      type?: 'kanban' | 'scrum';
+      query?: string;
+    };
+    Board: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: 'kanban' | 'scrum';
+      project: {
+        key: string;
+        name: string;
+      };
+      query: string;
+      /** @enum {string} */
+      swimlanes: 'none' | 'epic' | 'assignee';
+      hideDoneAfterDays: number | null;
+      columns: components['schemas']['BoardColumn'][];
+      quickFilters: components['schemas']['QuickFilter'][];
+      canConfigure: boolean;
+    };
+    BoardColumn: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      statusIds: string[];
+      wipMin: number | null;
+      wipMax: number | null;
+    };
+    QuickFilter: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      query: string;
+    };
+    UpdateBoardRequest: {
+      name?: string;
+      query?: string;
+      /** @enum {string} */
+      swimlanes?: 'none' | 'epic' | 'assignee';
+      hideDoneAfterDays?: number | null;
+      columns?: {
+        /** Format: uuid */
+        id?: string;
+        name: string;
+        statusIds: string[];
+        /** @default null */
+        wipMin?: number | null;
+        /** @default null */
+        wipMax?: number | null;
+      }[];
+      quickFilters?: {
+        /** Format: uuid */
+        id?: string;
+        name: string;
+        query: string;
+      }[];
+    };
+    BoardData: {
+      board: components['schemas']['Board'];
+      issues: components['schemas']['IssueSummary'][];
+      truncated: boolean;
+      reachable: {
+        [key: string]: string[];
+      };
+    };
+    IssueSummary: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+      assignee: components['schemas']['UserRef'] | null;
+      storyPoints: number | null;
+      labels: string[];
+      rank: string;
+      /** Format: date-time */
+      updatedAt: string;
+      reporter: components['schemas']['UserRef'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      components: components['schemas']['ComponentRef'][];
+      timeTracking: components['schemas']['TimeTracking'];
+      customFields: {
+        [key: string]:
+          | string
+          | number
+          | boolean
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }[]
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            };
+      };
+      parent: components['schemas']['IssueRef'] | null;
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
+    };
+    IssueTypeInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      icon: string;
+      hierarchyLevel: number;
+    };
+    StatusInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      category: components['schemas']['StatusCategory'];
+    };
+    /** @enum {string} */
+    StatusCategory: 'todo' | 'in_progress' | 'done';
+    PriorityInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      icon: string;
+      sequence: number;
+    };
+    UserRef: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+    };
+    ResolutionInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+    };
+    ComponentRef: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+    };
+    TimeTracking: {
+      originalEstimateSeconds: number | null;
+      remainingEstimateSeconds: number | null;
+      timeSpentSeconds: number;
+    };
+    IssueRef: {
+      key: string;
+      summary: string;
+    };
+    MoveCardRequest: {
+      issueKey: string;
+      /** Format: uuid */
+      columnId: string;
+      afterKey?: string | null;
+      beforeKey?: string | null;
+    };
+    Issue: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+      assignee: components['schemas']['UserRef'] | null;
+      storyPoints: number | null;
+      labels: string[];
+      rank: string;
+      /** Format: date-time */
+      updatedAt: string;
+      reporter: components['schemas']['UserRef'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      components: components['schemas']['ComponentRef'][];
+      timeTracking: components['schemas']['TimeTracking'];
+      customFields: {
+        [key: string]:
+          | string
+          | number
+          | boolean
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }[]
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            };
+      };
+      parent: components['schemas']['IssueRef'] | null;
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
+      description: components['schemas']['RichTextOutput'] | null;
+      children: components['schemas']['IssueSummary'][];
+      resolvedAt: string | null;
+      watching: boolean;
+      watcherCount: number;
+      links: components['schemas']['IssueLink'][];
+    };
+    RichTextOutput: components['schemas']['RichText'] | string;
+    RichText: {
+      /** @constant */
+      type: 'doc';
+      content?: unknown[];
+    } & {
+      [key: string]: unknown;
+    };
+    IssueLink: {
+      /** Format: uuid */
+      id: string;
+      type: components['schemas']['IssueLinkTypeInfo'];
+      /** @enum {string} */
+      direction: 'outward' | 'inward';
+      issue: components['schemas']['LinkedIssue'];
+    };
+    IssueLinkTypeInfo: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      outward: string;
+      inward: string;
+    };
+    LinkedIssue: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+    };
     SavedFilter: {
       /** Format: uuid */
       id: string;
@@ -1420,11 +1805,6 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
-    };
-    UserRef: {
-      /** Format: uuid */
-      id: string;
-      displayName: string;
     };
     FilterShare:
       | {
@@ -1523,45 +1903,6 @@ export interface components {
       workingTime: components['schemas']['WorkingTime'];
       customFields: components['schemas']['CustomField'][];
     };
-    IssueTypeInfo: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      name: string;
-      icon: string;
-      hierarchyLevel: number;
-    };
-    StatusInfo: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      name: string;
-      category: components['schemas']['StatusCategory'];
-    };
-    /** @enum {string} */
-    StatusCategory: 'todo' | 'in_progress' | 'done';
-    PriorityInfo: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      name: string;
-      icon: string;
-      sequence: number;
-    };
-    ResolutionInfo: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      name: string;
-    };
-    IssueLinkTypeInfo: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      name: string;
-      outward: string;
-      inward: string;
-    };
     CreateIssueRequest: {
       projectKey: string;
       issueType: string;
@@ -1591,152 +1932,6 @@ export interface components {
       | {
           markdown: string;
         };
-    RichText: {
-      /** @constant */
-      type: 'doc';
-      content?: unknown[];
-    } & {
-      [key: string]: unknown;
-    };
-    Issue: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      project: {
-        key: string;
-        name: string;
-      };
-      summary: string;
-      issueType: components['schemas']['IssueTypeInfo'];
-      status: components['schemas']['StatusInfo'];
-      priority: components['schemas']['PriorityInfo'];
-      assignee: components['schemas']['UserRef'] | null;
-      storyPoints: number | null;
-      labels: string[];
-      rank: string;
-      /** Format: date-time */
-      updatedAt: string;
-      reporter: components['schemas']['UserRef'] | null;
-      resolution: components['schemas']['ResolutionInfo'] | null;
-      dueDate: string | null;
-      /** Format: date-time */
-      createdAt: string;
-      components: components['schemas']['ComponentRef'][];
-      timeTracking: components['schemas']['TimeTracking'];
-      customFields: {
-        [key: string]:
-          | string
-          | number
-          | boolean
-          | {
-              /** Format: uuid */
-              id: string;
-              value: string;
-            }
-          | {
-              /** Format: uuid */
-              id: string;
-              value: string;
-            }[]
-          | {
-              /** Format: uuid */
-              id: string;
-              displayName: string;
-            };
-      };
-      canEdit: boolean;
-      canAssign: boolean;
-      canTransition: boolean;
-      description: components['schemas']['RichTextOutput'] | null;
-      parent: components['schemas']['IssueRef'] | null;
-      children: components['schemas']['IssueSummary'][];
-      resolvedAt: string | null;
-      watching: boolean;
-      watcherCount: number;
-      links: components['schemas']['IssueLink'][];
-    };
-    ComponentRef: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    TimeTracking: {
-      originalEstimateSeconds: number | null;
-      remainingEstimateSeconds: number | null;
-      timeSpentSeconds: number;
-    };
-    RichTextOutput: components['schemas']['RichText'] | string;
-    IssueRef: {
-      key: string;
-      summary: string;
-    };
-    IssueSummary: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      project: {
-        key: string;
-        name: string;
-      };
-      summary: string;
-      issueType: components['schemas']['IssueTypeInfo'];
-      status: components['schemas']['StatusInfo'];
-      priority: components['schemas']['PriorityInfo'];
-      assignee: components['schemas']['UserRef'] | null;
-      storyPoints: number | null;
-      labels: string[];
-      rank: string;
-      /** Format: date-time */
-      updatedAt: string;
-      reporter: components['schemas']['UserRef'] | null;
-      resolution: components['schemas']['ResolutionInfo'] | null;
-      dueDate: string | null;
-      /** Format: date-time */
-      createdAt: string;
-      components: components['schemas']['ComponentRef'][];
-      timeTracking: components['schemas']['TimeTracking'];
-      customFields: {
-        [key: string]:
-          | string
-          | number
-          | boolean
-          | {
-              /** Format: uuid */
-              id: string;
-              value: string;
-            }
-          | {
-              /** Format: uuid */
-              id: string;
-              value: string;
-            }[]
-          | {
-              /** Format: uuid */
-              id: string;
-              displayName: string;
-            };
-      };
-      canEdit: boolean;
-      canAssign: boolean;
-      canTransition: boolean;
-    };
-    IssueLink: {
-      /** Format: uuid */
-      id: string;
-      type: components['schemas']['IssueLinkTypeInfo'];
-      /** @enum {string} */
-      direction: 'outward' | 'inward';
-      issue: components['schemas']['LinkedIssue'];
-    };
-    LinkedIssue: {
-      /** Format: uuid */
-      id: string;
-      key: string;
-      summary: string;
-      issueType: components['schemas']['IssueTypeInfo'];
-      status: components['schemas']['StatusInfo'];
-      priority: components['schemas']['PriorityInfo'];
-    };
     UpdateIssueRequest: {
       summary?: string;
       description?: components['schemas']['RichTextInput'] | null;
@@ -1763,6 +1958,10 @@ export interface components {
     TransitionRequest: {
       transitionId: string;
       resolution?: string;
+    };
+    RankIssueRequest: {
+      afterKey?: string | null;
+      beforeKey?: string | null;
     };
     Comment: {
       /** Format: uuid */
@@ -2715,6 +2914,233 @@ export interface operations {
       };
     };
   };
+  'Boards.list': {
+    parameters: {
+      query?: {
+        project?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BoardSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateBoardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Board'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Board'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateBoardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Board'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.issues': {
+    parameters: {
+      query?: {
+        filters?: string;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BoardData'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Boards.move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MoveCardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Filters.list': {
     parameters: {
       query?: {
@@ -3310,6 +3736,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Issue'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.rank': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RankIssueRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

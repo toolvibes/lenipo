@@ -13,6 +13,7 @@ import { parse } from '@tasklore/tql';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AuditService } from '../audit/audit.service.js';
+import type { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
@@ -35,6 +36,7 @@ import {
 
 export interface ToolServices {
   database: DatabaseHandle;
+  boards: BoardService;
   issues: IssueService;
   search: SearchService;
   projects: ProjectService;
@@ -507,5 +509,112 @@ export function registerTools(server: McpServer, principal: Principal, services:
       readOnly: true,
     },
     async ({ key }) => text(historyMarkdown(await issues.history(principal, key))),
+  );
+  // ---------------------------------------------------------------- agile (E-53)
+
+  const BoardId = z.uuid().describe('Board id from list_boards');
+
+  tool(
+    'list_boards',
+    {
+      title: 'List boards',
+      description: 'Boards you can see, optionally of one project.',
+      inputSchema: { project: ProjectKey.optional() },
+      readOnly: true,
+    },
+    async ({ project }) => {
+      const list = await services.boards.list(principal, project);
+      return text(
+        list
+          .map((board) => `- ${board.name} (${board.type}, ${board.project.key}): id ${board.id}`)
+          .join('\n') || 'No boards.',
+        { boards: list.map(({ id, name, type }) => ({ id, name, type })) },
+      );
+    },
+  );
+
+  tool(
+    'get_board',
+    {
+      title: 'Get a board',
+      description:
+        'The board columns with their cards in rank order (one line per card); optionally only your cards.',
+      inputSchema: { board: BoardId, onlyMine: z.boolean().default(false) },
+      readOnly: true,
+    },
+    async ({ board, onlyMine }) => {
+      const data = await services.boards.issues(principal, board, onlyMine ? ['mine'] : []);
+      const lines = [`# ${data.board.name} (${data.board.type}, scope: ${data.board.query})`];
+      for (const column of data.board.columns) {
+        const cards = data.issues.filter((issue) => column.statusIds.includes(issue.status.id));
+        const limit = column.wipMax !== null ? ` / max ${column.wipMax}` : '';
+        lines.push('', `## ${column.name} (${cards.length}${limit})`, ...cards.map(issueLine));
+      }
+      if (data.truncated)
+        lines.push('', 'More than 500 issues match; only the first 500 are shown.');
+      return text(lines.join('\n'));
+    },
+  );
+
+  tool(
+    'move_card',
+    {
+      title: 'Move a card on a board',
+      description:
+        'Moves an issue into a board column (by column name) through the workflow, optionally next to another card. Fails with the possible columns when the workflow does not allow it.',
+      inputSchema: {
+        board: BoardId,
+        key: IssueKey,
+        column: z.string().min(1).describe('Column name'),
+        afterKey: IssueKey.optional().describe('Place directly below this card'),
+        beforeKey: IssueKey.optional().describe('Place directly above this card'),
+      },
+    },
+    async ({ board, key, column, afterKey, beforeKey }) => {
+      const config = await services.boards.get(principal, board);
+      const target = config.columns.find(
+        (entry) => entry.name.toLowerCase() === column.toLowerCase(),
+      );
+      if (!target) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `No column "${column}". Columns: ${config.columns.map((entry) => entry.name).join(', ')}`,
+            },
+          ],
+        };
+      }
+      const moved = await services.boards.move(principal, board, {
+        issueKey: key,
+        columnId: target.id,
+        afterKey,
+        beforeKey,
+      });
+      await audited('move_card', moved.id);
+      return text(`${moved.key} is now in "${target.name}" (status ${moved.status.name}).`);
+    },
+  );
+
+  tool(
+    'rank_issue',
+    {
+      title: 'Rank an issue',
+      description:
+        'Moves an issue directly below `afterKey` and/or above `beforeKey` in the global rank (same order on every board and backlog).',
+      inputSchema: { key: IssueKey, afterKey: IssueKey.optional(), beforeKey: IssueKey.optional() },
+    },
+    async ({ key, afterKey, beforeKey }) => {
+      if (!afterKey && !beforeKey) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: 'Give afterKey, beforeKey or both.' }],
+        };
+      }
+      await issues.rank(principal, key, { afterKey, beforeKey });
+      await audited('rank_issue', key);
+      return text(`Ranked ${key}.`);
+    },
   );
 }

@@ -3,6 +3,7 @@ import {
   Funnel,
   House,
   type Icon,
+  Kanban,
   Lightning,
   ListMagnifyingGlass,
   MagnifyingGlass,
@@ -138,6 +139,7 @@ export function AppShell({ me }: { me: Me }) {
           <NavItem to="/" icon={House} label={t('shell.home')} />
           <NavItem to="/projects" icon={FolderSimple} label={t('shell.projects')} exact={false} />
           <NavItem to="/issues" icon={ListMagnifyingGlass} label={t('search.nav')} />
+          <NavItem to="/boards" icon={Kanban} label={t('boards.title')} exact={false} />
           <NavItem to="/activity" icon={Lightning} label={t('activity.title')} />
           <NavItem to="/pages/spike" icon={NotePencil} label={t('shell.testPage')} />
         </div>

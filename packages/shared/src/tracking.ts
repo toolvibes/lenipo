@@ -209,9 +209,6 @@ export const UpdateIssueRequest = z
   .meta({ id: 'UpdateIssueRequest' });
 export type UpdateIssueRequest = z.infer<typeof UpdateIssueRequest>;
 
-export const IssueRef = z.object({ key: z.string(), summary: z.string() }).meta({ id: 'IssueRef' });
-export type IssueRef = z.infer<typeof IssueRef>;
-
 export const ComponentRef = z.object({ id: Id, name: z.string() }).meta({ id: 'ComponentRef' });
 export type ComponentRef = z.infer<typeof ComponentRef>;
 
@@ -223,6 +220,9 @@ export const TimeTracking = z
   })
   .meta({ id: 'TimeTracking' });
 export type TimeTracking = z.infer<typeof TimeTracking>;
+
+export const IssueRef = z.object({ key: z.string(), summary: z.string() }).meta({ id: 'IssueRef' });
+export type IssueRef = z.infer<typeof IssueRef>;
 
 export const IssueSummary = z
   .object({
@@ -247,6 +247,8 @@ export const IssueSummary = z
     timeTracking: TimeTracking,
     /** Values of the custom fields the project uses, by field id (E-50). */
     customFields: z.record(Id, CustomFieldValue),
+    /** The parent (epic or story), e.g. for swimlanes (T-BRD-06). */
+    parent: IssueRef.nullable(),
     /** What the caller may change in lists (E-49); the API checks again on every change. */
     canEdit: z.boolean(),
     canAssign: z.boolean(),
@@ -322,7 +324,6 @@ export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
 
 export const Issue = IssueSummary.extend({
   description: RichTextOutput.nullable(),
-  parent: IssueRef.nullable(),
   children: z.array(IssueSummary),
   resolvedAt: z.iso.datetime().nullable(),
   watching: z.boolean(),

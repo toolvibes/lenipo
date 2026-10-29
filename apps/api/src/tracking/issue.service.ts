@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -27,7 +28,7 @@ import type {
   UserRef,
 } from '@tasklore/shared';
 import { formatDuration } from '@tasklore/tql';
-import { and, asc, count, desc, eq, inArray, isNull, max, type SQL, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, max, min, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -67,6 +68,7 @@ interface SummaryContext {
   rights: Map<string, Set<ProjectPermission>>;
   /** Shown custom field values by issue id (E-50). */
   custom: Map<string, Record<string, CustomFieldValue>>;
+  parents: Map<string, { key: string; summary: string }>;
 }
 
 export interface IssueListFilter {
@@ -165,6 +167,7 @@ export class IssueService {
         timeSpentSeconds: row.timeSpentSeconds,
       },
       customFields: context.custom.get(row.id) ?? {},
+      parent: row.parentId ? (context.parents.get(row.parentId) ?? null) : null,
       canEdit: rights.has('edit-issues'),
       canAssign: rights.has('assign-issues'),
       canTransition: rights.has('transition-issues'),
@@ -177,7 +180,8 @@ export class IssueService {
    */
   private async summaryContext(viewer: string | null, rows: IssueRow[]): Promise<SummaryContext> {
     const projectIds = [...new Set(rows.map((row) => row.projectId))];
-    const [meta, people, components, projectRows, rights, custom] = await Promise.all([
+    const parentIds = [...new Set(rows.flatMap((row) => (row.parentId ? [row.parentId] : [])))];
+    const [meta, people, components, projectRows, rights, custom, parents] = await Promise.all([
       this.meta.load(),
       this.userRefs(rows.flatMap((row) => [row.assigneeId, row.reporterId])),
       this.components.refsForMany(rows.map((row) => row.id)),
@@ -201,6 +205,12 @@ export class IssueService {
       this.customFields.presentAll(
         rows.map((row) => ({ projectId: row.projectId, values: row.customFields as StoredValues })),
       ),
+      parentIds.length > 0
+        ? this.database.db
+            .select({ id: issues.id, key: issues.key, summary: issues.summary })
+            .from(issues)
+            .where(inArray(issues.id, parentIds))
+        : [],
     ]);
     return {
       meta,
@@ -209,6 +219,7 @@ export class IssueService {
       projects: new Map(projectRows.map(({ id, ...project }) => [id, project])),
       rights: new Map(rights),
       custom: new Map(rows.map((row, index) => [row.id, custom[index] ?? {}])),
+      parents: new Map(parents.map(({ id, ...parent }) => [id, parent])),
     };
   }
 
@@ -238,12 +249,6 @@ export class IssueService {
     const db = this.database.db;
     const [issue] = await db.select().from(issues).where(eq(issues.id, issueId));
     if (!issue) throw new NotFoundException('Issue not found');
-    const [parent] = issue.parentId
-      ? await db
-          .select({ key: issues.key, summary: issues.summary })
-          .from(issues)
-          .where(eq(issues.id, issue.parentId))
-      : [];
     const children = await db
       .select()
       .from(issues)
@@ -260,7 +265,6 @@ export class IssueService {
     return {
       ...this.toSummary(issue, context),
       description: (issue.description as RichText | null) ?? null,
-      parent: parent ?? null,
       children: children.map((child) => this.toSummary(child, context)),
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
       watching: watchers.some((watcher) => watcher.userId === viewer),
@@ -683,6 +687,51 @@ export class IssueService {
       });
     }
     return this.present(principal, issue.id);
+  }
+
+  /**
+   * Moves an issue between two others in the global rank (T-BRD-10, E-53); only this issue's
+   * rank changes. With one neighbour it goes directly next to it.
+   */
+  async rank(
+    principal: Principal,
+    key: string,
+    neighbours: { afterKey?: string | null; beforeKey?: string | null },
+  ): Promise<void> {
+    const { issue } = await this.load(principal, key, 'edit-issues');
+    const rankOf = async (neighbour: string | null | undefined) => {
+      if (!neighbour) return null;
+      const [row] = await this.database.db
+        .select({ rank: issues.rank })
+        .from(issues)
+        .where(and(eq(issues.key, neighbour.toUpperCase()), isNull(issues.deletedAt)));
+      if (!row) throw new NotFoundException(`Issue ${neighbour} not found`);
+      return row.rank;
+    };
+    let after = await rankOf(neighbours.afterKey);
+    let before = await rankOf(neighbours.beforeKey);
+    const others = sql`${issues.id} <> ${issue.id}`;
+    if (after !== null && before === null) {
+      const [next] = await this.database.db
+        .select({ rank: min(issues.rank) })
+        .from(issues)
+        .where(and(sql`${issues.rank} > ${after}`, others));
+      before = next?.rank ?? null;
+    } else if (before !== null && after === null) {
+      const [previous] = await this.database.db
+        .select({ rank: max(issues.rank) })
+        .from(issues)
+        .where(and(sql`${issues.rank} < ${before}`, others));
+      after = previous?.rank ?? null;
+    }
+    if (after !== null && before !== null && after >= before) {
+      throw new ConflictException('The order changed meanwhile; reload and try again');
+    }
+    await this.database.db
+      .update(issues)
+      // Ranking is ordering, not a change of the issue: `updated` stays.
+      .set({ rank: rankBetween(after, before) })
+      .where(eq(issues.id, issue.id));
   }
 
   async transitions(principal: Principal, key: string): Promise<Transition[]> {

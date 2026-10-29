@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { BoardsModule } from './boards/boards.module.js';
 import type { AppConfig } from './core/config.js';
 import { CoreModule } from './core/core.module.js';
 import { ProblemFilter } from './core/http/problem.filter.js';
@@ -37,6 +38,7 @@ export class AppModule {
         SearchModule,
         EventsModule,
         PersonalModule,
+        BoardsModule,
         McpModule,
       ],
       controllers: [OpenApiController],

@@ -146,6 +146,33 @@ describe('MCP', () => {
     expect((await call(client, 'get_issue', { key: 'WEB-99' })).isError).toBe(true);
   });
 
+  it('reads boards and moves cards', async () => {
+    const board = await admin.request<{ id: string; columns: Array<{ name: string }> }>(
+      'POST',
+      '/boards',
+      { name: 'Team', projectKey: 'WEB' },
+    );
+    const listed = await call(client, 'list_boards', { project: 'WEB' });
+    expect(listed.text).toContain(board.body.id);
+    const shown = await call(client, 'get_board', { board: board.body.id });
+    expect(shown.text).toMatch(/## .+ \(1\)\n- WEB-1/);
+    const target = board.body.columns.at(-1)?.name ?? '';
+    const moved = await call(client, 'move_card', {
+      board: board.body.id,
+      key: 'WEB-1',
+      column: target,
+    });
+    expect(moved.isError).toBeFalsy();
+    expect(moved.text).toContain(`"${target}"`);
+    const wrong = await call(client, 'move_card', {
+      board: board.body.id,
+      key: 'WEB-1',
+      column: 'Mond',
+    });
+    expect(wrong.isError).toBe(true);
+    expect(wrong.text).toContain('Columns:');
+  });
+
   it('keeps the token’s limits', async () => {
     expect((await call(readOnly, 'search_issues', { query: 'project = WEB' })).text).toContain(
       'WEB-1',

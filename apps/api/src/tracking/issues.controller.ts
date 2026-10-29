@@ -19,6 +19,7 @@ import {
   CreateWorklogRequest,
   FormatQuery,
   Issue,
+  RankIssueRequest,
   TrackingMeta,
   Transition,
   TransitionRequest,
@@ -135,6 +136,22 @@ export class IssuesController {
     return this.issues
       .transition(principal, key, body)
       .then((issue) => issueIn(query.format, issue));
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Rank an issue between two others',
+    description:
+      'The rank is global: the order is the same on every board and backlog (T-BRD-10). Needs `edit-issues`.',
+  })
+  @Put('issues/:key/rank')
+  @HttpCode(204)
+  rank(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(RankIssueRequest) body: RankIssueRequest,
+  ): Promise<void> {
+    return this.issues.rank(principal, key, body);
   }
 
   @Endpoint({ tag: 'Issues', summary: 'List the comments of an issue', response: z.array(Comment) })

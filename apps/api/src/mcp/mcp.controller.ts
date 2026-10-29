@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
+import { BoardService } from '../boards/board.service.js';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -43,9 +44,11 @@ export class McpController {
     @Inject(CustomFieldService) customFields: CustomFieldService,
     @Inject(UserService) users: UserService,
     @Inject(AuditService) audit: AuditService,
+    @Inject(BoardService) boards: BoardService,
   ) {
     this.services = {
       database,
+      boards,
       issues,
       search,
       projects,
