@@ -2,6 +2,7 @@ import type {
   Attachment,
   Favourite,
   Page,
+  PageComment,
   PageDiff,
   PageTreeEntry,
   PageVersion,
@@ -511,5 +512,137 @@ describe('version diff and restore (E-62)', () => {
       [1, null],
     ]);
     expect(versions.body[0]?.comment).toBe('Zwei Wochen bleiben');
+  });
+});
+
+describe('page and inline comments (E-63)', () => {
+  let page: Page;
+  let thread: PageComment;
+  let inline: PageComment;
+  const publish = (...paragraphs: string[]) =>
+    mira.request<Page>('POST', `/pages/${page.id}/publish`, {
+      title: 'Regeln',
+      content: {
+        type: 'doc',
+        content: paragraphs.map((text) => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text }],
+        })),
+      },
+    });
+  const comments = async (client: TestClient = mira) =>
+    (await client.request<PageComment[]>('GET', `/pages/${page.id}/comments`)).body;
+
+  it('lets commenters write threads of one level', async () => {
+    page = (await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Regeln' })).body;
+    await publish('Der Sprint dauert zwei Wochen.', 'Planung ist am Montag.');
+    expect(
+      (await olaf.request('POST', `/pages/${page.id}/comments`, { body: { markdown: 'Hm' } }))
+        .status,
+    ).toBe(403);
+    await admin.request('POST', '/spaces/DOCS/members', { role: 'commenters', userId: olafId });
+    expect((await olaf.request<Page>('GET', `/pages/${page.id}`)).body.canComment).toBe(true);
+
+    const created = await olaf.request<PageComment>('POST', `/pages/${page.id}/comments`, {
+      body: { markdown: 'Frage an @mira@example.org: gilt das auch im Dezember?' },
+    });
+    expect(created.status).toBe(201);
+    thread = created.body;
+    expect(JSON.stringify(thread.body)).toContain(miraId);
+    const reply = await mira.request<PageComment>('POST', `/pages/${page.id}/comments`, {
+      body: { markdown: 'Ja.' },
+      parentId: thread.id,
+    });
+    expect(reply.body).toMatchObject({ parentId: thread.id, anchor: null });
+    expect(
+      (
+        await olaf.request('POST', `/pages/${page.id}/comments`, {
+          body: { markdown: 'Tiefer geht es nicht' },
+          parentId: reply.body.id,
+        })
+      ).status,
+    ).toBe(400);
+    const people = await olaf.request<Array<{ displayName: string }>>(
+      'GET',
+      '/spaces/DOCS/users?query=mi',
+    );
+    expect(people.body.map((person) => person.displayName)).toContain('Mira Kaya');
+  });
+
+  it('anchors inline threads on the published text and resolves them', async () => {
+    const missing = await olaf.request('POST', `/pages/${page.id}/comments`, {
+      body: { markdown: 'Wo?' },
+      anchor: { exact: 'drei Wochen', prefix: '', suffix: '', block: 0 },
+    });
+    expect(missing.status).toBe(400);
+    const created = await olaf.request<PageComment>('POST', `/pages/${page.id}/comments`, {
+      body: { markdown: 'Zu lang?' },
+      anchor: { exact: 'zwei Wochen', prefix: 'Der Sprint dauert ', suffix: '.', block: 0 },
+    });
+    expect(created.status).toBe(201);
+    inline = created.body;
+    expect(inline.anchor).toEqual({
+      exact: 'zwei Wochen',
+      prefix: 'Der Sprint dauert ',
+      suffix: '.',
+      block: 0,
+    });
+    const resolved = await olaf.request<PageComment>(
+      'PUT',
+      `/pages/${page.id}/comments/${inline.id}/resolved`,
+    );
+    expect(resolved.body.resolved?.by?.id).toBeDefined();
+    expect(
+      (await olaf.request('PUT', `/pages/${page.id}/comments/${thread.id}/resolved`)).status,
+    ).toBe(400);
+    const reopened = await mira.request<PageComment>(
+      'DELETE',
+      `/pages/${page.id}/comments/${inline.id}/resolved`,
+    );
+    expect(reopened.body.resolved).toBeNull();
+  });
+
+  it('follows the quote into new versions, detaches and comes back', async () => {
+    await publish('Neu oben.', 'Der Sprint dauert zwei Wochen und endet am Freitag.');
+    let found = (await comments()).find((comment) => comment.id === inline.id);
+    expect(found).toMatchObject({
+      detached: false,
+      anchor: { exact: 'zwei Wochen', suffix: ' und endet am Freitag.', block: 1 },
+    });
+    await publish('Der Sprint dauert drei Wochen.');
+    found = (await comments()).find((comment) => comment.id === inline.id);
+    expect(found?.detached).toBe(true);
+    await mira.request('POST', `/pages/${page.id}/versions/1/restore`, {});
+    found = (await comments()).find((comment) => comment.id === inline.id);
+    expect(found).toMatchObject({ detached: false, anchor: { block: 0 } });
+  });
+
+  it('lets authors edit and delete; deleted threads stay while answered', async () => {
+    expect(
+      (
+        await mira.request('PATCH', `/pages/${page.id}/comments/${thread.id}`, {
+          body: { markdown: 'Fremd' },
+        })
+      ).status,
+    ).toBe(403);
+    const edited = await olaf.request<PageComment>(
+      'PATCH',
+      `/pages/${page.id}/comments/${thread.id}`,
+      { body: { markdown: 'Gilt das auch im Dezember?' } },
+    );
+    expect(edited.status).toBe(200);
+    expect((await olaf.request('DELETE', `/pages/${page.id}/comments/${thread.id}`)).status).toBe(
+      204,
+    );
+    let list = await comments(olaf);
+    const root = list.find((comment) => comment.id === thread.id);
+    expect(root).toMatchObject({ deleted: true, body: null, canDelete: false });
+    const reply = list.find((comment) => comment.parentId === thread.id);
+    expect(reply?.canDelete).toBe(false);
+    expect((await admin.request('DELETE', `/pages/${page.id}/comments/${reply?.id}`)).status).toBe(
+      204,
+    );
+    list = await comments(olaf);
+    expect(list.map((comment) => comment.id)).toEqual([inline.id]);
   });
 });

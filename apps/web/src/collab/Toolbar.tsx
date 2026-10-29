@@ -73,7 +73,7 @@ export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile
   const chain = () => editor.chain().focus();
 
   return (
-    <div className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface-1)]">
+    <div className="border-b border-[var(--border)] bg-[var(--surface-1)]">
       <div
         role="toolbar"
         aria-label={t('editor.toolbar')}

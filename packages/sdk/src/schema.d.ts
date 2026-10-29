@@ -923,6 +923,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the comments of a page
+     * @description Page comments and inline threads, oldest first; answers carry `parentId`, inline threads an `anchor` on the published text.
+     */
+    get: operations['Pages.listComments'];
+    put?: never;
+    /**
+     * Comment on a page, answer a thread or start an inline thread
+     * @description Requires the space permission `comment`. `body` is a document or `{ markdown }`.
+     */
+    post: operations['Pages.addComment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/comments/{commentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a page comment (own, or any as space administrator) */
+    delete: operations['Pages.deleteComment'];
+    options?: never;
+    head?: never;
+    /** Edit an own page comment */
+    patch: operations['Pages.updateComment'];
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/comments/{commentId}/resolved': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Resolve an inline thread */
+    put: operations['Pages.resolveComment'];
+    post?: never;
+    /** Reopen a resolved inline thread */
+    delete: operations['Pages.reopenComment'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}': {
     parameters: {
       query?: never;
@@ -1515,6 +1575,26 @@ export interface paths {
      * @description Only spaces the caller can see; a space is linked with at most one project.
      */
     get: operations['Spaces.ofProject'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Find people who can see a space
+     * @description For @-mentions in page comments; needs no global `browse-users`.
+     */
+    get: operations['Spaces.users'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2788,6 +2868,49 @@ export interface components {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
     };
+    PageComment: {
+      /** Format: uuid */
+      id: string;
+      parentId: string | null;
+      author: components['schemas']['UserRef'] | null;
+      body: components['schemas']['RichTextOutput'] | null;
+      anchor: components['schemas']['TextAnchor'] | null;
+      detached: boolean;
+      resolved: {
+        /** Format: date-time */
+        at: string;
+        by: components['schemas']['UserRef'] | null;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      edited: boolean;
+      deleted: boolean;
+      canEdit: boolean;
+      canDelete: boolean;
+    };
+    TextAnchor: {
+      exact: string;
+      prefix: string;
+      suffix: string;
+      block: number;
+    };
+    CreatePageCommentRequest: {
+      body: components['schemas']['RichTextInput'];
+      /** Format: uuid */
+      parentId?: string;
+      anchor?: components['schemas']['TextAnchorInput'];
+    };
+    TextAnchorInput: {
+      exact: string;
+      prefix: string;
+      suffix: string;
+      block: number;
+    };
+    UpdatePageCommentRequest: {
+      body: components['schemas']['RichTextInput'];
+    };
     Page: {
       /** Format: uuid */
       id: string;
@@ -2807,6 +2930,7 @@ export interface components {
       canEdit: boolean;
       favourite: boolean;
       draftChanged: boolean;
+      canComment: boolean;
     };
     PageRef: {
       /** Format: uuid */
@@ -5632,6 +5756,202 @@ export interface operations {
       };
     };
   };
+  'Pages.listComments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageComment'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.addComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePageCommentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageComment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.deleteComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.updateComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePageCommentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageComment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.resolveComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageComment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.reopenComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageComment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Pages.get': {
     parameters: {
       query?: {
@@ -6951,6 +7271,40 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SpaceSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.users': {
+    parameters: {
+      query?: {
+        query?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserRef'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

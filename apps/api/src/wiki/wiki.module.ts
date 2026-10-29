@@ -4,6 +4,8 @@ import { TrackingModule } from '../tracking/tracking.module.js';
 import { PageService } from './page.service.js';
 import { PageAttachmentService } from './page-attachment.service.js';
 import { PageAttachmentsController } from './page-attachments.controller.js';
+import { PageCommentService } from './page-comment.service.js';
+import { PageCommentsController } from './page-comments.controller.js';
 import { PagesController } from './pages.controller.js';
 import { ProjectSpacesController } from './project-spaces.controller.js';
 import { SpaceService } from './space.service.js';
@@ -16,9 +18,16 @@ import { SpacesController } from './spaces.controller.js';
     SpacesController,
     PagesController,
     PageAttachmentsController,
+    PageCommentsController,
     ProjectSpacesController,
   ],
-  providers: [SpaceAccessService, SpaceService, PageService, PageAttachmentService],
+  providers: [
+    SpaceAccessService,
+    SpaceService,
+    PageService,
+    PageAttachmentService,
+    PageCommentService,
+  ],
   exports: [SpaceAccessService, SpaceService, PageService],
 })
 export class WikiModule {}

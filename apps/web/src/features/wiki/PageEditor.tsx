@@ -1,3 +1,4 @@
+import { ChatCircleText } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me, RichText } from '@tasklore/shared';
@@ -11,9 +12,10 @@ import { useCollabDocument } from '../../collab/useCollabDocument';
 import { client, unwrap } from '../../lib/api';
 import { presenceColor } from '../../lib/presence';
 import { useRealtimeRooms } from '../../lib/realtime';
-import { pageQuery } from '../../lib/wiki';
+import { pageCommentsQuery, pageQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { openThreads } from './InlineComments';
 import { Breadcrumbs } from './WikiPage';
 
 /** JSON with object keys sorted; stored documents come back from `jsonb` in another key order. */
@@ -50,6 +52,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const page = useQuery(pageQuery(id));
+  const comments = useQuery(pageCommentsQuery(id));
   useRealtimeRooms([`page:${id}`]);
   const identity = useMemo(() => ({ name: me.displayName, color: presenceColor(me.id) }), [me]);
   const { session, status, synced, unsyncedChanges, peers, authError } = useCollabDocument(
@@ -98,12 +101,23 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
     );
   }
   if (!page.data) return null;
+  const openComments = openThreads(comments.data ?? []).length;
 
   return (
     <form onSubmit={submit} className="flex flex-col">
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-6 py-2">
         <Breadcrumbs page={page.data} current={page.data.title} />
         <div className="ml-auto flex flex-wrap items-center gap-3">
+          {openComments > 0 && (
+            <Link
+              to="/spaces/$key/pages/$id"
+              params={{ key: spaceKey, id }}
+              className="flex items-center gap-1 text-xs text-[var(--ink-muted)] no-underline hover:underline"
+            >
+              <ChatCircleText size={14} aria-hidden />
+              {t('wiki.comments.openInEditor', { count: openComments })}
+            </Link>
+          )}
           <StatusBadge status={status} synced={synced} unsyncedChanges={unsyncedChanges} />
           <PresenceBar peers={peers} />
         </div>

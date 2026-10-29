@@ -20,13 +20,21 @@ import {
   SpaceSummary,
   TrashedPage,
   UpdateSpaceRequest,
+  UserRef,
 } from '@tasklore/shared';
 import { z } from 'zod';
-import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { PageService } from './page.service.js';
 import { SpaceService } from './space.service.js';
+import { SpaceAccessService } from './space-access.service.js';
+
+const SpaceUsersQuery = z.object({
+  query: z.string().max(100).default(''),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+type SpaceUsersQuery = z.infer<typeof SpaceUsersQuery>;
 
 /** Unknown and malformed ids are both "not found". */
 const MemberId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
@@ -36,7 +44,24 @@ export class SpacesController {
   constructor(
     @Inject(SpaceService) private readonly spaces: SpaceService,
     @Inject(PageService) private readonly pages: PageService,
+    @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
   ) {}
+
+  @Endpoint({
+    tag: 'Spaces',
+    summary: 'Find people who can see a space',
+    description: 'For @-mentions in page comments; needs no global `browse-users`.',
+    response: z.array(UserRef),
+  })
+  @Get(':key/users')
+  async users(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidQuery(SpaceUsersQuery) query: SpaceUsersQuery,
+  ): Promise<UserRef[]> {
+    const { space } = await this.spaces.find(principal, key);
+    return this.spaceAccess.viewingUsers(space.id, query.query.trim(), query.limit);
+  }
 
   @Endpoint({
     tag: 'Spaces',

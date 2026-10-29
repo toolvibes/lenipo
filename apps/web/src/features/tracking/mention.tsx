@@ -88,11 +88,14 @@ function place(element: HTMLElement, rect: DOMRect | null | undefined) {
   element.style.left = `${Math.min(rect.left, window.innerWidth - 272)}px`;
 }
 
+/** Whose people typing @ suggests: of a project (E-39) or of a wiki space (E-63). */
+export type MentionSource = { project: string } | { space: string };
+
 /**
- * @-mentions as nodes with user id and label (E-38). With a project key, typing @ suggests
- * the people who can see the project (E-39); without one, mentions only render.
+ * @-mentions as nodes with user id and label (E-38). With a source, typing @ suggests the
+ * people who can see it; without one, mentions only render.
  */
-export function mentionExtension(projectKey?: string) {
+export function mentionExtension(source?: MentionSource) {
   const base = Mention.configure({
     HTMLAttributes: { class: 'tl-mention' },
     renderText: ({ node }) => `@${node.attrs.label ?? ''}`,
@@ -102,14 +105,18 @@ export function mentionExtension(projectKey?: string) {
       `@${node.attrs.label ?? node.attrs.id}`,
     ],
   });
-  if (!projectKey) return base;
+  if (!source) return base;
   return base.configure({
     suggestion: {
       items: async ({ query }) =>
         unwrap(
-          client.GET('/api/v1/projects/{key}/users', {
-            params: { path: { key: projectKey }, query: { query, limit: 8 } },
-          }),
+          'project' in source
+            ? client.GET('/api/v1/projects/{key}/users', {
+                params: { path: { key: source.project }, query: { query, limit: 8 } },
+              })
+            : client.GET('/api/v1/spaces/{key}/users', {
+                params: { path: { key: source.space }, query: { query, limit: 8 } },
+              }),
         ).catch(() => []),
       render: () => {
         let renderer: ReactRenderer<MentionListHandle, SuggestionProps<UserRef>> | null = null;

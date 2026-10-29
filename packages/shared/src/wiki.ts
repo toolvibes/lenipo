@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Id } from './identity.js';
-import { RichText, RichTextOutput, UserRef } from './tracking.js';
+import { RichText, RichTextInput, RichTextOutput, UserRef } from './tracking.js';
 
 /** What a space role allows (W-SPC-03, E-59). `edit` covers creating, moving and deleting pages. */
 export const SPACE_PERMISSIONS = ['view', 'comment', 'edit', 'administer'] as const;
@@ -115,6 +115,8 @@ export const Page = z
     favourite: z.boolean(),
     /** The live draft differs from the published version; only ever true for editors. */
     draftChanged: z.boolean(),
+    /** May write, answer and resolve comments (E-63). */
+    canComment: z.boolean(),
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;
@@ -241,3 +243,57 @@ export const TrashedPage = z
   })
   .meta({ id: 'TrashedPage' });
 export type TrashedPage = z.infer<typeof TrashedPage>;
+
+// ---------------------------------------------------------------- comments (E-63)
+
+/** The quoted text of an inline comment, with context and block number in the published page. */
+export const TextAnchor = z
+  .object({
+    exact: z.string().min(1).max(1000),
+    prefix: z.string().max(64),
+    suffix: z.string().max(64),
+    block: z.number().int().min(0),
+  })
+  .meta({ id: 'TextAnchor' });
+export type TextAnchor = z.infer<typeof TextAnchor>;
+
+/** A comment on a page; replies have `parentId`, inline threads an `anchor`. */
+export const PageComment = z
+  .object({
+    id: Id,
+    parentId: Id.nullable(),
+    author: UserRef.nullable(),
+    /** Null for a deleted comment that is kept because the thread has answers. */
+    body: RichTextOutput.nullable(),
+    anchor: TextAnchor.nullable(),
+    /** The quoted text is no longer in the page. */
+    detached: z.boolean(),
+    resolved: z.object({ at: z.iso.datetime(), by: UserRef.nullable() }).nullable(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    edited: z.boolean(),
+    deleted: z.boolean(),
+    canEdit: z.boolean(),
+    canDelete: z.boolean(),
+  })
+  .meta({ id: 'PageComment' });
+export type PageComment = z.infer<typeof PageComment>;
+
+export const CreatePageCommentRequest = z
+  .object({
+    body: RichTextInput,
+    /** Answers this thread. */
+    parentId: Id.optional(),
+    /** Starts an inline thread on this quote of the published version. */
+    anchor: TextAnchor.optional(),
+  })
+  .refine((request) => !(request.parentId && request.anchor), {
+    message: 'Answers belong to their thread and take no anchor',
+  })
+  .meta({ id: 'CreatePageCommentRequest' });
+export type CreatePageCommentRequest = z.infer<typeof CreatePageCommentRequest>;
+
+export const UpdatePageCommentRequest = z
+  .object({ body: RichTextInput })
+  .meta({ id: 'UpdatePageCommentRequest' });
+export type UpdatePageCommentRequest = z.infer<typeof UpdatePageCommentRequest>;

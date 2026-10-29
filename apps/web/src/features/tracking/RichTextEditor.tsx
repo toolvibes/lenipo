@@ -36,6 +36,8 @@ interface RichTextEditorProps {
   autoFocus?: boolean;
   /** Enables @-mentions of the people in this project. */
   mentionProjectKey?: string;
+  /** Enables @-mentions of the people who can see this wiki space. */
+  mentionSpaceKey?: string;
 }
 
 /** Rich text for descriptions and comments; the same document format as wiki pages. */
@@ -49,6 +51,7 @@ export function RichTextEditor({
   clearOnSubmit = false,
   autoFocus = false,
   mentionProjectKey,
+  mentionSpaceKey,
 }: RichTextEditorProps) {
   const { t } = useTranslation();
   // The shortcut extension is created once, so it calls the latest submit through a ref.
@@ -58,7 +61,13 @@ export function RichTextEditor({
       StarterKit,
       ...blockExtensions({ resizableTables: true }),
       Placeholder.configure({ placeholder }),
-      mentionExtension(mentionProjectKey),
+      mentionExtension(
+        mentionProjectKey
+          ? { project: mentionProjectKey }
+          : mentionSpaceKey
+            ? { space: mentionSpaceKey }
+            : undefined,
+      ),
       Extension.create({
         name: 'submitShortcut',
         addKeyboardShortcuts: () => ({

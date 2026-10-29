@@ -64,6 +64,13 @@ export const pageAttachmentsQuery = (id: string) =>
       unwrap(client.GET('/api/v1/pages/{id}/attachments', { params: { path: { id } } })),
   });
 
+/** Page comments and inline threads, oldest first (E-63). */
+export const pageCommentsQuery = (id: string) =>
+  queryOptions({
+    queryKey: ['page', id, 'comments'],
+    queryFn: () => unwrap(client.GET('/api/v1/pages/{id}/comments', { params: { path: { id } } })),
+  });
+
 export const pageVersionsQuery = (id: string) =>
   queryOptions({
     queryKey: ['page', id, 'versions'],

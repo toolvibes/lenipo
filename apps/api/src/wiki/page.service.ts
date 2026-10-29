@@ -43,6 +43,7 @@ import { signal } from '../realtime/signals.js';
 import { markdownOf } from '../tracking/content-format.js';
 import { rankBetween } from '../tracking/rank.js';
 import { plainText } from '../tracking/rich-text.js';
+import { reanchorComments } from './comment-anchors.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 
@@ -283,6 +284,7 @@ export class PageService {
       canEdit: permissions.has('edit'),
       favourite: await this.starred(principal.userId, page.id),
       draftChanged: permissions.has('edit') ? await this.draftChanged(page.id, content) : false,
+      canComment: permissions.has('comment'),
     };
   }
 
@@ -492,6 +494,7 @@ export class PageService {
         .update(pages)
         .set({ title: version.title, version: number, publishedAt: now, updatedAt: now })
         .where(eq(pages.id, pageId));
+      await reanchorComments(tx, pageId, version.content);
       if (version.restoredFrom !== null) {
         // After commit the collab service replaces the draft with the restored content.
         await tx.execute(sql`select pg_notify(${DRAFT_RESET_CHANNEL}, ${draftName(pageId)})`);

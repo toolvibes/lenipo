@@ -215,6 +215,16 @@ body {
   outline-offset: 2px;
 }
 
+/* Text with an open inline comment (E-63); the active thread stands out. */
+.tl-comment-anchor {
+  background: var(--warning-soft);
+  border-bottom: 2px solid var(--warning);
+  cursor: pointer;
+}
+.tl-comment-anchor.is-active {
+  background: color-mix(in srgb, var(--warning) 28%, transparent);
+}
+
 /* Remote carets from the collaboration extension. */
 .collaboration-carets__caret {
   position: relative;

@@ -143,3 +143,35 @@ export const pageAttachments = pgTable(
   },
   (table) => [index('page_attachments_page_idx').on(table.pageId, table.createdAt)],
 );
+
+/**
+ * Comments on a page (W-EDT-11, -12, E-63): threads of one level. A thread with an anchor is an
+ * inline comment on the quoted text of the published version; it can be resolved.
+ */
+export const pageComments = pgTable(
+  'page_comments',
+  {
+    id: uuid().primaryKey(),
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    /** The thread this reply belongs to; null for the comment that starts a thread. */
+    parentId: uuid().references((): AnyPgColumn => pageComments.id, { onDelete: 'cascade' }),
+    authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    body: jsonb().notNull(),
+    bodyText: text().notNull(),
+    /** Quote, context and block of an inline comment (TextAnchor); null for page comments. */
+    anchor: jsonb(),
+    /** The quote was not found again in a later version. */
+    detached: boolean().notNull().default(false),
+    resolvedAt: timestamp({ withTimezone: true }),
+    resolvedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    index('page_comments_page_idx').on(table.pageId, table.createdAt),
+    index('page_comments_parent_idx').on(table.parentId),
+  ],
+);

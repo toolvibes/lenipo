@@ -2,19 +2,20 @@ import { CaretRight, ClockCounterClockwise, DotsThree, PencilSimple } from '@pho
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Page, PageTreeEntry, RichText } from '@tasklore/shared';
+import type { Page, PageTreeEntry, RichText, TextAnchor } from '@tasklore/shared';
 import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
-import { pageQuery, pageTreeQuery } from '../../lib/wiki';
+import { pageCommentsQuery, pageQuery, pageTreeQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { FavouriteButton } from '../personal/FavouriteButton';
-import { RichTextView } from '../tracking/RichTextEditor';
+import { PageComments } from './comments';
+import { CommentedText, InlineThreads } from './InlineComments';
 import { PageAttachments } from './PageAttachments';
 import { CreatePageDialog } from './SpaceLayout';
 
@@ -187,9 +188,12 @@ const menuItem =
 export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const { t } = useTranslation();
   const page = useQuery(pageQuery(id));
+  const comments = useQuery(pageCommentsQuery(id));
   useRealtimeRooms([`page:${id}`]);
   useRecordView('page', page.data?.id);
   const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | null>(null);
+  const [activeThread, setActiveThread] = useState<string | null>(null);
+  const [quote, setQuote] = useState<TextAnchor | null>(null);
   const close = (open: boolean) => !open && setDialog(null);
 
   if (page.error) {
@@ -201,6 +205,8 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   }
   if (!page.data) return null;
   const data = page.data;
+  const list = comments.data ?? [];
+  const withThreads = quote !== null || list.some((comment) => !comment.parentId && comment.anchor);
 
   return (
     <main className="flex flex-col gap-4 px-6 py-5">
@@ -280,13 +286,54 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
         </div>
       </header>
       {data.content ? (
-        <article className="max-w-[var(--prose-measure)]">
-          <RichTextView doc={data.content as RichText} variant="page" />
-        </article>
+        <div
+          className={
+            withThreads
+              ? 'grid items-start gap-6 xl:grid-cols-[minmax(0,var(--prose-measure))_minmax(260px,340px)]'
+              : ''
+          }
+        >
+          <article className="max-w-[var(--prose-measure)]">
+            <CommentedText
+              doc={data.content as RichText}
+              comments={list}
+              active={activeThread}
+              canComment={data.canComment}
+              onOpen={setActiveThread}
+              onQuote={(anchor) => {
+                setQuote(anchor);
+                setActiveThread(null);
+              }}
+            />
+          </article>
+          {withThreads && (
+            <InlineThreads
+              pageId={data.id}
+              spaceKey={spaceKey}
+              comments={list}
+              canComment={data.canComment}
+              active={activeThread}
+              onActivate={setActiveThread}
+              draft={quote}
+              onDraftDone={(created) => {
+                setQuote(null);
+                if (created) setActiveThread(created);
+              }}
+            />
+          )}
+        </div>
       ) : (
         <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('wiki.draftHelp')}</p>
       )}
       <PageAttachments pageId={data.id} canEdit={data.canEdit} />
+      {data.version > 0 && (
+        <PageComments
+          pageId={data.id}
+          spaceKey={spaceKey}
+          comments={list}
+          canComment={data.canComment}
+        />
+      )}
       <MoveDialog
         key={`${data.id}:${data.parentId}`}
         page={data}
