@@ -234,7 +234,7 @@ export function InlineThreads({
 
   return (
     <aside aria-label={t('wiki.comments.inline')} className="flex flex-col gap-3">
-      <h2 className="tl-label m-0 uppercase text-[var(--ink-muted)]">
+      <h2 className="tl-label m-0 text-[var(--ink-muted)]">
         {t('wiki.comments.inlineCount', { count: open.length })}
       </h2>
       {actions.error && <FormError message={actions.error.message} />}
@@ -261,7 +261,7 @@ export function InlineThreads({
       <ul className="m-0 flex list-none flex-col gap-3 p-0">{open.map(card)}</ul>
       {detached.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h3 className="tl-label m-0 uppercase text-[var(--ink-muted)]">
+          <h3 className="tl-label m-0 text-[var(--ink-muted)]">
             {t('wiki.comments.detached', { count: detached.length })}
           </h3>
           <p className="m-0 text-xs text-[var(--ink-muted)]">{t('wiki.comments.detachedHelp')}</p>
@@ -274,7 +274,7 @@ export function InlineThreads({
             type="button"
             aria-expanded={showResolved}
             onClick={() => setShowResolved((value) => !value)}
-            className="tl-label text-left uppercase text-[var(--ink-muted)] hover:text-[var(--ink)]"
+            className="tl-label text-left text-[var(--ink-muted)] hover:text-[var(--ink)]"
           >
             {t('wiki.comments.resolvedCount', { count: resolved.length })}
           </button>

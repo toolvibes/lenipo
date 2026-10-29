@@ -121,7 +121,7 @@ function CustomFieldDialog({
           onChange={(event) => setName(event.target.value)}
         />
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('fields.type')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('fields.type')}</span>
           <select
             value={type}
             disabled={!!editing}
@@ -136,9 +136,7 @@ function CustomFieldDialog({
           </select>
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">
-            {t('fields.description')}
-          </span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('fields.description')}</span>
           <textarea
             value={description}
             maxLength={500}
@@ -153,7 +151,7 @@ function CustomFieldDialog({
         </label>
         {CHOICES.has(type) && (
           <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-            <legend className="tl-label mb-1.5 uppercase text-[var(--ink-muted)]">
+            <legend className="tl-label mb-1.5 text-[var(--ink-muted)]">
               {t('fields.options')}
             </legend>
             {options.map((option, index) => (
@@ -277,7 +275,7 @@ export function CustomFieldsPage() {
         <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
           <table className="w-full min-w-[640px] border-collapse">
             <thead>
-              <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+              <tr className="tl-label text-left text-[var(--ink-muted)]">
                 <th className="border-b border-[var(--border)] px-3 py-2">{t('fields.name')}</th>
                 <th className="border-b border-[var(--border)] px-3 py-2">{t('fields.type')}</th>
                 <th className="border-b border-[var(--border)] px-3 py-2">{t('fields.tql')}</th>

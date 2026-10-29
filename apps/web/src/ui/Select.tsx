@@ -11,7 +11,7 @@ export function Select({ label, options, id, className = '', ...props }: SelectP
   const selectId = id ?? generatedId;
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={selectId} className="tl-label uppercase text-[var(--ink-muted)]">
+      <label htmlFor={selectId} className="tl-label text-[var(--ink-muted)]">
         {label}
       </label>
       <select

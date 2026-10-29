@@ -54,7 +54,7 @@ function HelpDialog({
           if (entries.length === 0) return null;
           return (
             <section key={group} className="flex flex-col gap-1">
-              <h3 className="tl-label m-0 uppercase text-[var(--ink-muted)]">
+              <h3 className="tl-label m-0 text-[var(--ink-muted)]">
                 {t(`shortcuts.groups.${group}`)}
               </h3>
               <dl className="m-0 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5">
@@ -71,7 +71,7 @@ function HelpDialog({
           );
         })}
         <section className="flex flex-col gap-1">
-          <h3 className="tl-label m-0 uppercase text-[var(--ink-muted)]">
+          <h3 className="tl-label m-0 text-[var(--ink-muted)]">
             {t('shortcuts.groups.everywhere')}
           </h3>
           <dl className="m-0 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5">
@@ -125,7 +125,7 @@ function QuickCreate({
       myId={me.id}
       header={
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('boards.project')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('boards.project')}</span>
           <select
             value={project.data.key}
             onChange={(event) => setChosen(event.target.value)}

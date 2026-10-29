@@ -34,7 +34,7 @@ export function TableBar({ editor }: { editor: Editor }) {
   const chain = () => editor.chain().focus();
   return (
     <div role="toolbar" aria-label={t('editor.tableTools')} className={bar}>
-      <span className="tl-label mr-1 uppercase text-[var(--ink-muted)]">{t('editor.table')}</span>
+      <span className="tl-label mr-1 text-[var(--ink-muted)]">{t('editor.table')}</span>
       <ToolbarButton
         icon={Rows}
         title={t('editor.addRow')}
@@ -93,7 +93,7 @@ export function ImageBar({ editor }: { editor: Editor }) {
 
   return (
     <div role="toolbar" aria-label={t('editor.imageTools')} className={bar}>
-      <span className="tl-label mr-1 uppercase text-[var(--ink-muted)]">{t('editor.image')}</span>
+      <span className="tl-label mr-1 text-[var(--ink-muted)]">{t('editor.image')}</span>
       {ALIGNMENTS.map(({ value, icon, label }) => (
         <ToolbarButton
           key={value}

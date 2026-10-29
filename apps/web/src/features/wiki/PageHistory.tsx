@@ -131,7 +131,7 @@ function DiffView({ blocks }: { blocks: DiffBlock[] }) {
     changed: 'border-[var(--warning)]',
   } as const;
   return (
-    <ol className="m-0 flex list-none flex-col gap-1.5 p-0 font-[family-name:var(--font-serif)] leading-7">
+    <ol className="m-0 flex list-none flex-col gap-1.5 p-0 font-[family-name:var(--font-prose)] leading-7">
       {blocks.map((entry, index) => {
         const block = entry.op === 'changed' ? entry.after : entry.block;
         return (

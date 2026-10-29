@@ -95,7 +95,7 @@ export function TimeTrackingPanel({
       className="flex flex-col gap-2 border-t border-[var(--border)] pt-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="tl-label uppercase text-[var(--ink-muted)]">{t('time.title')}</h2>
+        <h2 className="tl-label text-[var(--ink-muted)]">{t('time.title')}</h2>
         {canEdit && (
           <Button size="sm" variant="ghost" onClick={onLogWork}>
             <Timer size={16} aria-hidden />
@@ -114,7 +114,7 @@ export function TimeTrackingPanel({
         <div className="h-full bg-[var(--accent)]" style={{ width: `${done}%` }} />
       </div>
       <dl className="m-0 grid grid-cols-[minmax(0,110px)_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
-        <dt className="tl-label uppercase text-[var(--ink-muted)]">{t('time.estimate')}</dt>
+        <dt className="tl-label text-[var(--ink-muted)]">{t('time.estimate')}</dt>
         <dd className="m-0">
           <DurationInput
             label={t('issues.field.originalEstimate')}
@@ -123,7 +123,7 @@ export function TimeTrackingPanel({
             onSave={(value) => onUpdate({ originalEstimate: value })}
           />
         </dd>
-        <dt className="tl-label uppercase text-[var(--ink-muted)]">{t('time.remaining')}</dt>
+        <dt className="tl-label text-[var(--ink-muted)]">{t('time.remaining')}</dt>
         <dd className="m-0">
           <DurationInput
             label={t('issues.field.remainingEstimate')}
@@ -132,7 +132,7 @@ export function TimeTrackingPanel({
             onSave={(value) => onUpdate({ remainingEstimate: value })}
           />
         </dd>
-        <dt className="tl-label uppercase text-[var(--ink-muted)]">{t('time.logged')}</dt>
+        <dt className="tl-label text-[var(--ink-muted)]">{t('time.logged')}</dt>
         <dd className="m-0 px-1.5">{duration(timeSpentSeconds)}</dd>
       </dl>
     </section>
@@ -246,9 +246,7 @@ export function LogWorkDialog({
         />
         {!editing && (
           <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
-            <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
-              {t('time.adjust')}
-            </legend>
+            <legend className="tl-label mb-1 text-[var(--ink-muted)]">{t('time.adjust')}</legend>
             {(['auto', 'leave', 'set'] as const).map((option) => (
               <label key={option} className="flex items-center gap-2">
                 <input

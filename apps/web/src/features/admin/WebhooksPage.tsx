@@ -83,7 +83,7 @@ export function WebhooksPage() {
         <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
           <table className="w-full min-w-[720px] border-collapse">
             <thead>
-              <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+              <tr className="tl-label text-left text-[var(--ink-muted)]">
                 <th className="border-b border-[var(--border)] px-3 py-2">{t('webhooks.name')}</th>
                 <th className="border-b border-[var(--border)] px-3 py-2">{t('webhooks.url')}</th>
                 <th className="border-b border-[var(--border)] px-3 py-2">
@@ -258,11 +258,11 @@ export function WebhookPage({ id }: { id: string }) {
       )}
 
       <dl className="m-0 grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] gap-x-3 gap-y-1.5">
-        <dt className="tl-label uppercase text-[var(--ink-muted)]">{t('webhooks.events')}</dt>
+        <dt className="tl-label text-[var(--ink-muted)]">{t('webhooks.events')}</dt>
         <dd className="m-0">
           {data.events.map((type) => t(`webhooks.eventTypes.${type}`)).join(', ')}
         </dd>
-        <dt className="tl-label uppercase text-[var(--ink-muted)]">{t('webhooks.projects')}</dt>
+        <dt className="tl-label text-[var(--ink-muted)]">{t('webhooks.projects')}</dt>
         <dd className="m-0">
           {data.projectKeys.length > 0 ? data.projectKeys.join(', ') : t('webhooks.allProjects')}
         </dd>

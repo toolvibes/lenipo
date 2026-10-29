@@ -417,7 +417,7 @@ export function IssueTable({
           style={{ minWidth: `${Math.max(760, 360 + columns.length * 140)}px` }}
         >
           <thead>
-            <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+            <tr className="tl-label text-left text-[var(--ink-muted)]">
               {all.map((column) => (
                 <Header
                   key={column}

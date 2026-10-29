@@ -68,7 +68,7 @@ function FilterList({
   if (filters.length === 0) return null;
   return (
     <section className="flex flex-col gap-0.5">
-      <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">{title}</h2>
+      <h2 className="tl-label px-2 text-[var(--ink-muted)]">{title}</h2>
       {filters.map((filter) => (
         <Link
           key={filter.id}
@@ -261,9 +261,7 @@ export function SearchPage({
         className="flex shrink-0 flex-col gap-4 md:sticky md:top-5 md:w-56"
       >
         <section className="flex flex-col gap-0.5">
-          <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-            {t('search.defaultFilters')}
-          </h2>
+          <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('search.defaultFilters')}</h2>
           {(Object.keys(PRESETS) as Array<keyof typeof PRESETS>).map((preset) => (
             <Link
               key={preset}

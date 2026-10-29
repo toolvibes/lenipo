@@ -178,7 +178,7 @@ export function BurndownChart({ data }: { data: Burndown }) {
       table={
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="tl-label uppercase text-[var(--ink-muted)]">
+            <tr className="tl-label text-[var(--ink-muted)]">
               <th className={cell}>{t('reports.when')}</th>
               <th className={cell}>{t('reports.event')}</th>
               <th className={cell}>{t('reports.issue')}</th>
@@ -300,7 +300,7 @@ export function VelocityChart({ data }: { data: Velocity }) {
       table={
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="tl-label uppercase text-[var(--ink-muted)]">
+            <tr className="tl-label text-[var(--ink-muted)]">
               <th className={cell}>{t('reports.sprint')}</th>
               <th className={`${cell} text-right`}>{t('reports.committed')}</th>
               <th className={`${cell} text-right`}>{t('reports.completed')}</th>

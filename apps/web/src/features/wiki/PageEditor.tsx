@@ -152,9 +152,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
         {publish.error && <FormError message={publish.error.message} />}
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex min-w-60 flex-1 flex-col gap-1">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('wiki.changeComment')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('wiki.changeComment')}</span>
             <input
               value={comment}
               onChange={(event) => setComment(event.target.value)}

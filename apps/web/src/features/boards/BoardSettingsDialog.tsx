@@ -158,9 +158,7 @@ export function BoardSettingsDialog({
             onChange={(event) => setName(event.target.value)}
           />
           <label className="flex flex-col gap-1.5">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('boards.swimlanes')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('boards.swimlanes')}</span>
             <select
               value={swimlanes}
               onChange={(event) => setSwimlanes(event.target.value as SwimlaneMode)}
@@ -173,7 +171,7 @@ export function BoardSettingsDialog({
           </label>
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('boards.query')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('boards.query')}</span>
           <textarea
             value={query}
             rows={2}
@@ -184,9 +182,7 @@ export function BoardSettingsDialog({
         </label>
         {board.type === 'scrum' && (
           <label className="flex flex-col gap-1.5">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('sprints.estimation')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('sprints.estimation')}</span>
             <select
               value={estimation}
               onChange={(event) => setEstimation(event.target.value as EstimationField)}
@@ -211,9 +207,7 @@ export function BoardSettingsDialog({
         )}
 
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-          <legend className="tl-label mb-2 uppercase text-[var(--ink-muted)]">
-            {t('boards.columns')}
-          </legend>
+          <legend className="tl-label mb-2 text-[var(--ink-muted)]">{t('boards.columns')}</legend>
           {columns.map((column, index) => (
             <div
               key={column.key}
@@ -351,7 +345,7 @@ export function BoardSettingsDialog({
         </fieldset>
 
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-          <legend className="tl-label mb-2 uppercase text-[var(--ink-muted)]">
+          <legend className="tl-label mb-2 text-[var(--ink-muted)]">
             {t('boards.quickFilters')}
           </legend>
           {filters.map((filter) => (

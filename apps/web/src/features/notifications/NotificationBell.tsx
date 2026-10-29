@@ -111,7 +111,7 @@ function Settings({ onDone }: { onDone: () => void }) {
         disabled={!data.emailAvailable || !data.emailEnabled}
         className="m-0 flex flex-col gap-1.5 border-0 p-0 pl-6 disabled:opacity-55"
       >
-        <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
+        <legend className="tl-label mb-1 text-[var(--ink-muted)]">
           {t('notifications.emailFor')}
         </legend>
         {NOTIFICATION_CATEGORIES.map((category) => (

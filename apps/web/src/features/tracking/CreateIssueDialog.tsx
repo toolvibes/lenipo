@@ -166,7 +166,7 @@ export function CreateIssueDialog({
         />
         {components.data && components.data.length > 0 && (
           <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
-            <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
+            <legend className="tl-label mb-1 text-[var(--ink-muted)]">
               {t('issues.components')}
             </legend>
             <div className="flex flex-wrap gap-x-4 gap-y-1">

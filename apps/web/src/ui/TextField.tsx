@@ -14,7 +14,7 @@ export function TextField({ label, help, error, id, className = '', ...props }: 
   const describedBy = error || help ? `${inputId}-hint` : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={inputId} className="tl-label uppercase text-[var(--ink-muted)]">
+      <label htmlFor={inputId} className="tl-label text-[var(--ink-muted)]">
         {label}
       </label>
       <input

@@ -33,7 +33,7 @@ import { VersionsField } from './VersionsField';
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
-      <dt className="tl-label pt-1.5 uppercase text-[var(--ink-muted)]">{label}</dt>
+      <dt className="tl-label pt-1.5 text-[var(--ink-muted)]">{label}</dt>
       <dd className="m-0 min-w-0">{children}</dd>
     </>
   );

@@ -1,6 +1,5 @@
-import '@fontsource-variable/jetbrains-mono';
-import '@fontsource-variable/source-sans-3';
-import '@fontsource-variable/source-serif-4/opsz.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
 import './i18n';
 import './styles.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

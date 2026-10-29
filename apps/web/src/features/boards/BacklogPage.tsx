@@ -562,9 +562,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           <div className="flex shrink-0 flex-col gap-4 lg:w-52">
             {versions.length > 0 && (
               <nav aria-label={t('versions.panel')} className="flex flex-col gap-0.5">
-                <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-                  {t('versions.panel')}
-                </h2>
+                <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('versions.panel')}</h2>
                 {[{ id: null, name: t('versions.all'), projectKey: '' }, ...versions].map(
                   (entry) => (
                     <button
@@ -587,9 +585,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
             )}
             {epics.length > 0 && (
               <nav aria-label={t('sprints.epics')} className="flex flex-col gap-0.5">
-                <h2 className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-                  {t('sprints.epics')}
-                </h2>
+                <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('sprints.epics')}</h2>
                 {[[null, t('sprints.allEpics')] as const, ...epics].map(([key, name]) => (
                   <button
                     key={key ?? 'all'}

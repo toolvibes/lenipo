@@ -151,7 +151,7 @@ function TreeItem({
         }}
         // Pointer only: keyboard users move pages with the "Move" dialog.
         {...draggable.listeners}
-        className={`group relative flex min-h-8 items-center gap-0.5 rounded-[var(--radius-sm)] pr-1 ${current ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-1)]'} ${position === 'into' ? 'outline-2 outline-[var(--accent)]' : ''} ${dragging === page.id ? 'opacity-40' : ''}`}
+        className={`group relative flex min-h-8 items-center gap-0.5 rounded-[var(--radius-sm)] pr-1 ${current ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-2)]'} ${position === 'into' ? 'outline-2 outline-[var(--accent)]' : ''} ${dragging === page.id ? 'opacity-40' : ''}`}
       >
         {position === 'before' && (
           <span className="pointer-events-none absolute -top-px right-0 left-6 h-0.5 bg-[var(--accent)]" />
@@ -254,10 +254,10 @@ function ProjectLinks({ project }: { project: { key: string; name: string } }) {
   const { t } = useTranslation();
   const boards = useQuery(boardsQuery(project.key));
   const item =
-    'flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
+    'flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]';
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">{t('wiki.project')}</span>
+      <span className="tl-label px-2 text-[var(--ink-muted)]">{t('wiki.project')}</span>
       <Link to="/projects/$key" params={{ key: project.key }} className={item}>
         <FolderSimple size={16} aria-hidden />
         <span className="min-w-0 flex-1 truncate">{project.name}</span>
@@ -361,7 +361,7 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
     <div className="flex min-h-full flex-wrap">
       <aside
         aria-label={t('wiki.pageTree')}
-        className="flex w-full flex-col gap-3 border-b border-[var(--border)] bg-[var(--surface-2)] px-2 py-4 md:w-64 md:border-r md:border-b-0"
+        className="flex w-full flex-col gap-3 border-b border-[var(--border)] bg-[var(--surface-0)] px-2 py-4 md:w-64 md:border-r md:border-b-0"
       >
         <div className="flex items-start gap-1">
           <Link
@@ -383,14 +383,14 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
         </div>
         {space.data?.project && <ProjectLinks project={space.data.project} />}
         <div className="flex items-center justify-between px-2">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('wiki.pages')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('wiki.pages')}</span>
           {canEdit && (
             <button
               type="button"
               onClick={() => setCreatingUnder(null)}
               aria-label={t('wiki.createPage')}
               title={t('wiki.createPage')}
-              className="grid size-6 place-items-center rounded-[var(--radius-sm)] text-[var(--ink-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--ink)]"
+              className="grid size-6 place-items-center rounded-[var(--radius-sm)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
             >
               <Plus size={14} aria-hidden />
             </button>

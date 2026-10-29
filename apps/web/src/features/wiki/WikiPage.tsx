@@ -104,7 +104,7 @@ function MoveDialog({
       <div className="flex flex-col gap-4">
         {move.error && <FormError message={move.error.message} />}
         <label className="flex flex-col gap-1">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('wiki.newParent')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('wiki.newParent')}</span>
           <select
             value={parentId}
             onChange={(event) => setParentId(event.target.value)}

@@ -562,9 +562,7 @@ export function BoardPage({
                     data-limit={over ? 'over' : under ? 'under' : 'ok'}
                     className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 data-[limit=over]:bg-[var(--danger-soft)] data-[limit=under]:bg-[var(--warning-soft)]"
                   >
-                    <h2 className="tl-label m-0 truncate uppercase text-[var(--ink-muted)]">
-                      {column.name}
-                    </h2>
+                    <h2 className="tl-label m-0 truncate text-[var(--ink-muted)]">{column.name}</h2>
                     <span className="text-xs font-semibold">
                       {count}
                       {column.wipMax !== null && ` / ${column.wipMax}`}
@@ -586,7 +584,7 @@ export function BoardPage({
                   lane.title !== null && (
                     <h3
                       key={`${lane.id}:title`}
-                      className="tl-label m-0 mt-2 uppercase text-[var(--ink-muted)]"
+                      className="tl-label m-0 mt-2 text-[var(--ink-muted)]"
                       style={{ gridColumn: '1 / -1' }}
                     >
                       {lane.title} · {laneIssues.length}

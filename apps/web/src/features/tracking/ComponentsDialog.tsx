@@ -85,7 +85,7 @@ export function ComponentsDialog({ projectKey, open, onOpenChange }: ComponentsD
         {components.data && components.data.length > 0 && (
           <table className="w-full border-collapse">
             <thead>
-              <tr className="tl-label text-left uppercase text-[var(--ink-muted)]">
+              <tr className="tl-label text-left text-[var(--ink-muted)]">
                 <th className="border-b border-[var(--border)] py-1.5 pr-2">
                   {t('projects.components.name')}
                 </th>
@@ -139,9 +139,7 @@ export function ComponentsDialog({ projectKey, open, onOpenChange }: ComponentsD
           onSubmit={submit}
           className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-3"
         >
-          <h3 className="tl-label uppercase text-[var(--ink-muted)]">
-            {t('projects.components.add')}
-          </h3>
+          <h3 className="tl-label text-[var(--ink-muted)]">{t('projects.components.add')}</h3>
           <TextField
             label={t('projects.components.name')}
             value={name}

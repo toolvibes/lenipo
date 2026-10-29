@@ -63,7 +63,7 @@ function CreateBoardDialog({
           onChange={(event) => setName(event.target.value)}
         />
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('boards.project')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('boards.project')}</span>
           <select
             value={project}
             required
@@ -79,9 +79,7 @@ function CreateBoardDialog({
           <span className="text-xs text-[var(--ink-muted)]">{t('boards.projectHelp')}</span>
         </label>
         <fieldset className="m-0 flex gap-4 border-0 p-0">
-          <legend className="tl-label mb-1.5 uppercase text-[var(--ink-muted)]">
-            {t('boards.type')}
-          </legend>
+          <legend className="tl-label mb-1.5 text-[var(--ink-muted)]">{t('boards.type')}</legend>
           {(['kanban', 'scrum'] as const).map((option) => (
             <label key={option} className="flex items-center gap-2">
               <input

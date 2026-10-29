@@ -44,7 +44,7 @@ function NavItem({
     <Link
       to={to}
       activeOptions={{ exact }}
-      className="flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)] data-[status=active]:bg-[var(--accent-soft)] data-[status=active]:font-semibold data-[status=active]:text-[var(--accent)]"
+      className="flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-2)] data-[status=active]:bg-[var(--accent-soft)] data-[status=active]:font-semibold data-[status=active]:text-[var(--accent)]"
     >
       {({ isActive }) => (
         <>
@@ -57,7 +57,7 @@ function NavItem({
 }
 
 const FAVOURITE_ITEM =
-  'flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-1)]';
+  'flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]';
 
 function FavouriteLink({ favourite }: { favourite: Favourite }) {
   const label = <span className="truncate">{favourite.name}</span>;
@@ -104,9 +104,7 @@ function Favourites() {
   if (!favourites.data || favourites.data.length === 0) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
-        {t('favourites.title')}
-      </span>
+      <span className="tl-label px-2 text-[var(--ink-muted)]">{t('favourites.title')}</span>
       {favourites.data.map((favourite) => (
         <FavouriteLink key={`${favourite.kind}:${favourite.id}`} favourite={favourite} />
       ))}
@@ -151,9 +149,9 @@ export function AppShell({ me }: { me: Me }) {
       <div className="flex min-h-screen flex-wrap">
         <nav
           aria-label={t('shell.navigation')}
-          className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-4 border-r border-[var(--border)] bg-[var(--surface-2)] px-3 py-4 md:max-w-[var(--sidebar-width)]"
+          className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-4 border-r border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 md:max-w-[var(--sidebar-width)]"
         >
-          <span className="px-2 font-[family-name:var(--font-serif)] text-[22px] leading-7 font-semibold">
+          <span className="px-2 text-[20px] leading-7 font-semibold tracking-[-0.02em]">
             {t('common.product')}
           </span>
           <button
@@ -177,7 +175,7 @@ export function AppShell({ me }: { me: Me }) {
           <Favourites />
           {me.globalPermissions.includes('admin') && (
             <div className="flex flex-col gap-0.5">
-              <span className="tl-label px-2 uppercase text-[var(--ink-muted)]">
+              <span className="tl-label px-2 text-[var(--ink-muted)]">
                 {t('shell.administration')}
               </span>
               <NavItem
@@ -213,7 +211,7 @@ export function AppShell({ me }: { me: Me }) {
               onClick={signOut}
               aria-label={t('common.signOut')}
               title={t('common.signOut')}
-              className="grid size-8 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--ink)]"
+              className="grid size-8 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
             >
               <SignOut size={18} aria-hidden />
             </button>

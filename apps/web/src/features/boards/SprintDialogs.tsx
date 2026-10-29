@@ -124,7 +124,7 @@ export function SprintDialog({
           />
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className="tl-label uppercase text-[var(--ink-muted)]">{t('sprints.goal')}</span>
+          <span className="tl-label text-[var(--ink-muted)]">{t('sprints.goal')}</span>
           <textarea
             value={goal}
             rows={2}
@@ -197,9 +197,7 @@ export function CompleteSprintDialog({
         <p className="m-0">{t('sprints.completeSummary', { done: finished, open: open_ })}</p>
         {open_ > 0 && (
           <label className="flex flex-col gap-1.5">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('sprints.moveOpenTo')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('sprints.moveOpenTo')}</span>
             <select
               value={target}
               onChange={(event) => setTarget(event.target.value)}

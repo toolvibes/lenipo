@@ -112,9 +112,7 @@ export function IssueLinks({ issue, canEdit, onChanged }: IssueLinksProps) {
       {adding && (
         <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('issues.linkRelation')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('issues.linkRelation')}</span>
             <select
               value={relation}
               onChange={(event) => setRelation(event.target.value)}
@@ -128,9 +126,7 @@ export function IssueLinks({ issue, canEdit, onChanged }: IssueLinksProps) {
             </select>
           </label>
           <label className="flex min-w-40 flex-1 flex-col gap-1">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('issues.linkTarget')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('issues.linkTarget')}</span>
             <input
               value={target}
               ref={targetInput}
@@ -165,7 +161,7 @@ export function IssueLinks({ issue, canEdit, onChanged }: IssueLinksProps) {
       )}
       {[...groups.entries()].map(([label, links]) => (
         <div key={label} className="flex flex-col gap-1">
-          <h3 className="tl-label uppercase text-[var(--ink-muted)]">{label}</h3>
+          <h3 className="tl-label text-[var(--ink-muted)]">{label}</h3>
           <ul className="m-0 list-none overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-0">
             {links.map((link) => (
               <li

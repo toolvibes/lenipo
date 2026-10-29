@@ -15,14 +15,14 @@ body {
   outline-offset: 2px;
 }
 
-/* Editor content: wiki pages and long descriptions are set in the serif. */
+/* Editor content: wiki pages and long descriptions, in the reading sizes of the type scale. */
 .tl-prose {
   min-height: 60vh;
   max-width: var(--prose-measure);
   outline: none;
-  font-family: var(--font-serif);
-  font-size: 17px;
-  line-height: 28px;
+  font-family: var(--font-prose);
+  font-size: 16px;
+  line-height: 27px;
 }
 .tl-prose-read {
   min-height: 0;
@@ -31,20 +31,22 @@ body {
   margin-top: 0.75em;
 }
 .tl-prose h1 {
-  font-size: 34px;
-  line-height: 42px;
+  font-size: 32px;
+  line-height: 40px;
   font-weight: 600;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 .tl-prose h2 {
-  font-size: 24px;
-  line-height: 32px;
+  font-size: 22px;
+  line-height: 30px;
   font-weight: 600;
+  letter-spacing: -0.015em;
   margin-top: 1.5em;
 }
 .tl-prose h3 {
-  font-size: 19px;
-  line-height: 28px;
+  font-size: 17px;
+  line-height: 26px;
   font-weight: 600;
   margin-top: 1.25em;
 }

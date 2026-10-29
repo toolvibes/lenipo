@@ -314,9 +314,7 @@ function Roles({ spaceKey }: { spaceKey: string }) {
           const holders = members.data?.filter((member) => member.role === role) ?? [];
           return (
             <div key={role} className="flex flex-col gap-1">
-              <h3 className="tl-label m-0 uppercase text-[var(--ink-muted)]">
-                {t(`wiki.roles.${role}`)}
-              </h3>
+              <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t(`wiki.roles.${role}`)}</h3>
               <p className="m-0 text-xs text-[var(--ink-muted)]">{t(`wiki.roleHelp.${role}`)}</p>
               {holders.length === 0 ? (
                 <p className="m-0 flex min-h-9 items-center gap-2 text-sm text-[var(--ink-muted)]">

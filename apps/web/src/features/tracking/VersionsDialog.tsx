@@ -89,7 +89,7 @@ export function VersionsDialog({
         {error && <FormError message={error.message} />}
         <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
           <label className="flex min-w-48 flex-1 flex-col gap-1">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">{t('versions.name')}</span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('versions.name')}</span>
             <input
               value={name}
               maxLength={100}
@@ -98,9 +98,7 @@ export function VersionsDialog({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="tl-label uppercase text-[var(--ink-muted)]">
-              {t('versions.releaseDate')}
-            </span>
+            <span className="tl-label text-[var(--ink-muted)]">{t('versions.releaseDate')}</span>
             <input
               type="date"
               value={releaseDate}

@@ -91,9 +91,7 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
           onChange={(event) => setUrl(event.target.value)}
         />
         <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
-          <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
-            {t('webhooks.events')}
-          </legend>
+          <legend className="tl-label mb-1 text-[var(--ink-muted)]">{t('webhooks.events')}</legend>
           {WEBHOOK_EVENT_TYPES.map((type) => (
             <label key={type} className="flex items-center gap-2">
               <input
@@ -107,7 +105,7 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
           ))}
         </fieldset>
         <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
-          <legend className="tl-label mb-1 uppercase text-[var(--ink-muted)]">
+          <legend className="tl-label mb-1 text-[var(--ink-muted)]">
             {t('webhooks.projects')}
           </legend>
           <p className="m-0 text-xs text-[var(--ink-muted)]">{t('webhooks.projectsHelp')}</p>

@@ -129,7 +129,7 @@ function RecentlyVisited() {
     'flex h-8 max-w-64 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] px-2 text-sm text-[var(--ink)] no-underline hover:border-[var(--border-strong)]';
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="tl-label m-0 uppercase text-[var(--ink-muted)]">{t('wiki.recent')}</h2>
+      <h2 className="tl-label m-0 text-[var(--ink-muted)]">{t('wiki.recent')}</h2>
       <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
         {items.map((item) => (
           <li key={`${item.kind}:${item.ref}`}>
