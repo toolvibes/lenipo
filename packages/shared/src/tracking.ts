@@ -27,6 +27,29 @@ export type ProjectPermission = z.infer<typeof ProjectPermission>;
 export const UserRef = z.object({ id: Id, displayName: z.string() }).meta({ id: 'UserRef' });
 export type UserRef = z.infer<typeof UserRef>;
 
+export const PROJECT_ROLES = ['administrators', 'developers', 'users'] as const;
+export const ProjectRole = z.enum(PROJECT_ROLES).meta({ id: 'ProjectRole' });
+export type ProjectRole = z.infer<typeof ProjectRole>;
+
+/** A person or group holding a role in a project (T-PRJ-07, TL-65). */
+export const ProjectMember = z
+  .object({
+    id: Id,
+    role: ProjectRole,
+    user: UserRef.nullable(),
+    group: z.object({ id: Id, name: z.string() }).nullable(),
+  })
+  .meta({ id: 'ProjectMember' });
+export type ProjectMember = z.infer<typeof ProjectMember>;
+
+export const AddProjectMemberRequest = z
+  .union([
+    z.strictObject({ role: ProjectRole, userId: Id }),
+    z.strictObject({ role: ProjectRole, groupId: Id }),
+  ])
+  .meta({ id: 'AddProjectMemberRequest' });
+export type AddProjectMemberRequest = z.infer<typeof AddProjectMemberRequest>;
+
 export const UserLookup = UserRef.extend({ email: z.string() }).meta({ id: 'UserLookup' });
 export type UserLookup = z.infer<typeof UserLookup>;
 

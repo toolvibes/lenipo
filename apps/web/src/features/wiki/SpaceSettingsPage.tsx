@@ -1,9 +1,7 @@
-import { UserCircle, UsersThree, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type AddSpaceMemberRequest,
   type Space,
-  type SpaceMember,
   SpaceRole,
   type UpdateSpaceRequest,
 } from '@tasklore/shared';
@@ -11,12 +9,12 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { projectsQuery } from '../../lib/tracking';
-import { groupsQuery, spaceMembersQuery, spaceQuery, userSearchQuery } from '../../lib/wiki';
+import { spaceMembersQuery, spaceQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
-import { Avatar } from '../tracking/UserPicker';
+import { RoleMembers } from '../settings/RoleMembers';
 import { TemplateList } from './templates';
 
 function Section({
@@ -143,159 +141,11 @@ function ProjectLink({ space }: { space: Space }) {
   );
 }
 
-function MemberLine({
-  member,
-  onRemove,
-  disabled,
-}: {
-  member: SpaceMember;
-  onRemove: () => void;
-  disabled: boolean;
-}) {
-  const { t } = useTranslation();
-  const name = member.user?.displayName ?? member.group?.name ?? '';
-  const label = member.group?.name === 'users' ? t('wiki.settings.everyone') : name;
-  return (
-    <li className="flex min-h-9 items-center gap-2 border-b border-[var(--border)] last:border-b-0">
-      {member.user ? (
-        <Avatar user={member.user} />
-      ) : (
-        <UsersThree size={20} className="text-[var(--ink-muted)]" aria-hidden />
-      )}
-      <span className="min-w-0 flex-1 truncate">
-        {label}
-        {member.group && (
-          <span className="ml-1.5 text-xs text-[var(--ink-muted)]">{t('wiki.settings.group')}</span>
-        )}
-      </span>
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={disabled}
-        aria-label={t('wiki.settings.removeMember', { name: label })}
-        title={t('wiki.settings.removeMember', { name: label })}
-        className="grid size-7 place-items-center rounded-[var(--radius-sm)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)] disabled:opacity-50"
-      >
-        <X size={14} aria-hidden />
-      </button>
-    </li>
-  );
-}
-
-/** Adds a person (searched by name or email) or a group to a role. */
-function AddMember({ spaceKey }: { spaceKey: string }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [role, setRole] = useState<SpaceRole>('editors');
-  const [kind, setKind] = useState<'user' | 'group'>('user');
-  const [search, setSearch] = useState('');
-  const [groupId, setGroupId] = useState('');
-  const groups = useQuery({ ...groupsQuery, enabled: kind === 'group' });
-  const users = useQuery({
-    ...userSearchQuery(search.trim()),
-    enabled: kind === 'user' && search.trim().length > 0,
-  });
-  const add = useMutation({
-    mutationFn: (body: AddSpaceMemberRequest) =>
-      unwrap(
-        client.POST('/api/v1/spaces/{key}/members', { params: { path: { key: spaceKey } }, body }),
-      ),
-    onSuccess: async (members) => {
-      queryClient.setQueryData(spaceMembersQuery(spaceKey).queryKey, members);
-      await queryClient.invalidateQueries({ queryKey: ['space', spaceKey] });
-      setSearch('');
-      setGroupId('');
-    },
-  });
-
-  return (
-    <div className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)] p-3">
-      <strong>{t('wiki.settings.addMember')}</strong>
-      {add.error && <FormError message={add.error.message} />}
-      <div className="flex flex-wrap items-end gap-2">
-        <Select
-          label={t('wiki.settings.role')}
-          value={role}
-          options={SpaceRole.options.map((value) => ({
-            value,
-            label: t(`wiki.roles.${value}`),
-          }))}
-          onChange={(event) => setRole(event.target.value as SpaceRole)}
-        />
-        <Select
-          label={t('wiki.settings.who')}
-          value={kind}
-          options={[
-            { value: 'user', label: t('wiki.settings.person') },
-            { value: 'group', label: t('wiki.settings.group') },
-          ]}
-          onChange={(event) => setKind(event.target.value as 'user' | 'group')}
-        />
-        {kind === 'group' && (
-          <>
-            <Select
-              label={t('wiki.settings.group')}
-              value={groupId}
-              options={[
-                { value: '', label: t('wiki.settings.chooseGroup') },
-                ...(groups.data ?? []).map((group) => ({
-                  value: group.id,
-                  label: group.name === 'users' ? t('wiki.settings.everyone') : group.name,
-                })),
-              ]}
-              onChange={(event) => setGroupId(event.target.value)}
-            />
-            <Button
-              variant="primary"
-              disabled={!groupId || add.isPending}
-              onClick={() => add.mutate({ role, groupId })}
-            >
-              {t('wiki.settings.add')}
-            </Button>
-          </>
-        )}
-      </div>
-      {kind === 'user' && (
-        <div className="flex flex-col gap-1">
-          <TextField
-            label={t('wiki.settings.findPerson')}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          {users.data && users.data.length === 0 && (
-            <p className="m-0 text-sm text-[var(--ink-muted)]">{t('wiki.settings.nobodyFound')}</p>
-          )}
-          <ul className="m-0 flex list-none flex-col p-0">
-            {users.data?.map((user) => (
-              <li key={user.id}>
-                <button
-                  type="button"
-                  disabled={add.isPending}
-                  onClick={() => add.mutate({ role, userId: user.id })}
-                  className="flex min-h-9 w-full items-center gap-2 rounded-[var(--radius-sm)] px-1 text-left hover:bg-[var(--surface-1)]"
-                >
-                  <Avatar user={user} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {user.displayName}{' '}
-                    <span className="text-xs text-[var(--ink-muted)]">{user.email}</span>
-                  </span>
-                  <span className="text-xs text-[var(--accent)]">
-                    {t('wiki.settings.addAs', { role: t(`wiki.roles.${role}`) })}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function Roles({ spaceKey }: { spaceKey: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const members = useQuery(spaceMembersQuery(spaceKey));
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['space', spaceKey] });
   const remove = useMutation({
     mutationFn: (id: string) =>
       unwrap(
@@ -303,42 +153,31 @@ function Roles({ spaceKey }: { spaceKey: string }) {
           params: { path: { key: spaceKey, id } },
         }),
       ),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['space', spaceKey] });
+    onSuccess: refresh,
+  });
+  const add = useMutation({
+    mutationFn: (body: AddSpaceMemberRequest) =>
+      unwrap(
+        client.POST('/api/v1/spaces/{key}/members', { params: { path: { key: spaceKey } }, body }),
+      ),
+    onSuccess: async (list) => {
+      queryClient.setQueryData(spaceMembersQuery(spaceKey).queryKey, list);
+      await refresh();
     },
   });
   return (
     <Section title={t('wiki.settings.roles')} help={t('wiki.settings.rolesHelp')}>
-      {remove.error && <FormError message={remove.error.message} />}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {SpaceRole.options.map((role) => {
-          const holders = members.data?.filter((member) => member.role === role) ?? [];
-          return (
-            <div key={role} className="flex flex-col gap-1">
-              <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t(`wiki.roles.${role}`)}</h3>
-              <p className="m-0 text-xs text-[var(--ink-muted)]">{t(`wiki.roleHelp.${role}`)}</p>
-              {holders.length === 0 ? (
-                <p className="m-0 flex min-h-9 items-center gap-2 text-sm text-[var(--ink-muted)]">
-                  <UserCircle size={20} aria-hidden />
-                  {t('wiki.settings.nobody')}
-                </p>
-              ) : (
-                <ul className="m-0 list-none p-0">
-                  {holders.map((member) => (
-                    <MemberLine
-                      key={member.id}
-                      member={member}
-                      disabled={remove.isPending}
-                      onRemove={() => remove.mutate(member.id)}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <AddMember spaceKey={spaceKey} />
+      <RoleMembers
+        roles={SpaceRole.options}
+        defaultRole="editors"
+        roleLabel={(role) => t(`wiki.roles.${role}`)}
+        roleHelp={(role) => t(`wiki.roleHelp.${role}`)}
+        members={members.data}
+        error={remove.error ?? add.error}
+        busy={remove.isPending || add.isPending}
+        onRemove={(id) => remove.mutate(id)}
+        onAdd={(grant) => add.mutateAsync(grant)}
+      />
     </Section>
   );
 }

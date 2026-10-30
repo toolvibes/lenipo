@@ -1,17 +1,69 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { type AddProjectMemberRequest, PROJECT_ROLES } from '@tasklore/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { client, unwrap } from '../../lib/api';
 import { useCurrentProject } from '../../lib/shortcuts';
-import { projectQuery, projectWorkflowQuery } from '../../lib/tracking';
+import { projectMembersQuery, projectQuery, projectWorkflowQuery } from '../../lib/tracking';
 import { TopBar } from '../../ui/TopBar';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
+import { RoleMembers } from './RoleMembers';
 import { WorkflowEditor } from './WorkflowEditor';
 
 const NAV_ITEM =
   'flex h-[30px] w-full cursor-pointer items-center rounded-[5px] border-0 bg-transparent px-2.5 text-left text-[13px] font-medium text-[var(--ink-muted)] no-underline hover:bg-[var(--selected)] hover:text-[var(--ink)] aria-[current=page]:bg-[var(--selected)] aria-[current=page]:font-semibold aria-[current=page]:text-[var(--ink)]';
+
+/** People and groups per project role (T-PRJ-07, TL-65). */
+function Members({ projectKey }: { projectKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const members = useQuery(projectMembersQuery(projectKey));
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['project', projectKey] });
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        client.DELETE('/api/v1/projects/{key}/members/{id}', {
+          params: { path: { key: projectKey, id } },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+  const add = useMutation({
+    mutationFn: (body: AddProjectMemberRequest) =>
+      unwrap(
+        client.POST('/api/v1/projects/{key}/members', {
+          params: { path: { key: projectKey } },
+          body,
+        }),
+      ),
+    onSuccess: async (list) => {
+      queryClient.setQueryData(projectMembersQuery(projectKey).queryKey, list);
+      await refresh();
+    },
+  });
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="tl-heading-md m-0">{t('projectSettings.members')}</h2>
+        <p className="m-0 text-sm text-[var(--ink-muted)]">{t('projectSettings.membersHelp')}</p>
+      </div>
+      <RoleMembers
+        roles={PROJECT_ROLES}
+        defaultRole="developers"
+        roleLabel={(role) => t(`projectSettings.roles.${role}`)}
+        roleHelp={(role) => t(`projectSettings.roleHelp.${role}`)}
+        members={members.data}
+        error={remove.error ?? add.error}
+        busy={remove.isPending || add.isPending}
+        onRemove={(id) => remove.mutate(id)}
+        onAdd={(grant) => add.mutateAsync(grant)}
+      />
+    </section>
+  );
+}
 
 /** Project settings with a sub-navigation (1a S11): the workflow editor, other parts as dialogs. */
 export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
@@ -20,6 +72,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const workflow = useQuery(projectWorkflowQuery(projectKey));
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [view, setView] = useState<'workflow' | 'members'>('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
   const close = (open: boolean) => !open && setDialog(null);
@@ -42,11 +95,24 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           aria-label={t('projectSettings.sections')}
           className="flex w-full flex-col gap-px border-b border-[var(--border)] px-3 py-6 md:w-[220px] md:border-r md:border-b-0"
         >
-          <span aria-current="page" className={NAV_ITEM}>
+          <button
+            type="button"
+            aria-current={view === 'workflow' ? 'page' : undefined}
+            className={NAV_ITEM}
+            onClick={() => setView('workflow')}
+          >
             {t('projectSettings.workflow')}
-          </span>
+          </button>
           {administer && (
             <>
+              <button
+                type="button"
+                aria-current={view === 'members' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('members')}
+              >
+                {t('projectSettings.members')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -65,7 +131,8 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               {notice}
             </p>
           )}
-          {workflow.data && project.data && (
+          {view === 'members' && administer && <Members projectKey={projectKey} />}
+          {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={workflow.data.versionId}
               projectKey={projectKey}

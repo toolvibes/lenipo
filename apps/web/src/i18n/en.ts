@@ -984,6 +984,19 @@ export const en: Messages = {
     taken: 'The key {{key}} is already taken.',
   },
   projectSettings: {
+    members: 'Members',
+    membersHelp:
+      'Who sees the project and what they may do. Anyone in no role does not see the project anywhere; “All signed-in users” is the group of all internal accounts.',
+    roles: {
+      administrators: 'Administration',
+      developers: 'Development',
+      users: 'Users',
+    },
+    roleHelp: {
+      administrators: 'Everything, plus settings, workflow and members.',
+      developers: 'Create, edit, assign, transition and comment on issues.',
+      users: 'See the project, create issues and comment, e.g. for customers.',
+    },
     title: 'Project settings',
     open: 'Settings',
     sections: 'Project settings sections',

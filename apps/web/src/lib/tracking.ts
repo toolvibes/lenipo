@@ -21,6 +21,14 @@ export const projectsQuery = queryOptions({
   queryFn: () => unwrap(client.GET('/api/v1/projects')),
 });
 
+/** Role assignments of a project, for its administration (TL-65). */
+export const projectMembersQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['project', key, 'members'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/projects/{key}/members', { params: { path: { key } } })),
+  });
+
 export const projectQuery = (key: string) =>
   queryOptions({
     queryKey: ['project', key],

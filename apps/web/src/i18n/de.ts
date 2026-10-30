@@ -998,6 +998,19 @@ export const de = {
     taken: 'Der Schlüssel {{key}} ist schon vergeben.',
   },
   projectSettings: {
+    members: 'Mitglieder',
+    membersHelp:
+      'Wer das Projekt sieht und was er darf. Wer in keiner Rolle ist, sieht das Projekt nirgends; „Alle Angemeldeten“ ist die Gruppe aller internen Konten.',
+    roles: {
+      administrators: 'Administration',
+      developers: 'Entwicklung',
+      users: 'Benutzer',
+    },
+    roleHelp: {
+      administrators: 'Alles, dazu Einstellungen, Workflow und Mitglieder.',
+      developers: 'Vorgänge anlegen, bearbeiten, zuweisen, Status ändern und kommentieren.',
+      users: 'Projekt sehen, Vorgänge anlegen und kommentieren, zum Beispiel für Kunden.',
+    },
     title: 'Projekteinstellungen',
     open: 'Einstellungen',
     sections: 'Bereiche der Projekteinstellungen',

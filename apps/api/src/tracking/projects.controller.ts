@@ -11,6 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import {
+  AddProjectMemberRequest,
   Component,
   CreateComponentRequest,
   CreateProjectRequest,
@@ -18,6 +19,7 @@ import {
   IssueList,
   ProjectCustomFieldsRequest,
   ProjectDetails,
+  ProjectMember,
   ProjectSummary,
   ProjectWorkflow,
   PublishWorkflowRequest,
@@ -36,6 +38,7 @@ import { ComponentService } from './component.service.js';
 import { IssueService } from './issue.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
+import { ProjectMemberService } from './project-member.service.js';
 import { TimelineService } from './timeline.service.js';
 import { VersionService } from './version.service.js';
 import { WorkflowService } from './workflow.service.js';
@@ -70,7 +73,52 @@ export class ProjectsController {
     @Inject(VersionService) private readonly versions: VersionService,
     @Inject(TimelineService) private readonly timelines: TimelineService,
     @Inject(WorkflowService) private readonly workflows: WorkflowService,
+    @Inject(ProjectMemberService) private readonly members: ProjectMemberService,
   ) {}
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'List the role assignments of a project',
+    description:
+      'People and groups per project role. Requires the project permission `administer`.',
+    response: z.array(ProjectMember),
+  })
+  @Get(':key/members')
+  listMembers(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<ProjectMember[]> {
+    return this.members.list(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Give a user or group a role in a project',
+    response: z.array(ProjectMember),
+  })
+  @Post(':key/members')
+  @HttpCode(201)
+  addMember(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(AddProjectMemberRequest) body: AddProjectMemberRequest,
+  ): Promise<ProjectMember[]> {
+    return this.members.add(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Remove a role assignment; the last administrator stays',
+  })
+  @Delete(':key/members/:id')
+  @HttpCode(204)
+  removeMember(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('id', new ParseUUIDPipe({ errorHttpStatusCode: 404 })) id: string,
+  ): Promise<void> {
+    return this.members.remove(principal, key, id);
+  }
 
   @Endpoint({
     tag: 'Projects',
