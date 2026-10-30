@@ -26,12 +26,14 @@ import { type FormEvent, type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate } from '../../lib/format';
+import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
 import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { PageHeading, TopBar } from '../../ui/TopBar';
+import { FavouriteButton } from '../personal/FavouriteButton';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
@@ -200,6 +202,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const board = data.data?.board;
+  useRecordView('board', board?.id);
   useCurrentProject(board?.project.key);
   useRealtimeRooms([
     `board:${id}`,
@@ -487,6 +490,14 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           </Link>,
           t('sprints.backlog'),
         ]}
+        actions={
+          <FavouriteButton
+            kind="board"
+            refId={board.id}
+            active={board.favourite}
+            name={board.name}
+          />
+        }
       />
       <PageHeading
         title={t('sprints.backlog')}

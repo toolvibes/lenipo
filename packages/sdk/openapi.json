@@ -7832,9 +7832,12 @@
             },
             "required": ["key", "name"],
             "additionalProperties": false
+          },
+          "favourite": {
+            "type": "boolean"
           }
         },
-        "required": ["id", "name", "type", "project"],
+        "required": ["id", "name", "type", "project", "favourite"],
         "additionalProperties": false
       },
       "CreateBoardRequest": {
@@ -7889,6 +7892,9 @@
             "required": ["key", "name"],
             "additionalProperties": false
           },
+          "favourite": {
+            "type": "boolean"
+          },
           "query": {
             "type": "string"
           },
@@ -7933,6 +7939,7 @@
           "name",
           "type",
           "project",
+          "favourite",
           "query",
           "swimlanes",
           "hideDoneAfterDays",
@@ -11537,6 +11544,9 @@
           },
           "spaceKey": {
             "type": "string"
+          },
+          "projectKey": {
+            "type": "string"
           }
         },
         "required": ["kind", "id", "ref", "name"],
@@ -11544,7 +11554,7 @@
       },
       "FavouriteKind": {
         "type": "string",
-        "enum": ["project", "filter", "space", "page"]
+        "enum": ["project", "filter", "space", "page", "board"]
       },
       "RecordRecentRequest": {
         "type": "object",
@@ -11562,7 +11572,7 @@
       },
       "RecentKind": {
         "type": "string",
-        "enum": ["issue", "project", "space", "page"]
+        "enum": ["issue", "project", "space", "page", "board"]
       },
       "RecentItem": {
         "type": "object",
@@ -11577,6 +11587,9 @@
             "type": "string"
           },
           "spaceKey": {
+            "type": "string"
+          },
+          "projectKey": {
             "type": "string"
           },
           "viewedAt": {

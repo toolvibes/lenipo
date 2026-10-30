@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BoardsModule } from '../boards/boards.module.js';
 import { SearchModule } from '../search/search.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
 import { WikiModule } from '../wiki/wiki.module.js';
@@ -7,7 +8,7 @@ import { PersonalController } from './personal.controller.js';
 import { PersonalService } from './personal.service.js';
 
 @Module({
-  imports: [TrackingModule, SearchModule, WikiModule],
+  imports: [TrackingModule, SearchModule, WikiModule, BoardsModule],
   controllers: [PersonalController],
   providers: [PersonalService, ActivityService],
 })

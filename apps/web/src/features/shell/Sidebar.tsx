@@ -112,7 +112,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
   );
 }
 
-/** Starred filters, spaces and pages; starred projects are listed with the projects. */
+/** Starred filters, boards, spaces and pages; starred projects are listed with the projects. */
 function OtherFavourites({ path }: { path: string }) {
   const { t } = useTranslation();
   const favourites = useQuery(favouritesQuery);
@@ -122,6 +122,18 @@ function OtherFavourites({ path }: { path: string }) {
     if (favourite.kind === 'filter') {
       return (
         <NavRow to="/issues" search={{ filter: favourite.ref }} active={false}>
+          <span className="truncate">{favourite.name}</span>
+        </NavRow>
+      );
+    }
+    if (favourite.kind === 'board') {
+      return (
+        <NavRow
+          to="/boards/$id"
+          params={{ id: favourite.ref }}
+          search={{}}
+          active={path.startsWith(`/boards/${favourite.ref}`)}
+        >
           <span className="truncate">{favourite.name}</span>
         </NavRow>
       );

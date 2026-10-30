@@ -29,12 +29,14 @@ import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { boardDataQuery } from '../../lib/boards';
 import { formatDate } from '../../lib/format';
+import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
 import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { CHIP, PageHeading, TopBar } from '../../ui/TopBar';
+import { FavouriteButton } from '../personal/FavouriteButton';
 import { CreateIssueDialog } from '../tracking/CreateIssueDialog';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon } from '../tracking/icons';
@@ -283,6 +285,8 @@ export function BoardPage({
   );
 
   const board = data.data?.board;
+  // Remembered for "Zuletzt angesehen" and the board list (TL-6).
+  useRecordView('board', board?.id);
   const project = useQuery({
     ...projectQuery(board?.project.key ?? ''),
     enabled: board !== undefined,
@@ -492,12 +496,20 @@ export function BoardPage({
           board.name,
         ]}
         actions={
-          board.canConfigure && (
-            <Button size="sm" onClick={() => setConfiguring(true)}>
-              <GearSix size={14} aria-hidden />
-              {t('boards.configure')}
-            </Button>
-          )
+          <>
+            <FavouriteButton
+              kind="board"
+              refId={board.id}
+              active={board.favourite}
+              name={board.name}
+            />
+            {board.canConfigure && (
+              <Button size="sm" onClick={() => setConfiguring(true)}>
+                <GearSix size={14} aria-hidden />
+                {t('boards.configure')}
+              </Button>
+            )}
+          </>
         }
       />
       <PageHeading

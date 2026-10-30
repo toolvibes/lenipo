@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  type BoardSummary,
   DEFAULT_ISSUE_COLUMNS,
   type Favourite,
   type FavouriteKind,
@@ -8,6 +9,7 @@ import {
   type RecentKind,
 } from '@tasklore/shared';
 import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
+import { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -28,6 +30,7 @@ import { SpaceService } from '../wiki/space.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
 
 const RECENT_KEEP = 50;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISSUE_COLUMNS = 'issue-columns';
 
 /** Favourites and recently viewed items of the caller (P-GEN-05, E-46). */
@@ -42,6 +45,7 @@ export class PersonalService {
     @Inject(SpaceService) private readonly spaces: SpaceService,
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(PageService) private readonly pages: PageService,
+    @Inject(BoardService) private readonly boards: BoardService,
   ) {}
 
   // ---------------------------------------------------------------- favourites
@@ -63,6 +67,9 @@ export class PersonalService {
         return (await this.spaces.find(principal, ref)).space.id;
       case 'page':
         return (await this.pages.authorize(principal, ref, 'view')).page.id;
+      case 'board':
+        if (!UUID.test(ref)) throw new NotFoundException('Board not found');
+        return (await this.boards.get(principal, ref)).id;
     }
   }
 
@@ -83,6 +90,12 @@ export class PersonalService {
           ).map((space) => [space.id, space]),
     );
     return { spaces: visibleSpaces, pages: await this.pages.visible(userId, pageIds) };
+  }
+
+  /** Boards among the rows that the user can still see, by id. */
+  private async visibleBoards(principal: Principal, rows: { kind: string }[]) {
+    if (!rows.some((row) => row.kind === 'board')) return new Map<string, BoardSummary>();
+    return new Map((await this.boards.list(principal)).map((board) => [board.id, board]));
   }
 
   async setFavourite(
@@ -125,6 +138,7 @@ export class PersonalService {
       (await this.filters.list(principal, 'favourites')).map((filter) => [filter.id, filter]),
     );
     const wiki = await this.wikiTargets(principal.userId, rows);
+    const visibleBoards = await this.visibleBoards(principal, rows);
     return rows.flatMap((row): Favourite[] => {
       switch (row.kind) {
         case 'project': {
@@ -142,6 +156,20 @@ export class PersonalService {
         case 'space': {
           const space = wiki.spaces.get(row.targetId);
           return space ? [{ kind: 'space', id: space.id, ref: space.key, name: space.name }] : [];
+        }
+        case 'board': {
+          const board = visibleBoards.get(row.targetId);
+          return board
+            ? [
+                {
+                  kind: 'board',
+                  id: board.id,
+                  ref: board.id,
+                  name: board.name,
+                  projectKey: board.project.key,
+                },
+              ]
+            : [];
         }
         default: {
           const page = wiki.pages.get(row.targetId);
@@ -226,6 +254,7 @@ export class PersonalService {
       (await this.projects.list(principal)).map((project) => [project.id, project]),
     );
     const wiki = await this.wikiTargets(principal.userId, rows);
+    const visibleBoards = await this.visibleBoards(principal, rows);
     const items: RecentItem[] = [];
     for (const row of rows) {
       const viewedAt = row.viewedAt.toISOString();
@@ -240,6 +269,16 @@ export class PersonalService {
       } else if (row.kind === 'space') {
         const space = wiki.spaces.get(row.targetId);
         if (space) items.push({ kind: 'space', ref: space.key, name: space.name, viewedAt });
+      } else if (row.kind === 'board') {
+        const board = visibleBoards.get(row.targetId);
+        if (board)
+          items.push({
+            kind: 'board',
+            ref: board.id,
+            name: board.name,
+            projectKey: board.project.key,
+            viewedAt,
+          });
       } else {
         const page = wiki.pages.get(row.targetId);
         if (page)

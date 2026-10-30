@@ -27,6 +27,7 @@ import {
   boardColumns,
   boardQuickFilters,
   boards,
+  favourites,
   issues,
   projects,
   sprintIssues,
@@ -69,9 +70,18 @@ export class BoardService {
 
   // ---------------------------------------------------------------- reading
 
+  /** Whether the caller starred the board (TL-6). */
+  private starred(userId: string) {
+    return sql<boolean>`exists (select 1 from ${favourites} where ${favourites.userId} = ${userId} and ${favourites.kind} = 'board' and ${favourites.targetId} = ${boards.id})`;
+  }
+
   private async row(principal: Principal, id: string, permission: 'browse' | 'administer') {
     const [row] = await this.database.db
-      .select({ board: boards, project: { key: projects.key, name: projects.name } })
+      .select({
+        board: boards,
+        project: { key: projects.key, name: projects.name },
+        favourite: this.starred(principal.userId),
+      })
       .from(boards)
       .innerJoin(projects, eq(projects.id, boards.projectId))
       .where(and(eq(boards.id, id), isNull(projects.archivedAt)));
@@ -97,6 +107,7 @@ export class BoardService {
     board: BoardRow,
     project: { key: string; name: string },
     canConfigure: boolean,
+    favourite: boolean,
   ): Promise<Board> {
     const db = this.database.db;
     const [columns, mapping, quickFilters] = await Promise.all([
@@ -136,6 +147,7 @@ export class BoardService {
       })),
       quickFilters: quickFilters.map(({ id, name, query }) => ({ id, name, query })),
       canConfigure,
+      favourite,
     };
   }
 
@@ -146,7 +158,11 @@ export class BoardService {
       : visible;
     if (keys.length === 0) return [];
     const rows = await this.database.db
-      .select({ board: boards, project: { key: projects.key, name: projects.name } })
+      .select({
+        board: boards,
+        project: { key: projects.key, name: projects.name },
+        favourite: this.starred(principal.userId),
+      })
       .from(boards)
       .innerJoin(projects, eq(projects.id, boards.projectId))
       .where(
@@ -156,17 +172,18 @@ export class BoardService {
         ),
       )
       .orderBy(asc(projects.key), asc(sql`lower(${boards.name})`));
-    return rows.map(({ board, project }) => ({
+    return rows.map(({ board, project, favourite }) => ({
       id: board.id,
       name: board.name,
       type: board.type,
       project,
+      favourite,
     }));
   }
 
   async get(principal: Principal, id: string): Promise<Board> {
-    const { board, project, canConfigure } = await this.row(principal, id, 'browse');
-    return this.present(board, project, canConfigure);
+    const { board, project, canConfigure, favourite } = await this.row(principal, id, 'browse');
+    return this.present(board, project, canConfigure, favourite);
   }
 
   // ---------------------------------------------------------------- scope
@@ -194,8 +211,8 @@ export class BoardService {
   }
 
   async issues(principal: Principal, id: string, filters: string[]): Promise<BoardData> {
-    const { board, project, canConfigure } = await this.row(principal, id, 'browse');
-    const presented = await this.present(board, project, canConfigure);
+    const { board, project, canConfigure, favourite } = await this.row(principal, id, 'browse');
+    const presented = await this.present(board, project, canConfigure, favourite);
     const custom = new Map(presented.quickFilters.map((filter) => [filter.id, filter.query]));
     const extra = filters.map((filter) => {
       const query = BUILT_IN[filter] ?? custom.get(filter);

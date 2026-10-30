@@ -2508,6 +2508,7 @@ export interface components {
         key: string;
         name: string;
       };
+      favourite: boolean;
     };
     CreateBoardRequest: {
       name: string;
@@ -2529,6 +2530,7 @@ export interface components {
         key: string;
         name: string;
       };
+      favourite: boolean;
       query: string;
       /** @enum {string} */
       swimlanes: 'none' | 'epic' | 'assignee';
@@ -3410,20 +3412,22 @@ export interface components {
       ref: string;
       name: string;
       spaceKey?: string;
+      projectKey?: string;
     };
     /** @enum {string} */
-    FavouriteKind: 'project' | 'filter' | 'space' | 'page';
+    FavouriteKind: 'project' | 'filter' | 'space' | 'page' | 'board';
     RecordRecentRequest: {
       kind: components['schemas']['RecentKind'];
       ref: string;
     };
     /** @enum {string} */
-    RecentKind: 'issue' | 'project' | 'space' | 'page';
+    RecentKind: 'issue' | 'project' | 'space' | 'page' | 'board';
     RecentItem: {
       kind: components['schemas']['RecentKind'];
       ref: string;
       name: string;
       spaceKey?: string;
+      projectKey?: string;
       /** Format: date-time */
       viewedAt: string;
       issue?: components['schemas']['IssueSummary'];

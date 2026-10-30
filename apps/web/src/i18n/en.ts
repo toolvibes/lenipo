@@ -581,6 +581,7 @@ export const en: Messages = {
     },
   },
   boards: {
+    recentlyViewed: 'Recently viewed',
     allIssues: 'All',
     title: 'Boards',
     views: 'Board views',

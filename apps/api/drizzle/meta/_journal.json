@@ -225,6 +225,13 @@
       "when": 1793360681339,
       "tag": "0031_keyboard_shortcuts",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793362558354,
+      "tag": "0032_board_favourites",
+      "breakpoints": true
     }
   ]
 }

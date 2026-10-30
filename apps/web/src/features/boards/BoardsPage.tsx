@@ -6,11 +6,13 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { boardsQuery } from '../../lib/boards';
+import { recentQuery } from '../../lib/personal';
 import { projectsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { FavouriteButton } from '../personal/FavouriteButton';
 
 function CreateBoardDialog({
   open,
@@ -113,7 +115,11 @@ function CreateBoardDialog({
 export function BoardsPage() {
   const { t } = useTranslation();
   const boards = useQuery(boardsQuery());
+  const recent = useQuery(recentQuery(20));
   const [creating, setCreating] = useState(false);
+  // Starred boards first, then the rest in the server's order (TL-6).
+  const sorted = [...(boards.data ?? [])].sort((a, b) => Number(b.favourite) - Number(a.favourite));
+  const recentBoards = (recent.data ?? []).filter((item) => item.kind === 'board').slice(0, 5);
 
   return (
     <main className="flex flex-col gap-4 px-6 py-5">
@@ -129,8 +135,25 @@ export function BoardsPage() {
           {t('boards.empty')}
         </p>
       )}
+      {recentBoards.length > 0 && (
+        <nav aria-label={t('boards.recentlyViewed')} className="flex flex-wrap items-center gap-2">
+          <span className="tl-label text-[var(--ink-muted)]">{t('boards.recentlyViewed')}</span>
+          {recentBoards.map((item) => (
+            <Link
+              key={item.ref}
+              to="/boards/$id"
+              params={{ id: item.ref }}
+              search={{}}
+              className="rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-0.5 text-[13px] text-[var(--ink)] no-underline hover:border-[var(--accent)]"
+            >
+              {item.name}
+              <span className="text-[var(--ink-muted)]"> · {item.projectKey}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
       <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
-        {boards.data?.map((board) => (
+        {sorted.map((board) => (
           <li key={board.id}>
             <Link
               to="/boards/$id"
@@ -139,12 +162,18 @@ export function BoardsPage() {
               className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-4 text-[var(--ink)] no-underline hover:border-[var(--accent)]"
             >
               <Kanban size={24} aria-hidden className="shrink-0 text-[var(--accent)]" />
-              <span className="flex min-w-0 flex-col">
+              <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-semibold">{board.name}</span>
                 <span className="truncate text-xs text-[var(--ink-muted)]">
                   {board.project.name} · {t(`boards.types.${board.type}`)}
                 </span>
               </span>
+              <FavouriteButton
+                kind="board"
+                refId={board.id}
+                active={board.favourite}
+                name={board.name}
+              />
             </Link>
           </li>
         ))}

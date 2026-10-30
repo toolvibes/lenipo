@@ -595,6 +595,7 @@ export const de = {
     },
   },
   boards: {
+    recentlyViewed: 'Zuletzt angesehen',
     allIssues: 'Alle',
     title: 'Boards',
     views: 'Ansichten des Boards',

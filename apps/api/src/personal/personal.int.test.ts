@@ -1,5 +1,7 @@
 import type {
   ActivityPage,
+  Board,
+  BoardSummary,
   Favourite,
   IssueColumns,
   NotificationList,
@@ -131,7 +133,8 @@ describe('favourites', () => {
     const projects = await jonas.request<ProjectSummary[]>('GET', '/projects');
     expect(projects.body.find((project) => project.key === 'WEB')?.favourite).toBe(true);
     expect((await jonas.request('PUT', '/me/favourites/project/SEC')).status).toBe(404);
-    expect((await jonas.request('PUT', '/me/favourites/board/x')).status).toBe(400);
+    expect((await jonas.request('PUT', '/me/favourites/sprint/x')).status).toBe(400);
+    expect((await jonas.request('PUT', '/me/favourites/board/x')).status).toBe(404);
   });
 
   it('keeps saved-filter favourites in the same place', async () => {
@@ -279,5 +282,41 @@ describe('result columns', () => {
     expect(
       asAdmin.body.issues.every((issue) => issue.canEdit && issue.canAssign && issue.canTransition),
     ).toBe(true);
+  });
+});
+
+describe('boards as favourites and recently viewed (TL-6)', () => {
+  it('star and remember boards the caller can see', async () => {
+    const web = (
+      await admin.request<BoardSummary>('POST', '/boards', {
+        name: 'Team',
+        projectKey: 'WEB',
+        type: 'scrum',
+      })
+    ).body;
+    const secret = (
+      await admin.request<BoardSummary>('POST', '/boards', { name: 'Audit', projectKey: 'SEC' })
+    ).body;
+    expect((await jonas.request('PUT', `/me/favourites/board/${web.id}`)).status).toBe(204);
+    expect((await jonas.request('PUT', `/me/favourites/board/${secret.id}`)).status).toBe(404);
+    const starred = (await jonas.request<Favourite[]>('GET', '/me/favourites')).body;
+    expect(starred.find((entry) => entry.kind === 'board')).toMatchObject({
+      ref: web.id,
+      name: 'Team',
+      projectKey: 'WEB',
+    });
+    const boards = (await jonas.request<BoardSummary[]>('GET', '/boards')).body;
+    expect(boards.map((board) => [board.name, board.favourite])).toEqual([['Team', true]]);
+    expect((await jonas.request<Board>('GET', `/boards/${web.id}`)).body.favourite).toBe(true);
+    expect((await admin.request<Board>('GET', `/boards/${web.id}`)).body.favourite).toBe(false);
+
+    expect((await jonas.request('POST', '/me/recent', { kind: 'board', ref: web.id })).status).toBe(
+      204,
+    );
+    expect(
+      (await jonas.request('POST', '/me/recent', { kind: 'board', ref: secret.id })).status,
+    ).toBe(404);
+    const recent = (await jonas.request<RecentItem[]>('GET', '/me/recent')).body;
+    expect(recent[0]).toMatchObject({ kind: 'board', ref: web.id, projectKey: 'WEB' });
   });
 });

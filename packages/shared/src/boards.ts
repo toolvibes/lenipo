@@ -38,6 +38,8 @@ export const BoardSummary = z
     name: z.string(),
     type: BoardType,
     project: z.object({ key: z.string(), name: z.string() }),
+    /** Starred by the caller (TL-6). */
+    favourite: z.boolean(),
   })
   .meta({ id: 'BoardSummary' });
 export type BoardSummary = z.infer<typeof BoardSummary>;
