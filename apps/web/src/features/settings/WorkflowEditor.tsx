@@ -32,6 +32,7 @@ import { ApiError, client, unwrap } from '../../lib/api';
 import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { WorkflowDiagram } from './WorkflowDiagram';
 
 interface Row {
   /** Local identity: the status id, or a temporary one for a new status. */
@@ -500,6 +501,20 @@ export function WorkflowEditor({
       (workflow.usage[status.id] ?? 0) > 0 && !draft.rows.some((row) => row.id === status.id),
   );
   const missingTarget = removedInUse.some((status) => !draft.migrate[status.id]);
+  const diagramPairs = useMemo(
+    () =>
+      draft.mode === 'free'
+        ? null
+        : [...draft.pairs].map((pair) => pair.split('>') as [string, string]),
+    [draft.mode, draft.pairs],
+  );
+  const ruleCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(draft.rules).map(([key, rules]) => [key, ruleCount(rules)]),
+      ),
+    [draft.rules],
+  );
 
   const publish = useMutation({
     mutationFn: () =>
@@ -627,6 +642,12 @@ export function WorkflowEditor({
         <p className="m-0 text-[13px] text-[var(--ink-muted)]">
           {t(draft.mode === 'free' ? 'workflow.freeHint' : 'workflow.definedHint')}
         </p>
+        <WorkflowDiagram
+          rows={draft.rows}
+          initial={draft.initial}
+          pairs={diagramPairs}
+          ruleCounts={ruleCounts}
+        />
         {draft.mode === 'defined' && (
           <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
             <table className="w-full border-collapse text-[13px]">

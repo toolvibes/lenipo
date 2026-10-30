@@ -1132,6 +1132,13 @@ export const de = {
     defined: 'Festgelegt',
     definedHint: 'Nur die angekreuzten Wechsel sind erlaubt; Zeile: von, Spalte: nach.',
     fromTo: 'Von {{from}} nach {{to}}',
+    diagramLabel: 'Workflow als Diagramm: Status und erlaubte Wechsel',
+    diagramHint:
+      'Von links nach rechts der übliche Weg vom Start; Linien oben überspringen Status, Linien unten führen zurück. Zahlen zeigen Regeln für den Wechsel in den Status. Bearbeitet wird in der Matrix.',
+    diagramFree: 'Frei: Jeder Status kann in jeden anderen wechseln. Spalten nach Kategorie.',
+    unreachable: 'Vom Start aus nicht erreichbar: {{names}}',
+    unreachableOne: 'vom Start aus nicht erreichbar',
+    deadEnds: 'Kein Weg hinaus (und nicht erledigt): {{names}}',
     migrate: 'Vorgänge in entfernten Status',
     migrateHint:
       'Diese Vorgänge wechseln beim Veröffentlichen in den gewählten Status; die Historie hält es fest, Benachrichtigungen gehen nicht raus.',

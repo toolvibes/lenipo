@@ -1117,6 +1117,13 @@ export const en: Messages = {
     defined: 'Defined',
     definedHint: 'Only the ticked moves are allowed; row: from, column: to.',
     fromTo: 'From {{from}} to {{to}}',
+    diagramLabel: 'Workflow as a diagram: statuses and allowed moves',
+    diagramHint:
+      'Left to right the usual way from the start; lines above skip statuses, lines below lead back. Numbers show rules for moving into a status. Edit in the matrix.',
+    diagramFree: 'Free: every status can move to every other. Columns by category.',
+    unreachable: 'Not reachable from the start: {{names}}',
+    unreachableOne: 'not reachable from the start',
+    deadEnds: 'No way out (and not done): {{names}}',
     migrate: 'Issues in removed statuses',
     migrateHint:
       'These issues move to the chosen status when you publish; history records it, no notifications are sent.',
