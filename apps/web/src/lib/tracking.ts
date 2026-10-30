@@ -127,3 +127,11 @@ export const timelineQuery = (key: string) =>
     queryFn: () =>
       unwrap(client.GET('/api/v1/projects/{key}/timeline', { params: { path: { key } } })),
   });
+
+/** The project's workflow for the editor (E-70). */
+export const projectWorkflowQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['project-workflow', key],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/projects/{key}/workflow', { params: { path: { key } } })),
+  });

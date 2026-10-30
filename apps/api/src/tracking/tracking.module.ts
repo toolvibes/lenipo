@@ -16,6 +16,7 @@ import { ProjectsController } from './projects.controller.js';
 import { TimeTrackingController } from './time-tracking.controller.js';
 import { TimelineService } from './timeline.service.js';
 import { VersionService } from './version.service.js';
+import { WorkflowService } from './workflow.service.js';
 import { WorkingTimeService } from './working-time.service.js';
 import { WorklogService } from './worklog.service.js';
 
@@ -40,6 +41,7 @@ import { WorklogService } from './worklog.service.js';
     VersionService,
     IssueService,
     TimelineService,
+    WorkflowService,
     WorklogService,
     AttachmentService,
   ],

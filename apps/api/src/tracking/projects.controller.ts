@@ -19,6 +19,8 @@ import {
   ProjectCustomFieldsRequest,
   ProjectDetails,
   ProjectSummary,
+  ProjectWorkflow,
+  PublishWorkflowRequest,
   ReleaseVersionRequest,
   Timeline,
   UpdateComponentRequest,
@@ -36,6 +38,7 @@ import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { TimelineService } from './timeline.service.js';
 import { VersionService } from './version.service.js';
+import { WorkflowService } from './workflow.service.js';
 
 const ListIssuesQuery = z.object({
   status: z.enum(['todo', 'in_progress', 'done', 'unresolved']).optional(),
@@ -66,6 +69,7 @@ export class ProjectsController {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(VersionService) private readonly versions: VersionService,
     @Inject(TimelineService) private readonly timelines: TimelineService,
+    @Inject(WorkflowService) private readonly workflows: WorkflowService,
   ) {}
 
   @Endpoint({
@@ -138,6 +142,38 @@ export class ProjectsController {
   @Get(':key/timeline')
   timeline(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Timeline> {
     return this.timelines.get(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Workflows',
+    summary: "The project's workflow for the editor",
+    description:
+      'Statuses in order, the initial status, allowed moves and how many issues use each status.',
+    response: ProjectWorkflow,
+  })
+  @Get(':key/workflow')
+  workflow(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<ProjectWorkflow> {
+    return this.workflows.get(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Workflows',
+    summary: 'Publish a new version of the project workflow',
+    description:
+      'Needs project administration. The first edit gives the project its own copy of a shared workflow. All issues of the project move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.',
+    response: ProjectWorkflow,
+  })
+  @Post(':key/workflow')
+  @HttpCode(200)
+  publishWorkflow(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(PublishWorkflowRequest) body: PublishWorkflowRequest,
+  ): Promise<ProjectWorkflow> {
+    return this.workflows.publish(principal, key, body);
   }
 
   @Endpoint({

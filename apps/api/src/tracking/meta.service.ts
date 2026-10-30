@@ -47,6 +47,11 @@ export class MetaService {
     return this.cached.value;
   }
 
+  /** After statuses or other metadata changed; other instances catch up within the cache time. */
+  invalidate(): void {
+    this.cached = undefined;
+  }
+
   private async read(): Promise<MetaIndex> {
     const db = this.database.db;
     const [types, statusRows, priorityRows, resolutionRows, linkTypeRows] = await Promise.all([

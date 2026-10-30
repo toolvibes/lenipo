@@ -1,4 +1,4 @@
-import { BookOpenText, MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import { BookOpenText, GearSix, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
@@ -9,16 +9,13 @@ import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { projectSpacesQuery } from '../../lib/wiki';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { CHIP, PageHeading, TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { ColumnPicker } from '../search/ColumnPicker';
-import { ComponentsDialog } from './ComponentsDialog';
 import { CreateIssueDialog } from './CreateIssueDialog';
 import { IssueSplit, useWideScreen } from './IssueSplit';
 import { IssueTable } from './IssueTable';
-import { ProjectFieldsDialog } from './ProjectFieldsDialog';
-import { VersionsDialog } from './VersionsDialog';
 
 type Preset = 'all' | 'mine' | 'open' | 'done';
 
@@ -58,9 +55,6 @@ export function ProjectIssuesPage({
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(50);
   const [creating, setCreating] = useState(false);
-  const [managingComponents, setManagingComponents] = useState(false);
-  const [managingFields, setManagingFields] = useState(false);
-  const [managingVersions, setManagingVersions] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -94,19 +88,14 @@ export function ProjectIssuesPage({
           project.data?.name ?? projectKey,
         ]}
         actions={
-          project.data?.permissions.includes('administer') && (
-            <>
-              <Button size="sm" variant="ghost" onClick={() => setManagingVersions(true)}>
-                {t('versions.title')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setManagingFields(true)}>
-                {t('fields.project.button')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setManagingComponents(true)}>
-                {t('projects.components.title')}
-              </Button>
-            </>
-          )
+          <Link
+            to="/projects/$key/settings"
+            params={{ key: projectKey }}
+            className={buttonClass('ghost', 'sm')}
+          >
+            <GearSix size={16} aria-hidden />
+            {t('projectSettings.open')}
+          </Link>
         }
       />
       <PageHeading
@@ -210,23 +199,6 @@ export function ProjectIssuesPage({
           )}
         </IssueSplit>
       </div>
-      <ComponentsDialog
-        projectKey={projectKey}
-        open={managingComponents}
-        onOpenChange={setManagingComponents}
-      />
-      <VersionsDialog
-        projectKey={projectKey}
-        open={managingVersions}
-        onOpenChange={setManagingVersions}
-      />
-      {project.data && (
-        <ProjectFieldsDialog
-          project={project.data}
-          open={managingFields}
-          onOpenChange={setManagingFields}
-        />
-      )}
       {project.data && (
         <CreateIssueDialog
           project={project.data}

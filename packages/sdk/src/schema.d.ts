@@ -2158,6 +2158,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/workflow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The project's workflow for the editor
+     * @description Statuses in order, the initial status, allowed moves and how many issues use each status.
+     */
+    get: operations['Workflows.workflow'];
+    put?: never;
+    /**
+     * Publish a new version of the project workflow
+     * @description Needs project administration. The first edit gives the project its own copy of a shared workflow. All issues of the project move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.
+     */
+    post: operations['Workflows.publishWorkflow'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3779,6 +3803,49 @@ export interface components {
       durationMs: number | null;
       /** Format: date-time */
       createdAt: string;
+    };
+    ProjectWorkflow: {
+      /** Format: uuid */
+      versionId: string;
+      version: number;
+      name: string;
+      ownedByProject: boolean;
+      /** @enum {string} */
+      mode: 'free' | 'defined';
+      statuses: components['schemas']['StatusInfo'][];
+      /** Format: uuid */
+      initialStatusId: string;
+      transitions: {
+        /** Format: uuid */
+        from: string;
+        /** Format: uuid */
+        to: string;
+      }[];
+      usage: {
+        [key: string]: number;
+      };
+      available: components['schemas']['StatusInfo'][];
+    };
+    PublishWorkflowRequest: {
+      /** Format: uuid */
+      baseVersionId: string;
+      statuses: {
+        id: string | null;
+        name: string;
+        category: components['schemas']['StatusCategory'];
+      }[];
+      initial: number;
+      /** @enum {string} */
+      mode: 'free' | 'defined';
+      /** @default [] */
+      transitions?: {
+        from: number;
+        to: number;
+      }[];
+      /** @default {} */
+      migrate?: {
+        [key: string]: number;
+      };
     };
   };
   responses: never;
@@ -8781,6 +8848,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['WebhookDelivery'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Workflows.workflow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectWorkflow'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Workflows.publishWorkflow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublishWorkflowRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectWorkflow'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

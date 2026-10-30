@@ -79,6 +79,8 @@ export const workflows = pgTable('workflows', {
   name: text().notNull(),
   description: text().notNull().default(''),
   builtIn: boolean().notNull().default(false),
+  /** Set for a project's own copy, made on its first edit (E-70); shared workflows have none. */
+  projectId: uuid(),
 });
 
 /** A published workflow version is immutable (decision E-31); drafts come with the editor in phase 4. */

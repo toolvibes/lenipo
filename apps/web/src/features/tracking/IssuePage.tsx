@@ -242,6 +242,7 @@ function Activity({
                   </strong>{' '}
                   · {formatRelative(group.createdAt)}
                   {group.via === 'mcp' && ` · ${t('issues.viaMcp')}`}
+                  {group.via === 'workflow' && ` · ${t('issues.viaWorkflow')}`}
                 </span>
                 {/* A change group records each field at most once. */}
                 {group.items.map((item) => (

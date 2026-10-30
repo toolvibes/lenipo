@@ -25,6 +25,7 @@ import { ActivityPage } from './features/personal/ActivityPage';
 import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
+import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
 import { TimelinePage } from './features/timeline/TimelinePage';
@@ -239,6 +240,15 @@ const timelineRoute = createRoute({
   },
 });
 
+const projectSettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/settings',
+  component: function ProjectSettings() {
+    const { key } = projectSettingsRoute.useParams();
+    return <ProjectSettingsPage key={key} projectKey={key.toUpperCase()} />;
+  },
+});
+
 const everythingRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/search',
@@ -433,6 +443,7 @@ const routeTree = rootRoute.addChildren([
     projectsRoute,
     projectRoute,
     timelineRoute,
+    projectSettingsRoute,
     everythingRoute,
     searchRoute,
     issueRoute,

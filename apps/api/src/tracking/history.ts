@@ -21,11 +21,13 @@ export async function recordChanges(
   principal: Principal,
   changes: Change[],
   mentions: string[] = [],
+  /** A workflow change moved the issue (E-70): shown as such, nobody is notified. */
+  migration = false,
 ): Promise<void> {
   if (changes.length === 0) return;
   const [group] = await tx
     .insert(issueChangeGroups)
-    .values({ issueId, authorId: principal.userId, via: principal.via })
+    .values({ issueId, authorId: principal.userId, via: migration ? 'workflow' : principal.via })
     .returning({ id: issueChangeGroups.id });
   if (!group) throw new Error('Change group insert returned no row');
   await tx
@@ -35,5 +37,6 @@ export async function recordChanges(
     type: 'issue.updated',
     items: changes,
     mentions,
+    ...(migration ? { migration: true } : {}),
   });
 }

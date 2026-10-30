@@ -14,7 +14,7 @@ export interface ChangedItem {
 /** What happened to an issue; written to the outbox in the transaction of the change (E-44). */
 export type IssueEvent =
   | { type: 'issue.created'; mentions: string[] }
-  | { type: 'issue.updated'; items: ChangedItem[]; mentions: string[] }
+  | { type: 'issue.updated'; items: ChangedItem[]; mentions: string[]; migration?: boolean }
   | {
       type: 'issue.commented';
       commentId: string;

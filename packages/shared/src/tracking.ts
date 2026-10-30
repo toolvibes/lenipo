@@ -533,3 +533,58 @@ export const ReleaseVersionRequest = z
   })
   .meta({ id: 'ReleaseVersionRequest' });
 export type ReleaseVersionRequest = z.infer<typeof ReleaseVersionRequest>;
+
+// ---------------------------------------------------------------- workflow editor (E-70)
+
+export const WorkflowMode = z.enum(['free', 'defined']);
+export type WorkflowMode = z.infer<typeof WorkflowMode>;
+
+export const ProjectWorkflow = z
+  .object({
+    versionId: Id,
+    version: z.number().int(),
+    name: z.string(),
+    /** The project edits its own copy; false while it still uses a shared workflow. */
+    ownedByProject: z.boolean(),
+    /** "free": every status reachable from every other; "defined": only `transitions`. */
+    mode: WorkflowMode,
+    statuses: z.array(StatusInfo),
+    initialStatusId: Id,
+    /** Allowed moves in "defined" mode; empty in "free" mode. */
+    transitions: z.array(z.object({ from: Id, to: Id })),
+    /** Issues of the project per status, for moving them off removed statuses. */
+    usage: z.record(Id, z.number().int()),
+    /** Every status there is, to pick from. */
+    available: z.array(StatusInfo),
+  })
+  .meta({ id: 'ProjectWorkflow' });
+export type ProjectWorkflow = z.infer<typeof ProjectWorkflow>;
+
+export const PublishWorkflowRequest = z
+  .object({
+    /** The version the edit started from; another publish in between answers 409. */
+    baseVersionId: Id,
+    /** In board order; without id, a status of that name is reused or created. */
+    statuses: z
+      .array(
+        z.object({
+          id: Id.nullable(),
+          name: z.string().trim().min(1).max(60),
+          category: StatusCategory,
+        }),
+      )
+      .min(1)
+      .max(30),
+    /** Index into `statuses`. */
+    initial: z.number().int().min(0),
+    mode: WorkflowMode,
+    /** Pairs of indexes into `statuses`, for "defined" mode. */
+    transitions: z
+      .array(z.object({ from: z.number().int().min(0), to: z.number().int().min(0) }))
+      .max(900)
+      .default([]),
+    /** Removed status id → index of the status its issues move to. */
+    migrate: z.record(Id, z.number().int().min(0)).default({}),
+  })
+  .meta({ id: 'PublishWorkflowRequest' });
+export type PublishWorkflowRequest = z.infer<typeof PublishWorkflowRequest>;
