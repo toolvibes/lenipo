@@ -1,5 +1,5 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { UserRef } from '@tasklore/shared';
+import type { ProjectRole, UserRef } from '@tasklore/shared';
 import { PROJECT_PERMISSIONS, type ProjectPermission } from '@tasklore/shared';
 import { and, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
@@ -13,6 +13,7 @@ import {
   projects,
   users,
 } from '../db/schema/index.js';
+import type { RuleViewer } from './workflow.js';
 
 export interface Relational {
   assignee: Set<ProjectPermission>;
@@ -65,6 +66,19 @@ export class ProjectAccessService {
         where ${grantApplies(sql`${projectId}::uuid`, scheme, sql`${userId}::uuid`)}`,
     );
     return new Set([...rows].map((row) => row.permission));
+  }
+
+  /** The viewer of a project's issues, for transition conditions (TL-11). */
+  async ruleViewer(userId: string, projectId: string): Promise<RuleViewer> {
+    const [isAdmin, rows] = await Promise.all([
+      this.access.hasGlobal(userId, 'admin'),
+      this.database.db.execute<{ role: ProjectRole }>(
+        sql`select distinct m.role from project_role_members m
+          where m.project_id = ${projectId} and (m.user_id = ${userId}
+            or m.group_id in (select gm.group_id from group_members gm where gm.user_id = ${userId}))`,
+      ),
+    ]);
+    return { userId, isAdmin, roles: new Set([...rows].map((row) => row.role)) };
   }
 
   /** SQL condition limiting `projects` to those the user may browse. */

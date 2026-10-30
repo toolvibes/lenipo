@@ -41,7 +41,6 @@ import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
-import { transitionsFrom } from '../tracking/workflow.js';
 
 const { searchVector: _searchVector, ...issueColumns } = getTableColumns(issues);
 const BOARD_LIMIT = 500;
@@ -283,17 +282,12 @@ export class BoardService {
 
     // Where each card may go now, so the board can mark the reachable columns.
     const reachable: Record<string, string[]> = {};
-    const workflows = new Map<string, Awaited<ReturnType<ProjectService['workflow']>>>();
-    for (const [index, row] of shown.entries()) {
-      if (!summaries[index]?.canTransition) continue;
-      let workflow = workflows.get(row.workflowVersionId);
-      if (!workflow) {
-        workflow = await this.projects.workflow(row.workflowVersionId);
-        workflows.set(row.workflowVersionId, workflow);
-      }
-      reachable[row.id] = transitionsFrom(workflow, row.statusId).map(
-        (transition) => transition.to,
-      );
+    const offered = await this.issueService.offered(
+      principal.userId,
+      shown.filter((_, index) => summaries[index]?.canTransition),
+    );
+    for (const [issueId, transitions] of offered) {
+      reachable[issueId] = transitions.map((transition) => transition.to);
     }
     return {
       board: presented,

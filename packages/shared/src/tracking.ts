@@ -729,6 +729,39 @@ export type ReleaseVersionRequest = z.infer<typeof ReleaseVersionRequest>;
 
 // ---------------------------------------------------------------- workflow editor (E-70)
 
+/** System fields a transition can require; custom fields are named by their id (TL-11). */
+export const TRANSITION_FIELDS = [
+  'assignee',
+  'description',
+  'dueDate',
+  'startDate',
+  'storyPoints',
+  'labels',
+  'components',
+  'fixVersions',
+] as const;
+
+/**
+ * Rules for moving into one status (TL-11, E-85): conditions decide whether the transition is
+ * offered at all, required fields are checked when it runs, and the assignment follows it.
+ */
+export const TransitionRules = z
+  .object({
+    /** Only the issue's assignee may move it here. */
+    onlyAssignee: z.boolean().default(false),
+    /** Only members of these project roles (global administrators always); empty: everybody. */
+    roles: z.array(ProjectRole).max(PROJECT_ROLES.length).default([]),
+    /** Every subtask is done first. */
+    subtasksDone: z.boolean().default(false),
+    /** A `TRANSITION_FIELDS` key or a custom field id each; empty values block the move. */
+    requiredFields: z.array(z.string().min(1).max(64)).max(30).default([]),
+    /** Afterwards: keep the assignee, take the issue, give it to the reporter, or unassign it. */
+    assign: z.enum(['keep', 'caller', 'reporter', 'nobody']).default('keep'),
+  })
+  .meta({ id: 'TransitionRules' });
+export type TransitionRules = z.infer<typeof TransitionRules>;
+export type TransitionRulesInput = z.input<typeof TransitionRules>;
+
 export const WorkflowMode = z.enum(['free', 'defined']);
 export type WorkflowMode = z.infer<typeof WorkflowMode>;
 
@@ -745,6 +778,8 @@ export const ProjectWorkflow = z
     initialStatusId: Id,
     /** Allowed moves in "defined" mode; empty in "free" mode. */
     transitions: z.array(z.object({ from: Id, to: Id })),
+    /** Rules for moving into a status, by its id; statuses without rules are missing. */
+    rules: z.record(Id, TransitionRules),
     /** Issues of the project per status, for moving them off removed statuses. */
     usage: z.record(Id, z.number().int()),
     /** Every status there is, to pick from. */
@@ -764,6 +799,8 @@ export const PublishWorkflowRequest = z
           id: Id.nullable(),
           name: z.string().trim().min(1).max(60),
           category: StatusCategory,
+          /** Rules for moving into this status. */
+          rules: TransitionRules.optional(),
         }),
       )
       .min(1)

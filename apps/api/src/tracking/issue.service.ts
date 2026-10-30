@@ -38,14 +38,18 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import { escapeLike } from '../db/like.js';
 import {
+  customFields,
   issueChangeGroups,
   issueChangeItems,
   issueComments,
+  issueComponents,
   issues,
+  issueVersions,
   issueWatchers,
   projects,
   sprintIssues,
   sprints,
+  statuses,
   users,
 } from '../db/schema/index.js';
 import { emitIssueEvent } from '../notifications/events.js';
@@ -62,7 +66,26 @@ import { ProjectAccessService, type Relational, withRelational } from './project
 import { rankBetween } from './rank.js';
 import { mentionedUserIds, plainText } from './rich-text.js';
 import { VERSION_FIELD, VersionService } from './version.service.js';
-import { transitionsFrom } from './workflow.js';
+import {
+  blockedBy,
+  type RuleViewer,
+  transitionsFrom,
+  type WorkflowDefinition,
+  type WorkflowTransition,
+} from './workflow.js';
+
+/** Names of the system fields a transition can require, for its error message. */
+const FIELD_NAMES: Record<string, string> = {
+  assignee: 'Assignee',
+  description: 'Description',
+  dueDate: 'Due date',
+  startDate: 'Start date',
+  storyPoints: 'Story points',
+  labels: 'Labels',
+  components: 'Components',
+  fixVersions: 'Fix versions',
+};
+
 import { WorkingTimeService } from './working-time.service.js';
 
 /** Issue columns without the search vector, which only the database reads. */
@@ -887,11 +910,137 @@ export class IssueService {
     });
   }
 
+  /**
+   * The transitions each issue offers the viewer: those from its status whose conditions hold
+   * (TL-11, E-85). Required fields are only checked when a transition runs.
+   */
+  async offered(
+    userId: string,
+    rows: Array<{
+      id: string;
+      projectId: string;
+      statusId: string;
+      workflowVersionId: string;
+      assigneeId: string | null;
+    }>,
+  ): Promise<Map<string, WorkflowTransition[]>> {
+    const definitions = new Map<string, WorkflowDefinition>();
+    const candidates = new Map<string, WorkflowTransition[]>();
+    for (const row of rows) {
+      let definition = definitions.get(row.workflowVersionId);
+      if (!definition) {
+        definition = await this.projectService.workflow(row.workflowVersionId);
+        definitions.set(row.workflowVersionId, definition);
+      }
+      candidates.set(row.id, transitionsFrom(definition, row.statusId));
+    }
+    const open = await this.openSubtasks(
+      rows
+        .filter((row) => candidates.get(row.id)?.some((entry) => entry.rules?.subtasksDone))
+        .map((row) => row.id),
+    );
+    const viewers = new Map<string, RuleViewer>();
+    const result = new Map<string, WorkflowTransition[]>();
+    for (const row of rows) {
+      const offered: WorkflowTransition[] = [];
+      for (const transition of candidates.get(row.id) ?? []) {
+        if (transition.rules) {
+          let viewer = viewers.get(row.projectId);
+          if (!viewer) {
+            viewer = await this.projectAccess.ruleViewer(userId, row.projectId);
+            viewers.set(row.projectId, viewer);
+          }
+          const subject = { assigneeId: row.assigneeId, openSubtasks: open.get(row.id) ?? 0 };
+          if (blockedBy(transition.rules, subject, viewer)) continue;
+        }
+        offered.push(transition);
+      }
+      result.set(row.id, offered);
+    }
+    return result;
+  }
+
+  /** Child issues not done yet, per parent. */
+  private async openSubtasks(parentIds: string[]): Promise<Map<string, number>> {
+    if (parentIds.length === 0) return new Map();
+    const rows = await this.database.db
+      .select({ parentId: issues.parentId, n: count() })
+      .from(issues)
+      .innerJoin(statuses, eq(statuses.id, issues.statusId))
+      .where(
+        and(
+          inArray(issues.parentId, parentIds),
+          isNull(issues.deletedAt),
+          sql`${statuses.category} <> 'done'`,
+        ),
+      )
+      .groupBy(issues.parentId);
+    return new Map(rows.map((row) => [row.parentId as string, row.n]));
+  }
+
+  /** The required fields of a transition that the issue leaves empty, by name. */
+  private async missingFields(
+    issue: typeof issues.$inferSelect,
+    required: string[],
+  ): Promise<string[]> {
+    const empty = async (field: string): Promise<boolean> => {
+      switch (field) {
+        case 'assignee':
+          return !issue.assigneeId;
+        case 'description':
+          return !issue.descriptionText.trim();
+        case 'dueDate':
+        case 'startDate':
+        case 'storyPoints':
+          return issue[field] === null;
+        case 'labels':
+          return issue.labels.length === 0;
+        case 'components': {
+          const [row] = await this.database.db
+            .select({ n: count() })
+            .from(issueComponents)
+            .where(eq(issueComponents.issueId, issue.id));
+          return (row?.n ?? 0) === 0;
+        }
+        case 'fixVersions': {
+          const [row] = await this.database.db
+            .select({ n: count() })
+            .from(issueVersions)
+            .where(and(eq(issueVersions.issueId, issue.id), eq(issueVersions.kind, 'fix')));
+          return (row?.n ?? 0) === 0;
+        }
+        default: {
+          const value = (issue.customFields as Record<string, unknown>)[field];
+          return (
+            value === undefined ||
+            value === null ||
+            value === '' ||
+            (Array.isArray(value) && value.length === 0)
+          );
+        }
+      }
+    };
+    const missing: string[] = [];
+    for (const field of required) if (await empty(field)) missing.push(field);
+    const custom = missing.filter((field) => !FIELD_NAMES[field]);
+    const names = new Map(
+      custom.length === 0
+        ? []
+        : (
+            await this.database.db
+              .select({ id: customFields.id, name: customFields.name })
+              .from(customFields)
+              .where(inArray(customFields.id, custom))
+          ).map((row) => [row.id, row.name]),
+    );
+    return missing.map((field) => FIELD_NAMES[field] ?? names.get(field) ?? field);
+  }
+
   async transitions(principal: Principal, key: string): Promise<Transition[]> {
     const { issue } = await this.load(principal, key, 'browse');
     const meta = await this.meta.load();
-    const definition = await this.projectService.workflow(issue.workflowVersionId);
-    return transitionsFrom(definition, issue.statusId).flatMap((transition) => {
+    const offered = (await this.offered(principal.userId, [issue])).get(issue.id) ?? [];
+    return offered.flatMap((transition) => {
       const to = meta.status.get(transition.to);
       return to
         ? [{ id: transition.id, name: transition.name, to, setsResolution: to.category === 'done' }]
@@ -909,6 +1058,21 @@ export class IssueService {
     );
     if (!transition)
       throw new BadRequestException('This transition is not available from the current status');
+    const rules = transition.rules;
+    if (rules) {
+      const viewer = await this.projectAccess.ruleViewer(principal.userId, issue.projectId);
+      const open = rules.subtasksDone ? await this.openSubtasks([issue.id]) : new Map();
+      const reason = blockedBy(
+        rules,
+        { assigneeId: issue.assigneeId, openSubtasks: open.get(issue.id) ?? 0 },
+        viewer,
+      );
+      if (reason) throw new ForbiddenException(reason);
+      const missing = await this.missingFields(issue, rules.requiredFields);
+      if (missing.length > 0) {
+        throw new BadRequestException(`Fill in first: ${missing.join(', ')}`);
+      }
+    }
     const from = meta.status.get(issue.statusId);
     const to = meta.status.get(transition.to);
     if (!from || !to) throw new Error('Workflow references unknown statuses');
@@ -952,6 +1116,32 @@ export class IssueService {
         toValue: null,
         toDisplay: null,
       });
+    }
+    // Post-function: who has the issue afterwards. Someone who cannot work in the project
+    // (any more) does not get it; the issue keeps its assignee then.
+    if (rules && rules.assign !== 'keep') {
+      const target =
+        rules.assign === 'caller'
+          ? principal.userId
+          : rules.assign === 'reporter'
+            ? issue.reporterId
+            : null;
+      if (target !== issue.assigneeId) {
+        const next = target
+          ? await this.requireAssignable(issue.projectId, target).catch(() => undefined)
+          : null;
+        if (next !== undefined) {
+          const previous = (await this.userRefs([issue.assigneeId])).get(issue.assigneeId ?? '');
+          changes.push({
+            field: 'assignee',
+            fromValue: issue.assigneeId,
+            fromDisplay: previous?.displayName ?? null,
+            toValue: next?.id ?? null,
+            toDisplay: next?.displayName ?? null,
+          });
+          patch.assigneeId = next?.id ?? null;
+        }
+      }
     }
     await this.database.db.transaction(async (tx) => {
       await tx

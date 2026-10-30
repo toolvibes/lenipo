@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
-import type {
-  ProjectWorkflow,
-  PublishWorkflowRequest,
-  StatusCategory,
-  StatusInfo,
+import {
+  type ProjectWorkflow,
+  type PublishWorkflowRequest,
+  type StatusCategory,
+  type StatusInfo,
+  TRANSITION_FIELDS,
 } from '@tasklore/shared';
 import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -14,6 +15,7 @@ import {
   boardColumnStatuses,
   boardColumns,
   boards,
+  customFields,
   issues,
   projects,
   statuses,
@@ -25,7 +27,7 @@ import { type Change, recordChanges } from './history.js';
 import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
-import type { WorkflowDefinition, WorkflowTransition } from './workflow.js';
+import { hasRules, type WorkflowDefinition, type WorkflowTransition } from './workflow.js';
 
 /** A readable, unique key for a new status, e.g. "code-review". */
 function statusKey(name: string, taken: Set<string>): string {
@@ -112,6 +114,9 @@ export class WorkflowService {
       statuses: definition.statusIds.flatMap((id) => meta.status.get(id) ?? []),
       initialStatusId: definition.initialStatusId,
       transitions: free ? [] : pairs(definition),
+      rules: Object.fromEntries(
+        definition.transitions.flatMap((entry) => (entry.rules ? [[entry.to, entry.rules]] : [])),
+      ),
       usage: Object.fromEntries(usage.map((entry) => [entry.statusId, entry.n])),
       available: meta.statuses,
     };
@@ -134,6 +139,7 @@ export class WorkflowService {
       index(pair.from);
       index(pair.to);
     }
+    await this.checkRequiredFields(request);
 
     const versionId = await this.database.db.transaction(async (tx) => {
       // Locks the project row, so two publishes cannot both start from the same version.
@@ -228,6 +234,25 @@ export class WorkflowService {
     return this.present(project.id, versionId);
   }
 
+  /** Required fields are system fields or custom fields that exist (TL-11). */
+  private async checkRequiredFields(request: PublishWorkflowRequest) {
+    const named = new Set(request.statuses.flatMap((entry) => entry.rules?.requiredFields ?? []));
+    const custom = [...named].filter(
+      (field) => !(TRANSITION_FIELDS as readonly string[]).includes(field),
+    );
+    if (custom.length === 0) return;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const found =
+      custom.every((field) => uuid.test(field)) &&
+      (
+        await this.database.db
+          .select({ id: customFields.id })
+          .from(customFields)
+          .where(inArray(customFields.id, custom))
+      ).length === custom.length;
+    if (!found) throw new BadRequestException('A required field does not exist');
+  }
+
   /** Existing statuses by id; new ones reuse a status of the same name or are created. */
   private async resolveStatuses(
     tx: Executor,
@@ -269,7 +294,13 @@ export class WorkflowService {
   ): WorkflowDefinition {
     const transitions = ids.flatMap((to, toIndex): WorkflowTransition[] => {
       const target = byId.get(to);
-      const base = { id: `to-${target?.key ?? to}`, name: target?.name ?? to, to };
+      const rules = request.statuses[toIndex]?.rules;
+      const base = {
+        id: `to-${target?.key ?? to}`,
+        name: target?.name ?? to,
+        to,
+        ...(hasRules(rules) ? { rules } : {}),
+      };
       if (request.mode === 'free') return [{ ...base, from: '*' as const }];
       const from = [
         ...new Set(

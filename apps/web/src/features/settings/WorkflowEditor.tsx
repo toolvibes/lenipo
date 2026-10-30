@@ -16,16 +16,20 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowDown, ArrowUp, DotsSixVertical, Trash } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type {
-  ProjectWorkflow,
-  PublishWorkflowRequest,
-  StatusCategory,
-  WorkflowMode,
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  PROJECT_ROLES,
+  type ProjectWorkflow,
+  type PublishWorkflowRequest,
+  type StatusCategory,
+  TRANSITION_FIELDS,
+  type TransitionRules,
+  type WorkflowMode,
 } from '@tasklore/shared';
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 
@@ -45,6 +49,29 @@ interface Draft {
   pairs: Set<string>;
   /** Removed status id → row key its issues move to. */
   migrate: Record<string, string>;
+  /** Rules for moving into a status, by row key (TL-11). */
+  rules: Record<string, TransitionRules>;
+}
+
+const NO_RULES: TransitionRules = {
+  onlyAssignee: false,
+  roles: [],
+  subtasksDone: false,
+  requiredFields: [],
+  assign: 'keep',
+};
+const ASSIGN = ['keep', 'caller', 'reporter', 'nobody'] as const;
+
+/** How many rules are set, so empty ones are neither sent nor counted. */
+function ruleCount(rules: TransitionRules | undefined): number {
+  if (!rules) return 0;
+  return (
+    Number(rules.onlyAssignee) +
+    Number(rules.roles.length > 0) +
+    Number(rules.subtasksDone) +
+    rules.requiredFields.length +
+    Number(rules.assign !== 'keep')
+  );
 }
 
 const DOT: Record<StatusCategory, string> = {
@@ -68,6 +95,7 @@ function fromServer(workflow: ProjectWorkflow): Draft {
     mode: workflow.mode,
     pairs: new Set(workflow.transitions.map((pair) => `${pair.from}>${pair.to}`)),
     migrate: {},
+    rules: workflow.rules,
   };
 }
 
@@ -81,7 +109,10 @@ function toRequest(workflow: ProjectWorkflow, draft: Draft): PublishWorkflowRequ
   const index = new Map(draft.rows.map((row, position) => [row.key, position]));
   return {
     baseVersionId: workflow.versionId,
-    statuses: draft.rows.map(({ id, name, category }) => ({ id, name, category })),
+    statuses: draft.rows.map(({ key, id, name, category }) => {
+      const rules = draft.rules[key];
+      return { id, name, category, ...(ruleCount(rules) > 0 ? { rules } : {}) };
+    }),
     initial: index.get(draft.initial) ?? 0,
     mode: draft.mode,
     transitions:
@@ -214,6 +245,129 @@ function StatusRow({
   );
 }
 
+/** Rules for moving into each status (TL-11, E-85), one folding panel per status. */
+function TransitionRulesSection({
+  rows,
+  rules,
+  fields,
+  editable,
+  onChange,
+}: {
+  rows: Row[];
+  rules: Record<string, TransitionRules>;
+  fields: Array<{ id: string; name: string }>;
+  editable: boolean;
+  onChange: (key: string, rules: TransitionRules) => void;
+}) {
+  const { t } = useTranslation();
+  const fieldNames = [
+    ...TRANSITION_FIELDS.map((field) => ({ id: field, name: t(`workflow.fields.${field}`) })),
+    ...fields,
+  ];
+  const toggled = (list: string[], value: string) =>
+    list.includes(value) ? list.filter((entry) => entry !== value) : [...list, value];
+  return (
+    <section aria-label={t('workflow.rules')} className="flex flex-col gap-2">
+      <h2 className="m-0 text-[13.5px] font-semibold">{t('workflow.rules')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('workflow.rulesHint')}</p>
+      <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+        {rows.map((row) => {
+          const current = rules[row.key] ?? NO_RULES;
+          const set = (patch: Partial<TransitionRules>) =>
+            onChange(row.key, { ...current, ...patch });
+          const count = ruleCount(current);
+          return (
+            <details
+              key={row.key}
+              className="border-b border-[var(--border)] last:border-b-0 [&[open]>summary]:bg-[var(--surface-2)]"
+            >
+              <summary className="flex cursor-pointer items-center gap-3 px-3.5 py-2 text-[13.5px]">
+                <span aria-hidden className={`size-2.5 rounded-full ${DOT[row.category]}`} />
+                <span className="font-medium">{t('workflow.rulesInto', { name: row.name })}</span>
+                <span className="text-xs text-[var(--ink-muted)]">
+                  {count === 0 ? t('workflow.noRules') : t('workflow.ruleCount', { count })}
+                </span>
+              </summary>
+              <fieldset
+                disabled={!editable}
+                className="m-0 grid gap-4 border-0 px-3.5 py-3 text-[13px] sm:grid-cols-3"
+              >
+                <div className="flex flex-col gap-1.5">
+                  <strong className="text-xs text-[var(--ink-muted)]">
+                    {t('workflow.conditions')}
+                  </strong>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.onlyAssignee}
+                      onChange={() => set({ onlyAssignee: !current.onlyAssignee })}
+                    />
+                    {t('workflow.onlyAssignee')}
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.subtasksDone}
+                      onChange={() => set({ subtasksDone: !current.subtasksDone })}
+                    />
+                    {t('workflow.subtasksDone')}
+                  </label>
+                  <span className="mt-1 text-xs text-[var(--ink-muted)]">
+                    {t('workflow.onlyRoles')}
+                  </span>
+                  {PROJECT_ROLES.map((role) => (
+                    <label key={role} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={current.roles.includes(role)}
+                        onChange={() =>
+                          set({ roles: toggled(current.roles, role) as TransitionRules['roles'] })
+                        }
+                      />
+                      {t(`projectSettings.roles.${role}`)}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <strong className="text-xs text-[var(--ink-muted)]">
+                    {t('workflow.required')}
+                  </strong>
+                  {fieldNames.map((field) => (
+                    <label key={field.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={current.requiredFields.includes(field.id)}
+                        onChange={() =>
+                          set({ requiredFields: toggled(current.requiredFields, field.id) })
+                        }
+                      />
+                      {field.name}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <strong className="text-xs text-[var(--ink-muted)]">{t('workflow.after')}</strong>
+                  {ASSIGN.map((value) => (
+                    <label key={value} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`assign-${row.key}`}
+                        checked={current.assign === value}
+                        onChange={() => set({ assign: value })}
+                      />
+                      {t(`workflow.assign.${value}`)}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </details>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function AddStatus({
   rows,
   available,
@@ -325,6 +479,12 @@ export function WorkflowEditor({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(() => fromServer(workflow));
+  const projectFields = useQuery(projectQuery(projectKey)).data?.customFieldIds;
+  // The project's custom fields, and any a rule still requires.
+  const required = new Set(Object.values(draft.rules).flatMap((rules) => rules.requiredFields));
+  const fields = (useQuery(trackingMetaQuery).data?.customFields ?? [])
+    .filter((field) => projectFields?.includes(field.id) || required.has(field.id))
+    .map(({ id, name }) => ({ id, name }));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -516,6 +676,16 @@ export function WorkflowEditor({
           </div>
         )}
       </section>
+
+      <TransitionRulesSection
+        rows={draft.rows}
+        rules={draft.rules}
+        fields={fields}
+        editable={editable}
+        onChange={(key, rules) =>
+          update((current) => ({ ...current, rules: { ...current.rules, [key]: rules } }))
+        }
+      />
 
       {removedInUse.length > 0 && (
         <section

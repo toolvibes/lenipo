@@ -15572,6 +15572,17 @@
               "additionalProperties": false
             }
           },
+          "rules": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TransitionRules"
+            }
+          },
           "usage": {
             "type": "object",
             "propertyNames": {
@@ -15601,9 +15612,48 @@
           "statuses",
           "initialStatusId",
           "transitions",
+          "rules",
           "usage",
           "available"
         ],
+        "additionalProperties": false
+      },
+      "TransitionRules": {
+        "type": "object",
+        "properties": {
+          "onlyAssignee": {
+            "default": false,
+            "type": "boolean"
+          },
+          "roles": {
+            "default": [],
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectRole"
+            }
+          },
+          "subtasksDone": {
+            "default": false,
+            "type": "boolean"
+          },
+          "requiredFields": {
+            "default": [],
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "assign": {
+            "default": "keep",
+            "type": "string",
+            "enum": ["keep", "caller", "reporter", "nobody"]
+          }
+        },
+        "required": ["onlyAssignee", "roles", "subtasksDone", "requiredFields", "assign"],
         "additionalProperties": false
       },
       "PublishWorkflowRequest": {
@@ -15640,6 +15690,9 @@
                 },
                 "category": {
                   "$ref": "#/components/schemas/StatusCategory"
+                },
+                "rules": {
+                  "$ref": "#/components/schemas/TransitionRulesInput"
                 }
               },
               "required": ["id", "name", "category"]
@@ -15691,6 +15744,42 @@
           }
         },
         "required": ["baseVersionId", "statuses", "initial", "mode"]
+      },
+      "TransitionRulesInput": {
+        "type": "object",
+        "properties": {
+          "onlyAssignee": {
+            "default": false,
+            "type": "boolean"
+          },
+          "roles": {
+            "default": [],
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectRole"
+            }
+          },
+          "subtasksDone": {
+            "default": false,
+            "type": "boolean"
+          },
+          "requiredFields": {
+            "default": [],
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "assign": {
+            "default": "keep",
+            "type": "string",
+            "enum": ["keep", "caller", "reporter", "nobody"]
+          }
+        }
       }
     },
     "securitySchemes": {

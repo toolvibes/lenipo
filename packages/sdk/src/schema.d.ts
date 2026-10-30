@@ -4487,10 +4487,28 @@ export interface components {
         /** Format: uuid */
         to: string;
       }[];
+      rules: {
+        [key: string]: components['schemas']['TransitionRules'];
+      };
       usage: {
         [key: string]: number;
       };
       available: components['schemas']['StatusInfo'][];
+    };
+    TransitionRules: {
+      /** @default false */
+      onlyAssignee: boolean;
+      /** @default [] */
+      roles: components['schemas']['ProjectRole'][];
+      /** @default false */
+      subtasksDone: boolean;
+      /** @default [] */
+      requiredFields: string[];
+      /**
+       * @default keep
+       * @enum {string}
+       */
+      assign: 'keep' | 'caller' | 'reporter' | 'nobody';
     };
     PublishWorkflowRequest: {
       /** Format: uuid */
@@ -4499,6 +4517,7 @@ export interface components {
         id: string | null;
         name: string;
         category: components['schemas']['StatusCategory'];
+        rules?: components['schemas']['TransitionRulesInput'];
       }[];
       initial: number;
       /** @enum {string} */
@@ -4512,6 +4531,21 @@ export interface components {
       migrate?: {
         [key: string]: number;
       };
+    };
+    TransitionRulesInput: {
+      /** @default false */
+      onlyAssignee?: boolean;
+      /** @default [] */
+      roles?: components['schemas']['ProjectRole'][];
+      /** @default false */
+      subtasksDone?: boolean;
+      /** @default [] */
+      requiredFields?: string[];
+      /**
+       * @default keep
+       * @enum {string}
+       */
+      assign?: 'keep' | 'caller' | 'reporter' | 'nobody';
     };
   };
   responses: never;
