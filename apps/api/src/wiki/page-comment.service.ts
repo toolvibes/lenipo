@@ -22,8 +22,9 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { pageComments, pageVersions, users } from '../db/schema/index.js';
+import { emitPageEvent } from '../notifications/events.js';
 import { signal } from '../realtime/signals.js';
-import { plainText } from '../tracking/rich-text.js';
+import { mentionedUserIds, plainText } from '../tracking/rich-text.js';
 import { PageService } from './page.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 
@@ -126,6 +127,14 @@ export class PageCommentService {
     return row;
   }
 
+  private async threadQuote(threadId: string): Promise<TextAnchor | null> {
+    const [root] = await this.database.db
+      .select({ anchor: pageComments.anchor })
+      .from(pageComments)
+      .where(eq(pageComments.id, threadId));
+    return (root?.anchor as TextAnchor | null | undefined) ?? null;
+  }
+
   async create(
     principal: Principal,
     pageId: string,
@@ -165,6 +174,17 @@ export class PageCommentService {
         bodyText: text,
         anchor,
       });
+      await emitPageEvent(tx, page.id, principal.userId, {
+        type: 'page.commented',
+        commentId: id,
+        threadId: request.parentId ?? id,
+        excerpt: text.slice(0, 500),
+        quote:
+          (anchor ?? (request.parentId ? await this.threadQuote(request.parentId) : null))?.exact ??
+          null,
+        mentions: mentionedUserIds(body),
+        edited: false,
+      });
       await signal(tx, { type: 'page', pageId: page.id, spaceKey: space.key });
     });
     const [row] = await this.database.db.select().from(pageComments).where(eq(pageComments.id, id));
@@ -192,6 +212,19 @@ export class PageCommentService {
         .set({ body, bodyText: text, updatedAt: sql`now()` })
         .where(eq(pageComments.id, row.id))
         .returning();
+      // Only people mentioned for the first time hear about an edit.
+      const added = mentionedUserIds(body).filter((id) => !mentionedUserIds(row.body).includes(id));
+      if (added.length > 0) {
+        await emitPageEvent(tx, page.id, principal.userId, {
+          type: 'page.commented',
+          commentId: row.id,
+          threadId: row.parentId ?? row.id,
+          excerpt: text.slice(0, 500),
+          quote: (row.anchor as TextAnchor | null)?.exact ?? null,
+          mentions: added,
+          edited: true,
+        });
+      }
       await signal(tx, { type: 'page', pageId: page.id, spaceKey: space.key });
       return result;
     });

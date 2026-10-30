@@ -10,7 +10,7 @@ import {
   type UpdateNotificationSettings,
   type UserRef,
 } from '@tasklore/shared';
-import { and, asc, count, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
 import type { AppConfig } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
@@ -21,12 +21,16 @@ import {
   issueWatchers,
   notificationSettings,
   notifications,
+  pageComments,
+  pages,
+  spaces,
   users,
 } from '../db/schema/index.js';
 import { signal } from '../realtime/signals.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { PageService } from '../wiki/page.service.js';
 import { notificationEmail } from './email.js';
-import type { ChangedItem, IssueEvent } from './events.js';
+import type { ChangedItem, IssueEvent, PageEvent } from './events.js';
 import { Mailer } from './mailer.js';
 
 type EventRow = typeof domainEvents.$inferSelect;
@@ -43,7 +47,7 @@ function shown(items: ChangedItem[]): NotificationDetails['items'] {
 
 /**
  * In-app and email notifications (P-NTF-01/-02, E-44): events from the outbox become one
- * notification per recipient; emails bundle a person's notifications per issue.
+ * notification per recipient; emails bundle a person's notifications per issue or page.
  */
 @Injectable()
 export class NotificationService {
@@ -53,6 +57,7 @@ export class NotificationService {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(Mailer) private readonly mailer: Mailer,
+    @Inject(PageService) private readonly pages: PageService,
   ) {}
 
   // ---------------------------------------------------------------- events
@@ -62,6 +67,7 @@ export class NotificationService {
    * watchers plus mentioned people, minus the actor; only who may still see the issue.
    */
   async handle(tx: Executor, row: EventRow): Promise<void> {
+    if (row.pageId) return this.handlePage(tx, row, row.pageId);
     if (!row.issueId) return;
     const [issue] = await tx.select().from(issues).where(eq(issues.id, row.issueId));
     if (!issue || issue.deletedAt) return;
@@ -93,12 +99,6 @@ export class NotificationService {
     }
     if (recipients.length === 0) return;
 
-    const settings = await tx
-      .select()
-      .from(notificationSettings)
-      .where(inArray(notificationSettings.userId, recipients));
-    const settingsOf = new Map(settings.map((entry) => [entry.userId, entry]));
-
     const details: NotificationDetails =
       event.type === 'issue.created'
         ? { kind: 'created', items: [] }
@@ -117,6 +117,71 @@ export class NotificationService {
       return 'other';
     };
 
+    await this.deliver(tx, row, { issueId: issue.id }, recipients, details, category);
+  }
+
+  /**
+   * Page comments (E-63): mentioned people, everyone who wrote in the thread and the page's
+   * creator, minus the actor; only who may still see the page. Edits tell new mentions only.
+   */
+  private async handlePage(tx: Executor, row: EventRow, pageId: string): Promise<void> {
+    const [page] = await tx
+      .select({ id: pages.id, createdById: pages.createdById, deletedAt: pages.deletedAt })
+      .from(pages)
+      .where(eq(pages.id, pageId));
+    if (!page || page.deletedAt) return;
+    const event = { type: row.type, ...(row.payload as object) } as PageEvent;
+    const mentions = new Set(event.mentions);
+    let candidates: string[] = [...mentions];
+    if (!event.edited) {
+      const thread = await tx
+        .select({ authorId: pageComments.authorId })
+        .from(pageComments)
+        .where(
+          and(
+            or(eq(pageComments.id, event.threadId), eq(pageComments.parentId, event.threadId)),
+            isNull(pageComments.deletedAt),
+          ),
+        );
+      candidates.push(...thread.flatMap((entry) => (entry.authorId ? [entry.authorId] : [])));
+      if (page.createdById) candidates.push(page.createdById);
+    }
+    candidates = [...new Set(candidates)].filter((id) => id !== row.actorId);
+    if (candidates.length === 0) return;
+    const active = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(and(inArray(users.id, candidates), eq(users.status, 'active')));
+    const recipients: string[] = [];
+    for (const { id } of active) {
+      if ((await this.pages.visible(id, [page.id])).has(page.id)) recipients.push(id);
+    }
+    if (recipients.length === 0) return;
+    const details: NotificationDetails = {
+      kind: 'commented',
+      items: [],
+      excerpt: event.excerpt,
+      ...(event.quote ? { quote: event.quote } : {}),
+    };
+    await this.deliver(tx, row, { pageId: page.id }, recipients, details, (userId) =>
+      mentions.has(userId) ? 'mention' : 'comment',
+    );
+  }
+
+  /** One notification per recipient, queued for email as each person chose; bells update. */
+  private async deliver(
+    tx: Executor,
+    row: EventRow,
+    subject: { issueId: string } | { pageId: string },
+    recipients: string[],
+    details: NotificationDetails,
+    category: (userId: string) => NotificationCategory,
+  ): Promise<void> {
+    const settings = await tx
+      .select()
+      .from(notificationSettings)
+      .where(inArray(notificationSettings.userId, recipients));
+    const settingsOf = new Map(settings.map((entry) => [entry.userId, entry]));
     await tx.insert(notifications).values(
       recipients.map((userId) => {
         const kind = category(userId);
@@ -126,7 +191,7 @@ export class NotificationService {
           (choice?.emailCategories ?? NOTIFICATION_CATEGORIES).includes(kind);
         return {
           userId,
-          issueId: issue.id,
+          ...subject,
           eventId: row.id,
           category: kind,
           actorId: row.actorId,
@@ -141,21 +206,25 @@ export class NotificationService {
 
   // ---------------------------------------------------------------- email
 
-  /** Sends one email per person and issue once no change came for the quiet period. */
+  /** Sends one email per person and issue or page once no change came for the quiet period. */
   async sendDueEmails(limit = 50): Promise<number> {
     if (!this.mailer.enabled) return 0;
     const delay = this.config.NOTIFICATION_EMAIL_DELAY_SECONDS;
     const groups = await this.database.db
-      .select({ userId: notifications.userId, issueId: notifications.issueId })
+      .select({
+        userId: notifications.userId,
+        issueId: notifications.issueId,
+        pageId: notifications.pageId,
+      })
       .from(notifications)
       .where(eq(notifications.emailPending, true))
-      .groupBy(notifications.userId, notifications.issueId)
+      .groupBy(notifications.userId, notifications.issueId, notifications.pageId)
       .having(sql`max(${notifications.createdAt}) <= now() - make_interval(secs => ${delay})`)
       .limit(limit);
     let sent = 0;
     for (const group of groups) {
       try {
-        if (await this.sendGroup(group.userId, group.issueId)) sent += 1;
+        if (await this.sendGroup(group)) sent += 1;
       } catch (error) {
         // Stays pending; the next round tries again.
         this.logger.error({ err: error, ...group }, 'Sending a notification email failed');
@@ -164,27 +233,46 @@ export class NotificationService {
     return sent;
   }
 
-  private async sendGroup(userId: string, issueId: string): Promise<boolean> {
+  private async sendGroup(group: {
+    userId: string;
+    issueId: string | null;
+    pageId: string | null;
+  }): Promise<boolean> {
+    const same = (
+      column: typeof notifications.issueId | typeof notifications.pageId,
+      value: string | null,
+    ): SQL => (value ? eq(column, value) : isNull(column));
     return this.database.db.transaction(async (tx) => {
       const pending = await tx
         .select()
         .from(notifications)
         .where(
           and(
-            eq(notifications.userId, userId),
-            eq(notifications.issueId, issueId),
+            eq(notifications.userId, group.userId),
+            same(notifications.issueId, group.issueId),
+            same(notifications.pageId, group.pageId),
             eq(notifications.emailPending, true),
           ),
         )
         .orderBy(asc(notifications.id))
         .for('update', { skipLocked: true });
       if (pending.length === 0) return false;
-      const [recipient] = await tx.select().from(users).where(eq(users.id, userId));
-      const [issue] = await tx
-        .select({ key: issues.key, summary: issues.summary })
-        .from(issues)
-        .where(eq(issues.id, issueId));
-      if (recipient?.status === 'active' && issue) {
+      const [recipient] = await tx.select().from(users).where(eq(users.id, group.userId));
+      const [issue] = group.issueId
+        ? await tx
+            .select({ key: issues.key, summary: issues.summary })
+            .from(issues)
+            .where(eq(issues.id, group.issueId))
+        : [];
+      const [page] = group.pageId
+        ? await tx
+            .select({ id: pages.id, title: pages.title, spaceKey: spaces.key })
+            .from(pages)
+            .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+            .where(eq(pages.id, group.pageId))
+        : [];
+      const subject = issue ? { issue } : page ? { page } : null;
+      if (recipient?.status === 'active' && subject) {
         const actors = await this.refs(
           tx,
           pending.map((entry) => entry.actorId),
@@ -193,7 +281,7 @@ export class NotificationService {
           notificationEmail({
             to: recipient.email,
             locale: recipient.locale,
-            issue,
+            ...subject,
             publicUrl: this.config.PUBLIC_URL,
             entries: pending.map((entry) => ({
               actor: entry.actorId ? (actors.get(entry.actorId)?.displayName ?? null) : null,
@@ -238,9 +326,17 @@ export class NotificationService {
 
   async list(userId: string, query: NotificationListQuery): Promise<NotificationList> {
     const rows = await this.database.db
-      .select({ notification: notifications, key: issues.key, summary: issues.summary })
+      .select({
+        notification: notifications,
+        key: issues.key,
+        summary: issues.summary,
+        pageTitle: pages.title,
+        spaceKey: spaces.key,
+      })
       .from(notifications)
-      .innerJoin(issues, eq(issues.id, notifications.issueId))
+      .leftJoin(issues, eq(issues.id, notifications.issueId))
+      .leftJoin(pages, eq(pages.id, notifications.pageId))
+      .leftJoin(spaces, eq(spaces.id, pages.spaceId))
       .where(
         and(
           eq(notifications.userId, userId),
@@ -255,15 +351,21 @@ export class NotificationService {
       this.database.db,
       rows.map((row) => row.notification.actorId),
     );
-    const list: Notification[] = rows.map(({ notification, key, summary }) => ({
-      id: notification.id,
-      issue: { key, summary },
-      actor: notification.actorId ? (actors.get(notification.actorId) ?? null) : null,
-      category: notification.category,
-      details: notification.details as NotificationDetails,
-      createdAt: notification.createdAt.toISOString(),
-      read: notification.readAt !== null,
-    }));
+    const list: Notification[] = rows.map(
+      ({ notification, key, summary, pageTitle, spaceKey }) => ({
+        id: notification.id,
+        issue: key && summary !== null ? { key, summary } : null,
+        page:
+          notification.pageId && pageTitle !== null && spaceKey
+            ? { id: notification.pageId, title: pageTitle, spaceKey }
+            : null,
+        actor: notification.actorId ? (actors.get(notification.actorId) ?? null) : null,
+        category: notification.category,
+        details: notification.details as NotificationDetails,
+        createdAt: notification.createdAt.toISOString(),
+        read: notification.readAt !== null,
+      }),
+    );
     return { notifications: list, unreadCount: await this.unreadCount(userId) };
   }
 

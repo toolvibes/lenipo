@@ -3,6 +3,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -14,6 +15,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 import { issues } from './tracking.js';
+import { pages } from './wiki.js';
 
 /**
  * Transactional outbox (E-44): written in the same transaction as the change, processed once by
@@ -25,6 +27,8 @@ export const domainEvents = pgTable(
     id: bigserial({ mode: 'number' }).primaryKey(),
     type: text().notNull(),
     issueId: uuid().references(() => issues.id, { onDelete: 'cascade' }),
+    /** Wiki events (E-63) name their page instead of an issue. */
+    pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
     actorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     payload: jsonb().notNull().default({}),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -53,9 +57,9 @@ export const notifications = pgTable(
     userId: uuid()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    issueId: uuid()
-      .notNull()
-      .references(() => issues.id, { onDelete: 'cascade' }),
+    /** What it is about: an issue, or a wiki page (E-63); exactly one of the two. */
+    issueId: uuid().references(() => issues.id, { onDelete: 'cascade' }),
+    pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
     eventId: bigint({ mode: 'number' }).references(() => domainEvents.id, { onDelete: 'set null' }),
     category: notificationCategory().notNull(),
     actorId: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -70,8 +74,9 @@ export const notifications = pgTable(
   (table) => [
     index('notifications_user_idx').on(table.userId, table.createdAt),
     index('notifications_email_idx')
-      .on(table.userId, table.issueId)
+      .on(table.userId, table.issueId, table.pageId)
       .where(sql`${table.emailPending}`),
+    check('notifications_subject', sql`num_nonnulls(${table.issueId}, ${table.pageId}) = 1`),
   ],
 );
 

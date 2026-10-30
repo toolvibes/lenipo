@@ -2833,7 +2833,12 @@ export interface components {
       issue: {
         key: string;
         summary: string;
-      };
+      } | null;
+      page: {
+        id: string;
+        title: string;
+        spaceKey: string;
+      } | null;
       actor: components['schemas']['UserRef'] | null;
       category: components['schemas']['NotificationCategory'];
       details: components['schemas']['NotificationDetails'];
@@ -2850,6 +2855,7 @@ export interface components {
         to: string | null;
       }[];
       excerpt?: string;
+      quote?: string;
     };
     UnreadCount: {
       count: number;

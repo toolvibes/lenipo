@@ -29,11 +29,20 @@ function useDescribe() {
   return (notification: Notification): { title: string; detail: string | null } => {
     const actor = notification.actor?.displayName ?? t('notifications.someone');
     const { details, category } = notification;
+    // Inline comments on a wiki page name the passage first (E-63).
+    const excerpt = details.quote
+      ? `„${details.quote}“ · ${details.excerpt ?? ''}`
+      : (details.excerpt ?? null);
     if (category === 'mention') {
-      return { title: t('notifications.mentioned', { actor }), detail: details.excerpt ?? null };
+      return { title: t('notifications.mentioned', { actor }), detail: excerpt };
     }
     if (details.kind === 'commented') {
-      return { title: t('notifications.commented', { actor }), detail: details.excerpt ?? null };
+      return {
+        title: notification.page
+          ? t('notifications.commentedPage', { actor })
+          : t('notifications.commented', { actor }),
+        detail: excerpt,
+      };
     }
     if (details.kind === 'created') {
       return {
@@ -156,7 +165,14 @@ export function NotificationBell() {
   function openNotification(notification: Notification) {
     if (!notification.read) markRead.mutate({ ids: [notification.id] });
     setOpen(false);
-    void navigate({ to: '/issues/$key', params: { key: notification.issue.key } });
+    if (notification.page) {
+      void navigate({
+        to: '/spaces/$key/pages/$id',
+        params: { key: notification.page.spaceKey, id: notification.page.id },
+      });
+    } else if (notification.issue) {
+      void navigate({ to: '/issues/$key', params: { key: notification.issue.key } });
+    }
   }
 
   const tab = (value: 'unread' | 'all', label: string) => (
@@ -256,8 +272,10 @@ export function NotificationBell() {
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className={notification.read ? '' : 'font-semibold'}>{title}</span>
                         <span className="truncate text-[var(--ink-muted)]">
-                          <span className="tl-key">{notification.issue.key}</span>{' '}
-                          {notification.issue.summary}
+                          <span className="tl-key">
+                            {notification.issue?.key ?? notification.page?.spaceKey}
+                          </span>{' '}
+                          {notification.issue?.summary ?? notification.page?.title}
                         </span>
                         {detail && (
                           <span className="line-clamp-2 text-xs text-[var(--ink-muted)]">

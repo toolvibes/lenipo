@@ -259,3 +259,89 @@ describe('notification email', () => {
     expect(toMira?.text).toContain('Open issue: https://tasklore.example.org/issues/WEB-1');
   });
 });
+
+describe('page comment notifications (E-63)', () => {
+  let pageId: string;
+
+  it('tells mentioned people, thread participants and the page creator', async () => {
+    await admin.request('POST', '/spaces', { key: 'DOCS', name: 'Doku' });
+    const page = await admin.request<{ id: string }>('POST', '/spaces/DOCS/pages', {
+      title: 'Regeln',
+    });
+    pageId = page.body.id;
+    await admin.request('POST', `/pages/${pageId}/publish`, {
+      title: 'Regeln',
+      content: docFromText('Der Sprint dauert zwei Wochen.'),
+    });
+    const before = {
+      lena: (await inbox(admin)).unreadCount,
+      mira: (await inbox(mira)).unreadCount,
+    };
+
+    // Gast cannot see the space, so that mention reaches nobody.
+    const doc: RichText = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Passt das? ' },
+            { type: 'mention', attrs: { id: ids.mira, label: 'Mira Kaya' } },
+            { type: 'text', text: ' ' },
+            { type: 'mention', attrs: { id: ids.gast, label: 'Gast' } },
+          ],
+        },
+      ],
+    };
+    const thread = await jonas.request<{ id: string }>('POST', `/pages/${pageId}/comments`, {
+      body: doc,
+      anchor: { exact: 'zwei Wochen', prefix: 'Der Sprint dauert ', suffix: '.', block: 0 },
+    });
+    expect(thread.status).toBe(201);
+    await work();
+
+    const toMira = (await inbox(mira)).notifications[0];
+    expect(toMira).toMatchObject({
+      issue: null,
+      page: { id: pageId, title: 'Regeln', spaceKey: 'DOCS' },
+      category: 'mention',
+      details: { kind: 'commented', quote: 'zwei Wochen' },
+    });
+    expect((await inbox(admin)).notifications[0]).toMatchObject({
+      page: { title: 'Regeln' },
+      category: 'comment',
+    });
+    expect((await inbox(mira)).unreadCount).toBe(before.mira + 1);
+    expect((await inbox(admin)).unreadCount).toBe(before.lena + 1);
+    const [gastRows] = await test.database.sql`
+      select count(*)::int as count from notifications where user_id = ${ids.gast}`;
+    expect(gastRows?.count).toBe(0);
+
+    // A reply reaches the thread's author and the page's creator, not the one who replies.
+    const jonasBefore = (await inbox(jonas)).unreadCount;
+    await mira.request('POST', `/pages/${pageId}/comments`, {
+      body: docFromText('Ja, passt.'),
+      parentId: thread.body.id,
+    });
+    await work();
+    expect((await inbox(jonas)).unreadCount).toBe(jonasBefore + 1);
+    expect((await inbox(jonas)).notifications[0]).toMatchObject({
+      category: 'comment',
+      details: { excerpt: 'Ja, passt.', quote: 'zwei Wochen' },
+    });
+    expect((await inbox(mira)).unreadCount).toBe(before.mira + 1);
+  });
+
+  it('bundles one email per person and page', async () => {
+    const before = sent.length;
+    await test.app.get(NotificationService).sendDueEmails();
+    const toLena = sent.slice(before).filter((mail) => mail.to === 'lena@example.org');
+    expect(toLena).toHaveLength(1);
+    expect(toLena[0]?.subject).toBe('[DOCS] Regeln');
+    expect(toLena[0]?.text).toContain('Jonas Schulz hat auf der Seite kommentiert:');
+    expect(toLena[0]?.text).toContain('zu „zwei Wochen“');
+    expect(toLena[0]?.text).toContain(
+      `Seite öffnen: https://tasklore.example.org/spaces/DOCS/pages/${pageId}`,
+    );
+  });
+});

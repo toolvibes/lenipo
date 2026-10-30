@@ -42,3 +42,27 @@ export async function emitIssueEvent(
   // Open boards and issue pages hear about it once this commits (E-58).
   await signalIssue(tx, issueId);
 }
+
+/** What happened on a wiki page (E-63); written to the outbox with the page's id. */
+export type PageEvent = {
+  type: 'page.commented';
+  commentId: string;
+  /** The comment that starts the thread; the comment itself for a new thread. */
+  threadId: string;
+  excerpt: string;
+  /** The quoted text of an inline thread. */
+  quote: string | null;
+  mentions: string[];
+  /** An edit: only people mentioned for the first time are told. */
+  edited: boolean;
+};
+
+export async function emitPageEvent(
+  tx: Executor,
+  pageId: string,
+  actorId: string | null,
+  event: PageEvent,
+): Promise<void> {
+  const { type, ...payload } = event;
+  await tx.insert(domainEvents).values({ type, pageId, actorId, payload });
+}

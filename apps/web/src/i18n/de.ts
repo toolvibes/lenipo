@@ -377,6 +377,7 @@ export const de = {
     someone: 'Jemand',
     mentioned: '{{actor}} hat Sie erwähnt',
     commented: '{{actor}} hat kommentiert',
+    commentedPage: '{{actor}} hat auf der Seite kommentiert',
     created: '{{actor}} hat einen Vorgang erstellt',
     createdAssigned: '{{actor}} hat einen Vorgang erstellt und Ihnen zugewiesen',
     assigned: '{{actor}} hat Ihnen einen Vorgang zugewiesen',

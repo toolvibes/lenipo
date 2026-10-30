@@ -112,13 +112,25 @@ export function HomePage({ me }: { me: Me }) {
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {mentions.data?.notifications.map((mention) => (
               <li key={mention.id} className="flex min-w-0 flex-col">
-                <Link
-                  to="/issues/$key"
-                  params={{ key: mention.issue.key }}
-                  className="truncate text-[var(--ink)] no-underline hover:underline"
-                >
-                  <span className="tl-key">{mention.issue.key}</span> {mention.issue.summary}
-                </Link>
+                {mention.page ? (
+                  <Link
+                    to="/spaces/$key/pages/$id"
+                    params={{ key: mention.page.spaceKey, id: mention.page.id }}
+                    className="truncate text-[var(--ink)] no-underline hover:underline"
+                  >
+                    <span className="tl-key">{mention.page.spaceKey}</span> {mention.page.title}
+                  </Link>
+                ) : (
+                  mention.issue && (
+                    <Link
+                      to="/issues/$key"
+                      params={{ key: mention.issue.key }}
+                      className="truncate text-[var(--ink)] no-underline hover:underline"
+                    >
+                      <span className="tl-key">{mention.issue.key}</span> {mention.issue.summary}
+                    </Link>
+                  )
+                )}
                 <span className="truncate text-xs text-[var(--ink-muted)]">
                   {mention.actor?.displayName} ·{' '}
                   <span title={formatDateTime(mention.createdAt)}>

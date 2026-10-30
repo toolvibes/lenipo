@@ -366,6 +366,7 @@ export const en: Messages = {
     someone: 'Someone',
     mentioned: '{{actor}} mentioned you',
     commented: '{{actor}} commented',
+    commentedPage: '{{actor}} commented on the page',
     created: '{{actor}} created an issue',
     createdAssigned: '{{actor}} created an issue and assigned it to you',
     assigned: '{{actor}} assigned an issue to you',

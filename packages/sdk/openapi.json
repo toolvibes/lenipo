@@ -9447,17 +9447,47 @@
             "maximum": 9007199254740991
           },
           "issue": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string"
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "summary"],
+                "additionalProperties": false
               },
-              "summary": {
-                "type": "string"
+              {
+                "type": "null"
               }
-            },
-            "required": ["key", "summary"],
-            "additionalProperties": false
+            ]
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "spaceKey": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "title", "spaceKey"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "actor": {
             "anyOf": [
@@ -9484,7 +9514,7 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "issue", "actor", "category", "details", "createdAt", "read"],
+        "required": ["id", "issue", "page", "actor", "category", "details", "createdAt", "read"],
         "additionalProperties": false
       },
       "NotificationDetails": {
@@ -9514,6 +9544,9 @@
             }
           },
           "excerpt": {
+            "type": "string"
+          },
+          "quote": {
             "type": "string"
           }
         },

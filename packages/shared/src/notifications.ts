@@ -21,6 +21,8 @@ export const NotificationDetails = z
     ),
     /** Start of the comment, for comments and mentions in comments. */
     excerpt: z.string().optional(),
+    /** The quoted page text of an inline comment (E-63). */
+    quote: z.string().optional(),
   })
   .meta({ id: 'NotificationDetails' });
 export type NotificationDetails = z.infer<typeof NotificationDetails>;
@@ -28,7 +30,9 @@ export type NotificationDetails = z.infer<typeof NotificationDetails>;
 export const Notification = z
   .object({
     id: z.number().int(),
-    issue: z.object({ key: z.string(), summary: z.string() }),
+    /** What the notification is about: an issue, or a wiki page (E-63). */
+    issue: z.object({ key: z.string(), summary: z.string() }).nullable(),
+    page: z.object({ id: z.string(), title: z.string(), spaceKey: z.string() }).nullable(),
     actor: UserRef.nullable(),
     category: NotificationCategory,
     details: NotificationDetails,
