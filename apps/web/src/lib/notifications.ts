@@ -10,17 +10,6 @@ export const unreadCountQuery = queryOptions({
   refetchOnWindowFocus: true,
 });
 
-export const notificationsQuery = (unread: boolean) =>
-  queryOptions({
-    queryKey: ['notifications', 'list', unread],
-    queryFn: () =>
-      unwrap(
-        client.GET('/api/v1/me/notifications', {
-          params: { query: { unread: unread ? 'true' : 'false', limit: 50 } },
-        }),
-      ),
-  });
-
 export const notificationSettingsQuery = queryOptions({
   queryKey: ['notifications', 'settings'],
   queryFn: () => unwrap(client.GET('/api/v1/me/notification-settings')),

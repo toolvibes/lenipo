@@ -394,12 +394,22 @@ export const de = {
     },
   },
   notifications: {
+    tabs: {
+      unread: 'Ungelesen',
+      mention: 'Erwähnungen',
+      assigned: 'Zugewiesen',
+      all: 'Alle',
+    },
+    today: 'Heute',
+    yesterday: 'Gestern',
+    open: 'Öffnen',
+    pick: 'Wählen Sie links eine Benachrichtigung.',
     title: 'Benachrichtigungen',
     openWithCount_one: 'Benachrichtigungen, {{count}} ungelesen',
     openWithCount_other: 'Benachrichtigungen, {{count}} ungelesen',
     unread: 'Ungelesen',
     all: 'Alle',
-    markAllRead: 'Alle als gelesen markieren',
+    markAllRead: 'Alle gelesen',
     none: 'Noch keine Benachrichtigungen.',
     noneUnread: 'Alles gelesen.',
     unreadMarker: 'ungelesen',
@@ -415,7 +425,7 @@ export const de = {
     updated: '{{actor}} hat einen Vorgang geändert',
     settings: 'Einstellungen für Benachrichtigungen',
     settingsIntro:
-      'In Tasklore sehen Sie alle Benachrichtigungen unter der Glocke. Per E-Mail kommen nur die gewählten, gebündelt pro Vorgang.',
+      'In Tasklore sehen Sie alle Benachrichtigungen unter „Benachrichtigungen“. Per E-Mail kommen nur die gewählten, gebündelt pro Vorgang.',
     noMailServer:
       'Auf diesem Server ist kein Mailserver eingerichtet; E-Mails werden nicht verschickt.',
     emailEnabled: 'E-Mails erhalten',

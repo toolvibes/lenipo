@@ -16,6 +16,10 @@ import { SetupPage } from './features/auth/SetupPage';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
+import {
+  NotificationsPage,
+  type NotificationTab,
+} from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { SearchPage } from './features/search/SearchPage';
@@ -323,6 +327,21 @@ const activityRoute = createRoute({
   },
 });
 
+const notificationsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/notifications',
+  validateSearch: (search: Record<string, unknown>): { tab?: NotificationTab } => ({
+    tab:
+      search.tab === 'mention' || search.tab === 'assigned' || search.tab === 'all'
+        ? search.tab
+        : undefined,
+  }),
+  component: function Notifications() {
+    const { tab } = notificationsRoute.useSearch();
+    return <NotificationsPage key={tab ?? 'unread'} tab={tab ?? 'unread'} />;
+  },
+});
+
 /** Administration needs the global permission "admin"; the API checks it again. */
 const adminRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -381,6 +400,7 @@ const routeTree = rootRoute.addChildren([
     searchRoute,
     issueRoute,
     activityRoute,
+    notificationsRoute,
     boardsRoute,
     boardRoute,
     backlogRoute,

@@ -212,7 +212,7 @@ export function Sidebar({
         >
           {t('sidebar.myIssues')}
         </NavRow>
-        <NotificationBell />
+        <NotificationBell active={path === '/notifications'} />
       </div>
 
       <div className="flex flex-col gap-px">
