@@ -243,4 +243,18 @@ describe('sprints', () => {
     ]);
     expect((await mira.request('DELETE', `/sprints/${first.id}`)).status).toBe(409);
   });
+
+  it('leave epics out of the backlog rows, but name them at their stories', async () => {
+    const epic = (
+      await admin.request<Issue>('POST', '/issues', {
+        projectKey: 'WEB',
+        issueType: 'epic',
+        summary: 'Konto',
+      })
+    ).body;
+    await admin.request('PATCH', '/issues/WEB-3', { parentKey: epic.key });
+    const rows = (await backlog()).backlog;
+    expect(rows.map((issue) => issue.key)).toEqual(['WEB-2', 'WEB-3', 'WEB-4']);
+    expect(rows.find((issue) => issue.key === 'WEB-3')?.parent?.summary).toBe('Konto');
+  });
 });

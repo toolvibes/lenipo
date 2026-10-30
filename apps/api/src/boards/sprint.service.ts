@@ -383,7 +383,7 @@ export class SprintService {
 
   // ---------------------------------------------------------------- backlog
 
-  /** Open sprints with their issues, then the backlog: not done, in no open sprint (T-SPR-01). */
+  /** Open sprints with their issues, then the backlog: not done, no epic, in no open sprint (T-SPR-01). */
   async backlog(principal: Principal, boardId: string): Promise<BacklogData> {
     const board = await this.boards.get(principal, boardId);
     if (board.type !== 'scrum') throw new BadRequestException('Only Scrum boards have a backlog');
@@ -423,6 +423,10 @@ export class SprintService {
       const done = meta.statuses
         .filter((status) => status.category === 'done')
         .map((status) => status.id);
+      // Epics are planned through their stories; the epic panel names them (TL-55).
+      const epicTypes = meta.issueTypes
+        .filter((type) => type.hierarchyLevel >= 1)
+        .map((type) => type.id);
       const rows = await this.database.db
         .select(issueColumns)
         .from(issues)
@@ -432,6 +436,7 @@ export class SprintService {
             isNull(issues.deletedAt),
             compiled.where,
             done.length > 0 ? not(inArray(issues.statusId, done)) : undefined,
+            epicTypes.length > 0 ? not(inArray(issues.issueTypeId, epicTypes)) : undefined,
             sql`not exists (select 1 from ${sprintIssues} si join ${sprints} s on s.id = si.sprint_id
               where si.issue_id = ${issues.id} and si.removed_at is null and s.state <> 'closed')`,
           ),
