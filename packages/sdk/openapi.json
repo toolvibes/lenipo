@@ -15158,6 +15158,14 @@
               "type": "string"
             }
           },
+          "statusIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -15223,6 +15231,7 @@
           "url",
           "events",
           "projectKeys",
+          "statusIds",
           "enabled",
           "disabledReason",
           "failingSince",
@@ -15274,6 +15283,16 @@
               "minLength": 1
             }
           },
+          "statusIds": {
+            "default": [],
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
           "enabled": {
             "default": true,
             "type": "boolean"
@@ -15305,6 +15324,14 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "statusIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "enabled": {
@@ -15375,6 +15402,7 @@
           "url",
           "events",
           "projectKeys",
+          "statusIds",
           "enabled",
           "disabledReason",
           "failingSince",
@@ -15410,6 +15438,15 @@
             "items": {
               "type": "string",
               "minLength": 1
+            }
+          },
+          "statusIds": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "enabled": {
@@ -15637,6 +15674,10 @@
             "default": false,
             "type": "boolean"
           },
+          "blockersDone": {
+            "default": false,
+            "type": "boolean"
+          },
           "requiredFields": {
             "default": [],
             "maxItems": 30,
@@ -15647,13 +15688,78 @@
               "maxLength": 64
             }
           },
+          "dueNotPast": {
+            "default": false,
+            "type": "boolean"
+          },
           "assign": {
             "default": "keep",
             "type": "string",
             "enum": ["keep", "caller", "reporter", "nobody"]
+          },
+          "fieldActions": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransitionFieldAction"
+            }
+          },
+          "watch": {
+            "default": false,
+            "type": "boolean"
           }
         },
-        "required": ["onlyAssignee", "roles", "subtasksDone", "requiredFields", "assign"],
+        "required": [
+          "onlyAssignee",
+          "roles",
+          "subtasksDone",
+          "blockersDone",
+          "requiredFields",
+          "dueNotPast",
+          "assign",
+          "fieldActions",
+          "watch"
+        ],
+        "additionalProperties": false
+      },
+      "TransitionFieldAction": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "action": {
+            "type": "string",
+            "enum": ["clear", "set", "add", "remove"]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            ]
+          }
+        },
+        "required": ["field", "action"],
         "additionalProperties": false
       },
       "PublishWorkflowRequest": {
@@ -15764,6 +15870,10 @@
             "default": false,
             "type": "boolean"
           },
+          "blockersDone": {
+            "default": false,
+            "type": "boolean"
+          },
           "requiredFields": {
             "default": [],
             "maxItems": 30,
@@ -15774,12 +15884,66 @@
               "maxLength": 64
             }
           },
+          "dueNotPast": {
+            "default": false,
+            "type": "boolean"
+          },
           "assign": {
             "default": "keep",
             "type": "string",
             "enum": ["keep", "caller", "reporter", "nobody"]
+          },
+          "fieldActions": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransitionFieldActionInput"
+            }
+          },
+          "watch": {
+            "default": false,
+            "type": "boolean"
           }
         }
+      },
+      "TransitionFieldActionInput": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "action": {
+            "type": "string",
+            "enum": ["clear", "set", "add", "remove"]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            ]
+          }
+        },
+        "required": ["field", "action"]
       }
     },
     "securitySchemes": {

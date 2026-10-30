@@ -21,6 +21,7 @@ import {
   issues,
   issueWorklogs,
   projects,
+  statuses,
   users,
   webhookDeliveries,
   webhooks,
@@ -40,6 +41,12 @@ const BACKOFF_SECONDS = [5, 5 * 60, 30 * 60, 2 * 3600, 5 * 3600, 10 * 3600, 10 *
 const MAX_ATTEMPTS = BACKOFF_SECONDS.length + 1;
 const DISABLE_AFTER_FAILING_DAYS = 3;
 const KEEP_DAYS = 30;
+
+/** The status a transition event moved the issue into. */
+function statusAfter(event: IssueEvent): string | null {
+  if (event.type !== 'issue.updated') return null;
+  return event.items.find((item) => item.field === 'status')?.toValue ?? null;
+}
 
 /** The public event type of an outbox event; transitions are updates that change the status. */
 export function webhookEventType(event: IssueEvent): WebhookEventType {
@@ -71,6 +78,17 @@ export class WebhookService {
   ) {}
 
   // ---------------------------------------------------------------- management
+
+  private async statusIds(ids: string[]): Promise<string[]> {
+    const wanted = [...new Set(ids)];
+    if (wanted.length === 0) return [];
+    const rows = await this.database.db
+      .select({ id: statuses.id })
+      .from(statuses)
+      .where(inArray(statuses.id, wanted));
+    if (rows.length !== wanted.length) throw new BadRequestException('Unknown status');
+    return wanted;
+  }
 
   private async projectIds(keys: string[]): Promise<string[]> {
     if (keys.length === 0) return [];
@@ -132,6 +150,7 @@ export class WebhookService {
         url: row.url,
         events: row.events as WebhookEventType[],
         projectKeys: row.projectIds.flatMap((id) => keyOf.get(id) ?? []),
+        statusIds: row.statusIds,
         enabled: row.enabled,
         disabledReason: row.disabledReason,
         failingSince: row.failingSince?.toISOString() ?? null,
@@ -173,6 +192,7 @@ export class WebhookService {
       secret,
       events: [...new Set(request.events)],
       projectIds: await this.projectIds(request.projectKeys),
+      statusIds: await this.statusIds(request.statusIds),
       enabled: request.enabled,
       createdById: principal.userId,
     });
@@ -198,6 +218,9 @@ export class WebhookService {
         ...(request.events !== undefined ? { events: [...new Set(request.events)] } : {}),
         ...(request.projectKeys !== undefined
           ? { projectIds: await this.projectIds(request.projectKeys) }
+          : {}),
+        ...(request.statusIds !== undefined
+          ? { statusIds: await this.statusIds(request.statusIds) }
           : {}),
         // Switching a webhook on again also clears the reason the system switched it off.
         ...(request.enabled !== undefined
@@ -323,7 +346,10 @@ export class WebhookService {
     const targets = (await tx.select().from(webhooks).where(eq(webhooks.enabled, true))).filter(
       (webhook) =>
         webhook.events.includes(type) &&
-        (webhook.projectIds.length === 0 || webhook.projectIds.includes(issue.projectId)),
+        (webhook.projectIds.length === 0 || webhook.projectIds.includes(issue.projectId)) &&
+        (type !== 'issue.transitioned' ||
+          webhook.statusIds.length === 0 ||
+          webhook.statusIds.includes(statusAfter(event) ?? '')),
     );
     if (targets.length === 0) return;
 

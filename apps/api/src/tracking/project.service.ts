@@ -37,7 +37,7 @@ import { builtInId, PROJECT_TEMPLATES } from './builtins.js';
 import { CustomFieldService } from './custom-field.service.js';
 import { MetaService } from './meta.service.js';
 import { ProjectAccessService } from './project-access.service.js';
-import type { WorkflowDefinition } from './workflow.js';
+import { readDefinition, type WorkflowDefinition } from './workflow.js';
 
 export type ProjectRow = typeof projects.$inferSelect;
 
@@ -217,7 +217,7 @@ export class ProjectService {
       .from(workflowVersions)
       .where(eq(workflowVersions.id, versionId));
     if (!version) throw new Error(`Workflow version ${versionId} missing`);
-    return version.definition as WorkflowDefinition;
+    return readDefinition(version.definition);
   }
 
   private summary(

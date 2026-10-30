@@ -32,6 +32,7 @@ import { ApiError, client, unwrap } from '../../lib/api';
 import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { FieldActionsEditor, type FieldChoice } from './FieldActionsEditor';
 import { WorkflowDiagram } from './WorkflowDiagram';
 
 interface Row {
@@ -58,8 +59,12 @@ const NO_RULES: TransitionRules = {
   onlyAssignee: false,
   roles: [],
   subtasksDone: false,
+  blockersDone: false,
   requiredFields: [],
+  dueNotPast: false,
   assign: 'keep',
+  fieldActions: [],
+  watch: false,
 };
 const ASSIGN = ['keep', 'caller', 'reporter', 'nobody'] as const;
 
@@ -70,8 +75,12 @@ function ruleCount(rules: TransitionRules | undefined): number {
     Number(rules.onlyAssignee) +
     Number(rules.roles.length > 0) +
     Number(rules.subtasksDone) +
+    Number(rules.blockersDone) +
     rules.requiredFields.length +
-    Number(rules.assign !== 'keep')
+    Number(rules.dueNotPast) +
+    Number(rules.assign !== 'keep') +
+    rules.fieldActions.length +
+    Number(rules.watch)
   );
 }
 
@@ -256,14 +265,14 @@ function TransitionRulesSection({
 }: {
   rows: Row[];
   rules: Record<string, TransitionRules>;
-  fields: Array<{ id: string; name: string }>;
+  fields: FieldChoice[];
   editable: boolean;
   onChange: (key: string, rules: TransitionRules) => void;
 }) {
   const { t } = useTranslation();
   const fieldNames = [
     ...TRANSITION_FIELDS.map((field) => ({ id: field, name: t(`workflow.fields.${field}`) })),
-    ...fields,
+    ...fields.map(({ id, name }) => ({ id, name })),
   ];
   const toggled = (list: string[], value: string) =>
     list.includes(value) ? list.filter((entry) => entry !== value) : [...list, value];
@@ -313,6 +322,14 @@ function TransitionRulesSection({
                     />
                     {t('workflow.subtasksDone')}
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.blockersDone}
+                      onChange={() => set({ blockersDone: !current.blockersDone })}
+                    />
+                    {t('workflow.blockersDone')}
+                  </label>
                   <span className="mt-1 text-xs text-[var(--ink-muted)]">
                     {t('workflow.onlyRoles')}
                   </span>
@@ -331,8 +348,19 @@ function TransitionRulesSection({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <strong className="text-xs text-[var(--ink-muted)]">
-                    {t('workflow.required')}
+                    {t('workflow.checks')}
                   </strong>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.dueNotPast}
+                      onChange={() => set({ dueNotPast: !current.dueNotPast })}
+                    />
+                    {t('workflow.dueNotPast')}
+                  </label>
+                  <span className="mt-1 text-xs text-[var(--ink-muted)]">
+                    {t('workflow.required')}
+                  </span>
                   {fieldNames.map((field) => (
                     <label key={field.id} className="flex items-center gap-2">
                       <input
@@ -359,6 +387,24 @@ function TransitionRulesSection({
                       {t(`workflow.assign.${value}`)}
                     </label>
                   ))}
+                  <label className="mt-1 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.watch}
+                      onChange={() => set({ watch: !current.watch })}
+                    />
+                    {t('workflow.watch')}
+                  </label>
+                </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-3">
+                  <strong className="text-xs text-[var(--ink-muted)]">
+                    {t('workflow.fieldActions')}
+                  </strong>
+                  <FieldActionsEditor
+                    actions={current.fieldActions}
+                    fields={fields}
+                    onChange={(fieldActions) => set({ fieldActions })}
+                  />
                 </div>
               </fieldset>
             </details>
@@ -481,11 +527,16 @@ export function WorkflowEditor({
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(() => fromServer(workflow));
   const projectFields = useQuery(projectQuery(projectKey)).data?.customFieldIds;
-  // The project's custom fields, and any a rule still requires.
-  const required = new Set(Object.values(draft.rules).flatMap((rules) => rules.requiredFields));
+  // The project's custom fields, and any a rule still names.
+  const required = new Set(
+    Object.values(draft.rules).flatMap((rules) => [
+      ...rules.requiredFields,
+      ...rules.fieldActions.map((action) => action.field),
+    ]),
+  );
   const fields = (useQuery(trackingMetaQuery).data?.customFields ?? [])
     .filter((field) => projectFields?.includes(field.id) || required.has(field.id))
-    .map(({ id, name }) => ({ id, name }));
+    .map(({ id, name, type, options }) => ({ id, name, type, options }));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),

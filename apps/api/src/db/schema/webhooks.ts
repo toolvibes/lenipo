@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
@@ -23,6 +24,8 @@ export const webhooks = pgTable('webhooks', {
   events: text().array().notNull(),
   /** Only events of these projects; empty means all projects. */
   projectIds: uuid().array().notNull(),
+  /** Transitions only into these statuses; empty means all (TL-75, E-86). */
+  statusIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
   enabled: boolean().notNull().default(true),
   /** Why the system switched the webhook off, e.g. after days of failures. */
   disabledReason: text(),

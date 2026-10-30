@@ -4,7 +4,7 @@ import { WEBHOOK_EVENT_TYPES, type Webhook, type WebhookEventType } from '@taskl
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
-import { projectsQuery } from '../../lib/tracking';
+import { projectsQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -18,15 +18,17 @@ interface WebhookDialogProps {
   onCreated: (webhook: Webhook, secret: string) => void;
 }
 
-/** Name, target, events and projects of a webhook (E-45). */
+/** Name, target, events, projects and target statuses of a webhook (E-45, E-86). */
 export function WebhookDialog({ open, onOpenChange, editing, onCreated }: WebhookDialogProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const projects = useQuery({ ...projectsQuery, enabled: open });
+  const meta = useQuery({ ...trackingMetaQuery, enabled: open });
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [events, setEvents] = useState<WebhookEventType[]>([]);
   const [projectKeys, setProjectKeys] = useState<string[]>([]);
+  const [statusIds, setStatusIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -34,11 +36,12 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
     setUrl(editing?.url ?? '');
     setEvents(editing?.events ?? ['issue.created', 'issue.transitioned', 'comment.created']);
     setProjectKeys(editing?.projectKeys ?? []);
+    setStatusIds(editing?.statusIds ?? []);
   }, [open, editing]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const body = { name, url, events, projectKeys };
+      const body = { name, url, events, projectKeys, statusIds };
       if (editing) {
         await unwrap(
           client.PATCH('/api/v1/admin/webhooks/{id}', {
@@ -124,6 +127,28 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
             ))}
           </div>
         </fieldset>
+        {events.includes('issue.transitioned') && (
+          <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+            <legend className="tl-label mb-1 text-[var(--ink-muted)]">
+              {t('webhooks.statuses')}
+            </legend>
+            <p className="m-0 text-xs text-[var(--ink-muted)]">{t('webhooks.statusesHelp')}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {meta.data?.statuses.map((status) => (
+                <label key={status.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={statusIds.includes(status.id)}
+                    onChange={(event) =>
+                      setStatusIds(toggle(statusIds, status.id, event.target.checked))
+                    }
+                  />
+                  {status.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}

@@ -1,4 +1,4 @@
-import type { ProjectRole, TransitionRules } from '@tasklore/shared';
+import { type ProjectRole, TransitionRules } from '@tasklore/shared';
 
 /** A published workflow version (decision E-31); stored as JSONB in workflow_versions. */
 export interface WorkflowDefinition {
@@ -38,7 +38,7 @@ export interface RuleViewer {
 /** Why the conditions of a transition keep it from this viewer, or null when it is offered. */
 export function blockedBy(
   rules: TransitionRules | undefined,
-  issue: { assigneeId: string | null; openSubtasks: number },
+  issue: { assigneeId: string | null; openSubtasks: number; openBlockers: number },
   viewer: RuleViewer,
 ): string | null {
   if (!rules) return null;
@@ -55,6 +55,9 @@ export function blockedBy(
   if (rules.subtasksDone && issue.openSubtasks > 0) {
     return 'All subtasks need to be done first';
   }
+  if (rules.blockersDone && issue.openBlockers > 0) {
+    return 'All blocking issues need to be done first';
+  }
   return null;
 }
 
@@ -65,7 +68,28 @@ export function hasRules(rules: TransitionRules | undefined): rules is Transitio
     (rules.onlyAssignee ||
       rules.roles.length > 0 ||
       rules.subtasksDone ||
+      rules.blockersDone ||
       rules.requiredFields.length > 0 ||
-      rules.assign !== 'keep')
+      rules.dueNotPast ||
+      rules.assign !== 'keep' ||
+      rules.fieldActions.length > 0 ||
+      rules.watch)
   );
+}
+
+/**
+ * A stored definition with every rule completed by its defaults, so versions published before a
+ * rule existed read like new ones (TL-75).
+ */
+export function readDefinition(stored: unknown): WorkflowDefinition {
+  const definition = stored as WorkflowDefinition;
+  if (!definition.transitions.some((transition) => transition.rules)) return definition;
+  return {
+    ...definition,
+    transitions: definition.transitions.map((transition) =>
+      transition.rules
+        ? { ...transition, rules: TransitionRules.parse(transition.rules) }
+        : transition,
+    ),
+  };
 }

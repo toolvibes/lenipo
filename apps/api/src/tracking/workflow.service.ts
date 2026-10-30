@@ -4,6 +4,7 @@ import {
   type PublishWorkflowRequest,
   type StatusCategory,
   type StatusInfo,
+  TRANSITION_CLEARABLE,
   TRANSITION_FIELDS,
 } from '@tasklore/shared';
 import { and, count, eq, inArray, sql } from 'drizzle-orm';
@@ -23,11 +24,17 @@ import {
   workflowVersions,
 } from '../db/schema/index.js';
 import { builtInId } from './builtins.js';
+import { CustomFieldService } from './custom-field.service.js';
 import { type Change, recordChanges } from './history.js';
 import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
-import { hasRules, type WorkflowDefinition, type WorkflowTransition } from './workflow.js';
+import {
+  hasRules,
+  readDefinition,
+  type WorkflowDefinition,
+  type WorkflowTransition,
+} from './workflow.js';
 
 /** A readable, unique key for a new status, e.g. "code-review". */
 function statusKey(name: string, taken: Set<string>): string {
@@ -76,6 +83,7 @@ export class WorkflowService {
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(MetaService) private readonly meta: MetaService,
+    @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
   async get(principal: Principal, projectKey: string): Promise<ProjectWorkflow> {
@@ -96,7 +104,7 @@ export class WorkflowService {
       .innerJoin(workflows, eq(workflows.id, workflowVersions.workflowId))
       .where(eq(workflowVersions.id, versionId));
     if (!row) throw new Error(`Workflow version ${versionId} missing`);
-    const definition = row.definition as WorkflowDefinition;
+    const definition = readDefinition(row.definition);
     const meta = await this.meta.load();
     const usage = await db
       .select({ statusId: issues.statusId, n: count() })
@@ -140,6 +148,7 @@ export class WorkflowService {
       index(pair.to);
     }
     await this.checkRequiredFields(request);
+    await this.checkFieldActions(project.id, request);
 
     const versionId = await this.database.db.transaction(async (tx) => {
       // Locks the project row, so two publishes cannot both start from the same version.
@@ -162,7 +171,7 @@ export class WorkflowService {
         .innerJoin(workflows, eq(workflows.id, workflowVersions.workflowId))
         .where(eq(workflowVersions.id, request.baseVersionId));
       if (!base) throw new Error('Base workflow version missing');
-      const previous = base.definition as WorkflowDefinition;
+      const previous = readDefinition(base.definition);
 
       const ids = await this.resolveStatuses(tx, request.statuses);
       if (new Set(ids).size !== ids.length) {
@@ -251,6 +260,43 @@ export class WorkflowService {
           .where(inArray(customFields.id, custom))
       ).length === custom.length;
     if (!found) throw new BadRequestException('A required field does not exist');
+  }
+
+  /**
+   * Field changes after a transition (TL-75): system fields can be cleared, labels also added or
+   * removed, and custom fields of the project cleared or set to a value they accept.
+   */
+  private async checkFieldActions(projectId: string, request: PublishWorkflowRequest) {
+    const label = /^\S{1,64}$/;
+    for (const action of request.statuses.flatMap((entry) => entry.rules?.fieldActions ?? [])) {
+      if (action.field === 'labels') {
+        if (action.action === 'clear') continue;
+        const valid =
+          (action.action === 'add' || action.action === 'remove') &&
+          typeof action.value === 'string' &&
+          label.test(action.value);
+        if (!valid)
+          throw new BadRequestException('Labels are cleared, or one label added or removed');
+      } else if ((TRANSITION_CLEARABLE as readonly string[]).includes(action.field)) {
+        if (action.action !== 'clear') {
+          throw new BadRequestException(`${action.field} can only be cleared`);
+        }
+      } else if (action.action === 'clear' || action.action === 'set') {
+        if (action.action === 'set' && action.value === undefined) {
+          throw new BadRequestException('A value to set is missing');
+        }
+        // Throws for fields the project does not use and for values the field does not accept.
+        await this.customFields.apply(
+          projectId,
+          {},
+          {
+            [action.field]: action.action === 'clear' ? null : (action.value ?? null),
+          },
+        );
+      } else {
+        throw new BadRequestException(`Only labels can be added or removed`);
+      }
+    }
   }
 
   /** Existing statuses by id; new ones reuse a status of the same name or are created. */

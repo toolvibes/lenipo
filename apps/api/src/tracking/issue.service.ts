@@ -24,6 +24,7 @@ import type {
   RichTextInput,
   SprintRef,
   Transition,
+  TransitionFieldAction,
   TransitionRequest,
   UpdateCommentRequest,
   UpdateIssueRequest,
@@ -43,6 +44,8 @@ import {
   issueChangeItems,
   issueComments,
   issueComponents,
+  issueLinks,
+  issueLinkTypes,
   issues,
   issueVersions,
   issueWatchers,
@@ -118,6 +121,11 @@ export interface IssueListFilter {
 }
 
 /** A planned start after the due date makes no bar on the timeline (E-68). */
+/** Today as an ISO date (UTC), to compare with date fields. */
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function assertDateOrder(start: string | null, due: string | null) {
   if (start && due && start > due) {
     throw new BadRequestException('The start date must not be after the due date');
@@ -934,11 +942,12 @@ export class IssueService {
       }
       candidates.set(row.id, transitionsFrom(definition, row.statusId));
     }
-    const open = await this.openSubtasks(
+    const needing = (rule: 'subtasksDone' | 'blockersDone') =>
       rows
-        .filter((row) => candidates.get(row.id)?.some((entry) => entry.rules?.subtasksDone))
-        .map((row) => row.id),
-    );
+        .filter((row) => candidates.get(row.id)?.some((entry) => entry.rules?.[rule]))
+        .map((row) => row.id);
+    const open = await this.openSubtasks(needing('subtasksDone'));
+    const blockers = await this.openBlockers(needing('blockersDone'));
     const viewers = new Map<string, RuleViewer>();
     const result = new Map<string, WorkflowTransition[]>();
     for (const row of rows) {
@@ -950,7 +959,11 @@ export class IssueService {
             viewer = await this.projectAccess.ruleViewer(userId, row.projectId);
             viewers.set(row.projectId, viewer);
           }
-          const subject = { assigneeId: row.assigneeId, openSubtasks: open.get(row.id) ?? 0 };
+          const subject = {
+            assigneeId: row.assigneeId,
+            openSubtasks: open.get(row.id) ?? 0,
+            openBlockers: blockers.get(row.id) ?? 0,
+          };
           if (blockedBy(transition.rules, subject, viewer)) continue;
         }
         offered.push(transition);
@@ -976,6 +989,27 @@ export class IssueService {
       )
       .groupBy(issues.parentId);
     return new Map(rows.map((row) => [row.parentId as string, row.n]));
+  }
+
+  /** Unfinished issues blocking each given one ("A blocks B": A is the link's source). */
+  private async openBlockers(issueIds: string[]): Promise<Map<string, number>> {
+    if (issueIds.length === 0) return new Map();
+    const rows = await this.database.db
+      .select({ issueId: issueLinks.targetId, n: count() })
+      .from(issueLinks)
+      .innerJoin(issueLinkTypes, eq(issueLinkTypes.id, issueLinks.typeId))
+      .innerJoin(issues, eq(issues.id, issueLinks.sourceId))
+      .innerJoin(statuses, eq(statuses.id, issues.statusId))
+      .where(
+        and(
+          inArray(issueLinks.targetId, issueIds),
+          eq(issueLinkTypes.key, 'blocks'),
+          isNull(issues.deletedAt),
+          sql`${statuses.category} <> 'done'`,
+        ),
+      )
+      .groupBy(issueLinks.targetId);
+    return new Map(rows.map((row) => [row.issueId, row.n]));
   }
 
   /** The required fields of a transition that the issue leaves empty, by name. */
@@ -1062,15 +1096,23 @@ export class IssueService {
     if (rules) {
       const viewer = await this.projectAccess.ruleViewer(principal.userId, issue.projectId);
       const open = rules.subtasksDone ? await this.openSubtasks([issue.id]) : new Map();
+      const blockers = rules.blockersDone ? await this.openBlockers([issue.id]) : new Map();
       const reason = blockedBy(
         rules,
-        { assigneeId: issue.assigneeId, openSubtasks: open.get(issue.id) ?? 0 },
+        {
+          assigneeId: issue.assigneeId,
+          openSubtasks: open.get(issue.id) ?? 0,
+          openBlockers: blockers.get(issue.id) ?? 0,
+        },
         viewer,
       );
       if (reason) throw new ForbiddenException(reason);
       const missing = await this.missingFields(issue, rules.requiredFields);
       if (missing.length > 0) {
         throw new BadRequestException(`Fill in first: ${missing.join(', ')}`);
+      }
+      if (rules.dueNotPast && (!issue.dueDate || issue.dueDate < today())) {
+        throw new BadRequestException('The due date needs to be set and not in the past');
       }
     }
     const from = meta.status.get(issue.statusId);
@@ -1143,14 +1185,154 @@ export class IssueService {
         }
       }
     }
+    const after = await this.fieldActions(issue, rules?.fieldActions ?? []);
+    changes.push(...after.changes);
+    Object.assign(patch, after.patch);
     await this.database.db.transaction(async (tx) => {
       await tx
         .update(issues)
         .set({ ...patch, updatedAt: sql`now()` })
         .where(eq(issues.id, issue.id));
+      if (after.clearComponents) await this.components.replaceOnIssue(tx, issue.id, []);
+      if (after.clearFixVersions) await this.versions.replaceOnIssue(tx, issue.id, 'fix', []);
+      if (after.sprintRowId) {
+        await tx
+          .update(sprintIssues)
+          .set({ removedAt: sql`now()` })
+          .where(eq(sprintIssues.id, after.sprintRowId));
+      }
       await recordChanges(tx, issue.id, principal, changes);
+      if (rules?.watch) {
+        await tx
+          .insert(issueWatchers)
+          .values({ issueId: issue.id, userId: principal.userId })
+          .onConflictDoNothing();
+      }
     });
     return this.present(principal, issue.id);
+  }
+
+  /**
+   * The field changes a transition makes afterwards (TL-75, E-86). They need no edit right; a
+   * custom field the project no longer uses is left alone, like an assignee who cannot be assigned.
+   */
+  private async fieldActions(
+    issue: typeof issues.$inferSelect,
+    actions: TransitionFieldAction[],
+  ): Promise<{
+    patch: Partial<typeof issues.$inferInsert>;
+    changes: Change[];
+    clearComponents: boolean;
+    clearFixVersions: boolean;
+    sprintRowId: string | null;
+  }> {
+    const patch: Partial<typeof issues.$inferInsert> = {};
+    const changes: Change[] = [];
+    const result = { patch, changes, clearComponents: false, clearFixVersions: false };
+    let sprintRowId: string | null = null;
+    let labels = [...issue.labels];
+    let custom = issue.customFields as StoredValues;
+    for (const action of actions) {
+      switch (action.field) {
+        case 'dueDate':
+        case 'startDate':
+        case 'storyPoints': {
+          const field = action.field;
+          if (issue[field] === null || field in patch) break;
+          changes.push({
+            field,
+            fromValue: String(issue[field]),
+            fromDisplay: String(issue[field]),
+            toValue: null,
+            toDisplay: null,
+          });
+          patch[field] = null;
+          break;
+        }
+        case 'labels': {
+          const label = typeof action.value === 'string' ? action.value : '';
+          if (action.action === 'clear') labels = [];
+          else if (action.action === 'add' && !labels.includes(label)) labels.push(label);
+          else if (action.action === 'remove') labels = labels.filter((entry) => entry !== label);
+          break;
+        }
+        case 'components': {
+          if (result.clearComponents) break;
+          const current = await this.components.refsFor(issue.id);
+          if (current.length === 0) break;
+          changes.push({
+            field: 'components',
+            fromValue: current.map((component) => component.name).join(', '),
+            fromDisplay: current.map((component) => component.name).join(', '),
+            toValue: null,
+            toDisplay: null,
+          });
+          result.clearComponents = true;
+          break;
+        }
+        case 'fixVersions': {
+          if (result.clearFixVersions) break;
+          const current = await this.versions.refsFor(this.database.db, issue.id, 'fix');
+          if (current.length === 0) break;
+          changes.push({
+            field: VERSION_FIELD.fix,
+            fromValue: current.map((version) => version.id).join(','),
+            fromDisplay: current.map((version) => version.name).join(', '),
+            toValue: null,
+            toDisplay: null,
+          });
+          result.clearFixVersions = true;
+          break;
+        }
+        case 'sprint': {
+          if (sprintRowId) break;
+          const [current] = await this.database.db
+            .select({ id: sprintIssues.id, name: sprints.name })
+            .from(sprintIssues)
+            .innerJoin(sprints, eq(sprints.id, sprintIssues.sprintId))
+            .where(
+              and(
+                eq(sprintIssues.issueId, issue.id),
+                isNull(sprintIssues.removedAt),
+                sql`${sprints.state} <> 'closed'`,
+              ),
+            );
+          if (!current) break;
+          sprintRowId = current.id;
+          changes.push({
+            field: 'sprint',
+            fromValue: current.name,
+            fromDisplay: current.name,
+            toValue: null,
+            toDisplay: null,
+          });
+          break;
+        }
+        default: {
+          const input = action.action === 'clear' ? null : (action.value ?? null);
+          const applied = await this.customFields
+            .apply(issue.projectId, custom, { [action.field]: input })
+            .catch(() => undefined);
+          if (!applied) break;
+          custom = applied.next;
+          changes.push(...applied.changes);
+          patch.customFields = custom;
+        }
+      }
+    }
+    const before = [...issue.labels].sort();
+    const next = [...new Set(labels)].sort();
+    if (before.join(' ') !== next.join(' ')) {
+      changes.push({
+        field: 'labels',
+        fromValue: before.join(' ') || null,
+        fromDisplay: before.join(' ') || null,
+        toValue: next.join(' ') || null,
+        toDisplay: next.join(' ') || null,
+      });
+      patch.labels = next;
+    }
+    return { ...result, sprintRowId };
   }
 
   // ---------------------------------------------------------------- links

@@ -4389,6 +4389,7 @@ export interface components {
       url: string;
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
+      statusIds: string[];
       enabled: boolean;
       disabledReason: string | null;
       failingSince: string | null;
@@ -4420,6 +4421,8 @@ export interface components {
       events: components['schemas']['WebhookEventType'][];
       /** @default [] */
       projectKeys?: string[];
+      /** @default [] */
+      statusIds?: string[];
       /** @default true */
       enabled?: boolean;
     };
@@ -4430,6 +4433,7 @@ export interface components {
       url: string;
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
+      statusIds: string[];
       enabled: boolean;
       disabledReason: string | null;
       failingSince: string | null;
@@ -4450,6 +4454,7 @@ export interface components {
       url?: string;
       events?: components['schemas']['WebhookEventType'][];
       projectKeys?: string[];
+      statusIds?: string[];
       enabled?: boolean;
     };
     WebhookSecret: {
@@ -4502,13 +4507,27 @@ export interface components {
       roles: components['schemas']['ProjectRole'][];
       /** @default false */
       subtasksDone: boolean;
+      /** @default false */
+      blockersDone: boolean;
       /** @default [] */
       requiredFields: string[];
+      /** @default false */
+      dueNotPast: boolean;
       /**
        * @default keep
        * @enum {string}
        */
       assign: 'keep' | 'caller' | 'reporter' | 'nobody';
+      /** @default [] */
+      fieldActions: components['schemas']['TransitionFieldAction'][];
+      /** @default false */
+      watch: boolean;
+    };
+    TransitionFieldAction: {
+      field: string;
+      /** @enum {string} */
+      action: 'clear' | 'set' | 'add' | 'remove';
+      value?: string | number | boolean | string[];
     };
     PublishWorkflowRequest: {
       /** Format: uuid */
@@ -4539,13 +4558,27 @@ export interface components {
       roles?: components['schemas']['ProjectRole'][];
       /** @default false */
       subtasksDone?: boolean;
+      /** @default false */
+      blockersDone?: boolean;
       /** @default [] */
       requiredFields?: string[];
+      /** @default false */
+      dueNotPast?: boolean;
       /**
        * @default keep
        * @enum {string}
        */
       assign?: 'keep' | 'caller' | 'reporter' | 'nobody';
+      /** @default [] */
+      fieldActions?: components['schemas']['TransitionFieldActionInput'][];
+      /** @default false */
+      watch?: boolean;
+    };
+    TransitionFieldActionInput: {
+      field: string;
+      /** @enum {string} */
+      action: 'clear' | 'set' | 'add' | 'remove';
+      value?: string | number | boolean | string[];
     };
   };
   responses: never;

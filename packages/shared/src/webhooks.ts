@@ -25,6 +25,8 @@ export const Webhook = z
     events: z.array(WebhookEventType),
     /** Limited to these projects; empty means all. */
     projectKeys: z.array(z.string()),
+    /** Transitions only into these statuses; empty means all (TL-75, E-86). */
+    statusIds: z.array(z.uuid()),
     enabled: z.boolean(),
     disabledReason: z.string().nullable(),
     failingSince: z.iso.datetime().nullable(),
@@ -53,6 +55,7 @@ export const CreateWebhookRequest = z
     url: WebhookUrl,
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100).default([]),
+    statusIds: z.array(z.uuid()).max(100).default([]),
     enabled: z.boolean().default(true),
   })
   .meta({ id: 'CreateWebhookRequest' });
@@ -64,6 +67,7 @@ export const UpdateWebhookRequest = z
     url: WebhookUrl,
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100),
+    statusIds: z.array(z.uuid()).max(100),
     enabled: z.boolean(),
   })
   .partial()

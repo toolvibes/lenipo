@@ -741,9 +741,36 @@ export const TRANSITION_FIELDS = [
   'fixVersions',
 ] as const;
 
+/** Fields a transition can clear afterwards (TL-75, E-86); labels can also be added or removed. */
+export const TRANSITION_CLEARABLE = [
+  'dueDate',
+  'startDate',
+  'storyPoints',
+  'labels',
+  'components',
+  'fixVersions',
+  'sprint',
+] as const;
+
 /**
- * Rules for moving into one status (TL-11, E-85): conditions decide whether the transition is
- * offered at all, required fields are checked when it runs, and the assignment follows it.
+ * One field change after a transition: "clear" a system or custom field, "add"/"remove" a label,
+ * or "set" a custom field to a value in the form the issue API takes.
+ */
+export const TransitionFieldAction = z
+  .object({
+    /** A `TRANSITION_CLEARABLE` key or a custom field id. */
+    field: z.string().min(1).max(64),
+    action: z.enum(['clear', 'set', 'add', 'remove']),
+    value: z
+      .union([z.string().max(10_000), z.number(), z.boolean(), z.array(Id).max(100)])
+      .optional(),
+  })
+  .meta({ id: 'TransitionFieldAction' });
+export type TransitionFieldAction = z.infer<typeof TransitionFieldAction>;
+
+/**
+ * Rules for moving into one status (TL-11, E-85, E-86): conditions decide whether the transition
+ * is offered at all, validators are checked when it runs, and post-functions follow it.
  */
 export const TransitionRules = z
   .object({
@@ -753,10 +780,18 @@ export const TransitionRules = z
     roles: z.array(ProjectRole).max(PROJECT_ROLES.length).default([]),
     /** Every subtask is done first. */
     subtasksDone: z.boolean().default(false),
+    /** Every issue that blocks this one is done first (TL-75). */
+    blockersDone: z.boolean().default(false),
     /** A `TRANSITION_FIELDS` key or a custom field id each; empty values block the move. */
     requiredFields: z.array(z.string().min(1).max(64)).max(30).default([]),
+    /** The due date is set and not in the past (TL-75). */
+    dueNotPast: z.boolean().default(false),
     /** Afterwards: keep the assignee, take the issue, give it to the reporter, or unassign it. */
     assign: z.enum(['keep', 'caller', 'reporter', 'nobody']).default('keep'),
+    /** Afterwards, in this order (TL-75). */
+    fieldActions: z.array(TransitionFieldAction).max(20).default([]),
+    /** Afterwards the person moving the issue watches it (TL-75). */
+    watch: z.boolean().default(false),
   })
   .meta({ id: 'TransitionRules' });
 export type TransitionRules = z.infer<typeof TransitionRules>;

@@ -1,0 +1,1 @@
+ALTER TABLE "webhooks" ADD COLUMN "status_ids" uuid[] DEFAULT '{}'::uuid[] NOT NULL;
