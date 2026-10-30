@@ -1168,6 +1168,11 @@ export const en: Messages = {
     choose: 'Choose status …',
     publish: 'Publish',
     discard: 'Discard',
+    draftSaving: 'Saving draft …',
+    draftFailed: 'The draft could not be saved.',
+    draftSaved: 'Draft saved · {{when}} by {{name}}',
+    draftStale:
+      'This draft is based on an older version; a newer one has been published since. It cannot be published like this – “Discard” starts again from the current version.',
     published: 'Version {{version}} published.',
     conflict: 'Someone changed the workflow meanwhile. Reload and edit again.',
     reload: 'Reload',

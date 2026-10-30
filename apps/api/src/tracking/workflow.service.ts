@@ -2,11 +2,12 @@ import { BadRequestException, ConflictException, Inject, Injectable } from '@nes
 import {
   type IssueTypeInfo,
   type ProjectWorkflow,
-  type PublishWorkflowRequest,
+  PublishWorkflowRequest,
   type StatusCategory,
   type StatusInfo,
   TRANSITION_CLEARABLE,
   TRANSITION_FIELDS,
+  type WorkflowDraft,
 } from '@tasklore/shared';
 import { and, count, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -22,6 +23,8 @@ import {
   projects,
   projectTypeWorkflows,
   statuses,
+  users,
+  workflowDrafts,
   workflows,
   workflowVersions,
 } from '../db/schema/index.js';
@@ -79,6 +82,11 @@ function pairs(definition: WorkflowDefinition): Array<{ from: string; to: string
  * The project's workflow in the list editor (T-WF-02 P1, T-WF-09, E-70): reading it, and
  * publishing a new immutable version that the project's issues and boards move to at once.
  */
+/** Drafts are kept per scope: '' for the standard workflow, else the issue type id. */
+function scopeKey(scope: Scope): string {
+  return scope.type?.id ?? '';
+}
+
 /** The workflow an edit is about (TL-76): the project's standard one, or an issue type's. */
 interface Scope {
   type: IssueTypeInfo | null;
@@ -167,6 +175,7 @@ export class WorkflowService {
       issueType: scope.type?.key ?? null,
       inherited: !!scope.type && !scope.own,
       ownTypes: [...scope.types.keys()].flatMap((id) => meta.issueType.get(id)?.key ?? []),
+      draft: await this.draft(project.id, scope),
       mode: free ? 'free' : 'defined',
       statuses: definition.statusIds.flatMap((id) => meta.status.get(id) ?? []),
       initialStatusId: definition.initialStatusId,
@@ -177,6 +186,67 @@ export class WorkflowService {
       usage: Object.fromEntries(usage.map((entry) => [entry.statusId, entry.n])),
       available: meta.statuses,
     };
+  }
+
+  /** The saved draft of a scope (TL-77, E-88). */
+  private async draft(projectId: string, scope: Scope): Promise<WorkflowDraft | null> {
+    const [row] = await this.database.db
+      .select({
+        request: workflowDrafts.request,
+        updatedAt: workflowDrafts.updatedAt,
+        updatedById: users.id,
+        updatedByName: users.displayName,
+      })
+      .from(workflowDrafts)
+      .leftJoin(users, eq(users.id, workflowDrafts.updatedById))
+      .where(
+        and(eq(workflowDrafts.projectId, projectId), eq(workflowDrafts.scope, scopeKey(scope))),
+      );
+    if (!row) return null;
+    const request = PublishWorkflowRequest.parse(row.request);
+    return {
+      request,
+      updatedBy: row.updatedById
+        ? { id: row.updatedById, displayName: row.updatedByName ?? '' }
+        : null,
+      updatedAt: row.updatedAt.toISOString(),
+      stale: request.baseVersionId !== scope.versionId,
+    };
+  }
+
+  /** Saves the shared draft of the workflow the request is about; nothing is published. */
+  async saveDraft(
+    principal: Principal,
+    projectKey: string,
+    request: PublishWorkflowRequest,
+  ): Promise<WorkflowDraft> {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    await this.projectAccess.require(principal, project.id, 'administer');
+    const scope = await this.scope(project, request.issueType);
+    await this.database.db
+      .insert(workflowDrafts)
+      .values({
+        projectId: project.id,
+        scope: scopeKey(scope),
+        request,
+        updatedById: principal.userId,
+      })
+      .onConflictDoUpdate({
+        target: [workflowDrafts.projectId, workflowDrafts.scope],
+        set: { request, updatedById: principal.userId, updatedAt: sql`now()` },
+      });
+    return (await this.draft(project.id, scope)) as WorkflowDraft;
+  }
+
+  async discardDraft(principal: Principal, projectKey: string, issueTypeKey?: string) {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    await this.projectAccess.require(principal, project.id, 'administer');
+    const scope = await this.scope(project, issueTypeKey);
+    await this.database.db
+      .delete(workflowDrafts)
+      .where(
+        and(eq(workflowDrafts.projectId, project.id), eq(workflowDrafts.scope, scopeKey(scope))),
+      );
   }
 
   async publish(
@@ -304,6 +374,12 @@ export class WorkflowService {
         .set({ workflowVersionId: newVersionId })
         .where(this.inScope(project.id, scope));
 
+      // The published edit is no draft any more.
+      await tx
+        .delete(workflowDrafts)
+        .where(
+          and(eq(workflowDrafts.projectId, project.id), eq(workflowDrafts.scope, scopeKey(scope))),
+        );
       await this.migrateIssues(tx, principal, inUse, request, ids, byId);
       const after = await this.projects.statusIds(
         { id: project.id, workflowVersionId: scope.type ? fresh.workflowVersionId : newVersionId },
@@ -344,6 +420,11 @@ export class WorkflowService {
         .select({ id: issues.id, statusId: issues.statusId, resolutionId: issues.resolutionId })
         .from(issues)
         .where(this.inScope(project.id, scope));
+      await tx
+        .delete(workflowDrafts)
+        .where(
+          and(eq(workflowDrafts.projectId, project.id), eq(workflowDrafts.scope, scope.type.id)),
+        );
       await tx
         .delete(projectTypeWorkflows)
         .where(

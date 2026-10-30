@@ -164,6 +164,24 @@ export const projectTypeWorkflows = pgTable(
   (table) => [primaryKey({ columns: [table.projectId, table.issueTypeId] })],
 );
 
+/**
+ * The shared draft of a workflow edit (TL-77, E-88): one per project and scope, the scope being
+ * '' for the standard workflow or an issue type id. `request` is a PublishWorkflowRequest.
+ */
+export const workflowDrafts = pgTable(
+  'workflow_drafts',
+  {
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    scope: text().notNull(),
+    request: jsonb().notNull(),
+    updatedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.scope] })],
+);
+
 export const projectRole = pgEnum('project_role', ['administrators', 'developers', 'users']);
 
 /** Who holds which role in a project: a single user or a whole group. */

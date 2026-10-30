@@ -30,6 +30,7 @@ import {
   UpdateVersionRequest,
   UserRef,
   Version,
+  WorkflowDraft,
 } from '@tasklore/shared';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
@@ -232,6 +233,37 @@ export class ProjectsController {
     @ValidQuery(WorkflowQuery) query: WorkflowQuery,
   ): Promise<ProjectWorkflow> {
     return this.workflows.get(principal, key, query.issueType);
+  }
+
+  @Endpoint({
+    tag: 'Workflows',
+    summary: 'Save the shared draft of a workflow',
+    description:
+      'Needs project administration. One draft per project and issue type (`issueType`, else the standard workflow), shared by its administrators; publishing removes it (TL-77).',
+    response: WorkflowDraft,
+  })
+  @Put(':key/workflow/draft')
+  saveWorkflowDraft(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(PublishWorkflowRequest) body: PublishWorkflowRequest,
+  ): Promise<WorkflowDraft> {
+    return this.workflows.saveDraft(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Workflows',
+    summary: 'Discard the draft of a workflow',
+    description: 'Needs project administration.',
+  })
+  @Delete(':key/workflow/draft')
+  @HttpCode(204)
+  async discardWorkflowDraft(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidQuery(WorkflowQuery) query: WorkflowQuery,
+  ): Promise<void> {
+    await this.workflows.discardDraft(principal, key, query.issueType);
   }
 
   @Endpoint({

@@ -813,6 +813,10 @@ export const ProjectWorkflow = z
     inherited: z.boolean(),
     /** Keys of the issue types with a workflow of their own. */
     ownTypes: z.array(z.string()),
+    /** The saved draft of this workflow, if any (TL-77). */
+    get draft() {
+      return WorkflowDraft.nullable();
+    },
     /** "free": every status reachable from every other; "defined": only `transitions`. */
     mode: WorkflowMode,
     statuses: z.array(StatusInfo),
@@ -861,6 +865,20 @@ export const PublishWorkflowRequest = z
   })
   .meta({ id: 'PublishWorkflowRequest' });
 export type PublishWorkflowRequest = z.infer<typeof PublishWorkflowRequest>;
+
+/**
+ * The shared, saved edit of a workflow (TL-77, E-88): one per project and issue type, saved while
+ * editing. `stale` once someone published a newer version; publishing it then answers 409.
+ */
+export const WorkflowDraft = z
+  .object({
+    request: PublishWorkflowRequest,
+    updatedBy: UserRef.nullable(),
+    updatedAt: z.iso.datetime(),
+    stale: z.boolean(),
+  })
+  .meta({ id: 'WorkflowDraft' });
+export type WorkflowDraft = z.infer<typeof WorkflowDraft>;
 
 // ---------------------------------------------------------------- issue lookup (E-73)
 

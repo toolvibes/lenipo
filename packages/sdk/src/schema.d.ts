@@ -2532,6 +2532,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/workflow/draft': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Save the shared draft of a workflow
+     * @description Needs project administration. One draft per project and issue type (`issueType`, else the standard workflow), shared by its administrators; publishing removes it (TL-77).
+     */
+    put: operations['Workflows.saveWorkflowDraft'];
+    post?: never;
+    /**
+     * Discard the draft of a workflow
+     * @description Needs project administration.
+     */
+    delete: operations['Workflows.discardWorkflowDraft'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/workflow/types/{issueType}': {
     parameters: {
       query?: never;
@@ -4504,6 +4528,7 @@ export interface components {
       issueType: string | null;
       inherited: boolean;
       ownTypes: string[];
+      draft: components['schemas']['WorkflowDraft'] | null;
       /** @enum {string} */
       mode: 'free' | 'defined';
       statuses: components['schemas']['StatusInfo'][];
@@ -4522,6 +4547,36 @@ export interface components {
         [key: string]: number;
       };
       available: components['schemas']['StatusInfo'][];
+    };
+    WorkflowDraft: {
+      request: components['schemas']['PublishWorkflowRequest'];
+      updatedBy: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      updatedAt: string;
+      stale: boolean;
+    };
+    PublishWorkflowRequest: {
+      /** Format: uuid */
+      baseVersionId: string;
+      issueType?: string;
+      statuses: {
+        id: string | null;
+        name: string;
+        category: components['schemas']['StatusCategory'];
+        rules?: components['schemas']['TransitionRules'];
+      }[];
+      initial: number;
+      /** @enum {string} */
+      mode: 'free' | 'defined';
+      /** @default [] */
+      transitions: {
+        from: number;
+        to: number;
+      }[];
+      /** @default {} */
+      migrate: {
+        [key: string]: number;
+      };
     };
     TransitionRules: {
       /** @default false */
@@ -4552,7 +4607,7 @@ export interface components {
       action: 'clear' | 'set' | 'add' | 'remove';
       value?: string | number | boolean | string[];
     };
-    PublishWorkflowRequest: {
+    PublishWorkflowRequestInput: {
       /** Format: uuid */
       baseVersionId: string;
       issueType?: string;
@@ -10524,7 +10579,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['PublishWorkflowRequest'];
+        'application/json': components['schemas']['PublishWorkflowRequestInput'];
       };
     };
     responses: {
@@ -10536,6 +10591,72 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ProjectWorkflow'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Workflows.saveWorkflowDraft': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublishWorkflowRequestInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkflowDraft'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Workflows.discardWorkflowDraft': {
+    parameters: {
+      query?: {
+        issueType?: string;
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

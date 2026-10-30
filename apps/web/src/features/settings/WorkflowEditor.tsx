@@ -27,9 +27,10 @@ import {
   type TransitionRules,
   type WorkflowMode,
 } from '@tasklore/shared';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { formatRelative } from '../../lib/format';
 import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
@@ -45,6 +46,8 @@ interface Row {
 }
 
 interface Draft {
+  /** The version the edit started from; a draft keeps its own (TL-77). */
+  base: string;
   rows: Row[];
   initial: string;
   mode: WorkflowMode;
@@ -96,6 +99,7 @@ const FIELD =
 
 function fromServer(workflow: ProjectWorkflow): Draft {
   return {
+    base: workflow.versionId,
     rows: workflow.statuses.map((status) => ({
       key: status.id,
       id: status.id,
@@ -110,6 +114,32 @@ function fromServer(workflow: ProjectWorkflow): Draft {
   };
 }
 
+/** A saved draft back in the editor's shape; new statuses get fresh keys (TL-77). */
+function fromRequest(request: PublishWorkflowRequest): Draft {
+  const rows = request.statuses.map((status) => ({
+    key: status.id ?? `new:${crypto.randomUUID()}`,
+    id: status.id,
+    name: status.name,
+    category: status.category,
+  }));
+  const key = (index: number) => rows[index]?.key ?? '';
+  return {
+    base: request.baseVersionId,
+    rows,
+    initial: key(request.initial),
+    mode: request.mode,
+    pairs: new Set(request.transitions.map((pair) => `${key(pair.from)}>${key(pair.to)}`)),
+    migrate: Object.fromEntries(
+      Object.entries(request.migrate).map(([statusId, index]) => [statusId, key(index)]),
+    ),
+    rules: Object.fromEntries(
+      request.statuses.flatMap((status, index) =>
+        status.rules ? [[key(index), status.rules]] : [],
+      ),
+    ),
+  };
+}
+
 function allPairs(rows: Row[]): Set<string> {
   return new Set(
     rows.flatMap((from) => rows.filter((to) => to !== from).map((to) => `${from.key}>${to.key}`)),
@@ -119,7 +149,7 @@ function allPairs(rows: Row[]): Set<string> {
 function toRequest(workflow: ProjectWorkflow, draft: Draft): PublishWorkflowRequest {
   const index = new Map(draft.rows.map((row, position) => [row.key, position]));
   return {
-    baseVersionId: workflow.versionId,
+    baseVersionId: draft.base,
     ...(workflow.issueType ? { issueType: workflow.issueType } : {}),
     statuses: draft.rows.map(({ key, id, name, category }) => {
       const rules = draft.rules[key];
@@ -532,9 +562,12 @@ export function WorkflowEditor({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [draft, setDraft] = useState<Draft>(() => fromServer(workflow));
+  const [draft, setDraft] = useState<Draft>(() =>
+    workflow.draft ? fromRequest(workflow.draft.request) : fromServer(workflow),
+  );
   // A type on the standard workflow is shown read-only until it gets its own copy.
-  const [forking, setForking] = useState(false);
+  const [forking, setForking] = useState(workflow.inherited && !!workflow.draft);
+  const [saved, setSaved] = useState(workflow.draft);
   const editable = canAdminister && (!workflow.inherited || forking);
   const typeName = issueTypes.find((type) => type.key === workflow.issueType)?.name ?? '';
   const ownTypeNames = issueTypes
@@ -561,6 +594,42 @@ export function WorkflowEditor({
     [workflow],
   );
   const changed = JSON.stringify(request) !== pristine;
+  const stale = draft.base !== workflow.versionId;
+
+  // The edit is saved as the shared draft a second after the last change (TL-77, E-88).
+  const lastSaved = useRef(workflow.draft ? JSON.stringify(toRequest(workflow, draft)) : pristine);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const saveDraft = useMutation({
+    mutationFn: (body: PublishWorkflowRequest) =>
+      unwrap(
+        client.PUT('/api/v1/projects/{key}/workflow/draft', {
+          params: { path: { key: projectKey } },
+          body,
+        }),
+      ),
+    onSuccess: setSaved,
+  });
+  const discardDraft = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.DELETE('/api/v1/projects/{key}/workflow/draft', {
+          params: {
+            path: { key: projectKey },
+            query: workflow.issueType ? { issueType: workflow.issueType } : {},
+          },
+        }),
+      ),
+  });
+  const body = JSON.stringify(request);
+  useEffect(() => {
+    clearTimeout(timer.current);
+    if (!editable || body === lastSaved.current) return;
+    timer.current = setTimeout(() => {
+      lastSaved.current = body;
+      saveDraft.mutate(JSON.parse(body) as PublishWorkflowRequest);
+    }, 1000);
+    return () => clearTimeout(timer.current);
+  }, [body, editable, saveDraft.mutate]);
   const removedInUse = workflow.statuses.filter(
     (status) =>
       (workflow.usage[status.id] ?? 0) > 0 && !draft.rows.some((row) => row.id === status.id),
@@ -871,6 +940,14 @@ export function WorkflowEditor({
         </section>
       )}
 
+      {editable && stale && (
+        <p
+          role="alert"
+          className="m-0 rounded-lg border border-[var(--warning)] bg-[var(--warning-soft)] px-4 py-3 text-[13px]"
+        >
+          {t('workflow.draftStale')}
+        </p>
+      )}
       {publish.error && (
         <FormError message={conflict ? t('workflow.conflict') : publish.error.message} />
       )}
@@ -879,11 +956,14 @@ export function WorkflowEditor({
           <Button
             variant="primary"
             disabled={(!changed && !forking) || missingTarget || publish.isPending}
-            onClick={() => publish.mutate()}
+            onClick={() => {
+              clearTimeout(timer.current);
+              publish.mutate();
+            }}
           >
             {t('workflow.publish')}
           </Button>
-          {conflict ? (
+          {conflict && !stale && (
             <Button
               variant="ghost"
               onClick={() => {
@@ -893,18 +973,35 @@ export function WorkflowEditor({
             >
               {t('workflow.reload')}
             </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              disabled={!changed && !forking}
-              onClick={() => {
-                update(() => fromServer(workflow));
-                setForking(false);
-              }}
-            >
-              {t('workflow.discard')}
-            </Button>
           )}
+          <Button
+            variant="ghost"
+            disabled={!changed && !forking && !saved}
+            onClick={() => {
+              clearTimeout(timer.current);
+              const fresh = fromServer(workflow);
+              lastSaved.current = JSON.stringify(toRequest(workflow, fresh));
+              update(() => fresh);
+              setForking(false);
+              setSaved(null);
+              publish.reset();
+              discardDraft.mutate();
+            }}
+          >
+            {t('workflow.discard')}
+          </Button>
+          <span role="status" className="self-center text-xs text-[var(--ink-muted)]">
+            {saveDraft.isPending
+              ? t('workflow.draftSaving')
+              : saveDraft.error
+                ? t('workflow.draftFailed')
+                : saved
+                  ? t('workflow.draftSaved', {
+                      when: formatRelative(saved.updatedAt),
+                      name: saved.updatedBy?.displayName ?? '–',
+                    })
+                  : null}
+          </span>
         </div>
       )}
     </div>

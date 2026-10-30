@@ -1183,6 +1183,11 @@ export const de = {
     choose: 'Status wählen …',
     publish: 'Veröffentlichen',
     discard: 'Verwerfen',
+    draftSaving: 'Entwurf wird gespeichert …',
+    draftFailed: 'Entwurf konnte nicht gespeichert werden.',
+    draftSaved: 'Entwurf gespeichert · {{when}} von {{name}}',
+    draftStale:
+      'Dieser Entwurf beruht auf einer älteren Version; inzwischen wurde neu veröffentlicht. So lässt er sich nicht veröffentlichen – „Verwerfen“ beginnt mit der aktuellen Version neu.',
     published: 'Version {{version}} veröffentlicht.',
     conflict: 'Jemand hat den Workflow inzwischen geändert. Bitte neu laden und erneut bearbeiten.',
     reload: 'Neu laden',

@@ -7893,7 +7893,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PublishWorkflowRequest"
+                "$ref": "#/components/schemas/PublishWorkflowRequestInput"
               }
             }
           }
@@ -7908,6 +7908,96 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/workflow/draft": {
+      "put": {
+        "operationId": "Workflows.saveWorkflowDraft",
+        "summary": "Save the shared draft of a workflow",
+        "description": "Needs project administration. One draft per project and issue type (`issueType`, else the standard workflow), shared by its administrators; publishing removes it (TL-77).",
+        "tags": ["Workflows"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishWorkflowRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowDraft"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Workflows.discardWorkflowDraft",
+        "summary": "Discard the draft of a workflow",
+        "description": "Needs project administration.",
+        "tags": ["Workflows"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "issueType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -15643,6 +15733,16 @@
               "type": "string"
             }
           },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "mode": {
             "type": "string",
             "enum": ["free", "defined"]
@@ -15717,6 +15817,7 @@
           "issueType",
           "inherited",
           "ownTypes",
+          "draft",
           "mode",
           "statuses",
           "initialStatusId",
@@ -15725,6 +15826,130 @@
           "usage",
           "available"
         ],
+        "additionalProperties": false
+      },
+      "WorkflowDraft": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/PublishWorkflowRequest"
+          },
+          "updatedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        },
+        "required": ["request", "updatedBy", "updatedAt", "stale"],
+        "additionalProperties": false
+      },
+      "PublishWorkflowRequest": {
+        "type": "object",
+        "properties": {
+          "baseVersionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "issueType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statuses": {
+            "minItems": 1,
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "category": {
+                  "$ref": "#/components/schemas/StatusCategory"
+                },
+                "rules": {
+                  "$ref": "#/components/schemas/TransitionRules"
+                }
+              },
+              "required": ["id", "name", "category"],
+              "additionalProperties": false
+            }
+          },
+          "initial": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["free", "defined"]
+          },
+          "transitions": {
+            "default": [],
+            "maxItems": 900,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "to": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": ["from", "to"],
+              "additionalProperties": false
+            }
+          },
+          "migrate": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "required": ["baseVersionId", "statuses", "initial", "mode", "transitions", "migrate"],
         "additionalProperties": false
       },
       "TransitionRules": {
@@ -15834,7 +16059,7 @@
         "required": ["field", "action"],
         "additionalProperties": false
       },
-      "PublishWorkflowRequest": {
+      "PublishWorkflowRequestInput": {
         "type": "object",
         "properties": {
           "baseVersionId": {
