@@ -136,10 +136,14 @@ export const timelineQuery = (key: string) =>
       unwrap(client.GET('/api/v1/projects/{key}/timeline', { params: { path: { key } } })),
   });
 
-/** The project's workflow for the editor (E-70). */
-export const projectWorkflowQuery = (key: string) =>
+/** The project's workflow for the editor (E-70), or an issue type's (TL-76, E-87). */
+export const projectWorkflowQuery = (key: string, issueType: string | null = null) =>
   queryOptions({
-    queryKey: ['project-workflow', key],
+    queryKey: ['project-workflow', key, issueType],
     queryFn: () =>
-      unwrap(client.GET('/api/v1/projects/{key}/workflow', { params: { path: { key } } })),
+      unwrap(
+        client.GET('/api/v1/projects/{key}/workflow', {
+          params: { path: { key }, query: issueType ? { issueType } : {} },
+        }),
+      ),
   });

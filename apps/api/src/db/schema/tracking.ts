@@ -144,6 +144,26 @@ export const projectHiddenIssueTypes = pgTable(
   (table) => [primaryKey({ columns: [table.projectId, table.issueTypeId] })],
 );
 
+/**
+ * Issue types with a workflow of their own (TL-76, E-87); the others use the project's workflow.
+ * The workflow is a project-owned copy, so a new version replaces the row's version.
+ */
+export const projectTypeWorkflows = pgTable(
+  'project_type_workflows',
+  {
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    issueTypeId: uuid()
+      .notNull()
+      .references(() => issueTypes.id, { onDelete: 'cascade' }),
+    workflowVersionId: uuid()
+      .notNull()
+      .references(() => workflowVersions.id),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.issueTypeId] })],
+);
+
 export const projectRole = pgEnum('project_role', ['administrators', 'developers', 'users']);
 
 /** Who holds which role in a project: a single user or a whole group. */

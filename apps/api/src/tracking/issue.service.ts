@@ -71,6 +71,7 @@ import { mentionedUserIds, plainText } from './rich-text.js';
 import { VERSION_FIELD, VersionService } from './version.service.js';
 import {
   blockedBy,
+  landingStatus,
   type RuleViewer,
   transitionsFrom,
   type WorkflowDefinition,
@@ -563,7 +564,8 @@ export class IssueService {
     // Without an explicit assignee, the components' default assignee takes over (E-40).
     const assigneeId =
       request.assigneeId ?? (await this.components.defaultAssignee(project.id, components));
-    const workflow = await this.projectService.workflow(project.workflowVersionId);
+    const workflowVersionId = await this.projectService.workflowVersionFor(project, type.id);
+    const workflow = await this.projectService.workflow(workflowVersionId);
     const custom = await this.customFields.apply(project.id, {}, request.customFields);
     const fixVersions = await this.versions.resolve(project.id, request.fixVersions);
     const affectsVersions = await this.versions.resolve(project.id, request.affectsVersions);
@@ -585,7 +587,7 @@ export class IssueService {
         key: `${project.key}-${counter.number}`,
         issueTypeId: type.id,
         statusId: workflow.initialStatusId,
-        workflowVersionId: project.workflowVersionId,
+        workflowVersionId,
         priorityId: priority.id,
         summary: request.summary,
         description: request.description,
@@ -688,6 +690,35 @@ export class IssueService {
       }
       track('issuetype', issue.issueTypeId, type.id, current?.name ?? null, type.name);
       patch.issueTypeId = type.id;
+      // Another type may have another workflow (TL-76, E-87): the issue lands on its status, one
+      // of the same category, or the initial status.
+      const versionId = await this.projectService.workflowVersionFor(project, type.id);
+      if (versionId !== issue.workflowVersionId) {
+        patch.workflowVersionId = versionId;
+        const definition = await this.projectService.workflow(versionId);
+        const statusId = landingStatus(
+          definition,
+          issue.statusId,
+          (id) => meta.status.get(id)?.category,
+        );
+        if (statusId !== issue.statusId) {
+          const from = meta.status.get(issue.statusId);
+          const to = meta.status.get(statusId);
+          track('status', issue.statusId, statusId, from?.name ?? null, to?.name ?? null);
+          patch.statusId = statusId;
+          if (to?.category === 'done' && !issue.resolutionId) {
+            const done = meta.resolution.get(builtInId('resolution', 'done'));
+            track('resolution', null, done?.id ?? null, null, done?.name ?? null);
+            patch.resolutionId = done?.id ?? null;
+            patch.resolvedAt = new Date();
+          } else if (to?.category !== 'done' && issue.resolutionId) {
+            const previous = meta.resolution.get(issue.resolutionId);
+            track('resolution', issue.resolutionId, null, previous?.name ?? null, null);
+            patch.resolutionId = null;
+            patch.resolvedAt = null;
+          }
+        }
+      }
     }
     if (request.priority !== undefined) {
       const priority = this.priorityByKey(meta, request.priority);

@@ -7829,7 +7829,7 @@
       "get": {
         "operationId": "Workflows.workflow",
         "summary": "The project's workflow for the editor",
-        "description": "Statuses in order, the initial status, allowed moves and how many issues use each status.",
+        "description": "Statuses in order, the initial status, allowed moves and how many issues use each status. With `issueType`, the workflow of that issue type: its own, or the standard one it uses (`inherited`).",
         "tags": ["Workflows"],
         "parameters": [
           {
@@ -7838,6 +7838,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "issueType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
             }
           }
         ],
@@ -7867,7 +7876,7 @@
       "post": {
         "operationId": "Workflows.publishWorkflow",
         "summary": "Publish a new version of the project workflow",
-        "description": "Needs project administration. The first edit gives the project its own copy of a shared workflow. All issues of the project move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.",
+        "description": "Needs project administration. The first edit gives the project its own copy of a shared workflow; with `issueType`, the first edit gives that issue type a workflow of its own. The issues it applies to move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.",
         "tags": ["Workflows"],
         "parameters": [
           {
@@ -7889,6 +7898,54 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectWorkflow"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/workflow/types/{issueType}": {
+      "delete": {
+        "operationId": "Workflows.useStandardWorkflow",
+        "summary": "Let an issue type use the standard workflow again",
+        "description": "Needs project administration. Issues of the type keep their status where the standard workflow has it, else take the first status of the same category or the initial status (history entry, no notifications).",
+        "tags": ["Workflows"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "issueType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -15574,6 +15631,18 @@
           "ownedByProject": {
             "type": "boolean"
           },
+          "issueType": {
+            "type": ["string", "null"]
+          },
+          "inherited": {
+            "type": "boolean"
+          },
+          "ownTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "mode": {
             "type": "string",
             "enum": ["free", "defined"]
@@ -15645,6 +15714,9 @@
           "version",
           "name",
           "ownedByProject",
+          "issueType",
+          "inherited",
+          "ownTypes",
           "mode",
           "statuses",
           "initialStatusId",
@@ -15769,6 +15841,10 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "issueType": {
+            "type": "string",
+            "minLength": 1
           },
           "statuses": {
             "minItems": 1,

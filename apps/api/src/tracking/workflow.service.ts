@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import {
+  type IssueTypeInfo,
   type ProjectWorkflow,
   type PublishWorkflowRequest,
   type StatusCategory,
@@ -7,7 +8,7 @@ import {
   TRANSITION_CLEARABLE,
   TRANSITION_FIELDS,
 } from '@tasklore/shared';
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -19,6 +20,7 @@ import {
   customFields,
   issues,
   projects,
+  projectTypeWorkflows,
   statuses,
   workflows,
   workflowVersions,
@@ -27,10 +29,11 @@ import { builtInId } from './builtins.js';
 import { CustomFieldService } from './custom-field.service.js';
 import { type Change, recordChanges } from './history.js';
 import { MetaService } from './meta.service.js';
-import { ProjectService } from './project.service.js';
+import { type ProjectRow, ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import {
   hasRules,
+  landingStatus,
   readDefinition,
   type WorkflowDefinition,
   type WorkflowTransition,
@@ -76,6 +79,16 @@ function pairs(definition: WorkflowDefinition): Array<{ from: string; to: string
  * The project's workflow in the list editor (T-WF-02 P1, T-WF-09, E-70): reading it, and
  * publishing a new immutable version that the project's issues and boards move to at once.
  */
+/** The workflow an edit is about (TL-76): the project's standard one, or an issue type's. */
+interface Scope {
+  type: IssueTypeInfo | null;
+  versionId: string;
+  /** False while the issue type uses the standard workflow. */
+  own: boolean;
+  /** Workflow version by issue type id, for the types with their own. */
+  types: Map<string, string>;
+}
+
 @Injectable()
 export class WorkflowService {
   constructor(
@@ -86,13 +99,46 @@ export class WorkflowService {
     @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
-  async get(principal: Principal, projectKey: string): Promise<ProjectWorkflow> {
+  async get(
+    principal: Principal,
+    projectKey: string,
+    issueTypeKey?: string,
+  ): Promise<ProjectWorkflow> {
     const project = await this.projects.findBrowsable(principal, projectKey);
-    return this.present(project.id, project.workflowVersionId);
+    return this.present(project, await this.scope(project, issueTypeKey));
   }
 
-  private async present(projectId: string, versionId: string): Promise<ProjectWorkflow> {
+  /** Which workflow an edit is about: the standard one, or one issue type's (TL-76, E-87). */
+  private async scope(
+    project: Pick<ProjectRow, 'id' | 'workflowVersionId'>,
+    issueTypeKey: string | undefined,
+    db: Executor = this.database.db,
+  ): Promise<Scope> {
+    const types = await this.projects.typeWorkflows(project.id, db);
+    if (!issueTypeKey)
+      return { type: null, versionId: project.workflowVersionId, own: true, types };
+    const type = (await this.meta.load()).issueTypes.find((entry) => entry.key === issueTypeKey);
+    if (!type) throw new BadRequestException(`Unknown issue type "${issueTypeKey}"`);
+    const versionId = types.get(type.id);
+    return { type, versionId: versionId ?? project.workflowVersionId, own: !!versionId, types };
+  }
+
+  /** The project's issues a workflow applies to: those of the type, or of all other types. */
+  private inScope(projectId: string, scope: Scope): SQL | undefined {
+    if (scope.type)
+      return and(eq(issues.projectId, projectId), eq(issues.issueTypeId, scope.type.id));
+    const own = [...scope.types.keys()];
+    return own.length === 0
+      ? eq(issues.projectId, projectId)
+      : and(eq(issues.projectId, projectId), notInArray(issues.issueTypeId, own));
+  }
+
+  private async present(
+    project: Pick<ProjectRow, 'id' | 'workflowVersionId'>,
+    scope: Scope,
+  ): Promise<ProjectWorkflow> {
     const db = this.database.db;
+    const versionId = scope.versionId;
     const [row] = await db
       .select({
         version: workflowVersions.version,
@@ -110,14 +156,17 @@ export class WorkflowService {
       .select({ statusId: issues.statusId, n: count() })
       .from(issues)
       // Deleted issues count too: they keep their status and must not keep a removed one.
-      .where(eq(issues.projectId, projectId))
+      .where(this.inScope(project.id, scope))
       .groupBy(issues.statusId);
     const free = isFree(definition);
     return {
       versionId,
       version: row.version,
       name: row.name,
-      ownedByProject: row.projectId === projectId,
+      ownedByProject: row.projectId === project.id,
+      issueType: scope.type?.key ?? null,
+      inherited: !!scope.type && !scope.own,
+      ownTypes: [...scope.types.keys()].flatMap((id) => meta.issueType.get(id)?.key ?? []),
       mode: free ? 'free' : 'defined',
       statuses: definition.statusIds.flatMap((id) => meta.status.get(id) ?? []),
       initialStatusId: definition.initialStatusId,
@@ -150,14 +199,17 @@ export class WorkflowService {
     await this.checkRequiredFields(request);
     await this.checkFieldActions(project.id, request);
 
-    const versionId = await this.database.db.transaction(async (tx) => {
+    await this.database.db.transaction(async (tx) => {
       // Locks the project row, so two publishes cannot both start from the same version.
       const [current] = await tx
         .select({ workflowVersionId: projects.workflowVersionId })
         .from(projects)
         .where(eq(projects.id, project.id))
         .for('update');
-      if (current?.workflowVersionId !== request.baseVersionId) {
+      if (!current) throw new Error('Project vanished');
+      const fresh = { id: project.id, workflowVersionId: current.workflowVersionId };
+      const scope = await this.scope(fresh, request.issueType, tx);
+      if (scope.versionId !== request.baseVersionId) {
         throw new ConflictException('The workflow changed meanwhile; reload and edit again');
       }
       const [base] = await tx
@@ -193,7 +245,7 @@ export class WorkflowService {
                 resolutionId: issues.resolutionId,
               })
               .from(issues)
-              .where(and(eq(issues.projectId, project.id), inArray(issues.statusId, removed)));
+              .where(and(this.inScope(project.id, scope), inArray(issues.statusId, removed)));
       const unmapped = [...new Set(inUse.map((issue) => issue.statusId))].filter(
         (statusId) => request.migrate[statusId] === undefined,
       );
@@ -202,11 +254,12 @@ export class WorkflowService {
           `Issues still use removed statuses: ${unmapped.map((id) => byId.get(id)?.name ?? id).join(', ')}`,
         );
       }
+      const before = await this.projects.statusIds(fresh, tx);
 
-      // Copy on write: the first edit gives the project its own workflow.
+      // Copy on write: the first edit gives the project, or the issue type, its own workflow.
       let workflowId = base.workflowId;
       let version = 1;
-      if (base.projectId === project.id) {
+      if (scope.type ? scope.own : base.projectId === project.id) {
         const [latest] = await tx
           .select({ version: sql<number>`max(${workflowVersions.version})` })
           .from(workflowVersions)
@@ -217,8 +270,10 @@ export class WorkflowService {
         await tx.insert(workflows).values({
           id: workflowId,
           key: `project-${project.key.toLowerCase()}-${workflowId.slice(-8)}`,
-          name: project.name,
-          description: `Eigener Workflow des Projekts ${project.key}, abgeleitet von „${base.name}“`,
+          name: scope.type ? `${project.name} · ${scope.type.name}` : project.name,
+          description: scope.type
+            ? `Workflow für ${scope.type.name} im Projekt ${project.key}, abgeleitet von „${base.name}“`
+            : `Eigener Workflow des Projekts ${project.key}, abgeleitet von „${base.name}“`,
           projectId: project.id,
         });
       }
@@ -226,21 +281,102 @@ export class WorkflowService {
       await tx
         .insert(workflowVersions)
         .values({ id: newVersionId, workflowId, version, definition });
-      await tx
-        .update(projects)
-        .set({ workflowVersionId: newVersionId })
-        .where(eq(projects.id, project.id));
+      if (scope.type) {
+        await tx
+          .insert(projectTypeWorkflows)
+          .values({
+            projectId: project.id,
+            issueTypeId: scope.type.id,
+            workflowVersionId: newVersionId,
+          })
+          .onConflictDoUpdate({
+            target: [projectTypeWorkflows.projectId, projectTypeWorkflows.issueTypeId],
+            set: { workflowVersionId: newVersionId },
+          });
+      } else {
+        await tx
+          .update(projects)
+          .set({ workflowVersionId: newVersionId })
+          .where(eq(projects.id, project.id));
+      }
       await tx
         .update(issues)
         .set({ workflowVersionId: newVersionId })
-        .where(eq(issues.projectId, project.id));
+        .where(this.inScope(project.id, scope));
 
       await this.migrateIssues(tx, principal, inUse, request, ids, byId);
-      await this.adjustBoards(tx, project.id, previous.statusIds, ids, byId);
-      return newVersionId;
+      const after = await this.projects.statusIds(
+        { id: project.id, workflowVersionId: scope.type ? fresh.workflowVersionId : newVersionId },
+        tx,
+      );
+      await this.adjustBoards(tx, project.id, before, after, byId);
     });
     this.meta.invalidate();
-    return this.present(project.id, versionId);
+    return this.get(principal, projectKey, request.issueType);
+  }
+
+  /**
+   * The issue type goes back to the standard workflow (TL-76, E-87). Its issues keep their status
+   * where the standard workflow has it, else take one of the same category or the initial status.
+   */
+  async useStandard(
+    principal: Principal,
+    projectKey: string,
+    issueTypeKey: string,
+  ): Promise<ProjectWorkflow> {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    await this.projectAccess.require(principal, project.id, 'administer');
+    const meta = await this.meta.load();
+    await this.database.db.transaction(async (tx) => {
+      const [current] = await tx
+        .select({ workflowVersionId: projects.workflowVersionId })
+        .from(projects)
+        .where(eq(projects.id, project.id))
+        .for('update');
+      if (!current) throw new Error('Project vanished');
+      const fresh = { id: project.id, workflowVersionId: current.workflowVersionId };
+      const scope = await this.scope(fresh, issueTypeKey, tx);
+      if (!scope.type || !scope.own) {
+        throw new BadRequestException('The issue type already uses the standard workflow');
+      }
+      const before = await this.projects.statusIds(fresh, tx);
+      const moving = await tx
+        .select({ id: issues.id, statusId: issues.statusId, resolutionId: issues.resolutionId })
+        .from(issues)
+        .where(this.inScope(project.id, scope));
+      await tx
+        .delete(projectTypeWorkflows)
+        .where(
+          and(
+            eq(projectTypeWorkflows.projectId, project.id),
+            eq(projectTypeWorkflows.issueTypeId, scope.type.id),
+          ),
+        );
+      await tx
+        .update(issues)
+        .set({ workflowVersionId: fresh.workflowVersionId })
+        .where(this.inScope(project.id, scope));
+      const standard = await this.projects.workflow(fresh.workflowVersionId);
+      const category = (id: string) => meta.status.get(id)?.category;
+      await this.moveIssues(
+        tx,
+        principal,
+        moving.flatMap((issue) => {
+          const to = landingStatus(standard, issue.statusId, category);
+          return to === issue.statusId ? [] : [{ ...issue, toId: to }];
+        }),
+        meta.status,
+      );
+      await this.adjustBoards(
+        tx,
+        project.id,
+        before,
+        await this.projects.statusIds(fresh, tx),
+        meta.status,
+      );
+    });
+    this.meta.invalidate();
+    return this.get(principal, projectKey, issueTypeKey);
   }
 
   /** Required fields are system fields or custom fields that exist (TL-11). */
@@ -369,12 +505,33 @@ export class WorkflowService {
     ids: string[],
     byId: Map<string, StatusInfo>,
   ) {
+    await this.moveIssues(
+      tx,
+      principal,
+      inUse.map((issue) => {
+        const targetIndex = request.migrate[issue.statusId];
+        const toId = targetIndex === undefined ? undefined : ids[targetIndex];
+        if (!toId || !byId.has(toId)) {
+          throw new BadRequestException('A migration target is out of range');
+        }
+        return { ...issue, toId };
+      }),
+      byId,
+    );
+  }
+
+  /** Moves issues to other statuses for a workflow change: history entry, no notifications. */
+  private async moveIssues(
+    tx: Executor,
+    principal: Principal,
+    moves: Array<{ id: string; statusId: string; resolutionId: string | null; toId: string }>,
+    byId: Map<string, StatusInfo>,
+  ) {
     const meta = await this.meta.load();
     const done = meta.resolution.get(builtInId('resolution', 'done'));
-    for (const issue of inUse) {
-      const targetIndex = request.migrate[issue.statusId];
-      const to = targetIndex === undefined ? undefined : byId.get(ids[targetIndex] as string);
-      if (!to) throw new BadRequestException('A migration target is out of range');
+    for (const issue of moves) {
+      const to = byId.get(issue.toId);
+      if (!to) throw new Error('Unknown migration target');
       const from = byId.get(issue.statusId);
       const changes: Change[] = [
         {

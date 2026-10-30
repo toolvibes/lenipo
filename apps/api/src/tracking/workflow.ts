@@ -93,3 +93,20 @@ export function readDefinition(stored: unknown): WorkflowDefinition {
     ),
   };
 }
+
+/**
+ * Where an issue lands in another workflow (TL-76, E-87): its status if the workflow has it, else
+ * the first status of the same category, else the initial status.
+ */
+export function landingStatus(
+  definition: WorkflowDefinition,
+  statusId: string,
+  categoryOf: (statusId: string) => string | undefined,
+): string {
+  if (definition.statusIds.includes(statusId)) return statusId;
+  const category = categoryOf(statusId);
+  return (
+    definition.statusIds.find((candidate) => categoryOf(candidate) === category) ??
+    definition.initialStatusId
+  );
+}

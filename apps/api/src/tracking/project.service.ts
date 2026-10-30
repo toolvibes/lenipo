@@ -29,6 +29,7 @@ import {
   projectHiddenIssueTypes,
   projectRoleMembers,
   projects,
+  projectTypeWorkflows,
   users,
   workflowVersions,
 } from '../db/schema/index.js';
@@ -163,7 +164,7 @@ export class ProjectService {
       .select({ total: count() })
       .from(issues)
       .where(and(eq(issues.projectId, project.id), sql`${issues.deletedAt} is null`));
-    const definition = await this.workflow(project.workflowVersionId);
+    const statusIds = await this.statusIds(project);
     const hidden = new Set(await this.hiddenIssueTypeIds(project.id));
     const [favourite] = await this.database.db
       .select({ targetId: favourites.targetId })
@@ -190,7 +191,7 @@ export class ProjectService {
       permissionScheme: scheme ?? { id: DEFAULT_PERMISSION_SCHEME_ID, name: '' },
       notificationScheme: notices ?? { id: DEFAULT_NOTIFICATION_SCHEME_ID, name: '' },
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
-      statuses: definition.statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
+      statuses: statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),
       customFieldIds: await this.customFields.projectFieldIds(project.id),
     };
@@ -209,6 +210,58 @@ export class ProjectService {
       .from(projectHiddenIssueTypes)
       .where(eq(projectHiddenIssueTypes.projectId, projectId));
     return rows.map((row) => row.id);
+  }
+
+  /** Workflow version by issue type, for the types with a workflow of their own (TL-76). */
+  async typeWorkflows(projectId: string, db: Executor = this.database.db) {
+    const rows = await db
+      .select({
+        issueTypeId: projectTypeWorkflows.issueTypeId,
+        workflowVersionId: projectTypeWorkflows.workflowVersionId,
+      })
+      .from(projectTypeWorkflows)
+      .where(eq(projectTypeWorkflows.projectId, projectId));
+    return new Map(rows.map((row) => [row.issueTypeId, row.workflowVersionId]));
+  }
+
+  /** The workflow version new issues of a type get. */
+  async workflowVersionFor(
+    project: { id: string; workflowVersionId: string },
+    issueTypeId: string,
+  ): Promise<string> {
+    const [row] = await this.database.db
+      .select({ workflowVersionId: projectTypeWorkflows.workflowVersionId })
+      .from(projectTypeWorkflows)
+      .where(
+        and(
+          eq(projectTypeWorkflows.projectId, project.id),
+          eq(projectTypeWorkflows.issueTypeId, issueTypeId),
+        ),
+      );
+    return row?.workflowVersionId ?? project.workflowVersionId;
+  }
+
+  /** Every status of the project's workflows: the standard one's first, then the types'. */
+  async statusIds(
+    project: { id: string; workflowVersionId: string },
+    db: Executor = this.database.db,
+  ): Promise<string[]> {
+    const versions = [
+      project.workflowVersionId,
+      ...(await this.typeWorkflows(project.id, db)).values(),
+    ];
+    const ids: string[] = [];
+    for (const versionId of versions) {
+      const [version] = await db
+        .select({ definition: workflowVersions.definition })
+        .from(workflowVersions)
+        .where(eq(workflowVersions.id, versionId));
+      for (const id of readDefinition(version?.definition ?? { statusIds: [], transitions: [] })
+        .statusIds) {
+        if (!ids.includes(id)) ids.push(id);
+      }
+    }
+    return ids;
   }
 
   async workflow(versionId: string): Promise<WorkflowDefinition> {

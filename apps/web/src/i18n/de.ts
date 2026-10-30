@@ -1130,6 +1130,19 @@ export const de = {
     },
     title: 'Workflow',
     appliesTo: 'Gilt für alle Aufgaben im Projekt {{name}}.',
+    forType: 'Workflow für',
+    standard: 'Standard (alle Typen ohne eigenen)',
+    typeOwn: '{{name}} – eigener Workflow',
+    typeStandard: '{{name}} – nutzt Standard',
+    appliesToType: 'Gilt für Vorgänge vom Typ {{type}}.',
+    appliesToOthers: 'Gilt im Projekt {{name}} für alle Typen außer {{types}}.',
+    inherited: '{{type}} nutzt den Standard-Workflow.',
+    fork: 'Eigenen Workflow für {{type}} anlegen',
+    forking:
+      'Änderungen hier werden mit „Veröffentlichen“ zum eigenen Workflow für {{type}}; der Standard bleibt unverändert.',
+    useStandard: 'Wieder Standard verwenden',
+    useStandardHint:
+      'Vorgänge behalten ihren Status, wenn der Standard ihn hat, sonst den ersten gleicher Kategorie oder den Startstatus.',
     own: 'Eigener Workflow · Version {{version}}',
     shared:
       'Gemeinsamer Workflow „{{name}}“ · beim ersten Veröffentlichen erhält das Projekt eine eigene Kopie',

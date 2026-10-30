@@ -2517,16 +2517,36 @@ export interface paths {
     };
     /**
      * The project's workflow for the editor
-     * @description Statuses in order, the initial status, allowed moves and how many issues use each status.
+     * @description Statuses in order, the initial status, allowed moves and how many issues use each status. With `issueType`, the workflow of that issue type: its own, or the standard one it uses (`inherited`).
      */
     get: operations['Workflows.workflow'];
     put?: never;
     /**
      * Publish a new version of the project workflow
-     * @description Needs project administration. The first edit gives the project its own copy of a shared workflow. All issues of the project move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.
+     * @description Needs project administration. The first edit gives the project its own copy of a shared workflow; with `issueType`, the first edit gives that issue type a workflow of its own. The issues it applies to move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.
      */
     post: operations['Workflows.publishWorkflow'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/workflow/types/{issueType}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Let an issue type use the standard workflow again
+     * @description Needs project administration. Issues of the type keep their status where the standard workflow has it, else take the first status of the same category or the initial status (history entry, no notifications).
+     */
+    delete: operations['Workflows.useStandardWorkflow'];
     options?: never;
     head?: never;
     patch?: never;
@@ -4481,6 +4501,9 @@ export interface components {
       version: number;
       name: string;
       ownedByProject: boolean;
+      issueType: string | null;
+      inherited: boolean;
+      ownTypes: string[];
       /** @enum {string} */
       mode: 'free' | 'defined';
       statuses: components['schemas']['StatusInfo'][];
@@ -4532,6 +4555,7 @@ export interface components {
     PublishWorkflowRequest: {
       /** Format: uuid */
       baseVersionId: string;
+      issueType?: string;
       statuses: {
         id: string | null;
         name: string;
@@ -10458,7 +10482,9 @@ export interface operations {
   };
   'Workflows.workflow': {
     parameters: {
-      query?: never;
+      query?: {
+        issueType?: string;
+      };
       header?: never;
       path: {
         key: string;
@@ -10501,6 +10527,38 @@ export interface operations {
         'application/json': components['schemas']['PublishWorkflowRequest'];
       };
     };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectWorkflow'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Workflows.useStandardWorkflow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        issueType: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Success */
       200: {

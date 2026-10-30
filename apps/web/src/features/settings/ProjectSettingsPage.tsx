@@ -222,7 +222,8 @@ function Notifications({ projectKey }: { projectKey: string }) {
 export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const { t } = useTranslation();
   const project = useQuery(projectQuery(projectKey));
-  const workflow = useQuery(projectWorkflowQuery(projectKey));
+  const [workflowType, setWorkflowType] = useState<string | null>(null);
+  const workflow = useQuery(projectWorkflowQuery(projectKey, workflowType));
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [view, setView] = useState<'workflow' | 'members' | 'permissions' | 'notifications'>(
@@ -307,9 +308,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
-              key={workflow.data.versionId}
+              key={`${workflowType}:${workflow.data.versionId}`}
               projectKey={projectKey}
               projectName={project.data.name}
+              issueTypes={project.data.issueTypes}
+              onIssueType={(type) => {
+                setNotice(null);
+                setWorkflowType(type);
+              }}
               workflow={workflow.data}
               editable={administer}
               onPublished={(version) => setNotice(t('workflow.published', { version }))}

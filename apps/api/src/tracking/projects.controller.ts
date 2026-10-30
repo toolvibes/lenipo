@@ -57,6 +57,12 @@ const ListIssuesQuery = z.object({
 });
 type ListIssuesQuery = z.infer<typeof ListIssuesQuery>;
 
+const WorkflowQuery = z.object({
+  /** An issue type key: its own workflow, or the standard one it uses (TL-76). */
+  issueType: z.string().min(1).optional(),
+});
+type WorkflowQuery = z.infer<typeof WorkflowQuery>;
+
 const ProjectUsersQuery = z.object({
   query: z.string().max(100).default(''),
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -216,22 +222,40 @@ export class ProjectsController {
     tag: 'Workflows',
     summary: "The project's workflow for the editor",
     description:
-      'Statuses in order, the initial status, allowed moves and how many issues use each status.',
+      'Statuses in order, the initial status, allowed moves and how many issues use each status. With `issueType`, the workflow of that issue type: its own, or the standard one it uses (`inherited`).',
     response: ProjectWorkflow,
   })
   @Get(':key/workflow')
   workflow(
     @CurrentPrincipal() principal: Principal,
     @Param('key') key: string,
+    @ValidQuery(WorkflowQuery) query: WorkflowQuery,
   ): Promise<ProjectWorkflow> {
-    return this.workflows.get(principal, key);
+    return this.workflows.get(principal, key, query.issueType);
+  }
+
+  @Endpoint({
+    tag: 'Workflows',
+    summary: 'Let an issue type use the standard workflow again',
+    description:
+      'Needs project administration. Issues of the type keep their status where the standard workflow has it, else take the first status of the same category or the initial status (history entry, no notifications).',
+    response: ProjectWorkflow,
+  })
+  @Delete(':key/workflow/types/:issueType')
+  @HttpCode(200)
+  useStandardWorkflow(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('issueType') issueType: string,
+  ): Promise<ProjectWorkflow> {
+    return this.workflows.useStandard(principal, key, issueType);
   }
 
   @Endpoint({
     tag: 'Workflows',
     summary: 'Publish a new version of the project workflow',
     description:
-      'Needs project administration. The first edit gives the project its own copy of a shared workflow. All issues of the project move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.',
+      'Needs project administration. The first edit gives the project its own copy of a shared workflow; with `issueType`, the first edit gives that issue type a workflow of its own. The issues it applies to move to the new version; issues on removed statuses take the status given in `migrate` (history entry, no notifications); boards of the project adjust their columns. Answers 409 when `baseVersionId` is no longer current.',
     response: ProjectWorkflow,
   })
   @Post(':key/workflow')

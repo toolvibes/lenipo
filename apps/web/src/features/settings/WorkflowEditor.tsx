@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ArrowDown, ArrowUp, DotsSixVertical, Trash } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type IssueTypeInfo,
   PROJECT_ROLES,
   type ProjectWorkflow,
   type PublishWorkflowRequest,
@@ -119,6 +120,7 @@ function toRequest(workflow: ProjectWorkflow, draft: Draft): PublishWorkflowRequ
   const index = new Map(draft.rows.map((row, position) => [row.key, position]));
   return {
     baseVersionId: workflow.versionId,
+    ...(workflow.issueType ? { issueType: workflow.issueType } : {}),
     statuses: draft.rows.map(({ key, id, name, category }) => {
       const rules = draft.rules[key];
       return { id, name, category, ...(ruleCount(rules) > 0 ? { rules } : {}) };
@@ -512,13 +514,18 @@ function AddStatus({
 export function WorkflowEditor({
   projectKey,
   projectName,
+  issueTypes,
+  onIssueType,
   workflow,
-  editable,
+  editable: canAdminister,
   onPublished,
 }: {
   projectKey: string;
   projectName: string;
-  /** Mount with `key={workflow.versionId}`: a new version starts a fresh draft. */
+  /** The project's issue types, each with its own workflow or the standard one (TL-76). */
+  issueTypes: IssueTypeInfo[];
+  onIssueType: (issueType: string | null) => void;
+  /** Mount with a key of the issue type and version: a new version starts a fresh draft. */
   workflow: ProjectWorkflow;
   editable: boolean;
   onPublished: (version: number) => void;
@@ -526,6 +533,13 @@ export function WorkflowEditor({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(() => fromServer(workflow));
+  // A type on the standard workflow is shown read-only until it gets its own copy.
+  const [forking, setForking] = useState(false);
+  const editable = canAdminister && (!workflow.inherited || forking);
+  const typeName = issueTypes.find((type) => type.key === workflow.issueType)?.name ?? '';
+  const ownTypeNames = issueTypes
+    .filter((type) => workflow.ownTypes.includes(type.key))
+    .map((type) => type.name);
   const projectFields = useQuery(projectQuery(projectKey)).data?.customFieldIds;
   // The project's custom fields, and any a rule still names.
   const required = new Set(
@@ -577,11 +591,28 @@ export function WorkflowEditor({
       ),
     onSuccess: (saved) => {
       onPublished(saved.version);
-      queryClient.setQueryData(['project-workflow', projectKey], saved);
-      void queryClient.invalidateQueries({ queryKey: ['project', projectKey] });
-      void queryClient.invalidateQueries({ queryKey: ['board'] });
+      refresh(saved);
     },
   });
+  const useStandard = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.DELETE('/api/v1/projects/{key}/workflow/types/{issueType}', {
+          params: { path: { key: projectKey, issueType: workflow.issueType ?? '' } },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+  function refresh(saved: ProjectWorkflow) {
+    queryClient.setQueryData(['project-workflow', projectKey, saved.issueType], saved);
+    // Other views of the workflow list which types have their own and count other issues.
+    void queryClient.invalidateQueries({
+      queryKey: ['project-workflow', projectKey],
+      predicate: (query) => query.queryKey[2] !== saved.issueType,
+    });
+    void queryClient.invalidateQueries({ queryKey: ['project', projectKey] });
+    void queryClient.invalidateQueries({ queryKey: ['board'] });
+  }
   const conflict = publish.error instanceof ApiError && publish.error.status === 409;
 
   const update = (change: (current: Draft) => Draft) => setDraft(change);
@@ -607,14 +638,60 @@ export function WorkflowEditor({
         <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
           {t('workflow.title')}
         </h1>
+        <label className="flex flex-wrap items-center gap-2 text-[13.5px]">
+          {t('workflow.forType')}
+          <select
+            value={workflow.issueType ?? ''}
+            onChange={(event) => onIssueType(event.target.value || null)}
+            className={FIELD}
+          >
+            <option value="">{t('workflow.standard')}</option>
+            {issueTypes.map((type) => (
+              <option key={type.key} value={type.key}>
+                {workflow.ownTypes.includes(type.key)
+                  ? t('workflow.typeOwn', { name: type.name })
+                  : t('workflow.typeStandard', { name: type.name })}
+              </option>
+            ))}
+          </select>
+        </label>
         <p className="m-0 text-[13.5px] text-[var(--ink-muted)]">
-          {t('workflow.appliesTo', { name: projectName })}{' '}
-          {workflow.ownedByProject
-            ? t('workflow.own', { version: workflow.version })
-            : t('workflow.shared', { name: workflow.name })}
+          {workflow.issueType
+            ? t('workflow.appliesToType', { type: typeName })
+            : ownTypeNames.length > 0
+              ? t('workflow.appliesToOthers', { name: projectName, types: ownTypeNames.join(', ') })
+              : t('workflow.appliesTo', { name: projectName })}{' '}
+          {workflow.inherited
+            ? t('workflow.inherited', { type: typeName })
+            : workflow.ownedByProject
+              ? t('workflow.own', { version: workflow.version })
+              : t('workflow.shared', { name: workflow.name })}
         </p>
+        {canAdminister && workflow.inherited && !forking && (
+          <div>
+            <Button variant="secondary" onClick={() => setForking(true)}>
+              {t('workflow.fork', { type: typeName })}
+            </Button>
+          </div>
+        )}
+        {canAdminister && workflow.issueType && !workflow.inherited && (
+          <div className="flex flex-col items-start gap-1">
+            <Button
+              variant="ghost"
+              disabled={useStandard.isPending}
+              onClick={() => useStandard.mutate()}
+            >
+              {t('workflow.useStandard')}
+            </Button>
+            <span className="text-xs text-[var(--ink-muted)]">{t('workflow.useStandardHint')}</span>
+            {useStandard.error && <FormError message={useStandard.error.message} />}
+          </div>
+        )}
+        {forking && <p className="m-0 text-[13px]">{t('workflow.forking', { type: typeName })}</p>}
       </header>
-      {!editable && <p className="m-0 text-[var(--ink-muted)]">{t('projectSettings.readOnly')}</p>}
+      {!canAdminister && (
+        <p className="m-0 text-[var(--ink-muted)]">{t('projectSettings.readOnly')}</p>
+      )}
 
       <section aria-label={t('workflow.statuses')} className="flex flex-col gap-2">
         <h2 className="m-0 text-[13.5px] font-semibold">{t('workflow.statuses')}</h2>
@@ -801,7 +878,7 @@ export function WorkflowEditor({
         <div className="flex gap-2">
           <Button
             variant="primary"
-            disabled={!changed || missingTarget || publish.isPending}
+            disabled={(!changed && !forking) || missingTarget || publish.isPending}
             onClick={() => publish.mutate()}
           >
             {t('workflow.publish')}
@@ -819,8 +896,11 @@ export function WorkflowEditor({
           ) : (
             <Button
               variant="ghost"
-              disabled={!changed}
-              onClick={() => update(() => fromServer(workflow))}
+              disabled={!changed && !forking}
+              onClick={() => {
+                update(() => fromServer(workflow));
+                setForking(false);
+              }}
             >
               {t('workflow.discard')}
             </Button>

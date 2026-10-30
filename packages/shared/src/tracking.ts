@@ -807,6 +807,12 @@ export const ProjectWorkflow = z
     name: z.string(),
     /** The project edits its own copy; false while it still uses a shared workflow. */
     ownedByProject: z.boolean(),
+    /** The issue type shown (TL-76, E-87); null for the project's standard workflow. */
+    issueType: z.string().nullable(),
+    /** The issue type has no workflow of its own and uses the standard one. */
+    inherited: z.boolean(),
+    /** Keys of the issue types with a workflow of their own. */
+    ownTypes: z.array(z.string()),
     /** "free": every status reachable from every other; "defined": only `transitions`. */
     mode: WorkflowMode,
     statuses: z.array(StatusInfo),
@@ -827,6 +833,8 @@ export const PublishWorkflowRequest = z
   .object({
     /** The version the edit started from; another publish in between answers 409. */
     baseVersionId: Id,
+    /** Publishes the workflow of this issue type (key); the first time gives it its own. */
+    issueType: z.string().min(1).optional(),
     /** In board order; without id, a status of that name is reused or created. */
     statuses: z
       .array(
