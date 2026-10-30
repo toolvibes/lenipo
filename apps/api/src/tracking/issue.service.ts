@@ -567,6 +567,8 @@ export class IssueService {
     const workflowVersionId = await this.projectService.workflowVersionFor(project, type.id);
     const workflow = await this.projectService.workflow(workflowVersionId);
     const custom = await this.customFields.apply(project.id, {}, request.customFields);
+    const missing = await this.customFields.missingRequired(project.id, custom.next);
+    if (missing.length > 0) throw new BadRequestException(`Fill in: ${missing.join(', ')}`);
     const fixVersions = await this.versions.resolve(project.id, request.fixVersions);
     const affectsVersions = await this.versions.resolve(project.id, request.affectsVersions);
     const id = uuidv7();
@@ -847,6 +849,13 @@ export class IssueService {
         issue.customFields as StoredValues,
         request.customFields,
       );
+      // Required fields cannot be emptied (TL-12, E-89).
+      const missing = await this.customFields.missingRequired(
+        project.id,
+        custom.next,
+        Object.keys(request.customFields),
+      );
+      if (missing.length > 0) throw new BadRequestException(`Fill in: ${missing.join(', ')}`);
       changes.push(...custom.changes);
       patch.customFields = custom.next;
     }

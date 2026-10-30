@@ -75,6 +75,12 @@ export const projectCustomFields = pgTable(
       .notNull()
       .references(() => customFields.id, { onDelete: 'cascade' }),
     position: integer().notNull(),
+    /** Per-project configuration (TL-12, E-89): forms and the API insist on a value. */
+    required: boolean().notNull().default(false),
+    /** Not shown in the project's forms; stored values stay and the API still returns them. */
+    hidden: boolean().notNull().default(false),
+    /** Help text in the project's forms instead of the field's own description. */
+    description: text(),
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.fieldId] }),

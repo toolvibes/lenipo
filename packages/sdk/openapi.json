@@ -5631,7 +5631,7 @@
       "put": {
         "operationId": "Projects.setCustomFields",
         "summary": "Choose the custom fields a project uses, in display order",
-        "description": "Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50).",
+        "description": "Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50). `settings` makes fields required, hidden from forms, or gives them help text (TL-12); a field cannot be both required and hidden.",
         "tags": ["Projects"],
         "parameters": [
           {
@@ -13344,6 +13344,12 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
+          },
+          "customFieldSettings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFieldConfig"
+            }
           }
         },
         "required": [
@@ -13361,8 +13367,41 @@
           "issueTypes",
           "statuses",
           "permissions",
-          "customFieldIds"
+          "customFieldIds",
+          "customFieldSettings"
         ],
+        "additionalProperties": false
+      },
+      "ProjectFieldConfig": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "default": false,
+            "type": "boolean"
+          },
+          "hidden": {
+            "default": false,
+            "type": "boolean"
+          },
+          "description": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": ["required", "hidden", "description", "fieldId"],
         "additionalProperties": false
       },
       "IssueList": {
@@ -13820,9 +13859,46 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
+          },
+          "settings": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProjectFieldSetting"
+            }
           }
         },
         "required": ["fieldIds"]
+      },
+      "ProjectFieldSetting": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "default": false,
+            "type": "boolean"
+          },
+          "hidden": {
+            "default": false,
+            "type": "boolean"
+          },
+          "description": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       },
       "Velocity": {
         "type": "object",

@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { CreateIssueRequest, type ProjectDetails, type RichText } from '@tasklore/shared';
+import {
+  CreateIssueRequest,
+  type CustomFieldInput,
+  type CustomFieldValue,
+  type ProjectDetails,
+  type RichText,
+} from '@tasklore/shared';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
@@ -10,6 +16,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
+import { FieldEditor, shownValue } from './CustomFields';
 import { useMetaName } from './icons';
 
 interface CreateIssueDialogProps {
@@ -47,6 +54,15 @@ export function CreateIssueDialog({
     assignToMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Required custom fields of the project, filled in right here (TL-12, E-89).
+  const [custom, setCustom] = useState<Record<string, CustomFieldInput>>({});
+  const [shown, setShown] = useState<Record<string, CustomFieldValue | undefined>>({});
+  const requiredFields = project.customFieldSettings
+    .filter((setting) => setting.required && !setting.hidden)
+    .flatMap((setting) => {
+      const field = meta.data?.customFields.find((entry) => entry.id === setting.fieldId);
+      return field && !field.archived ? [{ field, help: setting.description }] : [];
+    });
   const canAssign = project.permissions.includes('assign-issues');
 
   const create = useMutation({
@@ -64,6 +80,8 @@ export function CreateIssueDialog({
         storyPoints: '',
       }));
       setComponentIds([]);
+      setCustom({});
+      setShown({});
       await navigate({ to: '/issues/$key', params: { key: issue.key } });
     },
   });
@@ -82,6 +100,9 @@ export function CreateIssueDialog({
       storyPoints: form.storyPoints === '' ? null : Number(form.storyPoints),
       assigneeId: form.assignToMe ? myId : null,
       components: componentIds,
+      customFields: Object.fromEntries(
+        Object.entries(custom).filter(([, value]) => value !== null),
+      ),
     });
     if (!parsed.success) {
       setErrors(
@@ -204,6 +225,27 @@ export function CreateIssueDialog({
             {t('issues.assignToMe')}
           </label>
         )}
+        {requiredFields.map(({ field, help }) => (
+          <div key={field.id} className="flex flex-col gap-1">
+            <span className="tl-label text-[var(--ink-muted)]">{field.name} *</span>
+            <FieldEditor
+              field={field}
+              value={shown[field.id]}
+              projectKey={project.key}
+              disabled={create.isPending}
+              onChange={(value, person) => {
+                setCustom((current) => ({ ...current, [field.id]: value }));
+                setShown((current) => ({
+                  ...current,
+                  [field.id]: shownValue(field, value, person),
+                }));
+              }}
+            />
+            {(help || field.description) && (
+              <span className="text-xs text-[var(--ink-muted)]">{help || field.description}</span>
+            )}
+          </div>
+        ))}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}

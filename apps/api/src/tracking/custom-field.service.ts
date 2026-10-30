@@ -10,6 +10,8 @@ import type {
   CustomField,
   CustomFieldInputs,
   CustomFieldValue,
+  ProjectFieldConfig,
+  ProjectFieldSetting,
   UpdateCustomFieldRequest,
 } from '@tasklore/shared';
 import { customFieldNameClash, FieldCatalogue } from '@tasklore/tql';
@@ -235,20 +237,75 @@ export class CustomFieldService {
     return rows.map((row) => row.fieldId);
   }
 
-  async setProjectFields(principal: Principal, projectId: string, fieldIds: string[]) {
+  /** The project's fields with their configuration, in display order (TL-12, E-89). */
+  async projectFieldConfig(projectId: string): Promise<ProjectFieldConfig[]> {
+    return this.database.db
+      .select({
+        fieldId: projectCustomFields.fieldId,
+        required: projectCustomFields.required,
+        hidden: projectCustomFields.hidden,
+        description: projectCustomFields.description,
+      })
+      .from(projectCustomFields)
+      .innerJoin(customFields, eq(customFields.id, projectCustomFields.fieldId))
+      .where(and(eq(projectCustomFields.projectId, projectId), isNull(customFields.archivedAt)))
+      .orderBy(asc(projectCustomFields.position));
+  }
+
+  /**
+   * Names of required fields without a value; with `only`, just those among them, so editing one
+   * field does not trip over another left empty before it became required.
+   */
+  async missingRequired(
+    projectId: string,
+    values: StoredValues,
+    only?: string[],
+  ): Promise<string[]> {
+    const config = await this.projectFieldConfig(projectId);
+    const fields = await this.list();
+    return config
+      .filter((entry) => entry.required && !entry.hidden && (!only || only.includes(entry.fieldId)))
+      .filter((entry) => {
+        const value = values[entry.fieldId];
+        return (
+          value === undefined ||
+          value === null ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0)
+        );
+      })
+      .map((entry) => fields.find((field) => field.id === entry.fieldId)?.name ?? entry.fieldId);
+  }
+
+  async setProjectFields(
+    principal: Principal,
+    projectId: string,
+    fieldIds: string[],
+    settings: Record<string, ProjectFieldSetting> = {},
+  ) {
     await this.projectAccess.require(principal, projectId, 'administer');
     const fields = await this.list();
     const ids = [...new Set(fieldIds)];
     for (const id of ids) {
       const field = fields.find((entry) => entry.id === id);
       if (!field || field.archived) throw new BadRequestException('Unknown custom field');
+      if (settings[id]?.required && settings[id]?.hidden) {
+        throw new BadRequestException(`${field.name} cannot be both required and hidden`);
+      }
     }
     await this.database.db.transaction(async (tx) => {
       await tx.delete(projectCustomFields).where(eq(projectCustomFields.projectId, projectId));
       if (ids.length > 0) {
-        await tx
-          .insert(projectCustomFields)
-          .values(ids.map((fieldId, position) => ({ projectId, fieldId, position })));
+        await tx.insert(projectCustomFields).values(
+          ids.map((fieldId, position) => ({
+            projectId,
+            fieldId,
+            position,
+            required: settings[fieldId]?.required ?? false,
+            hidden: settings[fieldId]?.hidden ?? false,
+            description: settings[fieldId]?.description || null,
+          })),
+        );
       }
     });
     await this.audit.record({
@@ -257,7 +314,7 @@ export class CustomFieldService {
       via: principal.via,
       targetType: 'project',
       targetId: projectId,
-      details: { fieldIds: ids },
+      details: { fieldIds: ids, settings },
     });
   }
 

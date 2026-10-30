@@ -594,6 +594,10 @@ export const de = {
       title: 'Felder des Projekts',
       intro: 'Eingeschaltete Felder erscheinen bei allen Vorgängen dieses Projekts.',
       none: 'Es gibt noch keine benutzerdefinierten Felder. Die Administration legt sie an.',
+      required: 'Pflicht',
+      hidden: 'Versteckt',
+      help: 'Hilfetext für {{name}}',
+      helpPlaceholder: 'Hilfetext (optional)',
     },
   },
   boards: {

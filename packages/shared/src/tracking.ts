@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CustomField, CustomFieldInputs, CustomFieldValue } from './fields.js';
+import { CustomField, CustomFieldInputs, CustomFieldValue, ProjectFieldConfig } from './fields.js';
 import { Id } from './identity.js';
 
 export const StatusCategory = z
@@ -346,8 +346,10 @@ export const ProjectDetails = ProjectSummary.extend({
   issueTypes: z.array(IssueTypeInfo),
   statuses: z.array(StatusInfo),
   permissions: z.array(ProjectPermission),
-  /** Custom fields switched on for this project, in display order (E-50). */
+  /** Custom fields the project's forms show, in display order (E-50); hidden ones left out. */
   customFieldIds: z.array(Id),
+  /** Every switched-on field with its configuration, hidden ones included (TL-12, E-89). */
+  customFieldSettings: z.array(ProjectFieldConfig),
 }).meta({ id: 'ProjectDetails' });
 export type ProjectDetails = z.infer<typeof ProjectDetails>;
 

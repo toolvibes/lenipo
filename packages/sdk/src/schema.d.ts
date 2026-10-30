@@ -1751,7 +1751,7 @@ export interface paths {
     get?: never;
     /**
      * Choose the custom fields a project uses, in display order
-     * @description Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50).
+     * @description Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50). `settings` makes fields required, hidden from forms, or gives them help text (TL-12); a field cannot be both required and hidden.
      */
     put: operations['Projects.setCustomFields'];
     post?: never;
@@ -3975,6 +3975,17 @@ export interface components {
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
       customFieldIds: string[];
+      customFieldSettings: components['schemas']['ProjectFieldConfig'][];
+    };
+    ProjectFieldConfig: {
+      /** @default false */
+      required: boolean;
+      /** @default false */
+      hidden: boolean;
+      /** @default null */
+      description: string | null;
+      /** Format: uuid */
+      fieldId: string;
     };
     IssueList: {
       issues: components['schemas']['IssueSummary'][];
@@ -4076,6 +4087,18 @@ export interface components {
     };
     ProjectCustomFieldsRequest: {
       fieldIds: string[];
+      /** @default {} */
+      settings?: {
+        [key: string]: components['schemas']['ProjectFieldSetting'];
+      };
+    };
+    ProjectFieldSetting: {
+      /** @default false */
+      required?: boolean;
+      /** @default false */
+      hidden?: boolean;
+      /** @default null */
+      description?: string | null;
     };
     Velocity: {
       /** @enum {string} */

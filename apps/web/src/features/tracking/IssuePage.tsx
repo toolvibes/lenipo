@@ -741,6 +741,7 @@ export function IssuePage({
             <CustomFieldRows
               issue={data}
               fieldIds={project.data?.customFieldIds ?? []}
+              settings={project.data?.customFieldSettings}
               disabled={!canEdit}
               onChange={(fieldId, value) => update.mutate({ customFields: { [fieldId]: value } })}
             />

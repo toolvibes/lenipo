@@ -65,8 +65,30 @@ export const UpdateCustomFieldRequest = z
   .meta({ id: 'UpdateCustomFieldRequest' });
 export type UpdateCustomFieldRequest = z.infer<typeof UpdateCustomFieldRequest>;
 
+/** How a project uses one of its fields (TL-12, E-89). */
+export const ProjectFieldSetting = z
+  .object({
+    /** Forms and the API insist on a value. */
+    required: z.boolean().default(false),
+    /** Not shown in the project's forms; stored values stay. */
+    hidden: z.boolean().default(false),
+    /** Help text instead of the field's own description; null keeps that. */
+    description: z.string().trim().max(500).nullable().default(null),
+  })
+  .meta({ id: 'ProjectFieldSetting' });
+export type ProjectFieldSetting = z.infer<typeof ProjectFieldSetting>;
+
+export const ProjectFieldConfig = ProjectFieldSetting.extend({ fieldId: Id }).meta({
+  id: 'ProjectFieldConfig',
+});
+export type ProjectFieldConfig = z.infer<typeof ProjectFieldConfig>;
+
 export const ProjectCustomFieldsRequest = z
-  .object({ fieldIds: z.array(Id).max(200) })
+  .object({
+    fieldIds: z.array(Id).max(200),
+    /** By field id; fields left out are optional and shown. */
+    settings: z.record(Id, ProjectFieldSetting).default({}),
+  })
   .meta({ id: 'ProjectCustomFieldsRequest' });
 export type ProjectCustomFieldsRequest = z.infer<typeof ProjectCustomFieldsRequest>;
 

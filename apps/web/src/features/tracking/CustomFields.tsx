@@ -5,6 +5,7 @@ import type {
   CustomFieldInput,
   CustomFieldValue,
   Issue,
+  ProjectFieldConfig,
   UserRef,
 } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
@@ -68,7 +69,8 @@ export function FieldEditor({
   value: CustomFieldValue | undefined;
   projectKey: string;
   disabled: boolean;
-  onChange: (value: CustomFieldInput) => void;
+  /** The value as written; for people also who it is, to show without a round trip. */
+  onChange: (value: CustomFieldInput, person?: UserRef | null) => void;
   label?: string;
 }) {
   const { t } = useTranslation();
@@ -266,7 +268,7 @@ export function FieldEditor({
               onOpenChange={setPicking}
               me={{ id: me.id, displayName: me.displayName }}
               projectKey={projectKey}
-              onPick={(user) => onChange(user?.id ?? null)}
+              onPick={(user) => onChange(user?.id ?? null, user ?? null)}
             />
           )}
         </>
@@ -275,15 +277,33 @@ export function FieldEditor({
   }
 }
 
+/** What an input shows before the server answers, e.g. in a form not yet sent (TL-12). */
+export function shownValue(
+  field: CustomField,
+  input: CustomFieldInput | undefined,
+  person?: UserRef | null,
+): CustomFieldValue | undefined {
+  if (input === null || input === undefined) return undefined;
+  if (field.type === 'select') return field.options.find((option) => option.id === input);
+  if (field.type === 'multiselect' && Array.isArray(input)) {
+    return field.options.filter((option) => input.includes(option.id));
+  }
+  if (field.type === 'user') return person ?? undefined;
+  return input as CustomFieldValue;
+}
+
 /** The custom fields a project uses, as rows of the issue's field list. */
 export function CustomFieldRows({
   issue,
   fieldIds,
+  settings = [],
   disabled,
   onChange,
 }: {
   issue: Issue;
   fieldIds: string[];
+  /** The project's configuration: help text and required marks (TL-12, E-89). */
+  settings?: ProjectFieldConfig[];
   disabled: boolean;
   onChange: (fieldId: string, value: CustomFieldInput) => void;
 }) {
@@ -291,13 +311,15 @@ export function CustomFieldRows({
   return fieldIds.flatMap((id) => {
     const field = fields.find((entry) => entry.id === id);
     if (!field || field.archived) return [];
+    const setting = settings.find((entry) => entry.fieldId === id);
     return [
       <div key={id} className="contents">
         <dt
           className="pt-1.5 text-[13px] text-[var(--ink-muted)]"
-          title={field.description || undefined}
+          title={setting?.description || field.description || undefined}
         >
           {field.name}
+          {setting?.required && <span aria-hidden> *</span>}
         </dt>
         <dd className="m-0 min-w-0">
           <FieldEditor

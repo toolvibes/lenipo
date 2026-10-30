@@ -580,6 +580,10 @@ export const en: Messages = {
       title: 'Fields of the project',
       intro: 'Fields switched on appear on all issues of this project.',
       none: 'There are no custom fields yet. Administrators create them.',
+      required: 'Required',
+      hidden: 'Hidden',
+      help: 'Help text for {{name}}',
+      helpPlaceholder: 'Help text (optional)',
     },
   },
   boards: {

@@ -8,6 +8,7 @@ import {
 import type {
   CreateProjectRequest,
   ProjectDetails,
+  ProjectFieldSetting,
   ProjectSummary,
   ProjectTemplate,
 } from '@tasklore/shared';
@@ -165,6 +166,7 @@ export class ProjectService {
       .from(issues)
       .where(and(eq(issues.projectId, project.id), sql`${issues.deletedAt} is null`));
     const statusIds = await this.statusIds(project);
+    const fieldConfig = await this.customFields.projectFieldConfig(project.id);
     const hidden = new Set(await this.hiddenIssueTypeIds(project.id));
     const [favourite] = await this.database.db
       .select({ targetId: favourites.targetId })
@@ -193,14 +195,20 @@ export class ProjectService {
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),
-      customFieldIds: await this.customFields.projectFieldIds(project.id),
+      customFieldIds: fieldConfig.filter((entry) => !entry.hidden).map((entry) => entry.fieldId),
+      customFieldSettings: fieldConfig,
     };
   }
 
   /** Switches custom fields on for a project, in this order (E-50); needs `administer`. */
-  async setCustomFields(principal: Principal, key: string, fieldIds: string[]) {
+  async setCustomFields(
+    principal: Principal,
+    key: string,
+    fieldIds: string[],
+    settings: Record<string, ProjectFieldSetting> = {},
+  ) {
     const project = await this.findBrowsable(principal, key);
-    await this.customFields.setProjectFields(principal, project.id, fieldIds);
+    await this.customFields.setProjectFields(principal, project.id, fieldIds, settings);
     return this.details(principal, key);
   }
 

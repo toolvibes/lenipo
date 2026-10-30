@@ -441,7 +441,7 @@ export class ProjectsController {
     tag: 'Projects',
     summary: 'Choose the custom fields a project uses, in display order',
     description:
-      'Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50).',
+      'Requires the project permission `administer`. Values of fields switched off stay stored but are hidden (E-50). `settings` makes fields required, hidden from forms, or gives them help text (TL-12); a field cannot be both required and hidden.',
     response: ProjectDetails,
   })
   @Put(':key/custom-fields')
@@ -450,7 +450,7 @@ export class ProjectsController {
     @Param('key') key: string,
     @ValidBody(ProjectCustomFieldsRequest) body: ProjectCustomFieldsRequest,
   ): Promise<ProjectDetails> {
-    return this.projects.setCustomFields(principal, key, body.fieldIds);
+    return this.projects.setCustomFields(principal, key, body.fieldIds, body.settings);
   }
 
   @Endpoint({
