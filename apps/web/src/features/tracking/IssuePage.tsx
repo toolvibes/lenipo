@@ -663,6 +663,15 @@ export function IssuePage({
                 }
               />
             </Field>
+            <Field label={t('issues.startDate')}>
+              <InlineInput
+                type="date"
+                aria-label={t('issues.startDate')}
+                value={data.startDate ?? ''}
+                disabled={!canEdit}
+                onSave={(value) => update.mutate({ startDate: value || null })}
+              />
+            </Field>
             <Field label={t('issues.dueDate')}>
               <InlineInput
                 type="date"

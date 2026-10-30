@@ -169,6 +169,13 @@
       "when": 1793335417519,
       "tag": "0023_page_labels_watches",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793340738254,
+      "tag": "0024_issue_start_date",
+      "breakpoints": true
     }
   ]
 }

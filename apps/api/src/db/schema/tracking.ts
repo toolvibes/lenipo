@@ -191,6 +191,8 @@ export const issues = pgTable(
     parentId: uuid(),
     labels: text().array().notNull().default(sql`'{}'::text[]`),
     storyPoints: numeric({ precision: 6, scale: 1, mode: 'number' }),
+    /** Planned start, for the timeline (E-68). */
+    startDate: date({ mode: 'string' }),
     dueDate: date({ mode: 'string' }),
     originalEstimateSeconds: integer(),
     remainingEstimateSeconds: integer(),

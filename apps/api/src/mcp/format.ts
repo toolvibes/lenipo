@@ -71,6 +71,7 @@ export function issueMarkdown(issue: Issue, fields: CustomField[]): string {
     ['labels', issue.labels.join(', ')],
     ['components', issue.components.map((component) => component.name).join(', ')],
     ['story points', issue.storyPoints],
+    ['start', issue.startDate],
     ['due', issue.dueDate],
     ['parent', issue.parent ? `${issue.parent.key} ${issue.parent.summary}` : null],
     ['created', day(issue.createdAt)],

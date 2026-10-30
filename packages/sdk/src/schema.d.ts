@@ -1349,6 +1349,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/timeline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Epics with their children and milestones for the timeline
+     * @description Bars use the start and due date; without them, epics cover their children and children their latest sprint (`derived`). Milestones are versions with a release date.
+     */
+    get: operations['Projects.timeline'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/users': {
     parameters: {
       query?: never;
@@ -2411,6 +2431,7 @@ export interface components {
       updatedAt: string;
       reporter: components['schemas']['UserRef'] | null;
       resolution: components['schemas']['ResolutionInfo'] | null;
+      startDate: string | null;
       dueDate: string | null;
       /** Format: date-time */
       createdAt: string;
@@ -2535,6 +2556,7 @@ export interface components {
       updatedAt: string;
       reporter: components['schemas']['UserRef'] | null;
       resolution: components['schemas']['ResolutionInfo'] | null;
+      startDate: string | null;
       dueDate: string | null;
       /** Format: date-time */
       createdAt: string;
@@ -2736,6 +2758,8 @@ export interface components {
       /** @default null */
       storyPoints?: number | null;
       /** @default null */
+      startDate?: string | null;
+      /** @default null */
       dueDate?: string | null;
       /** @default [] */
       components?: string[];
@@ -2762,6 +2786,7 @@ export interface components {
       parentKey?: string | null;
       labels?: string[];
       storyPoints?: number | null;
+      startDate?: string | null;
       dueDate?: string | null;
       components?: string[];
       fixVersions?: string[];
@@ -3296,6 +3321,40 @@ export interface components {
     IssueList: {
       issues: components['schemas']['IssueSummary'][];
       total: number;
+    };
+    Timeline: {
+      epics: components['schemas']['TimelineEpic'][];
+      milestones: components['schemas']['TimelineMilestone'][];
+    };
+    TimelineEpic: {
+      issue: components['schemas']['IssueSummary'];
+      span: components['schemas']['TimelineSpan'] | null;
+      progress: {
+        done: number;
+        total: number;
+        /** @enum {string} */
+        unit: 'points' | 'issues';
+      };
+      children: components['schemas']['TimelineRow'][];
+    };
+    TimelineSpan: {
+      /** Format: date */
+      start: string;
+      /** Format: date */
+      end: string;
+      derived: boolean;
+    };
+    TimelineRow: {
+      issue: components['schemas']['IssueSummary'];
+      span: components['schemas']['TimelineSpan'] | null;
+    };
+    TimelineMilestone: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: date */
+      date: string;
+      released: boolean;
     };
     Component: {
       /** Format: uuid */
@@ -6923,6 +6982,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['IssueList'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.timeline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Timeline'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

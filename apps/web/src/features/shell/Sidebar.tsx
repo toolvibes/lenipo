@@ -90,6 +90,14 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
           {t('sidebar.board')}
         </NavRow>
       )}
+      <NavRow
+        small
+        to="/projects/$key/timeline"
+        params={{ key: projectKey }}
+        active={path === `/projects/${projectKey}/timeline`}
+      >
+        {t('sidebar.timeline')}
+      </NavRow>
       {lore && (
         <NavRow
           small

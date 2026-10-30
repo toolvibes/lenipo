@@ -925,11 +925,13 @@ export class TqlCompiler {
       customColumn ??
       (clause.field.id === 'due'
         ? issues.dueDate
-        : clause.field.id === 'created'
-          ? issues.createdAt
-          : clause.field.id === 'updated'
-            ? issues.updatedAt
-            : issues.resolvedAt);
+        : clause.field.id === 'startDate'
+          ? issues.startDate
+          : clause.field.id === 'created'
+            ? issues.createdAt
+            : clause.field.id === 'updated'
+              ? issues.updatedAt
+              : issues.resolvedAt);
     if (clause.operator === 'is') return isNull(column);
     if (clause.operator === 'is not') return isNotNull(column);
     const item = items(clause.operand)[0];
@@ -1035,6 +1037,8 @@ export class TqlCompiler {
         return [sql`lower(${issues.summary})`];
       case 'storyPoints':
         return [sql`${issues.storyPoints}`];
+      case 'startDate':
+        return [sql`${issues.startDate}`];
       case 'due':
         return [sql`${issues.dueDate}`];
       case 'created':

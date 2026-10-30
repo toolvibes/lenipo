@@ -183,6 +183,7 @@ export const CreateIssueRequest = z
     parentKey: z.string().nullable().default(null),
     labels: Labels.default([]),
     storyPoints: StoryPoints.default(null),
+    startDate: DueDate.default(null),
     dueDate: DueDate.default(null),
     components: ComponentNames.default([]),
     fixVersions: VersionNames.default([]),
@@ -202,6 +203,7 @@ export const UpdateIssueRequest = z
     parentKey: z.string().nullable(),
     labels: Labels,
     storyPoints: StoryPoints,
+    startDate: DueDate,
     dueDate: DueDate,
     components: ComponentNames,
     fixVersions: VersionNames,
@@ -262,6 +264,8 @@ export const IssueSummary = z
     // For the columns of result lists (T-QRY-08, E-48).
     reporter: UserRef.nullable(),
     resolution: ResolutionInfo.nullable(),
+    /** Planned start (E-68). */
+    startDate: z.iso.date().nullable(),
     dueDate: z.iso.date().nullable(),
     createdAt: z.iso.datetime(),
     components: z.array(ComponentRef),

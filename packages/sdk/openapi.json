@@ -4333,6 +4333,46 @@
         }
       }
     },
+    "/api/v1/projects/{key}/timeline": {
+      "get": {
+        "operationId": "Projects.timeline",
+        "summary": "Epics with their children and milestones for the timeline",
+        "description": "Bars use the start and due date; without them, epics cover their children and children their latest sprint (`derived`). Milestones are versions with a release date.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Timeline"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{key}/users": {
       "get": {
         "operationId": "Projects.users",
@@ -7685,6 +7725,18 @@
               }
             ]
           },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dueDate": {
             "anyOf": [
               {
@@ -7837,6 +7889,7 @@
           "updatedAt",
           "reporter",
           "resolution",
+          "startDate",
           "dueDate",
           "createdAt",
           "components",
@@ -8186,6 +8239,18 @@
               }
             ]
           },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dueDate": {
             "anyOf": [
               {
@@ -8380,6 +8445,7 @@
           "updatedAt",
           "reporter",
           "resolution",
+          "startDate",
           "dueDate",
           "createdAt",
           "components",
@@ -8960,6 +9026,19 @@
               }
             ]
           },
+          "startDate": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dueDate": {
             "default": null,
             "anyOf": [
@@ -9116,6 +9195,18 @@
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
               },
               {
                 "type": "null"
@@ -11122,6 +11213,131 @@
           }
         },
         "required": ["issues", "total"],
+        "additionalProperties": false
+      },
+      "Timeline": {
+        "type": "object",
+        "properties": {
+          "epics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineEpic"
+            }
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineMilestone"
+            }
+          }
+        },
+        "required": ["epics", "milestones"],
+        "additionalProperties": false
+      },
+      "TimelineEpic": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "$ref": "#/components/schemas/IssueSummary"
+          },
+          "span": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimelineSpan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "done": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string",
+                "enum": ["points", "issues"]
+              }
+            },
+            "required": ["done", "total", "unit"],
+            "additionalProperties": false
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineRow"
+            }
+          }
+        },
+        "required": ["issue", "span", "progress", "children"],
+        "additionalProperties": false
+      },
+      "TimelineSpan": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "derived": {
+            "type": "boolean"
+          }
+        },
+        "required": ["start", "end", "derived"],
+        "additionalProperties": false
+      },
+      "TimelineRow": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "$ref": "#/components/schemas/IssueSummary"
+          },
+          "span": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimelineSpan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["issue", "span"],
+        "additionalProperties": false
+      },
+      "TimelineMilestone": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "released": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "date", "released"],
         "additionalProperties": false
       },
       "Component": {

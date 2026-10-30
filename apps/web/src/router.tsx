@@ -26,6 +26,7 @@ import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { SearchPage } from './features/search/SearchPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
+import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
@@ -227,6 +228,15 @@ const projectRoute = createRoute({
   },
 });
 
+const timelineRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/timeline',
+  component: function Timeline() {
+    const { key } = timelineRoute.useParams();
+    return <TimelinePage key={key} projectKey={key.toUpperCase()} />;
+  },
+});
+
 const searchRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/issues',
@@ -398,6 +408,7 @@ const routeTree = rootRoute.addChildren([
     labelRoute,
     projectsRoute,
     projectRoute,
+    timelineRoute,
     searchRoute,
     issueRoute,
     activityRoute,

@@ -20,7 +20,7 @@ describe('completion', () => {
   });
 
   it('filters fields by the typed prefix, including aliases', () => {
-    expect(at('sta|').labels).toEqual(['status', 'statusCategory']);
+    expect(at('sta|').labels).toEqual(['status', 'statusCategory', 'startDate']);
     expect(at('ty|').labels).toEqual(['issuetype']);
     const { context } = at('project = WEB AND sta|');
     expect(context).toMatchObject({ from: 18, to: 21, prefix: 'sta' });
@@ -78,7 +78,7 @@ describe('completion', () => {
   });
 
   it('ignores the text behind the cursor', () => {
-    expect(at('sta| = Open').labels).toEqual(['status', 'statusCategory']);
+    expect(at('sta| = Open').labels).toEqual(['status', 'statusCategory', 'startDate']);
   });
 });
 

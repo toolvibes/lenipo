@@ -119,3 +119,11 @@ export const versionsQuery = (projectKey: string) =>
         client.GET('/api/v1/projects/{key}/versions', { params: { path: { key: projectKey } } }),
       ),
   });
+
+/** Epics, children and milestones of a project for the timeline (E-68). */
+export const timelineQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['timeline', key],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/projects/{key}/timeline', { params: { path: { key } } })),
+  });

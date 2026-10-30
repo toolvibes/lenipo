@@ -93,6 +93,13 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
+/** A planned start after the due date makes no bar on the timeline (E-68). */
+function assertDateOrder(start: string | null, due: string | null) {
+  if (start && due && start > due) {
+    throw new BadRequestException('The start date must not be after the due date');
+  }
+}
+
 @Injectable()
 export class IssueService {
   constructor(
@@ -168,6 +175,7 @@ export class IssueService {
       updatedAt: row.updatedAt.toISOString(),
       reporter: row.reporterId ? (people.get(row.reporterId) ?? null) : null,
       resolution: row.resolutionId ? (meta.resolution.get(row.resolutionId) ?? null) : null,
+      startDate: row.startDate,
       dueDate: row.dueDate,
       createdAt: row.createdAt.toISOString(),
       components: components.get(row.id) ?? [],
@@ -454,6 +462,7 @@ export class IssueService {
     const project = await this.projectService.findBrowsable(principal, input.projectKey);
     const permissions = await this.projectAccess.require(principal, project.id, 'create-issues');
     const request = { ...input, description: await this.richText(input.description, project.id) };
+    assertDateOrder(request.startDate, request.dueDate);
     const meta = await this.meta.load();
     const type = await this.visibleType(project, request.issueType, meta);
     const priority = this.priorityByKey(meta, request.priority);
@@ -501,6 +510,7 @@ export class IssueService {
         parentId: parent?.id ?? null,
         labels: [...new Set(request.labels)],
         storyPoints: request.storyPoints,
+        startDate: request.startDate,
         dueDate: request.dueDate,
         customFields: custom.next,
         rank: rankBetween(last?.rank ?? null, null),
@@ -656,6 +666,15 @@ export class IssueService {
         request.storyPoints?.toString() ?? null,
       );
       patch.storyPoints = request.storyPoints;
+    }
+    if (request.startDate !== undefined || request.dueDate !== undefined) {
+      const start = request.startDate !== undefined ? request.startDate : issue.startDate;
+      const due = request.dueDate !== undefined ? request.dueDate : issue.dueDate;
+      assertDateOrder(start, due);
+    }
+    if (request.startDate !== undefined) {
+      track('startDate', issue.startDate, request.startDate);
+      patch.startDate = request.startDate;
     }
     if (request.dueDate !== undefined) {
       track('dueDate', issue.dueDate, request.dueDate);

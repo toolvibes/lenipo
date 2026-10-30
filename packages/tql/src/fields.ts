@@ -141,6 +141,13 @@ export const FIELDS: readonly FieldDef[] = [
     orderable: true,
   },
   {
+    id: 'startDate',
+    aliases: ['start'],
+    type: 'date',
+    operators: [...DATES, ...EMPTINESS],
+    orderable: true,
+  },
+  {
     id: 'due',
     aliases: ['duedate'],
     type: 'date',

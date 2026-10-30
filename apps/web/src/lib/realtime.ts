@@ -44,7 +44,14 @@ export function useRealtimeRooms(wanted: string[]): void {
 
 function keysFor(signal: Signal): QueryKey[] {
   if (signal.type === 'issue') {
-    return [['issue', signal.issueKey], ['search'], ['project-issues'], ['board'], ['activity']];
+    return [
+      ['issue', signal.issueKey],
+      ['search'],
+      ['project-issues'],
+      ['board'],
+      ['activity'],
+      ['timeline'],
+    ];
   }
   if (signal.type === 'board') return [['board', signal.boardId], ['boards']];
   if (signal.type === 'space') return [['space', signal.spaceKey], ['spaces']];

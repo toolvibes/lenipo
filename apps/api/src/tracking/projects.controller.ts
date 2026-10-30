@@ -20,6 +20,7 @@ import {
   ProjectDetails,
   ProjectSummary,
   ReleaseVersionRequest,
+  Timeline,
   UpdateComponentRequest,
   UpdateVersionRequest,
   UserRef,
@@ -33,6 +34,7 @@ import { ComponentService } from './component.service.js';
 import { IssueService } from './issue.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
+import { TimelineService } from './timeline.service.js';
 import { VersionService } from './version.service.js';
 
 const ListIssuesQuery = z.object({
@@ -63,6 +65,7 @@ export class ProjectsController {
     @Inject(ComponentService) private readonly components: ComponentService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(VersionService) private readonly versions: VersionService,
+    @Inject(TimelineService) private readonly timelines: TimelineService,
   ) {}
 
   @Endpoint({
@@ -123,6 +126,18 @@ export class ProjectsController {
       limit: query.limit,
       offset: query.offset,
     });
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Epics with their children and milestones for the timeline',
+    description:
+      'Bars use the start and due date; without them, epics cover their children and children their latest sprint (`derived`). Milestones are versions with a release date.',
+    response: Timeline,
+  })
+  @Get(':key/timeline')
+  timeline(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Timeline> {
+    return this.timelines.get(principal, key);
   }
 
   @Endpoint({
