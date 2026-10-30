@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
   type CustomField,
@@ -17,9 +17,10 @@ import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
 import { meQuery } from '../../lib/queries';
-import { trackingMetaQuery, useFieldCatalogue } from '../../lib/tracking';
+import { projectQuery, trackingMetaQuery, useFieldCatalogue } from '../../lib/tracking';
 import { FormError } from '../../ui/FormError';
 import { ComponentsField } from './ComponentsField';
+import { FieldEditor } from './CustomFields';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueTypeIcon, PriorityIcon, useMetaName } from './icons';
 import { useDuration } from './TimeTracking';
@@ -115,7 +116,7 @@ function plainClick(event: MouseEvent): boolean {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
-/** A custom field's value, read-only (E-50); editing happens in the issue. */
+/** A custom field's value, read-only (E-50), where the caller may not change it. */
 function CustomValue({
   field,
   value,
@@ -242,6 +243,16 @@ export function IssueTable({
   const catalogue = useFieldCatalogue();
   const shown = new Set<Column>(columns);
   const all: Column[] = ['key', 'summary', ...columns];
+  // The custom fields each listed project uses, once any custom column is shown.
+  const projectKeys = columns.some(isCustom)
+    ? [...new Set(issues.map((issue) => issue.project.key))]
+    : [];
+  const projectDetails = useQueries({ queries: projectKeys.map((key) => projectQuery(key)) });
+  const fieldsOf = new Map(
+    projectDetails.flatMap((query) =>
+      query.data ? [[query.data.key, new Set(query.data.customFieldIds)] as const] : [],
+    ),
+  );
   const customField = (column: Column) =>
     isCustom(column)
       ? meta?.customFields.find((field) => `cf[${field.number}]` === column)
@@ -280,7 +291,20 @@ export function IssueTable({
   function cell(issue: IssueSummary, column: ListColumn): ReactNode {
     if (isCustom(column)) {
       const field = customField(column);
-      return field ? <CustomValue field={field} value={issue.customFields[field.id]} /> : null;
+      if (!field) return null;
+      // Editable where the field is switched on for the issue's project (TL-8).
+      return issue.canEdit && !field.archived && fieldsOf.get(issue.project.key)?.has(field.id) ? (
+        <FieldEditor
+          field={field}
+          value={issue.customFields[field.id]}
+          projectKey={issue.project.key}
+          disabled={false}
+          label={label(issue, column)}
+          onChange={(value) => edit(issue, { customFields: { [field.id]: value } })}
+        />
+      ) : (
+        <CustomValue field={field} value={issue.customFields[field.id]} />
+      );
     }
     switch (column) {
       case 'issuetype':

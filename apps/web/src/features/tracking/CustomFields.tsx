@@ -52,25 +52,29 @@ function InlineTextarea({
   );
 }
 
-/** One custom field of an issue with the editor its type needs (T-FLD-01, E-50). */
-function FieldEditor({
+/**
+ * One custom field of an issue with the editor its type needs (T-FLD-01, E-50); also used in
+ * the cells of issue lists (TL-8), where `label` names the issue as well.
+ */
+export function FieldEditor({
   field,
   value,
   projectKey,
   disabled,
   onChange,
+  label = field.name,
 }: {
   field: CustomField;
   value: CustomFieldValue | undefined;
   projectKey: string;
   disabled: boolean;
   onChange: (value: CustomFieldInput) => void;
+  label?: string;
 }) {
   const { t } = useTranslation();
   const me = useQuery(meQuery).data;
   const [picking, setPicking] = useState(false);
   const usable = field.options.filter((option) => !option.archived);
-  const label = field.name;
 
   switch (field.type) {
     case 'text':
