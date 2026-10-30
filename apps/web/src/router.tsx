@@ -11,6 +11,10 @@ import { ISSUE_KEY } from '@tasklore/tql';
 import { useTranslation } from 'react-i18next';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
+import {
+  NotificationSchemeEditor,
+  NotificationSchemesPage,
+} from './features/admin/NotificationSchemes';
 import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
@@ -525,6 +529,21 @@ const permissionSchemeRoute = createRoute({
   },
 });
 
+const notificationSchemesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/notification-schemes',
+  component: NotificationSchemesPage,
+});
+
+const notificationSchemeRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/notification-schemes/$id',
+  component: function NotificationScheme() {
+    const { id } = notificationSchemeRoute.useParams();
+    return <NotificationSchemeEditor key={id} id={id} />;
+  },
+});
+
 const customFieldsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/custom-fields',
@@ -585,6 +604,8 @@ const routeTree = rootRoute.addChildren([
       timeTrackingRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,
+      notificationSchemesRoute,
+      notificationSchemeRoute,
       customFieldsRoute,
       templatesRoute,
       templateRoute,

@@ -16,13 +16,18 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import {
+  DEFAULT_NOTIFICATION_SCHEME_ID,
   domainEvents,
+  groupMembers,
   issues,
   issueWatchers,
+  notificationSchemeRules,
   notificationSettings,
   notifications,
   pageComments,
   pages,
+  projectRoleMembers,
+  projects,
   spaces,
   users,
 } from '../db/schema/index.js';
@@ -37,6 +42,22 @@ import { Mailer } from './mailer.js';
 type EventRow = typeof domainEvents.$inferSelect;
 
 const STATUS_FIELDS = new Set(['status', 'resolution']);
+
+type NotificationEventKind = (typeof notificationSchemeRules.$inferSelect)['event'];
+
+/** The scheme's kinds of event in one issue event: a change can be several at once. */
+function kindsOf(event: IssueEvent): NotificationEventKind[] {
+  if (event.type === 'issue.created') return ['created'];
+  if (event.type === 'issue.commented') return ['commented'];
+  if (event.type !== 'issue.updated') return [];
+  const kinds = new Set<NotificationEventKind>();
+  for (const item of event.items) {
+    if (item.field === 'assignee') kinds.add('assigned');
+    else if (STATUS_FIELDS.has(item.field)) kinds.add('status');
+    else kinds.add('updated');
+  }
+  return [...kinds];
+}
 
 function issueEvent(row: EventRow): IssueEvent {
   return { type: row.type, ...(row.payload as object) } as IssueEvent;
@@ -82,11 +103,8 @@ export class NotificationService {
     let candidates: string[];
     if (event.type === 'issue.commented' && event.edited) candidates = [...mentions];
     else {
-      const watchers = await tx
-        .select({ userId: issueWatchers.userId })
-        .from(issueWatchers)
-        .where(eq(issueWatchers.issueId, issue.id));
-      candidates = [...new Set([...watchers.map((watcher) => watcher.userId), ...mentions])];
+      const recipients = await this.schemeRecipients(tx, issue, kindsOf(event));
+      candidates = [...new Set([...recipients, ...mentions])];
     }
     candidates = candidates.filter((id) => id !== row.actorId);
     if (candidates.length === 0) return;
@@ -121,6 +139,77 @@ export class NotificationService {
     };
 
     await this.deliver(tx, row, { issueId: issue.id }, recipients, details, category);
+  }
+
+  /**
+   * Who the project's notification scheme names for these kinds of event (P-NTF-03, E-83):
+   * watchers, assignee, reporter, holders of a project role, members of a group, or a person.
+   */
+  private async schemeRecipients(
+    tx: Executor,
+    issue: typeof issues.$inferSelect,
+    kinds: NotificationEventKind[],
+  ): Promise<string[]> {
+    if (kinds.length === 0) return [];
+    const [project] = await tx
+      .select({ schemeId: projects.notificationSchemeId })
+      .from(projects)
+      .where(eq(projects.id, issue.projectId));
+    const rules = await tx
+      .select()
+      .from(notificationSchemeRules)
+      .where(
+        and(
+          eq(notificationSchemeRules.schemeId, project?.schemeId ?? DEFAULT_NOTIFICATION_SCHEME_ID),
+          inArray(notificationSchemeRules.event, kinds),
+        ),
+      );
+    const found = new Set<string>();
+    const add = (ids: Array<string | null>) => {
+      for (const id of ids) if (id) found.add(id);
+    };
+    const groupIds = rules.flatMap((rule) => (rule.groupId ? [rule.groupId] : []));
+    const roles = rules.flatMap((rule) => (rule.role ? [rule.role] : []));
+    for (const rule of rules) {
+      if (rule.recipient === 'assignee') add([issue.assigneeId]);
+      if (rule.recipient === 'reporter') add([issue.reporterId]);
+      if (rule.recipient === 'user') add([rule.userId]);
+    }
+    if (rules.some((rule) => rule.recipient === 'watchers')) {
+      const watchers = await tx
+        .select({ userId: issueWatchers.userId })
+        .from(issueWatchers)
+        .where(eq(issueWatchers.issueId, issue.id));
+      add(watchers.map((watcher) => watcher.userId));
+    }
+    if (groupIds.length > 0) {
+      const members = await tx
+        .select({ userId: groupMembers.userId })
+        .from(groupMembers)
+        .where(inArray(groupMembers.groupId, groupIds));
+      add(members.map((member) => member.userId));
+    }
+    if (roles.length > 0) {
+      const holders = await tx
+        .select({ userId: projectRoleMembers.userId, groupId: projectRoleMembers.groupId })
+        .from(projectRoleMembers)
+        .where(
+          and(
+            eq(projectRoleMembers.projectId, issue.projectId),
+            inArray(projectRoleMembers.role, roles),
+          ),
+        );
+      add(holders.map((holder) => holder.userId));
+      const viaGroups = holders.flatMap((holder) => (holder.groupId ? [holder.groupId] : []));
+      if (viaGroups.length > 0) {
+        const members = await tx
+          .select({ userId: groupMembers.userId })
+          .from(groupMembers)
+          .where(inArray(groupMembers.groupId, viaGroups));
+        add(members.map((member) => member.userId));
+      }
+    }
+    return [...found];
   }
 
   /**

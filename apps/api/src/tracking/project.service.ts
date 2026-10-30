@@ -19,10 +19,12 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import {
+  DEFAULT_NOTIFICATION_SCHEME_ID,
   DEFAULT_PERMISSION_SCHEME_ID,
   favourites,
   groups,
   issues,
+  notificationSchemes,
   permissionSchemes,
   projectHiddenIssueTypes,
   projectRoleMembers,
@@ -177,9 +179,16 @@ export class ProjectService {
       .select({ id: permissionSchemes.id, name: permissionSchemes.name })
       .from(permissionSchemes)
       .where(eq(permissionSchemes.id, project.permissionSchemeId ?? DEFAULT_PERMISSION_SCHEME_ID));
+    const [notices] = await this.database.db
+      .select({ id: notificationSchemes.id, name: notificationSchemes.name })
+      .from(notificationSchemes)
+      .where(
+        eq(notificationSchemes.id, project.notificationSchemeId ?? DEFAULT_NOTIFICATION_SCHEME_ID),
+      );
     return {
       ...this.summary(project, lead?.name ?? null, issueCount?.total ?? 0, !!favourite),
       permissionScheme: scheme ?? { id: DEFAULT_PERMISSION_SCHEME_ID, name: '' },
+      notificationScheme: notices ?? { id: DEFAULT_NOTIFICATION_SCHEME_ID, name: '' },
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: definition.statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),

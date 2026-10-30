@@ -36,7 +36,7 @@ export class PermissionSchemesController {
     response: z.array(PermissionSchemeSummary),
   })
   @Get()
-  list(): Promise<PermissionSchemeSummary[]> {
+  listPermissionSchemes(): Promise<PermissionSchemeSummary[]> {
     return this.schemes.list();
   }
 
@@ -46,7 +46,7 @@ export class PermissionSchemesController {
     response: PermissionScheme,
   })
   @Get(':id')
-  get(@Param('id', SchemeId) id: string): Promise<PermissionScheme> {
+  getPermissionScheme(@Param('id', SchemeId) id: string): Promise<PermissionScheme> {
     return this.schemes.get(id);
   }
 
@@ -57,7 +57,7 @@ export class PermissionSchemesController {
   })
   @Post()
   @HttpCode(201)
-  create(
+  createPermissionScheme(
     @CurrentPrincipal() principal: Principal,
     @ValidBody(CreatePermissionSchemeRequest) body: CreatePermissionSchemeRequest,
   ): Promise<PermissionScheme> {
@@ -70,7 +70,7 @@ export class PermissionSchemesController {
     response: PermissionScheme,
   })
   @Patch(':id')
-  update(
+  updatePermissionScheme(
     @CurrentPrincipal() principal: Principal,
     @Param('id', SchemeId) id: string,
     @ValidBody(UpdatePermissionSchemeRequest) body: UpdatePermissionSchemeRequest,
@@ -81,7 +81,7 @@ export class PermissionSchemesController {
   @Endpoint({ tag: 'Administration', summary: 'Delete a permission scheme no project uses' })
   @Delete(':id')
   @HttpCode(204)
-  delete(
+  deletePermissionScheme(
     @CurrentPrincipal() principal: Principal,
     @Param('id', SchemeId) id: string,
   ): Promise<void> {

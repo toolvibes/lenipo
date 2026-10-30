@@ -997,6 +997,24 @@ export const de = {
       'Projekte legt bei Ihnen die Administration an. Danach sehen Sie alles, wozu Sie eingeladen sind.',
     taken: 'Der Schlüssel {{key}} ist schon vergeben.',
   },
+  notificationSchemes: {
+    title: 'Benachrichtigungsschemata',
+    intro:
+      'Welches Ereignis an einem Vorgang wen benachrichtigt. Erwähnte Personen erfahren es immer, und niemand erfährt etwas über Vorgänge, die er nicht sehen darf.',
+    event: 'Ereignis',
+    events: {
+      created: 'Vorgang angelegt',
+      assigned: 'Zugewiesen',
+      status: 'Status geändert',
+      updated: 'Sonst geändert',
+      commented: 'Kommentiert',
+    },
+    recipients: {
+      watchers: 'Beobachtende',
+      assignee: 'Bearbeiter',
+      reporter: 'Melder',
+    },
+  },
   schemes: {
     title: 'Berechtigungsschemata',
     intro:
@@ -1027,6 +1045,10 @@ export const de = {
     },
   },
   projectSettings: {
+    notifications: 'Benachrichtigungen',
+    notificationsHelp:
+      'Welches Benachrichtigungsschema gilt. Schemata werden in der Administration bearbeitet und von mehreren Projekten geteilt.',
+    notificationScheme: 'Benachrichtigungsschema',
     permissions: 'Berechtigungen',
     permissionsHelp:
       'Welches Berechtigungsschema gilt. Schemata werden in der Administration bearbeitet und von mehreren Projekten geteilt.',

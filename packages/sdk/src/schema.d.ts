@@ -197,13 +197,13 @@ export interface paths {
      * List the permission schemes with the projects using them
      * @description Requires the global permission `admin`.
      */
-    get: operations['Administration.list'];
+    get: operations['Administration.listPermissionSchemes'];
     put?: never;
     /**
      * Create a permission scheme as a copy of another (the default one if not given)
      * @description Requires the global permission `admin`.
      */
-    post: operations['Administration.create'];
+    post: operations['Administration.createPermissionScheme'];
     delete?: never;
     options?: never;
     head?: never;
@@ -221,21 +221,73 @@ export interface paths {
      * Get a permission scheme with its grants
      * @description Requires the global permission `admin`.
      */
-    get: operations['Administration.get'];
+    get: operations['Administration.getPermissionScheme'];
     put?: never;
     post?: never;
     /**
      * Delete a permission scheme no project uses
      * @description Requires the global permission `admin`.
      */
-    delete: operations['Administration.delete'];
+    delete: operations['Administration.deletePermissionScheme'];
     options?: never;
     head?: never;
     /**
      * Rename a permission scheme or replace its grants
      * @description Requires the global permission `admin`.
      */
-    patch: operations['Administration.update'];
+    patch: operations['Administration.updatePermissionScheme'];
+    trace?: never;
+  };
+  '/api/v1/admin/notification-schemes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the notification schemes with the projects using them
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.listNotificationSchemes'];
+    put?: never;
+    /**
+     * Create a notification scheme as a copy of another (the default one if not given)
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Administration.createNotificationScheme'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/notification-schemes/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a notification scheme with its rules
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.getNotificationScheme'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a notification scheme no project uses
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Administration.deleteNotificationScheme'];
+    options?: never;
+    head?: never;
+    /**
+     * Rename a notification scheme or replace its rules
+     * @description Requires the global permission `admin`.
+     */
+    patch: operations['Administration.updateNotificationScheme'];
     trace?: never;
   };
   '/api/v1/auth/login': {
@@ -1709,6 +1761,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/notification-scheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Give the project a notification scheme; null for the default one
+     * @description Requires the global permission `admin` (E-83).
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Projects.setNotificationScheme'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/boards/{id}/velocity': {
     parameters: {
       query?: never;
@@ -2682,6 +2756,60 @@ export interface components {
         }
       | {
           permission: components['schemas']['ProjectPermission'];
+          /** Format: uuid */
+          userId: string;
+        };
+    NotificationSchemeSummary: components['schemas']['PermissionSchemeSummary'];
+    NotificationScheme: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      isDefault: boolean;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+      rules: components['schemas']['NotificationRule'][];
+    };
+    NotificationRule: {
+      event: components['schemas']['NotificationEvent'];
+      recipient: components['schemas']['NotificationRecipient'];
+      role: components['schemas']['ProjectRole'] | null;
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+      user: components['schemas']['UserRef'] | null;
+    };
+    /** @enum {string} */
+    NotificationEvent: 'created' | 'assigned' | 'status' | 'updated' | 'commented';
+    /** @enum {string} */
+    NotificationRecipient: 'watchers' | 'assignee' | 'reporter' | 'role' | 'group' | 'user';
+    CreateNotificationSchemeRequest: components['schemas']['CreatePermissionSchemeRequest'];
+    UpdateNotificationSchemeRequest: {
+      name?: string;
+      description?: string;
+      rules?: components['schemas']['NotificationRuleInput'][];
+    };
+    NotificationRuleInput:
+      | {
+          event: components['schemas']['NotificationEvent'];
+          /** @enum {string} */
+          recipient: 'watchers' | 'assignee' | 'reporter';
+        }
+      | {
+          event: components['schemas']['NotificationEvent'];
+          role: components['schemas']['ProjectRole'];
+        }
+      | {
+          event: components['schemas']['NotificationEvent'];
+          /** Format: uuid */
+          groupId: string;
+        }
+      | {
+          event: components['schemas']['NotificationEvent'];
           /** Format: uuid */
           userId: string;
         };
@@ -3783,6 +3911,11 @@ export interface components {
         id: string;
         name: string;
       };
+      notificationScheme: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      };
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
@@ -4753,7 +4886,7 @@ export interface operations {
       };
     };
   };
-  'Administration.list': {
+  'Administration.listPermissionSchemes': {
     parameters: {
       query?: never;
       header?: never;
@@ -4782,7 +4915,7 @@ export interface operations {
       };
     };
   };
-  'Administration.create': {
+  'Administration.createPermissionScheme': {
     parameters: {
       query?: never;
       header?: never;
@@ -4815,7 +4948,7 @@ export interface operations {
       };
     };
   };
-  'Administration.get': {
+  'Administration.getPermissionScheme': {
     parameters: {
       query?: never;
       header?: never;
@@ -4846,7 +4979,7 @@ export interface operations {
       };
     };
   };
-  'Administration.delete': {
+  'Administration.deletePermissionScheme': {
     parameters: {
       query?: never;
       header?: never;
@@ -4875,7 +5008,7 @@ export interface operations {
       };
     };
   };
-  'Administration.update': {
+  'Administration.updatePermissionScheme': {
     parameters: {
       query?: never;
       header?: never;
@@ -4897,6 +5030,163 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PermissionScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.listNotificationSchemes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationSchemeSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.createNotificationScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateNotificationSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.getNotificationScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.deleteNotificationScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.updateNotificationScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateNotificationSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationScheme'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -8477,6 +8767,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ProjectDetails'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.setNotificationScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetProjectPermissionSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

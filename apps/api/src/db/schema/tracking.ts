@@ -121,6 +121,10 @@ export const projects = pgTable(
     permissionSchemeId: uuid().references((): AnyPgColumn => permissionSchemes.id, {
       onDelete: 'set null',
     }),
+    /** Null uses the default notification scheme (TL-71, E-83). */
+    notificationSchemeId: uuid().references((): AnyPgColumn => notificationSchemes.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
   },
@@ -185,6 +189,65 @@ export const permissionSchemes = pgTable(
 );
 
 export const permissionGrantee = pgEnum('permission_grantee', ['role', 'group', 'user']);
+
+/** The default notification scheme: every event to the watchers, as before (E-83). */
+export const DEFAULT_NOTIFICATION_SCHEME_ID = '01a00000-0000-7000-8000-00000000b311';
+
+/**
+ * Named notification schemes shared by projects (P-NTF-03, TL-71, E-83): which issue event
+ * reaches whom. Mentions always notify; nobody hears about what they may not see.
+ */
+export const notificationSchemes = pgTable(
+  'notification_schemes',
+  {
+    id: uuid().primaryKey(),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('notification_schemes_name_unique').on(table.name)],
+);
+
+export const notificationEvent = pgEnum('notification_event', [
+  'created',
+  'assigned',
+  'status',
+  'updated',
+  'commented',
+]);
+
+export const notificationRecipient = pgEnum('notification_recipient', [
+  'watchers',
+  'assignee',
+  'reporter',
+  'role',
+  'group',
+  'user',
+]);
+
+export const notificationSchemeRules = pgTable(
+  'notification_scheme_rules',
+  {
+    id: uuid().primaryKey(),
+    schemeId: uuid()
+      .notNull()
+      .references(() => notificationSchemes.id, { onDelete: 'cascade' }),
+    event: notificationEvent().notNull(),
+    recipient: notificationRecipient().notNull(),
+    role: projectRole(),
+    groupId: uuid().references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('notification_scheme_rules_scheme_idx').on(table.schemeId, table.event),
+    check(
+      'notification_scheme_rules_one_target',
+      sql`(recipient = 'role') = (role is not null)
+        and (recipient = 'group') = (group_id is not null)
+        and (recipient = 'user') = (user_id is not null)`,
+    ),
+  ],
+);
 
 export const permissionSchemeGrants = pgTable(
   'permission_scheme_grants',

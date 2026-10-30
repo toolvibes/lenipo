@@ -31,14 +31,19 @@ export const permissionSchemeQuery = (id: string) =>
       unwrap(client.GET('/api/v1/admin/permission-schemes/{id}', { params: { path: { id } } })),
   });
 
-/** A column of the matrix: a project role, a group or one person. */
-type Column =
+/** A column of a scheme matrix: a project role, a group, one person, or (notifications) a relation. */
+export type Column =
+  | { kind: 'special'; key: 'watchers' | 'assignee' | 'reporter' }
   | { kind: 'role'; role: ProjectRole }
   | { kind: 'group'; id: string; name: string }
   | { kind: 'user'; id: string; name: string };
 
-const columnKey = (column: Column) =>
-  column.kind === 'role' ? `role:${column.role}` : `${column.kind}:${column.id}`;
+export const columnKey = (column: Column) =>
+  column.kind === 'special'
+    ? `special:${column.key}`
+    : column.kind === 'role'
+      ? `role:${column.role}`
+      : `${column.kind}:${column.id}`;
 
 const grantKey = (grant: PermissionGrant) =>
   grant.grantee === 'role'
@@ -58,36 +63,61 @@ export function columnsOf(grants: PermissionGrant[]): Column[] {
   return [...PROJECT_ROLES.map((role) => ({ kind: 'role' as const, role })), ...extra.values()];
 }
 
-/**
- * Permissions down, holders across (P-PRM-02, E-82). Read-only without `onToggle`; the role
- * columns are always there, groups and people appear once they hold something.
- */
-export function PermissionMatrix({
-  columns,
-  checked,
-  onToggle,
-  onRemoveColumn,
-}: {
+/** Permissions down, holders across (P-PRM-02, E-82); see {@link SchemeMatrix}. */
+export function PermissionMatrix(props: {
   columns: Column[];
   checked: Set<string>;
   onToggle?: (permission: ProjectPermission, column: Column) => void;
   onRemoveColumn?: (column: Column) => void;
 }) {
   const { t } = useTranslation();
+  return (
+    <SchemeMatrix
+      {...props}
+      header={t('schemes.permission')}
+      rows={PROJECT_PERMISSIONS.map((permission) => ({
+        key: permission,
+        label: t(`schemes.permissions.${permission}`),
+      }))}
+      onToggle={props.onToggle as ((row: string, column: Column) => void) | undefined}
+    />
+  );
+}
+
+/**
+ * Rows (permissions or events) down, holders across. Read-only without `onToggle`; groups
+ * and people appear once they hold something. `checked` holds "row|column" keys.
+ */
+export function SchemeMatrix({
+  header,
+  rows,
+  columns,
+  checked,
+  onToggle,
+  onRemoveColumn,
+}: {
+  header: string;
+  rows: Array<{ key: string; label: string }>;
+  columns: Column[];
+  checked: Set<string>;
+  onToggle?: (row: string, column: Column) => void;
+  onRemoveColumn?: (column: Column) => void;
+}) {
+  const { t } = useTranslation();
   const label = (column: Column) =>
-    column.kind === 'role'
-      ? t(`projectSettings.roles.${column.role}`)
-      : column.kind === 'group' && column.name === 'users'
-        ? t('wiki.settings.everyone')
-        : column.name;
+    column.kind === 'special'
+      ? t(`notificationSchemes.recipients.${column.key}`)
+      : column.kind === 'role'
+        ? t(`projectSettings.roles.${column.role}`)
+        : column.kind === 'group' && column.name === 'users'
+          ? t('wiki.settings.everyone')
+          : column.name;
   return (
     <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)]">
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr className="bg-[var(--surface-2)]">
-            <th className="tl-label px-3 py-2 text-left text-[var(--ink-muted)]">
-              {t('schemes.permission')}
-            </th>
+            <th className="tl-label px-3 py-2 text-left text-[var(--ink-muted)]">{header}</th>
             {columns.map((column) => (
               <th
                 key={columnKey(column)}
@@ -98,7 +128,7 @@ export function PermissionMatrix({
                     <UsersThree size={14} aria-hidden className="text-[var(--ink-muted)]" />
                   )}
                   {label(column)}
-                  {onRemoveColumn && column.kind !== 'role' && (
+                  {onRemoveColumn && (column.kind === 'group' || column.kind === 'user') && (
                     <button
                       type="button"
                       aria-label={t('schemes.removeColumn', { name: label(column) })}
@@ -115,21 +145,21 @@ export function PermissionMatrix({
           </tr>
         </thead>
         <tbody>
-          {PROJECT_PERMISSIONS.map((permission) => (
-            <tr key={permission} className="border-t border-[var(--border)]">
+          {rows.map((row) => (
+            <tr key={row.key} className="border-t border-[var(--border)]">
               <th scope="row" className="px-3 py-2 text-left font-normal">
-                {t(`schemes.permissions.${permission}`)}
+                {row.label}
               </th>
               {columns.map((column) => {
-                const on = checked.has(`${permission}|${columnKey(column)}`);
+                const on = checked.has(`${row.key}|${columnKey(column)}`);
                 return (
                   <td key={columnKey(column)} className="px-3 py-2 text-center">
                     {onToggle ? (
                       <input
                         type="checkbox"
                         checked={on}
-                        aria-label={`${t(`schemes.permissions.${permission}`)}: ${label(column)}`}
-                        onChange={() => onToggle(permission, column)}
+                        aria-label={`${row.label}: ${label(column)}`}
+                        onChange={() => onToggle(row.key, column)}
                       />
                     ) : on ? (
                       <>
@@ -157,7 +187,7 @@ export function checkedOf(grants: PermissionGrant[]): Set<string> {
 }
 
 /** Adds a group or a person as a column of the matrix. */
-function AddColumn({ onAdd }: { onAdd: (column: Column) => void }) {
+export function AddColumn({ onAdd }: { onAdd: (column: Column) => void }) {
   const { t } = useTranslation();
   const [kind, setKind] = useState<'group' | 'user'>('group');
   const [search, setSearch] = useState('');

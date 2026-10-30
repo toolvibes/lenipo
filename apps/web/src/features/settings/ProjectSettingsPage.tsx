@@ -10,6 +10,13 @@ import { projectMembersQuery, projectQuery, projectWorkflowQuery } from '../../l
 import { Select } from '../../ui/Select';
 import { TopBar } from '../../ui/TopBar';
 import {
+  NotificationMatrix,
+  notificationChecked,
+  notificationColumns,
+  notificationSchemeQuery,
+  notificationSchemesQuery,
+} from '../admin/NotificationSchemes';
+import {
   checkedOf,
   columnsOf,
   PermissionMatrix,
@@ -144,6 +151,73 @@ function Permissions({ projectKey }: { projectKey: string }) {
   );
 }
 
+/** The project's notification scheme (E-83), chosen by global administrators like permissions. */
+function Notifications({ projectKey }: { projectKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const project = useQuery(projectQuery(projectKey));
+  const me = useQuery(meQuery);
+  const isAdmin = me.data?.globalPermissions.includes('admin') ?? false;
+  const schemes = useQuery({ ...notificationSchemesQuery, enabled: isAdmin });
+  const current = project.data?.notificationScheme;
+  const scheme = useQuery({
+    ...notificationSchemeQuery(current?.id ?? ''),
+    enabled: isAdmin && !!current,
+  });
+  const choose = useMutation({
+    mutationFn: (schemeId: string) =>
+      unwrap(
+        client.PUT('/api/v1/projects/{key}/notification-scheme', {
+          params: { path: { key: projectKey } },
+          body: { schemeId },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project', projectKey] }),
+  });
+  if (!current) return null;
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="tl-heading-md m-0">{t('projectSettings.notifications')}</h2>
+        <p className="m-0 text-sm text-[var(--ink-muted)]">
+          {isAdmin
+            ? t('projectSettings.notificationsHelp')
+            : t('projectSettings.permissionsAdminOnly')}
+        </p>
+      </div>
+      {choose.error && <p className="m-0 text-[var(--danger)]">{choose.error.message}</p>}
+      {isAdmin && schemes.data ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <Select
+            label={t('projectSettings.notificationScheme')}
+            value={current.id}
+            disabled={choose.isPending}
+            options={schemes.data.map((entry) => ({ value: entry.id, label: entry.name }))}
+            onChange={(event) => choose.mutate(event.target.value)}
+          />
+          <Link
+            to="/admin/notification-schemes/$id"
+            params={{ id: current.id }}
+            className="pb-2 text-[13px]"
+          >
+            {t('projectSettings.editScheme')}
+          </Link>
+        </div>
+      ) : (
+        <p className="m-0">
+          <strong>{current.name}</strong>
+        </p>
+      )}
+      {scheme.data && (
+        <NotificationMatrix
+          columns={notificationColumns(scheme.data.rules)}
+          checked={notificationChecked(scheme.data.rules)}
+        />
+      )}
+    </section>
+  );
+}
+
 /** Project settings with a sub-navigation (1a S11): the workflow editor, other parts as dialogs. */
 export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const { t } = useTranslation();
@@ -151,7 +225,9 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const workflow = useQuery(projectWorkflowQuery(projectKey));
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [view, setView] = useState<'workflow' | 'members' | 'permissions'>('workflow');
+  const [view, setView] = useState<'workflow' | 'members' | 'permissions' | 'notifications'>(
+    'workflow',
+  );
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
   const close = (open: boolean) => !open && setDialog(null);
@@ -200,6 +276,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('projectSettings.permissions')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'notifications' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('notifications')}
+              >
+                {t('projectSettings.notifications')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -220,6 +304,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           )}
           {view === 'members' && administer && <Members projectKey={projectKey} />}
           {view === 'permissions' && administer && <Permissions projectKey={projectKey} />}
+          {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={workflow.data.versionId}

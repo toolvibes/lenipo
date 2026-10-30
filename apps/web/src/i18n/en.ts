@@ -983,6 +983,24 @@ export const en: Messages = {
       'Your administrators create projects. Afterwards you see everything you are invited to.',
     taken: 'The key {{key}} is already taken.',
   },
+  notificationSchemes: {
+    title: 'Notification schemes',
+    intro:
+      'Which issue event notifies whom. Mentioned people always hear of it, and nobody hears about issues they may not see.',
+    event: 'Event',
+    events: {
+      created: 'Issue created',
+      assigned: 'Assigned',
+      status: 'Status changed',
+      updated: 'Otherwise changed',
+      commented: 'Commented',
+    },
+    recipients: {
+      watchers: 'Watchers',
+      assignee: 'Assignee',
+      reporter: 'Reporter',
+    },
+  },
   schemes: {
     title: 'Permission schemes',
     intro:
@@ -1013,6 +1031,10 @@ export const en: Messages = {
     },
   },
   projectSettings: {
+    notifications: 'Notifications',
+    notificationsHelp:
+      'Which notification scheme applies. Schemes are edited in the administration and shared by projects.',
+    notificationScheme: 'Notification scheme',
     permissions: 'Permissions',
     permissionsHelp:
       'Which permission scheme applies. Schemes are edited in the administration and shared by projects.',

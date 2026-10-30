@@ -466,7 +466,7 @@
     },
     "/api/v1/admin/permission-schemes": {
       "get": {
-        "operationId": "Administration.list",
+        "operationId": "Administration.listPermissionSchemes",
         "summary": "List the permission schemes with the projects using them",
         "description": "Requires the global permission `admin`.",
         "tags": ["Administration"],
@@ -497,7 +497,7 @@
         }
       },
       "post": {
-        "operationId": "Administration.create",
+        "operationId": "Administration.createPermissionScheme",
         "summary": "Create a permission scheme as a copy of another (the default one if not given)",
         "description": "Requires the global permission `admin`.",
         "tags": ["Administration"],
@@ -537,7 +537,7 @@
     },
     "/api/v1/admin/permission-schemes/{id}": {
       "get": {
-        "operationId": "Administration.get",
+        "operationId": "Administration.getPermissionScheme",
         "summary": "Get a permission scheme with its grants",
         "description": "Requires the global permission `admin`.",
         "tags": ["Administration"],
@@ -575,7 +575,7 @@
         }
       },
       "patch": {
-        "operationId": "Administration.update",
+        "operationId": "Administration.updatePermissionScheme",
         "summary": "Rename a permission scheme or replace its grants",
         "description": "Requires the global permission `admin`.",
         "tags": ["Administration"],
@@ -623,8 +623,198 @@
         }
       },
       "delete": {
-        "operationId": "Administration.delete",
+        "operationId": "Administration.deletePermissionScheme",
         "summary": "Delete a permission scheme no project uses",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notification-schemes": {
+      "get": {
+        "operationId": "Administration.listNotificationSchemes",
+        "summary": "List the notification schemes with the projects using them",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationSchemeSummary"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Administration.createNotificationScheme",
+        "summary": "Create a notification scheme as a copy of another (the default one if not given)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notification-schemes/{id}": {
+      "get": {
+        "operationId": "Administration.getNotificationScheme",
+        "summary": "Get a notification scheme with its rules",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "Administration.updateNotificationScheme",
+        "summary": "Rename a notification scheme or replace its rules",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Administration.deleteNotificationScheme",
+        "summary": "Delete a notification scheme no project uses",
         "description": "Requires the global permission `admin`.",
         "tags": ["Administration"],
         "parameters": [
@@ -5487,6 +5677,49 @@
         }
       }
     },
+    "/api/v1/projects/{key}/notification-scheme": {
+      "put": {
+        "operationId": "Projects.setNotificationScheme",
+        "summary": "Give the project a notification scheme; null for the default one",
+        "description": "Requires the global permission `admin` (E-83).\n\nRequires the global permission `admin`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetProjectPermissionSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards/{id}/velocity": {
       "get": {
         "operationId": "Reports.velocity",
@@ -8377,6 +8610,200 @@
               }
             },
             "required": ["permission", "userId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "NotificationSchemeSummary": {
+        "$ref": "#/components/schemas/PermissionSchemeSummary"
+      },
+      "NotificationScheme": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": ["key", "name"],
+              "additionalProperties": false
+            }
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationRule"
+            }
+          }
+        },
+        "required": ["id", "name", "description", "isDefault", "projects", "rules"],
+        "additionalProperties": false
+      },
+      "NotificationRule": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/NotificationEvent"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/NotificationRecipient"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["event", "recipient", "role", "group", "user"],
+        "additionalProperties": false
+      },
+      "NotificationEvent": {
+        "type": "string",
+        "enum": ["created", "assigned", "status", "updated", "commented"]
+      },
+      "NotificationRecipient": {
+        "type": "string",
+        "enum": ["watchers", "assignee", "reporter", "role", "group", "user"]
+      },
+      "CreateNotificationSchemeRequest": {
+        "$ref": "#/components/schemas/CreatePermissionSchemeRequest"
+      },
+      "UpdateNotificationSchemeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "rules": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationRuleInput"
+            }
+          }
+        }
+      },
+      "NotificationRuleInput": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "$ref": "#/components/schemas/NotificationEvent"
+              },
+              "recipient": {
+                "type": "string",
+                "enum": ["watchers", "assignee", "reporter"]
+              }
+            },
+            "required": ["event", "recipient"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "$ref": "#/components/schemas/NotificationEvent"
+              },
+              "role": {
+                "$ref": "#/components/schemas/ProjectRole"
+              }
+            },
+            "required": ["event", "role"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "$ref": "#/components/schemas/NotificationEvent"
+              },
+              "groupId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["event", "groupId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "$ref": "#/components/schemas/NotificationEvent"
+              },
+              "userId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["event", "userId"],
             "additionalProperties": false
           }
         ]
@@ -12709,6 +13136,21 @@
             "required": ["id", "name"],
             "additionalProperties": false
           },
+          "notificationScheme": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+          },
           "issueTypes": {
             "type": "array",
             "items": {
@@ -12747,6 +13189,7 @@
           "createdAt",
           "favourite",
           "permissionScheme",
+          "notificationScheme",
           "issueTypes",
           "statuses",
           "permissions",

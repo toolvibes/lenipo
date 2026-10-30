@@ -114,6 +114,82 @@ export const SetProjectPermissionSchemeRequest = z
   .meta({ id: 'SetProjectPermissionSchemeRequest' });
 export type SetProjectPermissionSchemeRequest = z.infer<typeof SetProjectPermissionSchemeRequest>;
 
+// ---------------------------------------------------------------- notification schemes (E-83)
+
+export const NOTIFICATION_EVENTS = [
+  'created',
+  'assigned',
+  'status',
+  'updated',
+  'commented',
+] as const;
+export const NotificationEvent = z.enum(NOTIFICATION_EVENTS).meta({ id: 'NotificationEvent' });
+export type NotificationEvent = z.infer<typeof NotificationEvent>;
+
+export const NOTIFICATION_RECIPIENTS = [
+  'watchers',
+  'assignee',
+  'reporter',
+  'role',
+  'group',
+  'user',
+] as const;
+export const NotificationRecipient = z
+  .enum(NOTIFICATION_RECIPIENTS)
+  .meta({ id: 'NotificationRecipient' });
+export type NotificationRecipient = z.infer<typeof NotificationRecipient>;
+
+/** One rule of a scheme: an issue event reaches a kind of recipient. */
+export const NotificationRule = z
+  .object({
+    event: NotificationEvent,
+    recipient: NotificationRecipient,
+    role: ProjectRole.nullable(),
+    group: z.object({ id: Id, name: z.string() }).nullable(),
+    user: UserRef.nullable(),
+  })
+  .meta({ id: 'NotificationRule' });
+export type NotificationRule = z.infer<typeof NotificationRule>;
+
+export const NotificationRuleInput = z
+  .union([
+    z.strictObject({
+      event: NotificationEvent,
+      recipient: z.enum(['watchers', 'assignee', 'reporter']),
+    }),
+    z.strictObject({ event: NotificationEvent, role: ProjectRole }),
+    z.strictObject({ event: NotificationEvent, groupId: Id }),
+    z.strictObject({ event: NotificationEvent, userId: Id }),
+  ])
+  .meta({ id: 'NotificationRuleInput' });
+export type NotificationRuleInput = z.infer<typeof NotificationRuleInput>;
+
+export const NotificationSchemeSummary = PermissionSchemeSummary.meta({
+  id: 'NotificationSchemeSummary',
+});
+export type NotificationSchemeSummary = z.infer<typeof NotificationSchemeSummary>;
+
+export const NotificationScheme = PermissionSchemeSummary.extend({
+  rules: z.array(NotificationRule),
+}).meta({ id: 'NotificationScheme' });
+export type NotificationScheme = z.infer<typeof NotificationScheme>;
+
+export const CreateNotificationSchemeRequest = CreatePermissionSchemeRequest.meta({
+  id: 'CreateNotificationSchemeRequest',
+});
+export type CreateNotificationSchemeRequest = z.infer<typeof CreateNotificationSchemeRequest>;
+
+export const UpdateNotificationSchemeRequest = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    description: z.string().max(500),
+    /** Replaces all rules of the scheme. */
+    rules: z.array(NotificationRuleInput).max(500),
+  })
+  .partial()
+  .meta({ id: 'UpdateNotificationSchemeRequest' });
+export type UpdateNotificationSchemeRequest = z.infer<typeof UpdateNotificationSchemeRequest>;
+
 export const AddProjectMemberRequest = z
   .union([
     z.strictObject({ role: ProjectRole, userId: Id }),
@@ -247,6 +323,8 @@ export type ProjectSummary = z.infer<typeof ProjectSummary>;
 export const ProjectDetails = ProjectSummary.extend({
   /** The permission scheme the project uses (E-82). */
   permissionScheme: z.object({ id: Id, name: z.string() }),
+  /** The notification scheme the project uses (E-83). */
+  notificationScheme: z.object({ id: Id, name: z.string() }),
   issueTypes: z.array(IssueTypeInfo),
   statuses: z.array(StatusInfo),
   permissions: z.array(ProjectPermission),
