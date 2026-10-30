@@ -9,6 +9,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useInAppLinks } from '../../lib/links';
 import { IssueKeyLinks } from '../../macros/issueLinks';
 import { macroViews } from '../../macros/views';
 import { FormError } from '../../ui/FormError';
@@ -83,6 +84,7 @@ export function CommentedText({
 }) {
   const { t } = useTranslation();
   const container = useRef<HTMLDivElement>(null);
+  const openInApp = useInAppLinks();
   const [offer, setOffer] = useState<{ anchor: TextAnchor; top: number; left: number } | null>(
     null,
   );
@@ -131,6 +133,7 @@ export function CommentedText({
   }
 
   function onClick(event: MouseEvent) {
+    openInApp(event);
     const thread = (event.target as HTMLElement).closest('[data-thread]');
     if (thread) onOpen(thread.getAttribute('data-thread') ?? '');
   }

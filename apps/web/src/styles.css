@@ -131,6 +131,15 @@ body {
   border: none;
   border-top: 1px solid var(--border);
 }
+.tl-prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.tl-prose a:hover {
+  color: var(--accent-hover);
+}
 .tl-prose p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: var(--ink-muted);
@@ -151,6 +160,16 @@ body {
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 22px;
+}
+/* Reading, columns share the width by their content; while editing they stay resizable. */
+.tl-prose[contenteditable="false"] table {
+  table-layout: auto;
+}
+/* Long words and code may break so the table fits the page; hyphenation keeps that rare. */
+.tl-prose[contenteditable="false"] :is(th, td) {
+  min-width: 6em;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 .tl-prose th,
 .tl-prose td {

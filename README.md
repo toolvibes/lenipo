@@ -15,6 +15,8 @@ Atlassian hat die Server-Produkte eingestellt. Was bleibt, sind die Cloud-Versio
 
 ## Dokumente
 
+Die Dokumentation lebt im eigenen Wiki (Lore-Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md).
+
 | # | Dokument | Inhalt |
 |---|----------|--------|
 | 1 | [Vision & Scope](docs/01-vision-scope.md) | Ziele, Zielgruppen, Leitprinzipien, was wir bewusst nicht machen |
@@ -36,7 +38,7 @@ Jedes Feature hat eine ID (z. B. `T-BRD-03`) und eine Priorität:
 
 ## Leitidee für die Umsetzung
 
-Sobald das MVP steht (Ende Phase 3), **verwalten wir die Weiterentwicklung im Tool selbst**: Backlog, Sprints und diese Dokumentation wandern dann aus dem Repo ins eigene Wiki. So merken wir früh, was im Alltag fehlt.
+Seit dem MVP (Ende Phase 3) **verwalten wir die Weiterentwicklung im Tool selbst**: Diese Dokumentation ist ins eigene Wiki umgezogen, Backlog und Sprints folgen. So merken wir früh, was im Alltag fehlt.
 
 ## Entwicklung
 

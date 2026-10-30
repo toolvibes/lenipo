@@ -8,6 +8,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { matchItems, SlashCommands, slashItems } from '../../collab/SlashMenu';
 import { Toolbar } from '../../collab/Toolbar';
+import { useInAppLinks } from '../../lib/links';
 import { IssueKeyLinks } from '../../macros/issueLinks';
 import { macroViews } from '../../macros/views';
 import { Button } from '../../ui/Button';
@@ -157,10 +158,15 @@ export function RichTextView({
     },
     [JSON.stringify(doc), variant, page?.pageId],
   );
+  const openInApp = useInAppLinks();
   return (
-    <EditorContent
-      editor={editor}
-      className="[&_.tiptap]:tl-prose [&_.tiptap]:min-h-0 [&_.tiptap]:max-w-none"
-    />
+    // biome-ignore lint/a11y/noStaticElementInteractions: opens links inside in the app
+    // biome-ignore lint/a11y/useKeyWithClickEvents: links keep their own keyboard behaviour
+    <div onClick={openInApp}>
+      <EditorContent
+        editor={editor}
+        className="[&_.tiptap]:tl-prose [&_.tiptap]:min-h-0 [&_.tiptap]:max-w-none"
+      />
+    </div>
   );
 }
