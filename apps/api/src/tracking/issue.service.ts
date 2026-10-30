@@ -58,7 +58,7 @@ import { type Change, displayText, recordChanges } from './history.js';
 import { LinkService } from './link.service.js';
 import { type MetaIndex, MetaService } from './meta.service.js';
 import { type ProjectRow, ProjectService } from './project.service.js';
-import { ProjectAccessService } from './project-access.service.js';
+import { ProjectAccessService, type Relational, withRelational } from './project-access.service.js';
 import { rankBetween } from './rank.js';
 import { mentionedUserIds, plainText } from './rich-text.js';
 import { VERSION_FIELD, VersionService } from './version.service.js';
@@ -74,6 +74,9 @@ interface SummaryContext {
   components: Map<string, ComponentRef[]>;
   projects: Map<string, { key: string; name: string }>;
   rights: Map<string, Set<ProjectPermission>>;
+  /** Per-issue grants of each project's scheme for the viewer as assignee or reporter (TL-72). */
+  relational: Map<string, Relational>;
+  viewer: string | null;
   /** Shown custom field values by issue id (E-50). */
   custom: Map<string, Record<string, CustomFieldValue>>;
   parents: Map<string, { key: string; summary: string }>;
@@ -128,7 +131,11 @@ export class IssueService {
       .where(and(eq(issues.key, key.toUpperCase()), isNull(issues.deletedAt)));
     if (!row || row.project.archivedAt) throw new NotFoundException('Issue not found');
     try {
-      const permissions = await this.projectAccess.require(principal, row.project.id, permission);
+      const permissions = await this.projectAccess.requireForIssue(
+        principal,
+        row.issue,
+        permission,
+      );
       return { ...row, permissions };
     } catch (error) {
       if (error instanceof NotFoundException) throw new NotFoundException('Issue not found');
@@ -157,7 +164,12 @@ export class IssueService {
     const project = context.projects.get(row.projectId);
     if (!issueType || !status || !priority || !project)
       throw new Error(`Issue ${row.key} references unknown metadata`);
-    const rights = context.rights.get(row.projectId) ?? new Set();
+    const projectRights = context.rights.get(row.projectId) ?? new Set<ProjectPermission>();
+    const relational = context.relational.get(row.projectId);
+    const rights =
+      context.viewer && relational
+        ? withRelational(projectRights, relational, row, context.viewer)
+        : projectRights;
     return {
       id: row.id,
       key: row.key,
@@ -263,6 +275,16 @@ export class IssueService {
       components,
       projects: new Map(projectRows.map(({ id, ...project }) => [id, project])),
       rights: new Map(rights),
+      relational: new Map(
+        viewer && rows.some((row) => row.assigneeId === viewer || row.reporterId === viewer)
+          ? await Promise.all(
+              projectIds.map(
+                async (id) => [id, await this.projectAccess.relationalGrants(id)] as const,
+              ),
+            )
+          : [],
+      ),
+      viewer,
       custom: new Map(rows.map((row, index) => [row.id, custom[index] ?? {}])),
       parents: new Map(parents.map(({ id, ...parent }) => [id, parent])),
       sprints: new Map(open.map(({ issueId, ...sprint }) => [issueId, sprint])),

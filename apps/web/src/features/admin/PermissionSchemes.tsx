@@ -2,6 +2,8 @@ import { Plus, Trash, UsersThree } from '@phosphor-icons/react';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import {
+  ISSUE_PERMISSIONS,
+  type IssuePermission,
   type PermissionGrant,
   type PermissionGrantInput,
   PROJECT_PERMISSIONS,
@@ -50,7 +52,14 @@ const grantKey = (grant: PermissionGrant) =>
     ? `role:${grant.role}`
     : grant.grantee === 'group'
       ? `group:${grant.group?.id}`
-      : `user:${grant.user?.id}`;
+      : grant.grantee === 'user'
+        ? `user:${grant.user?.id}`
+        : `special:${grant.grantee}`;
+
+/** Assignee and reporter hold rights per issue, only the issue's own ones (TL-72). */
+const RELATIONAL = ['assignee', 'reporter'] as const;
+const relationalBlocked = (permission: string, column: Column) =>
+  column.kind === 'special' && !(ISSUE_PERMISSIONS as readonly string[]).includes(permission);
 
 export function columnsOf(grants: PermissionGrant[]): Column[] {
   const extra = new Map<string, Column>();
@@ -60,7 +69,11 @@ export function columnsOf(grants: PermissionGrant[]): Column[] {
       extra.set(grantKey(grant), { kind: 'user', id: grant.user.id, name: grant.user.displayName });
     }
   }
-  return [...PROJECT_ROLES.map((role) => ({ kind: 'role' as const, role })), ...extra.values()];
+  return [
+    ...PROJECT_ROLES.map((role) => ({ kind: 'role' as const, role })),
+    ...RELATIONAL.map((key) => ({ kind: 'special' as const, key })),
+    ...extra.values(),
+  ];
 }
 
 /** Permissions down, holders across (P-PRM-02, E-82); see {@link SchemeMatrix}. */
@@ -80,6 +93,7 @@ export function PermissionMatrix(props: {
         label: t(`schemes.permissions.${permission}`),
       }))}
       onToggle={props.onToggle as ((row: string, column: Column) => void) | undefined}
+      blocked={relationalBlocked}
     />
   );
 }
@@ -95,6 +109,7 @@ export function SchemeMatrix({
   checked,
   onToggle,
   onRemoveColumn,
+  blocked,
 }: {
   header: string;
   rows: Array<{ key: string; label: string }>;
@@ -102,6 +117,8 @@ export function SchemeMatrix({
   checked: Set<string>;
   onToggle?: (row: string, column: Column) => void;
   onRemoveColumn?: (column: Column) => void;
+  /** Cells that cannot hold anything: shown empty, without a checkbox. */
+  blocked?: (row: string, column: Column) => boolean;
 }) {
   const { t } = useTranslation();
   const label = (column: Column) =>
@@ -152,6 +169,9 @@ export function SchemeMatrix({
               </th>
               {columns.map((column) => {
                 const on = checked.has(`${row.key}|${columnKey(column)}`);
+                if (blocked?.(row.key, column)) {
+                  return <td key={columnKey(column)} className="px-3 py-2" />;
+                }
                 return (
                   <td key={columnKey(column)} className="px-3 py-2 text-center">
                     {onToggle ? (
@@ -287,7 +307,12 @@ export function PermissionSchemeEditor({ id }: { id: string }) {
           ? { permission, role: ref as ProjectRole }
           : kind === 'group'
             ? { permission, groupId: ref }
-            : { permission, userId: ref };
+            : kind === 'special'
+              ? {
+                  permission: permission as IssuePermission,
+                  grantee: ref as (typeof RELATIONAL)[number],
+                }
+              : { permission, userId: ref };
       });
       return unwrap(
         client.PATCH('/api/v1/admin/permission-schemes/{id}', {

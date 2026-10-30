@@ -14,6 +14,25 @@ import {
   users,
 } from '../db/schema/index.js';
 
+export interface Relational {
+  assignee: Set<ProjectPermission>;
+  reporter: Set<ProjectPermission>;
+}
+
+/** Project rights plus the per-issue grants that apply to `userId` on this issue. */
+export function withRelational(
+  granted: Set<ProjectPermission>,
+  relational: Relational,
+  issue: { assigneeId: string | null; reporterId: string | null },
+  userId: string,
+): Set<ProjectPermission> {
+  if (!granted.has('browse')) return granted;
+  const all = new Set(granted);
+  if (issue.assigneeId === userId) for (const entry of relational.assignee) all.add(entry);
+  if (issue.reporterId === userId) for (const entry of relational.reporter) all.add(entry);
+  return all;
+}
+
 /**
  * Whether a grant of the project's permission scheme (`g`) applies to a user (TL-70, E-82):
  * through a project role they hold directly or via a group, a group of theirs, or by name.
@@ -98,6 +117,48 @@ export class ProjectAccessService {
   }
 
   /**
+   * What the scheme gives to the assignee and the reporter of an issue (TL-72): those grants
+   * apply per issue, on top of the project rights; the input allows only `ISSUE_PERMISSIONS`.
+   */
+  async relationalGrants(projectId: string): Promise<Relational> {
+    const rows = await this.database.db.execute<{
+      grantee: 'assignee' | 'reporter';
+      permission: ProjectPermission;
+    }>(
+      sql`select g.grantee, g.permission from permission_scheme_grants g
+        where g.grantee in ('assignee', 'reporter')
+          and g.scheme_id = coalesce(
+            (select p.permission_scheme_id from projects p where p.id = ${projectId}),
+            ${DEFAULT_PERMISSION_SCHEME_ID}::uuid)`,
+    );
+    const grants: Relational = { assignee: new Set(), reporter: new Set() };
+    for (const row of rows) grants[row.grantee].add(row.permission);
+    return grants;
+  }
+
+  /** The rights on one issue: the project's, plus what its assignee or reporter gets. */
+  async issuePermissions(
+    userId: string,
+    issue: { projectId: string; assigneeId: string | null; reporterId: string | null },
+  ): Promise<Set<ProjectPermission>> {
+    const granted = await this.permissions(userId, issue.projectId);
+    if (!granted.has('browse')) return granted;
+    if (issue.assigneeId !== userId && issue.reporterId !== userId) return granted;
+    return withRelational(granted, await this.relationalGrants(issue.projectId), issue, userId);
+  }
+
+  /** Like {@link require}, but with the rights on one issue. */
+  async requireForIssue(
+    principal: Principal,
+    issue: { projectId: string; assigneeId: string | null; reporterId: string | null },
+    permission: ProjectPermission,
+  ): Promise<Set<ProjectPermission>> {
+    this.checkScope(principal, permission);
+    const granted = await this.issuePermissions(principal.userId, issue);
+    return this.checkGranted(granted, permission);
+  }
+
+  /**
    * Throws unless the principal holds the permission. Missing browse access looks like a
    * missing project (404), so project existence does not leak.
    */
@@ -106,13 +167,20 @@ export class ProjectAccessService {
     projectId: string,
     permission: ProjectPermission,
   ): Promise<Set<ProjectPermission>> {
+    this.checkScope(principal, permission);
+    return this.checkGranted(await this.permissions(principal.userId, projectId), permission);
+  }
+
+  private checkScope(principal: Principal, permission: ProjectPermission) {
     if ('scopes' in principal) {
       const needed = permission === 'browse' ? ['issues:read', 'issues:write'] : ['issues:write'];
       if (!principal.scopes.some((scope) => needed.includes(scope))) {
         throw new ForbiddenException(`This token lacks the ${needed.at(-1)} scope`);
       }
     }
-    const granted = await this.permissions(principal.userId, projectId);
+  }
+
+  private checkGranted(granted: Set<ProjectPermission>, permission: ProjectPermission) {
     if (!granted.has('browse')) throw new NotFoundException('Project not found');
     if (!granted.has(permission)) {
       throw new ForbiddenException(`Requires the project permission "${permission}"`);

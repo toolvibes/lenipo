@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import type {
   CreatePermissionSchemeRequest,
+  IssuePermission,
   PermissionGrant,
   PermissionGrantInput,
   PermissionScheme,
@@ -132,11 +133,13 @@ export class PermissionSchemeService {
         schemeId,
         permission: grant.permission,
         grantee:
-          'role' in grant
-            ? ('role' as const)
-            : 'groupId' in grant
-              ? ('group' as const)
-              : ('user' as const),
+          'grantee' in grant
+            ? grant.grantee
+            : 'role' in grant
+              ? ('role' as const)
+              : 'groupId' in grant
+                ? ('group' as const)
+                : ('user' as const),
         role: 'role' in grant ? (grant.role as ProjectRole) : null,
         groupId: 'groupId' in grant ? grant.groupId : null,
         userId: 'userId' in grant ? grant.userId : null,
@@ -150,7 +153,12 @@ export class PermissionSchemeService {
         ? { permission: grant.permission, role: grant.role as ProjectRole }
         : grant.grantee === 'group'
           ? { permission: grant.permission, groupId: grant.group?.id ?? '' }
-          : { permission: grant.permission, userId: grant.user?.id ?? '' },
+          : grant.grantee === 'user'
+            ? { permission: grant.permission, userId: grant.user?.id ?? '' }
+            : {
+                permission: grant.permission as IssuePermission,
+                grantee: grant.grantee,
+              },
     );
   }
 

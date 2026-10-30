@@ -2724,7 +2724,7 @@ export interface components {
       | 'delete-issues'
       | 'administer';
     /** @enum {string} */
-    PermissionGrantee: 'role' | 'group' | 'user';
+    PermissionGrantee: 'role' | 'group' | 'user' | 'assignee' | 'reporter';
     /** @enum {string} */
     ProjectRole: 'administrators' | 'developers' | 'users';
     UserRef: {
@@ -2758,6 +2758,17 @@ export interface components {
           permission: components['schemas']['ProjectPermission'];
           /** Format: uuid */
           userId: string;
+        }
+      | {
+          /** @enum {string} */
+          permission:
+            | 'edit-issues'
+            | 'transition-issues'
+            | 'assign-issues'
+            | 'comment'
+            | 'delete-issues';
+          /** @enum {string} */
+          grantee: 'assignee' | 'reporter';
         };
     NotificationSchemeSummary: components['schemas']['PermissionSchemeSummary'];
     NotificationScheme: {

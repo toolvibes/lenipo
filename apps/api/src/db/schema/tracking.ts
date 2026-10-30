@@ -188,7 +188,14 @@ export const permissionSchemes = pgTable(
   (table) => [uniqueIndex('permission_schemes_name_unique').on(table.name)],
 );
 
-export const permissionGrantee = pgEnum('permission_grantee', ['role', 'group', 'user']);
+/** `assignee` and `reporter` apply per issue: to whoever holds that place in it (TL-72). */
+export const permissionGrantee = pgEnum('permission_grantee', [
+  'role',
+  'group',
+  'user',
+  'assignee',
+  'reporter',
+]);
 
 /** The default notification scheme: every event to the watchers, as before (E-83). */
 export const DEFAULT_NOTIFICATION_SCHEME_ID = '01a00000-0000-7000-8000-00000000b311';
@@ -264,11 +271,12 @@ export const permissionSchemeGrants = pgTable(
   },
   (table) => [
     index('permission_scheme_grants_scheme_idx').on(table.schemeId, table.permission),
+    // Only the existing enum values: a new value cannot be used in its own migration.
     check(
       'permission_scheme_grants_one_grantee',
-      sql`(grantee = 'role' and role is not null and group_id is null and user_id is null)
-        or (grantee = 'group' and group_id is not null and role is null and user_id is null)
-        or (grantee = 'user' and user_id is not null and role is null and group_id is null)`,
+      sql`(grantee = 'role') = (role is not null)
+        and (grantee = 'group') = (group_id is not null)
+        and (grantee = 'user') = (user_id is not null)`,
     ),
   ],
 );

@@ -8504,7 +8504,7 @@
       },
       "PermissionGrantee": {
         "type": "string",
-        "enum": ["role", "group", "user"]
+        "enum": ["role", "group", "user", "assignee", "reporter"]
       },
       "ProjectRole": {
         "type": "string",
@@ -8610,6 +8610,27 @@
               }
             },
             "required": ["permission", "userId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "edit-issues",
+                  "transition-issues",
+                  "assign-issues",
+                  "comment",
+                  "delete-issues"
+                ]
+              },
+              "grantee": {
+                "type": "string",
+                "enum": ["assignee", "reporter"]
+              }
+            },
+            "required": ["permission", "grantee"],
             "additionalProperties": false
           }
         ]

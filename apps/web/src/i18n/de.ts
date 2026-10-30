@@ -1018,7 +1018,7 @@ export const de = {
   schemes: {
     title: 'Berechtigungsschemata',
     intro:
-      'Was die Rollen, Gruppen und Personen in einem Projekt dürfen. Ein Schema gilt für alle Projekte, die es nutzen; Projekte ohne eigenes nutzen das Standardschema.',
+      'Was die Rollen, Gruppen und Personen in einem Projekt dürfen. Ein Schema gilt für alle Projekte, die es nutzen; Projekte ohne eigenes nutzen das Standardschema. Bearbeiter und Melder erhalten ihre Rechte nur am jeweiligen Vorgang, und nur wenn sie das Projekt sehen dürfen.',
     default: 'Standard',
     defaultNote: 'Gilt für alle Projekte ohne eigenes Schema.',
     unused: 'Von keinem Projekt genutzt.',

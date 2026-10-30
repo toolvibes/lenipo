@@ -1004,7 +1004,7 @@ export const en: Messages = {
   schemes: {
     title: 'Permission schemes',
     intro:
-      'What roles, groups and people may do in a project. A scheme applies to every project using it; projects without one use the default scheme.',
+      'What roles, groups and people may do in a project. A scheme applies to every project using it; projects without one use the default scheme. Assignee and reporter hold their rights only on that issue, and only if they may see the project.',
     default: 'Default',
     defaultNote: 'Applies to every project without a scheme of its own.',
     unused: 'Used by no project.',

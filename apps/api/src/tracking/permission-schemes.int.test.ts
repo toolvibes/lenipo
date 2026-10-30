@@ -156,6 +156,85 @@ describe('permission schemes (TL-70)', () => {
     expect(people.map((person) => person.displayName)).toEqual(['Paula Prüfer']);
   });
 
+  it('give the reporter and the assignee rights on their own issues only (TL-72)', async () => {
+    const base = scheme.grants.flatMap((grant): PermissionGrantInput[] =>
+      grant.grantee === 'role'
+        ? [{ permission: grant.permission, role: grant.role as 'users' }]
+        : grant.grantee === 'user'
+          ? [{ permission: grant.permission, userId: grant.user?.id as string }]
+          : [],
+    );
+    const patch = (grants: PermissionGrantInput[]) =>
+      admin.request<PermissionScheme>('PATCH', `/admin/permission-schemes/${scheme.id}`, {
+        grants,
+      });
+    // Seeing, creating and administering stay project rights.
+    for (const permission of ['browse', 'create-issues', 'administer']) {
+      const grant = { permission, grantee: 'reporter' } as unknown as PermissionGrantInput;
+      expect((await patch([...base, grant])).status).toBe(400);
+    }
+    const updated = await patch([
+      ...base,
+      { permission: 'create-issues', role: 'users' },
+      { permission: 'edit-issues', grantee: 'reporter' },
+      { permission: 'transition-issues', grantee: 'assignee' },
+      { permission: 'edit-issues', grantee: 'assignee' },
+    ]);
+    expect(updated.body.grants.filter((grant) => grant.grantee === 'reporter')).toHaveLength(1);
+
+    const own = await customer.request<{ key: string; canEdit: boolean }>('POST', '/issues', {
+      projectKey: 'APP',
+      issueType: 'task',
+      summary: 'Mein Wunsch',
+    });
+    expect(own.status).toBe(201);
+    const other = await admin.request<{ key: string }>('POST', '/issues', {
+      projectKey: 'APP',
+      issueType: 'task',
+      summary: 'Fremd',
+    });
+    const read = async (key: string) =>
+      (
+        await customer.request<{ canEdit: boolean; canTransition: boolean }>(
+          'GET',
+          `/issues/${key}`,
+        )
+      ).body;
+    expect(await read(own.body.key)).toMatchObject({ canEdit: true, canTransition: false });
+    expect(await read(other.body.key)).toMatchObject({ canEdit: false, canTransition: false });
+    expect(
+      (await customer.request('PATCH', `/issues/${own.body.key}`, { summary: 'Mein Wunsch, klar' }))
+        .status,
+    ).toBe(200);
+    expect(
+      (await customer.request('PATCH', `/issues/${other.body.key}`, { summary: 'Meins' })).status,
+    ).toBe(403);
+
+    // Assigned to the customer, the other issue moves on, and is editable through the assignee.
+    await admin.request('PATCH', `/issues/${other.body.key}`, {
+      assigneeId: ids['kunde@example.org'],
+    });
+    expect(await read(other.body.key)).toMatchObject({ canEdit: true, canTransition: true });
+    const transitions = (
+      await admin.request<Array<{ id: string }>>('GET', `/issues/${other.body.key}/transitions`)
+    ).body;
+    expect(
+      (
+        await customer.request('POST', `/issues/${other.body.key}/transitions`, {
+          transitionId: transitions[0]?.id,
+        })
+      ).status,
+    ).toBe(200);
+    // The auditor sees the project only through a personal grant; as assignee that is enough.
+    await admin.request('PATCH', `/issues/${other.body.key}`, {
+      assigneeId: ids['pruefer@example.org'],
+    });
+    expect(
+      (await auditor.request<{ canEdit: boolean }>('GET', `/issues/${other.body.key}`)).body
+        .canEdit,
+    ).toBe(true);
+  });
+
   it('keep the default scheme and schemes in use', async () => {
     const list = (
       await admin.request<PermissionSchemeSummary[]>('GET', '/admin/permission-schemes')

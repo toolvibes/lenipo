@@ -44,11 +44,24 @@ export type ProjectMember = z.infer<typeof ProjectMember>;
 
 // ---------------------------------------------------------------- permission schemes (E-82)
 
-export const PERMISSION_GRANTEES = ['role', 'group', 'user'] as const;
+/** `assignee` and `reporter` hold a permission only on the issues where they are that (TL-72). */
+export const PERMISSION_GRANTEES = ['role', 'group', 'user', 'assignee', 'reporter'] as const;
+/** What can hold per issue; seeing, creating and administering stay project rights (TL-72). */
+export const ISSUE_PERMISSIONS = [
+  'edit-issues',
+  'transition-issues',
+  'assign-issues',
+  'comment',
+  'delete-issues',
+] as const satisfies readonly ProjectPermission[];
+export type IssuePermission = (typeof ISSUE_PERMISSIONS)[number];
 export const PermissionGrantee = z.enum(PERMISSION_GRANTEES).meta({ id: 'PermissionGrantee' });
 export type PermissionGrantee = z.infer<typeof PermissionGrantee>;
 
-/** One right in a scheme: a project role, a group or one person holds a project permission. */
+/**
+ * One right in a scheme: a project role, a group or one person holds a project permission;
+ * or the assignee or reporter of each issue holds it on that issue.
+ */
 export const PermissionGrant = z
   .object({
     permission: ProjectPermission,
@@ -65,6 +78,11 @@ export const PermissionGrantInput = z
     z.strictObject({ permission: ProjectPermission, role: ProjectRole }),
     z.strictObject({ permission: ProjectPermission, groupId: Id }),
     z.strictObject({ permission: ProjectPermission, userId: Id }),
+    // Issue-wise browse would be issue security (TL-13).
+    z.strictObject({
+      permission: z.enum(ISSUE_PERMISSIONS),
+      grantee: z.enum(['assignee', 'reporter']),
+    }),
   ])
   .meta({ id: 'PermissionGrantInput' });
 export type PermissionGrantInput = z.infer<typeof PermissionGrantInput>;
