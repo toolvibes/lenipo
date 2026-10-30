@@ -653,3 +653,29 @@ body {
   color: #fff;
   user-select: none;
 }
+
+/* Issue keys in wiki text as live links (W-INT-01, E-73). */
+.tl-prose a.tl-issue-key {
+  color: var(--accent);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.tl-prose a.tl-issue-key:hover {
+  text-decoration: underline;
+}
+
+.tl-issue-key-status {
+  display: inline-block;
+  margin-left: 0.3em;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}

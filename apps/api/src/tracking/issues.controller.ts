@@ -19,6 +19,8 @@ import {
   CreateWorklogRequest,
   FormatQuery,
   Issue,
+  IssueLookup,
+  IssueLookupRequest,
   RankIssueRequest,
   TrackingMeta,
   Transition,
@@ -73,6 +75,22 @@ export class IssuesController {
       workingTime: await this.workingTime.get(),
       customFields: await this.customFields.list(),
     };
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Look up issues by key, for live links',
+    description:
+      'Up to 200 keys; answers only issues the caller may see. Unknown and hidden keys are both left out.',
+    response: z.array(IssueLookup),
+  })
+  @Post('issues/lookup')
+  @HttpCode(200)
+  lookup(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(IssueLookupRequest) body: IssueLookupRequest,
+  ): Promise<IssueLookup[]> {
+    return this.issues.lookup(principal, body.keys);
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Create an issue', response: Issue })

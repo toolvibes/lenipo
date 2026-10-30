@@ -17,6 +17,7 @@ import type {
   CustomFieldValue,
   Issue,
   IssueList,
+  IssueLookup,
   IssueSummary,
   ProjectPermission,
   RichText,
@@ -273,6 +274,40 @@ export class IssueService {
   async summarize(viewer: string | null, rows: IssueRow[]): Promise<IssueSummary[]> {
     const context = await this.summaryContext(viewer, rows);
     return rows.map((row) => this.toSummary(row, context));
+  }
+
+  /**
+   * Summary and status of the given keys, for live issue links in wiki pages (W-INT-01, E-73):
+   * only issues the caller may browse, so a hidden issue looks exactly like an unknown key.
+   */
+  async lookup(principal: Principal, keys: string[]): Promise<IssueLookup[]> {
+    if ('scopes' in principal && !principal.scopes.some((scope) => scope.startsWith('issues:'))) {
+      throw new ForbiddenException('This token lacks the issues:read scope');
+    }
+    const wanted = [...new Set(keys.map((key) => key.toUpperCase()))];
+    if (wanted.length === 0) return [];
+    const meta = await this.meta.load();
+    const rows = await this.database.db
+      .select({
+        key: issues.key,
+        summary: issues.summary,
+        issueTypeId: issues.issueTypeId,
+        statusId: issues.statusId,
+      })
+      .from(issues)
+      .innerJoin(projects, eq(projects.id, issues.projectId))
+      .where(
+        and(
+          inArray(issues.key, wanted),
+          isNull(issues.deletedAt),
+          await this.projectAccess.browsableCondition(principal.userId),
+        ),
+      );
+    return rows.flatMap((row) => {
+      const issueType = meta.issueType.get(row.issueTypeId);
+      const status = meta.status.get(row.statusId);
+      return issueType && status ? [{ key: row.key, summary: row.summary, issueType, status }] : [];
+    });
   }
 
   async get(principal: Principal, key: string): Promise<Issue> {

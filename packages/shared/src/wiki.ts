@@ -382,3 +382,16 @@ export const SavePageTemplateRequest = z
   })
   .meta({ id: 'SavePageTemplateRequest' });
 export type SavePageTemplateRequest = z.infer<typeof SavePageTemplateRequest>;
+
+/** A wiki page that refers to an issue, for "Wiki-Seiten" on the issue (W-INT-03, E-73). */
+export const IssuePageRef = z
+  .object({
+    id: Id,
+    title: z.string(),
+    space: z.object({ key: z.string(), name: z.string() }),
+    /** "macro": embeds the issue; "mention": names its key in the text. */
+    kind: z.enum(['mention', 'macro']),
+    publishedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'IssuePageRef' });
+export type IssuePageRef = z.infer<typeof IssuePageRef>;

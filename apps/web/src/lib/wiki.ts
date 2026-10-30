@@ -131,3 +131,10 @@ export const templateQuery = (ref: string) =>
     queryFn: () =>
       unwrap(client.GET('/api/v1/page-templates/{ref}', { params: { path: { ref } } })),
   });
+
+/** Wiki pages that name or embed an issue (W-INT-03, E-73). */
+export const issuePagesQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['issue', key, 'pages'],
+    queryFn: () => unwrap(client.GET('/api/v1/issues/{key}/pages', { params: { path: { key } } })),
+  });

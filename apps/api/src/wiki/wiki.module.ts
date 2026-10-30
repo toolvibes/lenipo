@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
+import { IssuePagesController } from './issue-pages.controller.js';
 import { LabelsController } from './labels.controller.js';
 import { PageService } from './page.service.js';
 import { PageAttachmentService } from './page-attachment.service.js';
@@ -19,6 +20,7 @@ import { TemplatesController } from './templates.controller.js';
   imports: [IdentityModule, TrackingModule],
   controllers: [
     TemplatesController,
+    IssuePagesController,
     SpacesController,
     PagesController,
     PageAttachmentsController,

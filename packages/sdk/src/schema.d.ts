@@ -487,6 +487,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Look up issues by key, for live links
+     * @description Up to 200 keys; answers only issues the caller may see. Unknown and hidden keys are both left out.
+     */
+    post: operations['Issues.lookup'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/issues': {
     parameters: {
       query?: never;
@@ -705,6 +725,26 @@ export interface paths {
     head?: never;
     /** Change an own worklog */
     patch: operations['Issues.updateWorklog'];
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Wiki pages that refer to an issue
+     * @description Published pages whose latest version names the issue key or embeds it as a macro, only in spaces the caller may view; newest first.
+     */
+    get: operations['Issues.pages'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/api/v1/me': {
@@ -2891,6 +2931,15 @@ export interface components {
       workingTime: components['schemas']['WorkingTime'];
       customFields: components['schemas']['CustomField'][];
     };
+    IssueLookupRequest: {
+      keys: string[];
+    };
+    IssueLookup: {
+      key: string;
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+    };
     CreateIssueRequest: {
       projectKey: string;
       issueType: string;
@@ -3047,6 +3096,18 @@ export interface components {
       /** Format: date-time */
       started?: string;
       comment?: string;
+    };
+    IssuePageRef: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      space: {
+        key: string;
+        name: string;
+      };
+      /** @enum {string} */
+      kind: 'mention' | 'macro';
+      publishedAt: string | null;
     };
     UpdateMeRequest: {
       displayName?: string;
@@ -5138,6 +5199,39 @@ export interface operations {
       };
     };
   };
+  'Issues.lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IssueLookupRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueLookup'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Issues.create': {
     parameters: {
       query?: {
@@ -5755,6 +5849,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Worklog'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssuePageRef'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

@@ -18,6 +18,10 @@
     "./anchors": {
       "types": "./dist/anchors.d.ts",
       "default": "./dist/anchors.js"
+    },
+    "./refs": {
+      "types": "./dist/refs.d.ts",
+      "default": "./dist/refs.js"
     }
   },
   "scripts": {

@@ -7,6 +7,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -14,7 +15,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { groups, users } from './identity.js';
-import { projects, searchVector, tsvector } from './tracking.js';
+import { issues, projects, searchVector, tsvector } from './tracking.js';
 
 export const spaceRole = pgEnum('space_role', [
   'administrators',
@@ -236,4 +237,25 @@ export const pageTemplates = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('page_templates_space_idx').on(table.spaceId)],
+);
+
+/**
+ * Issues a page's latest published version refers to (W-INT-03, E-73): keys in the text
+ * ("mention") and issue macros ("macro"); rebuilt on every publish and restore.
+ */
+export const pageIssueRefs = pgTable(
+  'page_issue_refs',
+  {
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    kind: text().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.pageId, table.issueId] }),
+    index('page_issue_refs_issue_idx').on(table.issueId),
+  ],
 );

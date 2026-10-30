@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mentionExtension } from '../features/tracking/mention';
+import { IssueKeyLinks } from '../macros/issueLinks';
 import { macroViews } from '../macros/views';
 import { FormError } from '../ui/FormError';
 import { matchItems, SlashCommands, slashItems } from './SlashMenu';
@@ -67,6 +68,7 @@ export function CollabEditor({ session, identity, pageId, spaceKey, onEditor }: 
           children: { spaceKey, pageId },
         }),
         mentionExtension(),
+        IssueKeyLinks,
         Placeholder.configure({
           placeholder: t('editor.placeholder'),
         }),

@@ -48,6 +48,7 @@ import { markdownOf } from '../tracking/content-format.js';
 import { rankBetween } from '../tracking/rank.js';
 import { plainText } from '../tracking/rich-text.js';
 import { reanchorComments } from './comment-anchors.js';
+import { indexIssueRefs } from './issue-refs.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 import { TemplateService } from './template.service.js';
@@ -624,6 +625,7 @@ export class PageService {
         .set({ title: version.title, version: number, publishedAt: now, updatedAt: now })
         .where(eq(pages.id, pageId));
       await reanchorComments(tx, pageId, version.content);
+      await indexIssueRefs(tx, pageId, version.content);
       await autoWatch(tx, principal.userId, pageId);
       await emitPageEvent(tx, pageId, principal.userId, {
         type: 'page.published',

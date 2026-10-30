@@ -588,3 +588,21 @@ export const PublishWorkflowRequest = z
   })
   .meta({ id: 'PublishWorkflowRequest' });
 export type PublishWorkflowRequest = z.infer<typeof PublishWorkflowRequest>;
+
+// ---------------------------------------------------------------- issue lookup (E-73)
+
+export const IssueLookupRequest = z
+  .object({ keys: z.array(z.string().max(32)).max(200) })
+  .meta({ id: 'IssueLookupRequest' });
+export type IssueLookupRequest = z.infer<typeof IssueLookupRequest>;
+
+/** Only issues the caller may see; unknown and hidden keys are both simply missing. */
+export const IssueLookup = z
+  .object({
+    key: z.string(),
+    summary: z.string(),
+    issueType: IssueTypeInfo,
+    status: StatusInfo,
+  })
+  .meta({ id: 'IssueLookup' });
+export type IssueLookup = z.infer<typeof IssueLookup>;

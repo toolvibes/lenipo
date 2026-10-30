@@ -9,6 +9,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { IssueKeyLinks } from '../../macros/issueLinks';
 import { macroViews } from '../../macros/views';
 import { FormError } from '../../ui/FormError';
 import { mentionExtension } from '../tracking/mention';
@@ -96,6 +97,7 @@ export function CommentedText({
         ...blockExtensions({ views: macroViews, children: { spaceKey, pageId } }),
         mentionExtension(),
         CommentHighlights.configure({ threads, active }),
+        IssueKeyLinks,
       ],
       content: doc as Content,
       editable: false,

@@ -25,6 +25,7 @@ import { CustomFieldRows } from './CustomFields';
 import { useFieldLabel } from './fieldLabel';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
+import { IssueWikiPages } from './IssueWikiPages';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
@@ -593,6 +594,8 @@ export function IssuePage({
                 : void queryClient.invalidateQueries({ queryKey: ['issue', issueKey] })
             }
           />
+
+          <IssueWikiPages issueKey={data.key} />
 
           <Activity
             issueKey={data.key}
