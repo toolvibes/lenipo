@@ -1,16 +1,26 @@
 import {
+  CaretCircleDown,
+  CheckCircle,
   CheckSquare,
   CodeBlock,
   type Icon,
   Image,
+  Info,
+  Lightbulb,
   ListBullets,
+  ListDashes,
+  ListMagnifyingGlass,
   ListNumbers,
   Minus,
   Quotes,
   Table,
+  Tag,
   TextHOne,
   TextHThree,
   TextHTwo,
+  Ticket,
+  TreeStructure,
+  Warning,
 } from '@phosphor-icons/react';
 import { type Editor, Extension, type Range } from '@tiptap/core';
 import { ReactRenderer } from '@tiptap/react';
@@ -103,6 +113,88 @@ export function slashItems(t: TFunction, onImage?: () => void): SlashItem[] {
       run: (editor) => editor.chain().focus().setHorizontalRule().run(),
     },
   ];
+  // Macros (E-66): boxes wrap the current block, atoms are configured in place.
+  const panel = (
+    id: string,
+    kind: 'info' | 'note' | 'warning' | 'success',
+    icon: Icon,
+    keywords: string,
+  ) =>
+    items.push({
+      id,
+      label: t(`editor.${id}` as 'editor.panelInfo'),
+      keywords,
+      icon,
+      run: (editor) => editor.chain().focus().setPanel(kind).run(),
+    });
+  panel('panelInfo', 'info', Info, 'info infobox panel box');
+  panel('panelNote', 'note', Lightbulb, 'hinweis note wichtig important panel box');
+  panel('panelWarning', 'warning', Warning, 'warnung warning achtung panel box');
+  panel('panelSuccess', 'success', CheckCircle, 'erfolg success tipp tip panel box');
+  items.push(
+    {
+      id: 'expand',
+      label: t('editor.expand'),
+      keywords: 'aufklappen expand details einklappen toggle',
+      icon: CaretCircleDown,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertContent({ type: 'expand', attrs: { title: '' }, content: [{ type: 'paragraph' }] })
+          .run(),
+    },
+    {
+      id: 'status',
+      label: t('editor.status'),
+      keywords: 'status lozenge label farbe',
+      icon: Tag,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertContent({ type: 'status', attrs: { text: t('editor.status'), color: 'blue' } })
+          .run(),
+    },
+    {
+      id: 'toc',
+      label: t('editor.toc'),
+      keywords: 'inhaltsverzeichnis toc inhalt contents',
+      icon: ListDashes,
+      run: (editor) => editor.chain().focus().insertMacro('tableOfContents', { maxLevel: 3 }).run(),
+    },
+    {
+      id: 'children',
+      label: t('editor.children'),
+      keywords: 'unterseiten children kinder seiten',
+      icon: TreeStructure,
+      run: (editor) => editor.chain().focus().insertMacro('childPages', { depth: 1 }).run(),
+    },
+    {
+      id: 'issueMacro',
+      label: t('editor.issueMacro'),
+      keywords: 'vorgang issue jira ticket',
+      icon: Ticket,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertContent({ type: 'issue', attrs: { key: '' } })
+          .run(),
+    },
+    {
+      id: 'issueList',
+      label: t('editor.issueList'),
+      keywords: 'vorgangsliste issues tql abfrage query liste tabelle',
+      icon: ListMagnifyingGlass,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertMacro('issueList', { query: '', display: 'table', limit: 20 })
+          .run(),
+    },
+  );
   if (onImage) {
     items.push({
       id: 'image',

@@ -1,13 +1,17 @@
 import {
   ArrowsInLineHorizontal,
+  CheckCircle,
   Columns,
+  Info,
+  Lightbulb,
   Rows,
   TextAlignCenter,
   TextAlignLeft,
   TextAlignRight,
   Trash,
+  Warning,
 } from '@phosphor-icons/react';
-import type { ImageAlignment } from '@tasklore/editor/schema';
+import type { ImageAlignment, PanelKind } from '@tasklore/editor/schema';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -148,6 +152,43 @@ export function ImageBar({ editor }: { editor: Editor }) {
           editor.commands.focus();
         }}
         className={field}
+      />
+    </div>
+  );
+}
+
+const PANELS = [
+  { kind: 'info', icon: Info, label: 'editor.panelInfo' },
+  { kind: 'note', icon: Lightbulb, label: 'editor.panelNote' },
+  { kind: 'warning', icon: Warning, label: 'editor.panelWarning' },
+  { kind: 'success', icon: CheckCircle, label: 'editor.panelSuccess' },
+] as const satisfies ReadonlyArray<{ kind: PanelKind; icon: unknown; label: string }>;
+
+/** Kind of the info box around the cursor, or unwrap it (W-MAC-02). */
+export function PanelBar({ editor }: { editor: Editor }) {
+  const { t } = useTranslation();
+  const kind = useEditorState({
+    editor,
+    selector: ({ editor: e }) => e.getAttributes('panel').kind as PanelKind,
+  });
+  return (
+    <div role="toolbar" aria-label={t('editor.panelTools')} className={bar}>
+      <span className="tl-label mr-1 text-[var(--ink-muted)]">{t('editor.panelInfo')}</span>
+      {PANELS.map((panel) => (
+        <ToolbarButton
+          key={panel.kind}
+          icon={panel.icon}
+          title={t(panel.label)}
+          active={kind === panel.kind}
+          onClick={() =>
+            editor.chain().focus().updateAttributes('panel', { kind: panel.kind }).run()
+          }
+        />
+      ))}
+      <Separator />
+      <TextButton
+        label={t('editor.panelRemove')}
+        onClick={() => editor.chain().focus().lift('panel').run()}
       />
     </div>
   );

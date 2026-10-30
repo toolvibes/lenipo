@@ -88,8 +88,12 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
     },
   });
 
-  function submit(event: FormEvent) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Only the publish button publishes: Enter in the title, a macro or a toolbar field must
+    // not, and React lets submits from forms inside the editor bubble up to here.
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (event.target !== event.currentTarget || submitter?.dataset.action !== 'publish') return;
     if (shownTitle.trim()) publish.mutate();
   }
 
@@ -105,6 +109,8 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
 
   return (
     <form onSubmit={submit} className="flex flex-col">
+      {/* A disabled first submit button turns off implicit submission by Enter in any field. */}
+      <button type="submit" disabled hidden aria-hidden tabIndex={-1} />
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-6 py-2">
         <Breadcrumbs page={page.data} current={page.data.title} />
         <div className="ml-auto flex flex-wrap items-center gap-3">
@@ -143,6 +149,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
                   session={session}
                   identity={identity}
                   pageId={id}
+                  spaceKey={spaceKey}
                   onEditor={onEditor}
                 />
               )}
@@ -177,6 +184,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
           </Link>
           <Button
             type="submit"
+            data-action="publish"
             variant="primary"
             disabled={
               !editor ||

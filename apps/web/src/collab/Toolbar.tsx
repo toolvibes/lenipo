@@ -16,7 +16,7 @@ import {
 } from '@phosphor-icons/react';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { useTranslation } from 'react-i18next';
-import { ImageBar, TableBar } from './BlockBars';
+import { ImageBar, PanelBar, TableBar } from './BlockBars';
 
 interface ToolbarButtonProps {
   icon: Icon;
@@ -68,6 +68,7 @@ export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile
       taskList: e.isActive('taskList'),
       table: e.isActive('table'),
       image: e.isActive('image'),
+      panel: e.isActive('panel'),
     }),
   });
   const chain = () => editor.chain().focus();
@@ -165,6 +166,7 @@ export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile
       </div>
       {state.table && <TableBar editor={editor} />}
       {state.image && <ImageBar editor={editor} />}
+      {state.panel && <PanelBar editor={editor} />}
     </div>
   );
 }

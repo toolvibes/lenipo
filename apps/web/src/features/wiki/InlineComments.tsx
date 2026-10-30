@@ -1,6 +1,6 @@
 import { ChatCircleText } from '@phosphor-icons/react';
 import { anchorFromSelection, anchorRange } from '@tasklore/editor/anchors';
-import { blockExtensions } from '@tasklore/editor/schema';
+import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
 import type { PageComment, RichText, TextAnchor } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
@@ -9,6 +9,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { macroViews } from '../../macros/views';
 import { FormError } from '../../ui/FormError';
 import { mentionExtension } from '../tracking/mention';
 import { RichTextEditor } from '../tracking/RichTextEditor';
@@ -62,6 +63,8 @@ export const openThreads = (comments: PageComment[]) =>
  */
 export function CommentedText({
   doc,
+  spaceKey,
+  pageId,
   comments,
   active,
   canComment,
@@ -69,6 +72,8 @@ export function CommentedText({
   onQuote,
 }: {
   doc: RichText;
+  spaceKey: string;
+  pageId: string;
   comments: PageComment[];
   active: string | null;
   canComment: boolean;
@@ -87,8 +92,8 @@ export function CommentedText({
   const editor = useEditor(
     {
       extensions: [
-        StarterKit,
-        ...blockExtensions(),
+        StarterKit.configure(starterKitOptions),
+        ...blockExtensions({ views: macroViews, children: { spaceKey, pageId } }),
         mentionExtension(),
         CommentHighlights.configure({ threads, active }),
       ],

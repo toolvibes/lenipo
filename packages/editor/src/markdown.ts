@@ -138,11 +138,182 @@ function blockShapes(state: StateCore): void {
   }
 }
 
+// ---------------------------------------------------------------- macros (E-66)
+
+/** `key=value key="quoted value" flag` as found in directive braces and fence info strings. */
+export function parseDirectiveAttrs(text: string): Record<string, string | true> {
+  const attrs: Record<string, string | true> = {};
+  const pattern = /([A-Za-z][\w-]*)(?:=(?:"((?:[^"\\]|\\.)*)"|([^\s"}]+)))?/g;
+  for (const match of text.matchAll(pattern)) {
+    const [, name, quoted, plain] = match as unknown as [string, string, string?, string?];
+    attrs[name] = quoted !== undefined ? quoted.replace(/\\(.)/g, '$1') : (plain ?? true);
+  }
+  return attrs;
+}
+
+const quoteAttr = (value: string) => `"${value.replace(/[\\"]/g, (char) => `\\${char}`)}"`;
+const intAttr = (value: string | true | undefined, fallback: number) => {
+  const number = typeof value === 'string' ? Number(value) : Number.NaN;
+  return Number.isInteger(number) ? number : fallback;
+};
+
+const ALERTS: Record<string, string> = {
+  NOTE: 'info',
+  TIP: 'success',
+  IMPORTANT: 'note',
+  WARNING: 'warning',
+  CAUTION: 'warning',
+};
+const ALERT_OF: Record<string, string> = {
+  info: 'NOTE',
+  success: 'TIP',
+  note: 'IMPORTANT',
+  warning: 'WARNING',
+};
+const ALERT = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*(?:\n|$)/i;
+
+/** GitHub alerts (`> [!NOTE]` …) become info boxes. */
+function alertPanels(state: StateCore): void {
+  const tokens = state.tokens;
+  for (let index = 0; index < tokens.length; index++) {
+    const open = tokens[index] as (typeof tokens)[number];
+    const inline = tokens[index + 2];
+    if (open.type !== 'blockquote_open' || tokens[index + 1]?.type !== 'paragraph_open') continue;
+    const match = inline ? ALERT.exec(inline.content) : null;
+    if (!inline || !match) continue;
+    const close = tokens.findIndex(
+      (token, at) => at > index && token.type === 'blockquote_close' && token.level === open.level,
+    );
+    if (close === -1) continue;
+    open.type = 'panel_open';
+    open.meta = { kind: ALERTS[(match[1] as string).toUpperCase()] };
+    (tokens[close] as (typeof tokens)[number]).type = 'panel_close';
+    inline.content = inline.content.slice(match[0].length);
+    // A marker on its own line leaves an empty paragraph, unless it is all there is.
+    if (!inline.content.trim() && tokens[index + 4]?.type !== 'panel_close') {
+      tokens.splice(index + 1, 3);
+    }
+  }
+}
+
+const EXPAND = /^:::expand(?:[ \t]+(.*))?$/;
+
+/** `:::expand Title` … `:::` around any Markdown. */
+function expandRule(state: StateBlock, startLine: number, endLine: number, silent: boolean) {
+  const lineText = (line: number) =>
+    state.src.slice(
+      (state.bMarks[line] as number) + (state.tShift[line] as number),
+      state.eMarks[line],
+    );
+  const match = EXPAND.exec(lineText(startLine).trimEnd());
+  if (!match) return false;
+  if (silent) return true;
+  let next = startLine + 1;
+  let depth = 1;
+  for (; next < endLine; next++) {
+    const text = lineText(next).trim();
+    if (EXPAND.test(text)) depth++;
+    else if (text === ':::' && --depth === 0) break;
+  }
+  const lineMax = state.lineMax;
+  state.lineMax = next;
+  const open = state.push('expand_open', 'details', 1);
+  open.meta = { title: (match[1] ?? '').trim() };
+  open.map = [startLine, next];
+  state.md.block.tokenize(state, startLine + 1, next);
+  state.push('expand_close', 'details', -1);
+  state.lineMax = lineMax;
+  state.line = Math.min(next + 1, endLine);
+  return true;
+}
+
+const LEAF = /^::(toc|children|issues)(?:\{(.*)\})?[ \t]*$/;
+
+/** `::toc`, `::children` and `::issues{query="…"}` on a line of their own. */
+function leafDirectiveRule(
+  state: StateBlock,
+  startLine: number,
+  _endLine: number,
+  silent: boolean,
+): boolean {
+  const start = (state.bMarks[startLine] as number) + (state.tShift[startLine] as number);
+  const match = LEAF.exec(state.src.slice(start, state.eMarks[startLine]));
+  if (!match) return false;
+  if (silent) return true;
+  const attrs = parseDirectiveAttrs(match[2] ?? '');
+  const token = state.push('macro_leaf', '', 0);
+  token.map = [startLine, startLine + 1];
+  token.type = `macro_${match[1]}`;
+  token.meta =
+    match[1] === 'toc'
+      ? { type: 'tableOfContents', attrs: { maxLevel: intAttr(attrs.maxLevel, 3) } }
+      : match[1] === 'children'
+        ? { type: 'childPages', attrs: { depth: intAttr(attrs.depth, 1) } }
+        : {
+            type: 'issueList',
+            attrs: {
+              query: typeof attrs.query === 'string' ? attrs.query : '',
+              display: attrs.display === 'count' ? 'count' : 'table',
+              limit: intAttr(attrs.limit, 20),
+            },
+          };
+  state.line = startLine + 1;
+  return true;
+}
+
+const STATUS = /^:status\[((?:[^\]\\\n]|\\.)*)\](?:\{([^}\n]*)\})?/;
+const ISSUE = /^:issue\[([A-Z][A-Z0-9]{1,9}-[1-9][0-9]*)\]/;
+
+/** `:status[Done]{color=green}` and `:issue[WEB-1]` in running text. */
+function inlineMacroRule(state: StateInline, silent: boolean): boolean {
+  if (state.src.charCodeAt(state.pos) !== 0x3a /* : */) return false;
+  const before = state.pos > 0 ? state.src[state.pos - 1] : '';
+  if (before && /[\p{L}\p{N}_]/u.test(before)) return false;
+  const rest = state.src.slice(state.pos);
+  const status = STATUS.exec(rest);
+  const issue = status ? null : ISSUE.exec(rest);
+  const match = status ?? issue;
+  if (!match) return false;
+  if (!silent) {
+    const token = state.push(status ? 'macro_status' : 'macro_issue', '', 0);
+    token.meta = status
+      ? {
+          type: 'status',
+          attrs: {
+            text: (status[1] as string).replace(/\\(.)/g, '$1'),
+            color: parseDirectiveAttrs(status[2] ?? '').color ?? 'grey',
+          },
+        }
+      : { type: 'issue', attrs: { key: issue?.[1] } };
+  }
+  state.pos += match[0].length;
+  return true;
+}
+
+/** `ts title="Datei" lineNumbers collapsed` after a fence. */
+function fenceAttrs(info: string) {
+  const first = info.trim().split(/\s+/)[0] ?? '';
+  const hasLanguage = first !== '' && !first.includes('=');
+  const attrs = parseDirectiveAttrs(hasLanguage ? info.trim().slice(first.length) : info);
+  return {
+    language: hasLanguage ? first : null,
+    title: typeof attrs.title === 'string' ? attrs.title : null,
+    lineNumbers: attrs.lineNumbers === true,
+    collapsed: attrs.collapsed === true,
+  };
+}
+
 // Raw HTML stays text; images only as attachments of their own line (E-61).
 const markdownIt = new MarkdownIt('default', { html: false, linkify: false }).disable(['image']);
 markdownIt.inline.ruler.before('link', 'mention', mentionRule);
 markdownIt.block.ruler.before('paragraph', 'attachment_image', attachmentImageRule);
 markdownIt.core.ruler.after('block', 'block_shapes', blockShapes);
+markdownIt.core.ruler.after('block_shapes', 'alert_panels', alertPanels);
+markdownIt.block.ruler.before('fence', 'expand', expandRule, {
+  alt: ['paragraph', 'reference', 'blockquote', 'list'],
+});
+markdownIt.block.ruler.before('paragraph', 'macro_leaf', leafDirectiveRule);
+markdownIt.inline.ruler.before('link', 'macro_inline', inlineMacroRule);
 
 const parser = new MarkdownParser(richTextSchema, markdownIt, {
   blockquote: { block: 'blockquote' },
@@ -155,11 +326,9 @@ const parser = new MarkdownParser(richTextSchema, markdownIt, {
   },
   heading: { block: 'heading', getAttrs: (token) => ({ level: Number(token.tag.slice(1)) }) },
   code_block: { block: 'codeBlock', noCloseToken: true },
-  fence: {
-    block: 'codeBlock',
-    getAttrs: (token) => ({ language: token.info.trim().split(/\s+/)[0] || null }),
-    noCloseToken: true,
-  },
+  fence: { block: 'codeBlock', getAttrs: (token) => fenceAttrs(token.info), noCloseToken: true },
+  panel: { block: 'panel', getAttrs: (token) => token.meta },
+  expand: { block: 'expand', getAttrs: (token) => token.meta },
   hr: { node: 'horizontalRule' },
   hardbreak: { node: 'hardBreak' },
   em: { mark: 'italic' },
@@ -176,6 +345,11 @@ const parser = new MarkdownParser(richTextSchema, markdownIt, {
     noCloseToken: true,
   },
   attachment_image: { node: 'image', getAttrs: (token) => token.meta, noCloseToken: true },
+  macro_toc: { node: 'tableOfContents', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_children: { node: 'childPages', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_issues: { node: 'issueList', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_status: { node: 'status', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_issue: { node: 'issue', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   task_list: { block: 'taskList' },
   task_item: { block: 'taskItem', getAttrs: (token) => ({ checked: token.meta.checked }) },
   table: { block: 'table' },
@@ -224,7 +398,15 @@ const serializer = new MarkdownSerializer(
       // A fence longer than any backtick run inside keeps the code intact.
       const runs = block.textContent.match(/`{3,}/g) ?? [];
       const fence = runs.length > 0 ? `${runs.sort().at(-1)}\`` : '```';
-      state.write(`${fence}${(block.attrs.language as string | null) ?? ''}\n`);
+      const info = [
+        (block.attrs.language as string | null) ?? '',
+        block.attrs.title ? `title=${quoteAttr(String(block.attrs.title))}` : '',
+        block.attrs.lineNumbers ? 'lineNumbers' : '',
+        block.attrs.collapsed ? 'collapsed' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      state.write(`${fence}${info}\n`);
       state.text(block.textContent, false);
       state.ensureNewLine();
       state.write(fence);
@@ -243,6 +425,44 @@ const serializer = new MarkdownSerializer(
       state.closeBlock(image);
     },
     taskList: (state, node) => state.renderList(node, '  ', () => '- '),
+    panel: (state, node) => {
+      state.wrapBlock('> ', null, node, () => {
+        state.write(`[!${ALERT_OF[node.attrs.kind as string] ?? 'NOTE'}]`);
+        state.ensureNewLine();
+        state.renderContent(node);
+      });
+    },
+    expand: (state, node) => {
+      state.write(`:::expand ${String(node.attrs.title ?? '').replace(/\s+/g, ' ')}`.trimEnd());
+      state.ensureNewLine();
+      state.renderContent(node);
+      state.write(':::');
+      state.closeBlock(node);
+    },
+    tableOfContents: (state, node) => {
+      const level = node.attrs.maxLevel as number;
+      state.write(level === 3 ? '::toc' : `::toc{maxLevel=${level}}`);
+      state.closeBlock(node);
+    },
+    childPages: (state, node) => {
+      const depth = node.attrs.depth as number;
+      state.write(depth === 1 ? '::children' : `::children{depth=${depth}}`);
+      state.closeBlock(node);
+    },
+    issueList: (state, node) => {
+      const attrs = [`query=${quoteAttr(String(node.attrs.query ?? ''))}`];
+      if (node.attrs.display === 'count') attrs.push('display=count');
+      if (node.attrs.limit !== 20) attrs.push(`limit=${node.attrs.limit}`);
+      state.write(`::issues{${attrs.join(' ')}}`);
+      state.closeBlock(node);
+    },
+    status: (state, node) => {
+      const text = String(node.attrs.text ?? '').replace(/[\\\]]/g, (char) => `\\${char}`);
+      state.write(`:status[${text}]{color=${node.attrs.color}}`);
+    },
+    issue: (state, node) => {
+      if (node.attrs.key) state.write(`:issue[${node.attrs.key}]`);
+    },
     taskItem: (state, node) => {
       state.write(node.attrs.checked ? '[x] ' : '[ ] ');
       state.renderContent(node);

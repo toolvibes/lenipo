@@ -1,4 +1,4 @@
-import { blockExtensions } from '@tasklore/editor/schema';
+import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
 import type { RichText, RichTextOutput } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
@@ -7,6 +7,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toolbar } from '../../collab/Toolbar';
+import { macroViews } from '../../macros/views';
 import { Button } from '../../ui/Button';
 import { mentionExtension } from './mention';
 
@@ -58,8 +59,8 @@ export function RichTextEditor({
   const submitRef = useRef(() => {});
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      ...blockExtensions({ resizableTables: true }),
+      StarterKit.configure(starterKitOptions),
+      ...blockExtensions({ resizableTables: true, views: macroViews }),
       Placeholder.configure({ placeholder }),
       mentionExtension(
         mentionProjectKey
@@ -119,20 +120,27 @@ export function RichTextEditor({
 export function RichTextView({
   doc,
   variant = 'compact',
+  page,
 }: {
   doc: RichText;
   variant?: 'compact' | 'page';
+  /** The wiki page shown, for macros such as child pages. */
+  page?: { spaceKey: string; pageId: string };
 }) {
   const editor = useEditor(
     {
-      extensions: [StarterKit, ...blockExtensions(), mentionExtension()],
+      extensions: [
+        StarterKit.configure(starterKitOptions),
+        ...blockExtensions({ views: macroViews, children: page ?? {} }),
+        mentionExtension(),
+      ],
       content: doc as Content,
       editable: false,
       ...(variant === 'page'
         ? { editorProps: { attributes: { class: 'tl-prose tl-prose-read' } } }
         : {}),
     },
-    [JSON.stringify(doc), variant],
+    [JSON.stringify(doc), variant, page?.pageId],
   );
   return (
     <EditorContent

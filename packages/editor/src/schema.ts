@@ -5,6 +5,14 @@ import { TableKit } from '@tiptap/extension-table';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 import { AttachmentImage, IMAGE_ALIGNMENTS } from './image.js';
+import {
+  type ChildPagesOptions,
+  ISSUE_LIST_DISPLAYS,
+  type MacroViews,
+  macroExtensions,
+  PANEL_KINDS,
+  STATUS_COLORS,
+} from './macros.js';
 
 export {
   AttachmentImage,
@@ -12,30 +20,49 @@ export {
   IMAGE_ALIGNMENTS,
   type ImageAlignment,
 } from './image.js';
+export * from './macros.js';
 
 /**
  * Tables, task lists and images (E-61). The web app adds them with the same settings; only
  * behaviour such as resizing columns differs, which does not change the schema.
  */
-export function blockExtensions({ resizableTables = false } = {}) {
+export function blockExtensions({
+  resizableTables = false,
+  views = {},
+  children = {},
+}: {
+  resizableTables?: boolean;
+  /** Browser views of the macros (E-66). */
+  views?: MacroViews;
+  children?: Partial<ChildPagesOptions>;
+} = {}) {
   return [
     TableKit.configure({ table: { resizable: resizableTables } }),
     TaskList,
     TaskItem.configure({ nested: true }),
     AttachmentImage,
+    ...macroExtensions(views, children),
   ];
 }
+
+/** StarterKit without the parts the shared schema replaces (the code block, E-66). */
+export const starterKitOptions = { codeBlock: false } as const;
 
 /**
  * The extensions that define Tasklore's rich text, the same in the browser editor and in the
  * converters (E-51). The web app adds only behaviour (placeholder, suggestions) on top.
  */
-export const richTextExtensions = [StarterKit, Mention, ...blockExtensions()];
+export const richTextExtensions = [
+  StarterKit.configure(starterKitOptions),
+  Mention,
+  ...blockExtensions(),
+];
 
 /** The ProseMirror schema of stored rich text, built without a DOM. */
 export const richTextSchema = getSchema(richTextExtensions);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISSUE_KEY = /^[A-Z][A-Z0-9]{1,9}-[1-9][0-9]*$/;
 
 /** Attribute values the schema itself does not restrict. */
 function validAttrs(node: PMNode): boolean {
@@ -63,7 +90,42 @@ function validAttrs(node: PMNode): boolean {
     );
   }
   if (node.type.name === 'taskItem') return typeof node.attrs.checked === 'boolean';
-  return true;
+  const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max;
+  const level = (value: unknown, max: number) =>
+    Number.isInteger(value) && (value as number) >= 1 && (value as number) <= max;
+  switch (node.type.name) {
+    case 'codeBlock':
+      return (
+        (node.attrs.language === null || text(node.attrs.language, 40)) &&
+        (node.attrs.title === null || text(node.attrs.title, 200)) &&
+        typeof node.attrs.lineNumbers === 'boolean' &&
+        typeof node.attrs.collapsed === 'boolean'
+      );
+    case 'panel':
+      return (PANEL_KINDS as readonly unknown[]).includes(node.attrs.kind);
+    case 'expand':
+      return text(node.attrs.title, 200);
+    case 'status':
+      return (
+        text(node.attrs.text, 40) &&
+        (STATUS_COLORS as readonly unknown[]).includes(node.attrs.color)
+      );
+    case 'issue':
+      // Empty while an editor is still choosing the issue.
+      return node.attrs.key === '' || (text(node.attrs.key, 30) && ISSUE_KEY.test(node.attrs.key));
+    case 'issueList':
+      return (
+        text(node.attrs.query, 2000) &&
+        (ISSUE_LIST_DISPLAYS as readonly unknown[]).includes(node.attrs.display) &&
+        level(node.attrs.limit, 100)
+      );
+    case 'tableOfContents':
+      return level(node.attrs.maxLevel, 6);
+    case 'childPages':
+      return level(node.attrs.depth, 5);
+    default:
+      return true;
+  }
 }
 
 /**

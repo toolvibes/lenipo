@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { blockExtensions } from '@tasklore/editor/schema';
+import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { Placeholder } from '@tiptap/extensions';
@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mentionExtension } from '../features/tracking/mention';
+import { macroViews } from '../macros/views';
 import { FormError } from '../ui/FormError';
 import { matchItems, SlashCommands, slashItems } from './SlashMenu';
 import { Toolbar } from './Toolbar';
@@ -19,6 +20,7 @@ interface CollabEditorProps {
   identity: CollabIdentity;
   /** The page whose draft this is; files pasted, dropped or picked become its attachments. */
   pageId: string;
+  spaceKey: string;
   /** Hands out the editor, e.g. to publish its document. */
   onEditor?: (editor: Editor | null) => void;
 }
@@ -26,7 +28,7 @@ interface CollabEditorProps {
 /** The Yjs fragment holding the draft; the server seeds the same one (E-59). */
 const DRAFT_FIELD = 'default';
 
-export function CollabEditor({ session, identity, pageId, onEditor }: CollabEditorProps) {
+export function CollabEditor({ session, identity, pageId, spaceKey, onEditor }: CollabEditorProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -57,9 +59,13 @@ export function CollabEditor({ session, identity, pageId, onEditor }: CollabEdit
     {
       extensions: [
         // Undo/redo comes from the collaboration extension (per user, Yjs-aware).
-        StarterKit.configure({ undoRedo: false }),
+        StarterKit.configure({ ...starterKitOptions, undoRedo: false }),
         // Same schema as stored pages (packages/editor), so publishing never loses content.
-        ...blockExtensions({ resizableTables: true }),
+        ...blockExtensions({
+          resizableTables: true,
+          views: macroViews,
+          children: { spaceKey, pageId },
+        }),
         mentionExtension(),
         Placeholder.configure({
           placeholder: t('editor.placeholder'),

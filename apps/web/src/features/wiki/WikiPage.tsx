@@ -299,6 +299,8 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
           <article className="max-w-[var(--prose-measure)]">
             <CommentedText
               doc={data.content as RichText}
+              spaceKey={spaceKey}
+              pageId={data.id}
               comments={list}
               active={activeThread}
               canComment={data.canComment}

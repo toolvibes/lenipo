@@ -28,11 +28,15 @@
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",
+    "@tiptap/extension-code-block": "3.32.0",
+    "@tiptap/extension-code-block-lowlight": "3.32.0",
     "@tiptap/extension-list": "3.32.0",
     "@tiptap/extension-mention": "3.32.0",
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/pm": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",
+    "highlight.js": "11.12.0",
+    "lowlight": "3.3.0",
     "markdown-it": "14.3.3",
     "prosemirror-markdown": "1.13.9"
   },

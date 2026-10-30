@@ -420,7 +420,11 @@ export function PageHistory({
           </h2>
           <article className="rounded-[var(--radius-md)] border border-[var(--border)] p-4">
             <h3 className="tl-heading-lg m-0 mb-3">{shown.data.title}</h3>
-            <RichTextView doc={shown.data.content as RichText} variant="page" />
+            <RichTextView
+              doc={shown.data.content as RichText}
+              variant="page"
+              page={{ spaceKey, pageId: id }}
+            />
           </article>
         </section>
       )}
