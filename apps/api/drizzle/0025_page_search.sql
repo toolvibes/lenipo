@@ -1,0 +1,2 @@
+ALTER TABLE "page_versions" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('german'::regconfig, coalesce(title, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') || setweight(to_tsvector('german'::regconfig, coalesce(text, '')), 'B') || setweight(to_tsvector('english'::regconfig, coalesce(text, '')), 'B')) STORED NOT NULL;--> statement-breakpoint
+CREATE INDEX "page_versions_search_idx" ON "page_versions" USING gin ("search_vector");

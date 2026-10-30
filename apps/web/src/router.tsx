@@ -23,6 +23,7 @@ import {
 } from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
+import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
 import { AppShell } from './features/shell/AppShell';
 import { HomePage } from './features/shell/HomePage';
@@ -39,6 +40,7 @@ import { SpacesPage } from './features/wiki/SpacesPage';
 import { TrashPage } from './features/wiki/TrashPage';
 import { WikiPage } from './features/wiki/WikiPage';
 import { meQuery, setupStatusQuery } from './lib/queries';
+import type { EverythingType } from './lib/search';
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -237,6 +239,28 @@ const timelineRoute = createRoute({
   },
 });
 
+const everythingRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/search',
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { q?: string; type?: EverythingType; project?: string } => ({
+    q: typeof search.q === 'string' && search.q.trim() ? search.q : undefined,
+    type:
+      search.type === 'issue' ||
+      search.type === 'page' ||
+      search.type === 'project' ||
+      search.type === 'space'
+        ? search.type
+        : undefined,
+    project: typeof search.project === 'string' ? search.project : undefined,
+  }),
+  component: function Everything() {
+    const { q, type, project } = everythingRoute.useSearch();
+    return <EverythingPage q={q ?? ''} type={type} project={project} />;
+  },
+});
+
 const searchRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/issues',
@@ -409,6 +433,7 @@ const routeTree = rootRoute.addChildren([
     projectsRoute,
     projectRoute,
     timelineRoute,
+    everythingRoute,
     searchRoute,
     issueRoute,
     activityRoute,

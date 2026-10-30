@@ -14,7 +14,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { groups, users } from './identity.js';
-import { projects } from './tracking.js';
+import { projects, searchVector, tsvector } from './tracking.js';
 
 export const spaceRole = pgEnum('space_role', [
   'administrators',
@@ -116,13 +116,20 @@ export const pageVersions = pgTable(
     content: jsonb().notNull(),
     /** Plain text derived by the server, for search and previews. */
     text: text().notNull().default(''),
+    /** Title and text for the global search (E-69); versions never change, so neither does this. */
+    searchVector: tsvector()
+      .notNull()
+      .generatedAlwaysAs(sql.raw(`${searchVector('title', 'A')} || ${searchVector('text', 'B')}`)),
     authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     comment: text().notNull().default(''),
     /** The number of the version this one restored (E-62). */
     restoredFrom: integer(),
     createdAt: timestamp({ withTimezone: true }).notNull().default(sql`now()`),
   },
-  (table) => [uniqueIndex('page_versions_page_number_unique').on(table.pageId, table.number)],
+  (table) => [
+    uniqueIndex('page_versions_page_number_unique').on(table.pageId, table.number),
+    index('page_versions_search_idx').using('gin', table.searchVector),
+  ],
 );
 
 /** Files of a page, also the source of its images (W-EDT-08, -09, E-61). */

@@ -22,6 +22,7 @@ import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
+import { escapeLike } from '../db/like.js';
 import {
   boards,
   issues,
@@ -51,10 +52,6 @@ function validTimeZone(timeZone: string): boolean {
   } catch {
     return false;
   }
-}
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
 /** Tokens need an issues scope to search, like every other tracking read. */

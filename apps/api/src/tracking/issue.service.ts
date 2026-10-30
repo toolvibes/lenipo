@@ -35,6 +35,7 @@ import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
+import { escapeLike } from '../db/like.js';
 import {
   issueChangeGroups,
   issueChangeItems,
@@ -87,10 +88,6 @@ export interface IssueListFilter {
   query?: string;
   limit: number;
   offset: number;
-}
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
 /** A planned start after the due date makes no bar on the timeline (E-68). */

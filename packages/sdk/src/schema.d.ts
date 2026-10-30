@@ -1587,6 +1587,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/search/everything': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search issues, Lore pages, projects and spaces
+     * @description Full text in German and English over what the caller may see; the last word also matches as a prefix, quotes, OR and -word work as in web search. Pages are searched in their latest published version, with a snippet whose hits are marked. `counts` always cover every kind.
+     */
+    get: operations['Search.searchEverything'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search/suggestions': {
     parameters: {
       query?: never;
@@ -3472,6 +3492,42 @@ export interface components {
       limit: number;
       offset: number;
     };
+    EverythingResult: {
+      counts: {
+        issue: number;
+        page: number;
+        project: number;
+        space: number;
+      };
+      issues: components['schemas']['IssueSummary'][];
+      pages: components['schemas']['PageHit'][];
+      projects: {
+        key: string;
+        name: string;
+        description: string;
+      }[];
+      spaces: {
+        key: string;
+        name: string;
+        description: string;
+      }[];
+    };
+    PageHit: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      space: {
+        key: string;
+        name: string;
+      };
+      parentTitle: string | null;
+      publishedAt: string | null;
+      snippet: components['schemas']['Snippet'];
+    };
+    Snippet: {
+      text: string;
+      hit: boolean;
+    }[];
     ValueSuggestion: {
       value: string;
       label: string;
@@ -7508,6 +7564,40 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SearchResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Search.searchEverything': {
+    parameters: {
+      query: {
+        q: string;
+        type?: 'issue' | 'page' | 'project' | 'space';
+        project?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EverythingResult'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

@@ -114,3 +114,56 @@ export type FilterScope = z.infer<typeof FilterScope>;
 
 export const FilterListQuery = z.object({ scope: FilterScope.default('visible') });
 export type FilterListQuery = z.infer<typeof FilterListQuery>;
+
+// ---------------------------------------------------------------- global search (E-69)
+
+export const EVERYTHING_TYPES = ['issue', 'page', 'project', 'space'] as const;
+export const EverythingType = z.enum(EVERYTHING_TYPES);
+export type EverythingType = z.infer<typeof EverythingType>;
+
+export const EverythingQuery = z
+  .object({
+    /** Words, "phrases", OR and -word; the last word also matches as a prefix. */
+    q: z.string().trim().min(1).max(200),
+    /** Only this kind of result; counts always cover all kinds. */
+    type: EverythingType.optional(),
+    /** Only this project and the Lore spaces linked to it. */
+    project: z.string().trim().min(1).max(10).optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(10),
+  })
+  .meta({ id: 'EverythingQuery' });
+export type EverythingQuery = z.infer<typeof EverythingQuery>;
+
+/** Text with the matched words marked, as plain segments (no HTML). */
+export const Snippet = z
+  .array(z.object({ text: z.string(), hit: z.boolean() }))
+  .meta({ id: 'Snippet' });
+export type Snippet = z.infer<typeof Snippet>;
+
+export const PageHit = z
+  .object({
+    id: Id,
+    title: z.string(),
+    space: z.object({ key: z.string(), name: z.string() }),
+    parentTitle: z.string().nullable(),
+    publishedAt: z.iso.datetime().nullable(),
+    snippet: Snippet,
+  })
+  .meta({ id: 'PageHit' });
+export type PageHit = z.infer<typeof PageHit>;
+
+export const EverythingResult = z
+  .object({
+    counts: z.object({
+      issue: z.number().int(),
+      page: z.number().int(),
+      project: z.number().int(),
+      space: z.number().int(),
+    }),
+    issues: z.array(IssueSummary),
+    pages: z.array(PageHit),
+    projects: z.array(z.object({ key: z.string(), name: z.string(), description: z.string() })),
+    spaces: z.array(z.object({ key: z.string(), name: z.string(), description: z.string() })),
+  })
+  .meta({ id: 'EverythingResult' });
+export type EverythingResult = z.infer<typeof EverythingResult>;

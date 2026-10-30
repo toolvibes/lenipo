@@ -6,6 +6,7 @@ import {
   House,
   type Icon,
   ListMagnifyingGlass,
+  MagnifyingGlass,
   Moon,
   SignOut,
   Sun,
@@ -26,14 +27,17 @@ function Item({
   icon: IconComponent,
   label,
   onSelect,
+  forceMount,
 }: {
   icon: Icon;
   label: string;
   onSelect: () => void;
+  forceMount?: boolean;
 }) {
   return (
     <Command.Item
       onSelect={onSelect}
+      forceMount={forceMount}
       className="flex h-9 cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-[var(--ink)] data-[selected=true]:bg-[var(--accent-soft)] data-[selected=true]:text-[var(--accent)]"
     >
       <IconComponent size={18} aria-hidden />
@@ -78,6 +82,17 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: PaletteProps) 
         <Command.Empty className="px-2 py-6 text-center text-[var(--ink-muted)]">
           {t('palette.empty')}
         </Command.Empty>
+        {search.trim() && (
+          <Command.Group forceMount>
+            <Item
+              icon={MagnifyingGlass}
+              label={t('palette.everywhere', { query: search.trim() })}
+              // Always offered, whatever cmdk's own filter thinks of the label.
+              forceMount
+              onSelect={() => run(() => navigate({ to: '/search', search: { q: search.trim() } }))}
+            />
+          </Command.Group>
+        )}
         <Command.Group heading={t('palette.navigation')}>
           <Item
             icon={House}

@@ -42,3 +42,19 @@ export const filterQuery = (id: string) =>
     queryKey: ['filter', id],
     queryFn: () => unwrap(client.GET('/api/v1/filters/{id}', { params: { path: { id } } })),
   });
+
+export type EverythingType = 'issue' | 'page' | 'project' | 'space';
+
+/** Global search over issues, Lore pages, projects and spaces (E-69). */
+export const everythingQuery = (q: string, type?: EverythingType, project?: string) =>
+  queryOptions({
+    queryKey: ['search-everything', q, type, project],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/search/everything', {
+          params: { query: { q, type, project, limit: type ? 50 : 10 } },
+        }),
+      ),
+    enabled: q.trim() !== '',
+    placeholderData: (previous) => previous,
+  });

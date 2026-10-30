@@ -21,12 +21,12 @@ import {
 import { groups, users } from './identity.js';
 
 /** PostgreSQL full-text vector; only ever written by generated columns. */
-const tsvector = customType<{ data: string }>({
+export const tsvector = customType<{ data: string }>({
   dataType: () => 'tsvector',
 });
 
 /** German and English stems of a text column (decision E-36). */
-function searchVector(column: string, weight: 'A' | 'B') {
+export function searchVector(column: string, weight: 'A' | 'B') {
   return `setweight(to_tsvector('german'::regconfig, coalesce(${column}, '')), '${weight}') || setweight(to_tsvector('english'::regconfig, coalesce(${column}, '')), '${weight}')`;
 }
 

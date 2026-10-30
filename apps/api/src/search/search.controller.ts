@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import {
   CreateFilterRequest,
+  EverythingQuery,
+  EverythingResult,
   FilterListQuery,
   SavedFilter,
   SearchRequest,
@@ -24,6 +26,7 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { EverythingService } from './everything.service.js';
 import { FilterService } from './filter.service.js';
 import { SearchService } from './search.service.js';
 
@@ -35,6 +38,7 @@ export class SearchController {
   constructor(
     @Inject(SearchService) private readonly search: SearchService,
     @Inject(FilterService) private readonly filters: FilterService,
+    @Inject(EverythingService) private readonly everything: EverythingService,
   ) {}
 
   @Endpoint({
@@ -51,6 +55,21 @@ export class SearchController {
     @ValidBody(SearchRequest) body: SearchRequest,
   ): Promise<SearchResult> {
     return this.search.search(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Search',
+    summary: 'Search issues, Lore pages, projects and spaces',
+    description:
+      'Full text in German and English over what the caller may see; the last word also matches as a prefix, quotes, OR and -word work as in web search. Pages are searched in their latest published version, with a snippet whose hits are marked. `counts` always cover every kind.',
+    response: EverythingResult,
+  })
+  @Get('search/everything')
+  searchEverything(
+    @CurrentPrincipal() principal: Principal,
+    @ValidQuery(EverythingQuery) query: EverythingQuery,
+  ): Promise<EverythingResult> {
+    return this.everything.search(principal, query);
   }
 
   @Endpoint({
