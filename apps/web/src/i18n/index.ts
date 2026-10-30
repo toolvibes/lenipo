@@ -14,7 +14,7 @@ declare module 'i18next' {
   }
 }
 
-/** Until users can pick a language in their profile, follow the browser. */
+/** Before sign-in, follow the browser; afterwards the profile decides (applyLocale). */
 function initialLanguage(): 'de' | 'en' {
   return navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en';
 }
@@ -27,5 +27,14 @@ void i18n.use(initReactI18next).init({
 });
 
 document.documentElement.lang = i18n.language;
+
+/** The signed-in user's saved language wins over the browser's (E-71). */
+export function applyLocale(locale: string) {
+  const language = locale === 'en' ? 'en' : 'de';
+  if (i18n.language !== language) {
+    void i18n.changeLanguage(language);
+    document.documentElement.lang = language;
+  }
+}
 
 export default i18n;

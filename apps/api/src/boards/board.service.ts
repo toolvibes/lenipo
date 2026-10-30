@@ -330,22 +330,16 @@ export class BoardService {
     await this.scope(principal, [query]);
     const details = await this.projects.details(principal, project.key);
     const id = uuidv7();
-    await this.database.db.transaction(async (tx) => {
-      await tx.insert(boards).values({
+    await this.database.db.transaction((tx) =>
+      this.insertBoard(tx, {
         id,
         name: request.name,
         type: request.type,
         projectId: project.id,
         query,
-        hideDoneAfterDays: request.type === 'kanban' ? 14 : null,
-      });
-      // One column per status of the project's workflow, in workflow order, as a start.
-      await this.writeColumns(
-        tx,
-        id,
-        details.statuses.map((status) => ({ name: status.name, statusIds: [status.id] })),
-      );
-    });
+        statuses: details.statuses,
+      }),
+    );
     await this.audit.record({
       action: 'board.created',
       actorId: principal.userId,
@@ -355,6 +349,36 @@ export class BoardService {
       details: { name: request.name, project: project.key },
     });
     return this.get(principal, id);
+  }
+
+  /**
+   * A new board inside a transaction, with one column per status in workflow order as a start.
+   * Also used by the welcome steps (E-71).
+   */
+  async insertBoard(
+    tx: Executor,
+    board: {
+      id: string;
+      name: string;
+      type: 'scrum' | 'kanban';
+      projectId: string;
+      query: string;
+      statuses: Array<{ id: string; name: string }>;
+    },
+  ): Promise<void> {
+    await tx.insert(boards).values({
+      id: board.id,
+      name: board.name,
+      type: board.type,
+      projectId: board.projectId,
+      query: board.query,
+      hideDoneAfterDays: board.type === 'kanban' ? 14 : null,
+    });
+    await this.writeColumns(
+      tx,
+      board.id,
+      board.statuses.map((status) => ({ name: status.name, statusIds: [status.id] })),
+    );
   }
 
   private async writeColumns(

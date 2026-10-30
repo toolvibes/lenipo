@@ -2299,6 +2299,43 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "Me.update",
+        "summary": "Change name, language or time zone of the signed-in user",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/me/sessions": {
@@ -2452,6 +2489,46 @@
         "responses": {
           "204": {
             "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/onboarding": {
+      "post": {
+        "operationId": "Me.finish",
+        "summary": "Finish the welcome steps after the first sign-in",
+        "description": "Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked Lore space with a start page; Lore → only the space. Without `start` the steps count as skipped. Web sessions only.",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingResult"
+                }
+              }
+            }
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -7318,6 +7395,9 @@
           "authenticatedVia": {
             "type": "string",
             "enum": ["session", "token", "mcp"]
+          },
+          "onboarded": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -7327,7 +7407,8 @@
           "locale",
           "timeZone",
           "globalPermissions",
-          "authenticatedVia"
+          "authenticatedVia",
+          "onboarded"
         ],
         "additionalProperties": false
       },
@@ -9820,6 +9901,25 @@
           }
         }
       },
+      "UpdateMeRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locale": {
+            "type": "string",
+            "enum": ["de", "en"]
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
       "SessionInfo": {
         "type": "object",
         "properties": {
@@ -9983,6 +10083,55 @@
           "lastUsedAt",
           "secret"
         ],
+        "additionalProperties": false
+      },
+      "OnboardingRequest": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/UpdateMeRequest"
+          },
+          "start": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": ["scrum", "kanban", "lore"]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]{1,9}$"
+              }
+            },
+            "required": ["method", "name", "key"]
+          }
+        }
+      },
+      "OnboardingResult": {
+        "type": "object",
+        "properties": {
+          "boardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spaceKey": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["boardId", "spaceKey"],
         "additionalProperties": false
       },
       "NotificationCategory": {

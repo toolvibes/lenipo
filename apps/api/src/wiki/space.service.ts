@@ -21,7 +21,7 @@ import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
-import { type DatabaseHandle, isUniqueViolation } from '../db/client.js';
+import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import {
   favourites,
   groups,
@@ -63,30 +63,9 @@ export class SpaceService {
     }
     const id = uuidv7();
     try {
-      await this.database.db.transaction(async (tx) => {
-        await tx.insert(spaces).values({
-          id,
-          key: request.key,
-          name: request.name,
-          description: request.description,
-          createdById: principal.userId,
-        });
-        await tx.insert(spaceRoleMembers).values({
-          id: uuidv7(),
-          spaceId: id,
-          role: 'administrators',
-          userId: principal.userId,
-        });
-        const [everyone] = await tx
-          .select({ id: groups.id })
-          .from(groups)
-          .where(eq(groups.name, USERS_GROUP));
-        if (everyone) {
-          await tx
-            .insert(spaceRoleMembers)
-            .values({ id: uuidv7(), spaceId: id, role: 'editors', groupId: everyone.id });
-        }
-      });
+      await this.database.db.transaction((tx) =>
+        this.insertSpace(tx, principal.userId, id, request),
+      );
     } catch (error) {
       if (isUniqueViolation(error))
         throw new ConflictException(`The space key "${request.key}" is already taken`);
@@ -101,6 +80,42 @@ export class SpaceService {
       details: { key: request.key },
     });
     return this.get(principal, request.key);
+  }
+
+  /**
+   * The rows of a new space inside a transaction: the creator administers it, everyone in
+   * "users" edits. `projectId` links it right away (welcome steps, E-71).
+   */
+  async insertSpace(
+    tx: Executor,
+    userId: string,
+    id: string,
+    request: CreateSpaceRequest,
+    projectId: string | null = null,
+  ) {
+    await tx.insert(spaces).values({
+      id,
+      key: request.key,
+      name: request.name,
+      description: request.description,
+      createdById: userId,
+      projectId,
+    });
+    await tx.insert(spaceRoleMembers).values({
+      id: uuidv7(),
+      spaceId: id,
+      role: 'administrators',
+      userId,
+    });
+    const [everyone] = await tx
+      .select({ id: groups.id })
+      .from(groups)
+      .where(eq(groups.name, USERS_GROUP));
+    if (everyone) {
+      await tx
+        .insert(spaceRoleMembers)
+        .values({ id: uuidv7(), spaceId: id, role: 'editors', groupId: everyone.id });
+    }
   }
 
   async list(principal: Principal): Promise<SpaceSummary[]> {

@@ -8,10 +8,18 @@ import {
   NotFoundException,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Req,
 } from '@nestjs/common';
-import { CreatedToken, CreateTokenRequest, Me, SessionInfo, TokenInfo } from '@tasklore/shared';
+import {
+  CreatedToken,
+  CreateTokenRequest,
+  Me,
+  SessionInfo,
+  TokenInfo,
+  UpdateMeRequest,
+} from '@tasklore/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { AuditService } from '../audit/audit.service.js';
@@ -42,6 +50,20 @@ export class MeController {
   @Endpoint({ tag: 'Me', summary: 'Get the signed-in user', response: Me })
   @Get()
   me(@CurrentPrincipal() principal: Principal): Promise<Me> {
+    return this.users.me(principal.userId, principal.via);
+  }
+
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Change name, language or time zone of the signed-in user',
+    response: Me,
+  })
+  @Patch()
+  async update(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(UpdateMeRequest) body: UpdateMeRequest,
+  ): Promise<Me> {
+    await this.users.updateProfile(principal.userId, body);
     return this.users.me(principal.userId, principal.via);
   }
 

@@ -14,6 +14,7 @@ import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsP
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
+import { WelcomePage } from './features/auth/WelcomePage';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
@@ -40,6 +41,7 @@ import { SpaceSettingsPage } from './features/wiki/SpaceSettingsPage';
 import { SpacesPage } from './features/wiki/SpacesPage';
 import { TrashPage } from './features/wiki/TrashPage';
 import { WikiPage } from './features/wiki/WikiPage';
+import { applyLocale } from './i18n';
 import { meQuery, setupStatusQuery } from './lib/queries';
 import type { EverythingType } from './lib/search';
 
@@ -76,6 +78,22 @@ const loginRoute = createRoute({
   },
 });
 
+/** The welcome steps after the first sign-in, full screen outside the app shell (E-71). */
+const welcomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/welcome',
+  beforeLoad: async ({ context }) => {
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (!me) throw redirect({ to: '/login', search: { redirect: '/welcome' } });
+    if (me.onboarded) throw redirect({ to: '/' });
+    applyLocale(me.locale);
+    return { me };
+  },
+  component: function Welcome() {
+    return <WelcomePage me={welcomeRoute.useRouteContext().me} />;
+  },
+});
+
 /** Everything below requires a signed-in user. */
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -83,6 +101,9 @@ const appRoute = createRoute({
   beforeLoad: async ({ context, location }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+    applyLocale(me.locale);
+    // New people start with the welcome steps (E-71).
+    if (!me.onboarded) throw redirect({ to: '/welcome' });
     return { me };
   },
   component: function App() {
@@ -427,6 +448,7 @@ const webhookRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   setupRoute,
   loginRoute,
+  welcomeRoute,
   appRoute.addChildren([
     homeRoute,
     spacesRoute,

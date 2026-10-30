@@ -11,6 +11,7 @@ import { EventsModule } from './events/events.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { OnboardingModule } from './onboarding/onboarding.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { PersonalModule } from './personal/personal.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
@@ -42,6 +43,7 @@ export class AppModule {
         PersonalModule,
         BoardsModule,
         WikiModule,
+        OnboardingModule,
         McpModule,
         RealtimeModule,
       ],

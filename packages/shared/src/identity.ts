@@ -66,6 +66,8 @@ export const Me = z
     timeZone: z.string(),
     globalPermissions: z.array(GlobalPermission),
     authenticatedVia: z.enum(['session', 'token', 'mcp']),
+    /** Went through (or skipped) the welcome steps after the first sign-in (E-71). */
+    onboarded: z.boolean(),
   })
   .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;

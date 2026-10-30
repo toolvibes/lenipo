@@ -721,7 +721,8 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /** Change name, language or time zone of the signed-in user */
+    patch: operations['Me.update'];
     trace?: never;
   };
   '/api/v1/me/sessions': {
@@ -788,6 +789,26 @@ export interface paths {
     post?: never;
     /** Revoke a personal access token */
     delete: operations['Me.revokeToken'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/onboarding': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Finish the welcome steps after the first sign-in
+     * @description Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked Lore space with a start page; Lore → only the space. Without `start` the steps count as skipped. Web sessions only.
+     */
+    post: operations['Me.finish'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -2344,6 +2365,7 @@ export interface components {
       globalPermissions: components['schemas']['GlobalPermission'][];
       /** @enum {string} */
       authenticatedVia: 'session' | 'token' | 'mcp';
+      onboarded: boolean;
     };
     AuthProviders: {
       password: boolean;
@@ -2943,6 +2965,12 @@ export interface components {
       started?: string;
       comment?: string;
     };
+    UpdateMeRequest: {
+      displayName?: string;
+      /** @enum {string} */
+      locale?: 'de' | 'en';
+      timeZone?: string;
+    };
     SessionInfo: {
       id: string;
       current: boolean;
@@ -2986,6 +3014,19 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
       secret: string;
+    };
+    OnboardingRequest: {
+      profile?: components['schemas']['UpdateMeRequest'];
+      start?: {
+        /** @enum {string} */
+        method: 'scrum' | 'kanban' | 'lore';
+        name: string;
+        key: string;
+      };
+    };
+    OnboardingResult: {
+      boardId: string | null;
+      spaceKey: string | null;
     };
     /** @enum {string} */
     NotificationCategory: 'mention' | 'assigned' | 'comment' | 'status' | 'other';
@@ -5640,6 +5681,39 @@ export interface operations {
       };
     };
   };
+  'Me.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateMeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Me.listSessions': {
     parameters: {
       query?: never;
@@ -5777,6 +5851,39 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.finish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OnboardingRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OnboardingResult'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

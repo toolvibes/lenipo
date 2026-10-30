@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Me, UserLookup, UserSummary } from '@tasklore/shared';
+import type { Me, UpdateMeRequest, UserLookup, UserSummary } from '@tasklore/shared';
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
@@ -71,7 +71,21 @@ export class UserService {
       timeZone: user.timeZone,
       globalPermissions: await this.access.globalPermissions(userId),
       authenticatedVia: via,
+      onboarded: user.onboardedAt !== null,
     };
+  }
+
+  /** Name, language and time zone of the signed-in user. */
+  async updateProfile(
+    userId: string,
+    request: UpdateMeRequest,
+    executor: Executor = this.database.db,
+  ) {
+    if (Object.keys(request).length === 0) return;
+    await executor
+      .update(users)
+      .set({ ...request, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   async list(): Promise<UserSummary[]> {

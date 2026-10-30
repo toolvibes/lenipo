@@ -17,7 +17,7 @@ import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
-import { type DatabaseHandle, isUniqueViolation } from '../db/client.js';
+import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import {
   favourites,
   groups,
@@ -56,43 +56,11 @@ export class ProjectService {
     if (!(await this.access.hasGlobal(principal.userId, 'create-projects'))) {
       throw new ForbiddenException('Requires the global permission "create-projects"');
     }
-    const template = PROJECT_TEMPLATES[request.template];
     const id = uuidv7();
     try {
-      await this.database.db.transaction(async (tx) => {
-        await tx.insert(projects).values({
-          id,
-          key: request.key,
-          name: request.name,
-          description: request.description,
-          template: request.template,
-          leadId: principal.userId,
-          workflowVersionId: builtInId('workflow-version', `${template.workflow}:1`),
-        });
-        if (template.hiddenIssueTypes.length > 0) {
-          await tx.insert(projectHiddenIssueTypes).values(
-            template.hiddenIssueTypes.map((key) => ({
-              projectId: id,
-              issueTypeId: builtInId('issue-type', key),
-            })),
-          );
-        }
-        await tx.insert(projectRoleMembers).values({
-          id: uuidv7(),
-          projectId: id,
-          role: 'administrators',
-          userId: principal.userId,
-        });
-        const [everyone] = await tx
-          .select({ id: groups.id })
-          .from(groups)
-          .where(eq(groups.name, USERS_GROUP));
-        if (everyone) {
-          await tx
-            .insert(projectRoleMembers)
-            .values({ id: uuidv7(), projectId: id, role: 'users', groupId: everyone.id });
-        }
-      });
+      await this.database.db.transaction((tx) =>
+        this.insertProject(tx, principal.userId, id, request),
+      );
     } catch (error) {
       if (isUniqueViolation(error))
         throw new ConflictException(`The project key "${request.key}" is already taken`);
@@ -107,6 +75,46 @@ export class ProjectService {
       details: { key: request.key, template: request.template },
     });
     return this.details(principal, request.key);
+  }
+
+  /**
+   * The rows of a new project inside a transaction: the creator administers it, everyone in
+   * "users" may work in it. Also used by the welcome steps (E-71).
+   */
+  async insertProject(tx: Executor, userId: string, id: string, request: CreateProjectRequest) {
+    const template = PROJECT_TEMPLATES[request.template];
+    await tx.insert(projects).values({
+      id,
+      key: request.key,
+      name: request.name,
+      description: request.description,
+      template: request.template,
+      leadId: userId,
+      workflowVersionId: builtInId('workflow-version', `${template.workflow}:1`),
+    });
+    if (template.hiddenIssueTypes.length > 0) {
+      await tx.insert(projectHiddenIssueTypes).values(
+        template.hiddenIssueTypes.map((key) => ({
+          projectId: id,
+          issueTypeId: builtInId('issue-type', key),
+        })),
+      );
+    }
+    await tx.insert(projectRoleMembers).values({
+      id: uuidv7(),
+      projectId: id,
+      role: 'administrators',
+      userId,
+    });
+    const [everyone] = await tx
+      .select({ id: groups.id })
+      .from(groups)
+      .where(eq(groups.name, USERS_GROUP));
+    if (everyone) {
+      await tx
+        .insert(projectRoleMembers)
+        .values({ id: uuidv7(), projectId: id, role: 'users', groupId: everyone.id });
+    }
   }
 
   async list(principal: Principal): Promise<ProjectSummary[]> {

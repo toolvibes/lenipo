@@ -28,6 +28,8 @@ export const users = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     lastLoginAt: timestamp({ withTimezone: true }),
+    /** Finished or skipped the welcome steps (E-71); null sends the web app to /welcome. */
+    onboardedAt: timestamp({ withTimezone: true }),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
 );

@@ -190,6 +190,13 @@
       "when": 1793343081022,
       "tag": "0026_project_workflows",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793343989142,
+      "tag": "0027_user_onboarding",
+      "breakpoints": true
     }
   ]
 }
