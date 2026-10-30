@@ -38,7 +38,7 @@ Jedes Feature hat eine ID (z. B. `T-BRD-03`) und eine Priorität:
 
 ## Leitidee für die Umsetzung
 
-Seit dem MVP (Ende Phase 3) **verwalten wir die Weiterentwicklung im Tool selbst**: Diese Dokumentation ist ins eigene Wiki umgezogen, Backlog und Sprints folgen. So merken wir früh, was im Alltag fehlt.
+Seit dem MVP (Ende Phase 3) **verwalten wir die Weiterentwicklung im Tool selbst**: Diese Dokumentation ist ins eigene Wiki umgezogen (Bereich `TL`), der Backlog steht im Projekt `TL` (ein Epic je Roadmap-Phase). So merken wir früh, was im Alltag fehlt.
 
 ## Entwicklung
 

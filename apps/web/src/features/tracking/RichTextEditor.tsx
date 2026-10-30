@@ -152,9 +152,11 @@ export function RichTextView({
       ],
       content: doc as Content,
       editable: false,
-      ...(variant === 'page'
-        ? { editorProps: { attributes: { class: 'tl-prose tl-prose-read tl-lore' } } }
-        : {}),
+      editorProps: {
+        attributes: {
+          class: variant === 'page' ? 'tl-prose tl-prose-read tl-lore' : 'tl-prose tl-prose-read',
+        },
+      },
     },
     [JSON.stringify(doc), variant, page?.pageId],
   );
@@ -163,10 +165,7 @@ export function RichTextView({
     // biome-ignore lint/a11y/noStaticElementInteractions: opens links inside in the app
     // biome-ignore lint/a11y/useKeyWithClickEvents: links keep their own keyboard behaviour
     <div onClick={openInApp}>
-      <EditorContent
-        editor={editor}
-        className="[&_.tiptap]:tl-prose [&_.tiptap]:min-h-0 [&_.tiptap]:max-w-none"
-      />
+      <EditorContent editor={editor} className="[&_.tiptap]:max-w-none" />
     </div>
   );
 }

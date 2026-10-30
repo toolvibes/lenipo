@@ -142,10 +142,7 @@ export function CommentedText({
     // biome-ignore lint/a11y/noStaticElementInteractions: mouse-only shortcut; threads are also reachable in the side column
     // biome-ignore lint/a11y/useKeyWithClickEvents: see above
     <div ref={container} className="relative" onMouseUp={onMouseUp} onClick={onClick}>
-      <EditorContent
-        editor={editor}
-        className="[&_.tiptap]:tl-prose [&_.tiptap]:min-h-0 [&_.tiptap]:max-w-none"
-      />
+      <EditorContent editor={editor} className="[&_.tiptap]:max-w-none" />
       {offer && (
         <button
           type="button"
