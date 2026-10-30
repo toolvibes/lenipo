@@ -124,6 +124,16 @@ function DatesDialog({
   );
 }
 
+let measure: CanvasRenderingContext2D | null = null;
+
+/** The width of `text` in the interface font at `font` (weight and size), for bar labels. */
+function textWidth(text: string, font: string): number {
+  measure ??= document.createElement('canvas').getContext('2d');
+  if (!measure) return text.length * 7;
+  measure.font = `${font} ${getComputedStyle(document.body).fontFamily}`;
+  return measure.measureText(text).width;
+}
+
 /** Epics and their issues as bars over time, with milestones (T-RDM-01, -05, E-68). */
 export function TimelinePage({ projectKey }: { projectKey: string }) {
   const { t, i18n } = useTranslation();
@@ -254,6 +264,9 @@ export function TimelinePage({ projectKey }: { projectKey: string }) {
         : 'bg-[var(--accent-soft)] text-[var(--ink)]'
       : STATUS_TONE[row.issue.status.category];
     const editable = row.issue.canEdit;
+    const text = `${epic ? row.issue.summary : row.issue.key}${percent !== null ? ` · ${percent} %` : ''}`;
+    // A bar too short for its text gets it beside the bar instead of an ellipsis (TL-5).
+    const outside = barWidth < textWidth(text, epic ? '500 12.5px' : '11.5px') + 18;
     const label = t('timeline.bar', {
       key: row.issue.key,
       summary: row.issue.summary,
@@ -261,58 +274,70 @@ export function TimelinePage({ projectKey }: { projectKey: string }) {
       end: formatDate(span.end),
     });
     return (
-      <button
-        type="button"
-        aria-label={label}
-        title={span.derived ? `${label} · ${t('timeline.derived')}` : label}
-        onPointerDown={(event) => startDrag(event, row, 'move')}
-        onPointerMove={moveDrag}
-        onPointerUp={() => endDrag(row)}
-        onPointerCancel={() => setDrag(null)}
-        onClick={(event) => {
-          // Pointer clicks are handled on pointer up; this is the keyboard path.
-          if (event.detail === 0)
-            void navigate({ to: '/issues/$key', params: { key: row.issue.key } });
-        }}
-        style={{ left, width: barWidth }}
-        className={`group absolute flex touch-none items-center overflow-hidden border text-left select-none ${
-          epic
-            ? 'top-3.5 h-7 rounded-[5px] text-[12.5px] font-medium'
-            : 'top-2.5 h-5 rounded-[4px] text-[11.5px]'
-        } ${tone} ${
-          span.derived
-            ? 'border-dashed border-[var(--border-strong)] !bg-transparent'
-            : 'border-transparent'
-        } ${editable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
-          drag?.key === row.issue.key ? 'shadow-[var(--shadow-drag)]' : ''
-        }`}
-      >
-        {epic && percent !== null && !span.derived && (
+      <>
+        <button
+          type="button"
+          aria-label={label}
+          title={span.derived ? `${label} · ${t('timeline.derived')}` : label}
+          onPointerDown={(event) => startDrag(event, row, 'move')}
+          onPointerMove={moveDrag}
+          onPointerUp={() => endDrag(row)}
+          onPointerCancel={() => setDrag(null)}
+          onClick={(event) => {
+            // Pointer clicks are handled on pointer up; this is the keyboard path.
+            if (event.detail === 0)
+              void navigate({ to: '/issues/$key', params: { key: row.issue.key } });
+          }}
+          style={{ left, width: barWidth }}
+          className={`group absolute flex touch-none items-center overflow-hidden border text-left select-none ${
+            epic
+              ? 'top-3.5 h-7 rounded-[5px] text-[12.5px] font-medium'
+              : 'top-2.5 h-5 rounded-[4px] text-[11.5px]'
+          } ${tone} ${
+            span.derived
+              ? 'border-dashed border-[var(--border-strong)] !bg-transparent'
+              : 'border-transparent'
+          } ${editable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
+            drag?.key === row.issue.key ? 'shadow-[var(--shadow-drag)]' : ''
+          }`}
+        >
+          {epic && percent !== null && !span.derived && (
+            <span
+              aria-hidden
+              className={`absolute inset-y-0 left-0 opacity-30 ${done ? 'bg-[var(--success)]' : 'bg-[var(--accent)]'}`}
+              style={{ width: `${percent}%` }}
+            />
+          )}
+          {!outside && <span className="relative truncate px-2">{text}</span>}
+          {editable && (
+            <>
+              <span
+                aria-hidden
+                onPointerDown={(event) => startDrag(event, row, 'start')}
+                className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize group-hover:bg-[var(--border-strong)]/40"
+              />
+              <span
+                aria-hidden
+                onPointerDown={(event) => startDrag(event, row, 'end')}
+                className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize group-hover:bg-[var(--border-strong)]/40"
+              />
+            </>
+          )}
+        </button>
+        {outside && (
           <span
             aria-hidden
-            className={`absolute inset-y-0 left-0 opacity-30 ${done ? 'bg-[var(--success)]' : 'bg-[var(--accent)]'}`}
-            style={{ width: `${percent}%` }}
-          />
+            style={{ left: left + barWidth + 6 }}
+            className={`pointer-events-none absolute whitespace-nowrap text-[var(--ink-muted)] ${
+              epic
+                ? 'top-3.5 text-[12.5px] leading-7 font-medium'
+                : 'top-2.5 text-[11.5px] leading-5'
+            }`}
+          >
+            {text}
+          </span>
         )}
-        <span className="relative truncate px-2">
-          {epic ? row.issue.summary : row.issue.key}
-          {percent !== null && ` · ${percent} %`}
-        </span>
-        {editable && (
-          <>
-            <span
-              aria-hidden
-              onPointerDown={(event) => startDrag(event, row, 'start')}
-              className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize group-hover:bg-[var(--border-strong)]/40"
-            />
-            <span
-              aria-hidden
-              onPointerDown={(event) => startDrag(event, row, 'end')}
-              className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize group-hover:bg-[var(--border-strong)]/40"
-            />
-          </>
-        )}
-      </button>
+      </>
     );
   };
 
