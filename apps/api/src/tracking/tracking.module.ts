@@ -10,6 +10,8 @@ import { IssueService } from './issue.service.js';
 import { IssuesController } from './issues.controller.js';
 import { LinkService } from './link.service.js';
 import { MetaService } from './meta.service.js';
+import { PermissionSchemeService } from './permission-scheme.service.js';
+import { PermissionSchemesController } from './permission-schemes.controller.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { ProjectMemberService } from './project-member.service.js';
@@ -29,6 +31,7 @@ import { WorklogService } from './worklog.service.js';
     AttachmentsController,
     TimeTrackingController,
     CustomFieldsController,
+    PermissionSchemesController,
   ],
   providers: [
     TrackingBootstrapService,
@@ -36,6 +39,7 @@ import { WorklogService } from './worklog.service.js';
     ProjectAccessService,
     ProjectService,
     ProjectMemberService,
+    PermissionSchemeService,
     ComponentService,
     CustomFieldService,
     LinkService,

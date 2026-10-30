@@ -19,9 +19,11 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import {
+  DEFAULT_PERMISSION_SCHEME_ID,
   favourites,
   groups,
   issues,
+  permissionSchemes,
   projectHiddenIssueTypes,
   projectRoleMembers,
   projects,
@@ -171,8 +173,13 @@ export class ProjectService {
           eq(favourites.targetId, project.id),
         ),
       );
+    const [scheme] = await this.database.db
+      .select({ id: permissionSchemes.id, name: permissionSchemes.name })
+      .from(permissionSchemes)
+      .where(eq(permissionSchemes.id, project.permissionSchemeId ?? DEFAULT_PERMISSION_SCHEME_ID));
     return {
       ...this.summary(project, lead?.name ?? null, issueCount?.total ?? 0, !!favourite),
+      permissionScheme: scheme ?? { id: DEFAULT_PERMISSION_SCHEME_ID, name: '' },
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: definition.statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),

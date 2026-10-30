@@ -42,6 +42,78 @@ export const ProjectMember = z
   .meta({ id: 'ProjectMember' });
 export type ProjectMember = z.infer<typeof ProjectMember>;
 
+// ---------------------------------------------------------------- permission schemes (E-82)
+
+export const PERMISSION_GRANTEES = ['role', 'group', 'user'] as const;
+export const PermissionGrantee = z.enum(PERMISSION_GRANTEES).meta({ id: 'PermissionGrantee' });
+export type PermissionGrantee = z.infer<typeof PermissionGrantee>;
+
+/** One right in a scheme: a project role, a group or one person holds a project permission. */
+export const PermissionGrant = z
+  .object({
+    permission: ProjectPermission,
+    grantee: PermissionGrantee,
+    role: ProjectRole.nullable(),
+    group: z.object({ id: Id, name: z.string() }).nullable(),
+    user: UserRef.nullable(),
+  })
+  .meta({ id: 'PermissionGrant' });
+export type PermissionGrant = z.infer<typeof PermissionGrant>;
+
+export const PermissionGrantInput = z
+  .union([
+    z.strictObject({ permission: ProjectPermission, role: ProjectRole }),
+    z.strictObject({ permission: ProjectPermission, groupId: Id }),
+    z.strictObject({ permission: ProjectPermission, userId: Id }),
+  ])
+  .meta({ id: 'PermissionGrantInput' });
+export type PermissionGrantInput = z.infer<typeof PermissionGrantInput>;
+
+export const PermissionSchemeSummary = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    /** Used by every project without a scheme of its own; cannot be deleted. */
+    isDefault: z.boolean(),
+    projects: z.array(z.object({ key: z.string(), name: z.string() })),
+  })
+  .meta({ id: 'PermissionSchemeSummary' });
+export type PermissionSchemeSummary = z.infer<typeof PermissionSchemeSummary>;
+
+export const PermissionScheme = PermissionSchemeSummary.extend({
+  grants: z.array(PermissionGrant),
+}).meta({ id: 'PermissionScheme' });
+export type PermissionScheme = z.infer<typeof PermissionScheme>;
+
+const SchemeName = z.string().trim().min(1).max(80);
+
+export const CreatePermissionSchemeRequest = z
+  .object({
+    name: SchemeName,
+    description: z.string().max(500).default(''),
+    /** Starts with the grants of this scheme; the default scheme if left out. */
+    copyFromId: Id.optional(),
+  })
+  .meta({ id: 'CreatePermissionSchemeRequest' });
+export type CreatePermissionSchemeRequest = z.infer<typeof CreatePermissionSchemeRequest>;
+
+export const UpdatePermissionSchemeRequest = z
+  .object({
+    name: SchemeName,
+    description: z.string().max(500),
+    /** Replaces all grants of the scheme. */
+    grants: z.array(PermissionGrantInput).max(500),
+  })
+  .partial()
+  .meta({ id: 'UpdatePermissionSchemeRequest' });
+export type UpdatePermissionSchemeRequest = z.infer<typeof UpdatePermissionSchemeRequest>;
+
+export const SetProjectPermissionSchemeRequest = z
+  .object({ schemeId: Id.nullable() })
+  .meta({ id: 'SetProjectPermissionSchemeRequest' });
+export type SetProjectPermissionSchemeRequest = z.infer<typeof SetProjectPermissionSchemeRequest>;
+
 export const AddProjectMemberRequest = z
   .union([
     z.strictObject({ role: ProjectRole, userId: Id }),
@@ -173,6 +245,8 @@ export const ProjectSummary = z
 export type ProjectSummary = z.infer<typeof ProjectSummary>;
 
 export const ProjectDetails = ProjectSummary.extend({
+  /** The permission scheme the project uses (E-82). */
+  permissionScheme: z.object({ id: Id, name: z.string() }),
   issueTypes: z.array(IssueTypeInfo),
   statuses: z.array(StatusInfo),
   permissions: z.array(ProjectPermission),

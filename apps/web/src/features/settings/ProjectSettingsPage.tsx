@@ -4,9 +4,18 @@ import { type AddProjectMemberRequest, PROJECT_ROLES } from '@tasklore/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
+import { meQuery } from '../../lib/queries';
 import { useCurrentProject } from '../../lib/shortcuts';
 import { projectMembersQuery, projectQuery, projectWorkflowQuery } from '../../lib/tracking';
+import { Select } from '../../ui/Select';
 import { TopBar } from '../../ui/TopBar';
+import {
+  checkedOf,
+  columnsOf,
+  PermissionMatrix,
+  permissionSchemeQuery,
+  permissionSchemesQuery,
+} from '../admin/PermissionSchemes';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
@@ -65,6 +74,76 @@ function Members({ projectKey }: { projectKey: string }) {
   );
 }
 
+/**
+ * The project's permission scheme (E-82): its name and matrix; global administrators choose
+ * another one here, project administrators see which applies.
+ */
+function Permissions({ projectKey }: { projectKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const project = useQuery(projectQuery(projectKey));
+  const me = useQuery(meQuery);
+  const isAdmin = me.data?.globalPermissions.includes('admin') ?? false;
+  const schemes = useQuery({ ...permissionSchemesQuery, enabled: isAdmin });
+  const current = project.data?.permissionScheme;
+  const scheme = useQuery({
+    ...permissionSchemeQuery(current?.id ?? ''),
+    enabled: isAdmin && !!current,
+  });
+  const choose = useMutation({
+    mutationFn: (schemeId: string) =>
+      unwrap(
+        client.PUT('/api/v1/projects/{key}/permission-scheme', {
+          params: { path: { key: projectKey } },
+          body: { schemeId },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project', projectKey] }),
+  });
+  if (!current) return null;
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="tl-heading-md m-0">{t('projectSettings.permissions')}</h2>
+        <p className="m-0 text-sm text-[var(--ink-muted)]">
+          {isAdmin
+            ? t('projectSettings.permissionsHelp')
+            : t('projectSettings.permissionsAdminOnly')}
+        </p>
+      </div>
+      {choose.error && <p className="m-0 text-[var(--danger)]">{choose.error.message}</p>}
+      {isAdmin && schemes.data ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <Select
+            label={t('projectSettings.scheme')}
+            value={current.id}
+            disabled={choose.isPending}
+            options={schemes.data.map((entry) => ({ value: entry.id, label: entry.name }))}
+            onChange={(event) => choose.mutate(event.target.value)}
+          />
+          <Link
+            to="/admin/permission-schemes/$id"
+            params={{ id: current.id }}
+            className="pb-2 text-[13px]"
+          >
+            {t('projectSettings.editScheme')}
+          </Link>
+        </div>
+      ) : (
+        <p className="m-0">
+          <strong>{current.name}</strong>
+        </p>
+      )}
+      {scheme.data && (
+        <PermissionMatrix
+          columns={columnsOf(scheme.data.grants)}
+          checked={checkedOf(scheme.data.grants)}
+        />
+      )}
+    </section>
+  );
+}
+
 /** Project settings with a sub-navigation (1a S11): the workflow editor, other parts as dialogs. */
 export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const { t } = useTranslation();
@@ -72,7 +151,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const workflow = useQuery(projectWorkflowQuery(projectKey));
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [view, setView] = useState<'workflow' | 'members'>('workflow');
+  const [view, setView] = useState<'workflow' | 'members' | 'permissions'>('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
   const close = (open: boolean) => !open && setDialog(null);
@@ -113,6 +192,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('projectSettings.members')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'permissions' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('permissions')}
+              >
+                {t('projectSettings.permissions')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -132,6 +219,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
             </p>
           )}
           {view === 'members' && administer && <Members projectKey={projectKey} />}
+          {view === 'permissions' && administer && <Permissions projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={workflow.data.versionId}

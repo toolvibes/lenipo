@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 const PAGES = [
   { to: '/admin/webhooks', label: 'webhooks.title' },
+  { to: '/admin/permission-schemes', label: 'schemes.title' },
   { to: '/admin/custom-fields', label: 'fields.title' },
   { to: '/admin/time-tracking', label: 'time.settingsTitle' },
   { to: '/admin/templates', label: 'templates.globalTitle' },

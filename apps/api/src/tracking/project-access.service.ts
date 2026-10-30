@@ -7,28 +7,28 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import {
+  DEFAULT_PERMISSION_SCHEME_ID,
   globalPermissionGrants,
   groupMembers,
-  projectRoleMembers,
   projects,
   users,
 } from '../db/schema/index.js';
 
-type Role = (typeof projectRoleMembers.$inferSelect)['role'];
-
-/** The default permission scheme: what each project role may do. */
-const ROLE_PERMISSIONS: Record<Role, readonly ProjectPermission[]> = {
-  administrators: PROJECT_PERMISSIONS,
-  developers: [
-    'browse',
-    'create-issues',
-    'edit-issues',
-    'transition-issues',
-    'assign-issues',
-    'comment',
-  ],
-  users: ['browse', 'create-issues', 'comment'],
-};
+/**
+ * Whether a grant of the project's permission scheme (`g`) applies to a user (TL-70, E-82):
+ * through a project role they hold directly or via a group, a group of theirs, or by name.
+ * `project` and `user` are SQL expressions, so the same rule works for one project, as a
+ * correlated condition on `projects`, and for listing people.
+ */
+function grantApplies(project: SQL, scheme: SQL, user: SQL): SQL {
+  const userGroups = sql`select gm.group_id from group_members gm where gm.user_id = ${user}`;
+  return sql`g.scheme_id = coalesce(${scheme}, ${DEFAULT_PERMISSION_SCHEME_ID}::uuid) and (
+    (g.grantee = 'role' and g.role in (
+      select m.role from project_role_members m
+      where m.project_id = ${project} and (m.user_id = ${user} or m.group_id in (${userGroups}))))
+    or (g.grantee = 'group' and g.group_id in (${userGroups}))
+    or (g.grantee = 'user' and g.user_id = ${user}))`;
+}
 
 /** Project-level permission checks; every tracking route goes through here. */
 @Injectable()
@@ -38,52 +38,41 @@ export class ProjectAccessService {
     @Inject(AccessService) private readonly access: AccessService,
   ) {}
 
-  /** Role assignments that apply to a user: directly or through one of their groups. */
-  private memberCondition(userId: string): SQL {
-    const userGroups = this.database.db
-      .select({ groupId: groupMembers.groupId })
-      .from(groupMembers)
-      .where(eq(groupMembers.userId, userId));
-    return or(
-      eq(projectRoleMembers.userId, userId),
-      inArray(projectRoleMembers.groupId, userGroups),
-    ) as SQL;
-  }
-
   async permissions(userId: string, projectId: string): Promise<Set<ProjectPermission>> {
     if (await this.access.hasGlobal(userId, 'admin')) return new Set(PROJECT_PERMISSIONS);
-    const rows = await this.database.db
-      .selectDistinct({ role: projectRoleMembers.role })
-      .from(projectRoleMembers)
-      .where(and(eq(projectRoleMembers.projectId, projectId), this.memberCondition(userId)));
-    return new Set(rows.flatMap((row) => ROLE_PERMISSIONS[row.role]));
+    const scheme = sql`(select p.permission_scheme_id from projects p where p.id = ${projectId})`;
+    const rows = await this.database.db.execute<{ permission: ProjectPermission }>(
+      sql`select distinct g.permission from permission_scheme_grants g
+        where ${grantApplies(sql`${projectId}::uuid`, scheme, sql`${userId}::uuid`)}`,
+    );
+    return new Set([...rows].map((row) => row.permission));
   }
 
   /** SQL condition limiting `projects` to those the user may browse. */
   async browsableCondition(userId: string): Promise<SQL> {
     if (await this.access.hasGlobal(userId, 'admin')) return isNull(projects.archivedAt);
-    const memberships = this.database.db
-      .selectDistinct({ projectId: projectRoleMembers.projectId })
-      .from(projectRoleMembers)
-      .where(this.memberCondition(userId));
-    return and(isNull(projects.archivedAt), inArray(projects.id, memberships)) as SQL;
+    return and(
+      isNull(projects.archivedAt),
+      sql`exists (select 1 from permission_scheme_grants g where g.permission = 'browse' and ${grantApplies(
+        sql`${projects.id}`,
+        sql`${projects.permissionSchemeId}`,
+        sql`${userId}::uuid`,
+      )})`,
+    ) as SQL;
   }
 
   /**
-   * Active users who may browse the project: role members (directly or through a group) and
-   * global administrators. Used for assignees and @-mentions (E-39).
+   * Active users who may browse the project under its permission scheme, and global
+   * administrators. Used for assignees and @-mentions (E-39).
    */
   async browsingUsers(projectId: string, query: string, limit: number): Promise<UserRef[]> {
     const db = this.database.db;
-    const direct = db
-      .select({ userId: projectRoleMembers.userId })
-      .from(projectRoleMembers)
-      .where(eq(projectRoleMembers.projectId, projectId));
-    const viaGroups = db
-      .select({ userId: groupMembers.userId })
-      .from(groupMembers)
-      .innerJoin(projectRoleMembers, eq(projectRoleMembers.groupId, groupMembers.groupId))
-      .where(eq(projectRoleMembers.projectId, projectId));
+    const scheme = sql`(select p.permission_scheme_id from projects p where p.id = ${projectId})`;
+    const mayBrowse = sql`exists (select 1 from permission_scheme_grants g where g.permission = 'browse' and ${grantApplies(
+      sql`${projectId}::uuid`,
+      scheme,
+      sql`${users.id}`,
+    )})`;
     const admins = db
       .select({ userId: groupMembers.userId })
       .from(groupMembers)
@@ -101,7 +90,7 @@ export class ProjectAccessService {
         and(
           eq(users.status, 'active'),
           query ? ilike(users.displayName, pattern) : undefined,
-          or(inArray(users.id, direct), inArray(users.id, viaGroups), inArray(users.id, admins)),
+          or(mayBrowse, inArray(users.id, admins)),
         ),
       )
       .orderBy(rank, users.displayName)

@@ -464,6 +464,196 @@
         }
       }
     },
+    "/api/v1/admin/permission-schemes": {
+      "get": {
+        "operationId": "Administration.list",
+        "summary": "List the permission schemes with the projects using them",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermissionSchemeSummary"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Administration.create",
+        "summary": "Create a permission scheme as a copy of another (the default one if not given)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePermissionSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/permission-schemes/{id}": {
+      "get": {
+        "operationId": "Administration.get",
+        "summary": "Get a permission scheme with its grants",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "Administration.update",
+        "summary": "Rename a permission scheme or replace its grants",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePermissionSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionScheme"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Administration.delete",
+        "summary": "Delete a permission scheme no project uses",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Administration"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "Auth.login",
@@ -4330,6 +4520,49 @@
         }
       }
     },
+    "/api/v1/projects/{key}/permission-scheme": {
+      "put": {
+        "operationId": "Projects.setPermissionScheme",
+        "summary": "Give the project a permission scheme; null for the default one",
+        "description": "Requires the global permission `admin` (E-82).\n\nRequires the global permission `admin`.",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetProjectPermissionSchemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{key}/members": {
       "get": {
         "operationId": "Projects.listMembers",
@@ -7888,6 +8121,266 @@
         },
         "required": ["hoursPerDay", "daysPerWeek"]
       },
+      "PermissionSchemeSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": ["key", "name"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "name", "description", "isDefault", "projects"],
+        "additionalProperties": false
+      },
+      "PermissionScheme": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": ["key", "name"],
+              "additionalProperties": false
+            }
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionGrant"
+            }
+          }
+        },
+        "required": ["id", "name", "description", "isDefault", "projects", "grants"],
+        "additionalProperties": false
+      },
+      "PermissionGrant": {
+        "type": "object",
+        "properties": {
+          "permission": {
+            "$ref": "#/components/schemas/ProjectPermission"
+          },
+          "grantee": {
+            "$ref": "#/components/schemas/PermissionGrantee"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["permission", "grantee", "role", "group", "user"],
+        "additionalProperties": false
+      },
+      "ProjectPermission": {
+        "type": "string",
+        "enum": [
+          "browse",
+          "create-issues",
+          "edit-issues",
+          "transition-issues",
+          "assign-issues",
+          "comment",
+          "delete-issues",
+          "administer"
+        ]
+      },
+      "PermissionGrantee": {
+        "type": "string",
+        "enum": ["role", "group", "user"]
+      },
+      "ProjectRole": {
+        "type": "string",
+        "enum": ["administrators", "developers", "users"]
+      },
+      "UserRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "displayName"],
+        "additionalProperties": false
+      },
+      "CreatePermissionSchemeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "copyFromId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": ["name"]
+      },
+      "UpdatePermissionSchemeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "grants": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionGrantInput"
+            }
+          }
+        }
+      },
+      "PermissionGrantInput": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "permission": {
+                "$ref": "#/components/schemas/ProjectPermission"
+              },
+              "role": {
+                "$ref": "#/components/schemas/ProjectRole"
+              }
+            },
+            "required": ["permission", "role"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "permission": {
+                "$ref": "#/components/schemas/ProjectPermission"
+              },
+              "groupId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["permission", "groupId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "permission": {
+                "$ref": "#/components/schemas/ProjectPermission"
+              },
+              "userId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["permission", "userId"],
+            "additionalProperties": false
+          }
+        ]
+      },
       "LoginRequest": {
         "type": "object",
         "properties": {
@@ -8775,21 +9268,6 @@
           }
         },
         "required": ["id", "key", "name", "icon", "sequence"],
-        "additionalProperties": false
-      },
-      "UserRef": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "displayName": {
-            "type": "string"
-          }
-        },
-        "required": ["id", "displayName"],
         "additionalProperties": false
       },
       "ResolutionInfo": {
@@ -11990,6 +12468,24 @@
         "required": ["id", "kind", "actor", "issue", "project", "items", "at"],
         "additionalProperties": false
       },
+      "SetProjectPermissionSchemeRequest": {
+        "type": "object",
+        "properties": {
+          "schemeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["schemeId"]
+      },
       "ProjectMember": {
         "type": "object",
         "properties": {
@@ -12036,10 +12532,6 @@
         },
         "required": ["id", "role", "user", "group"],
         "additionalProperties": false
-      },
-      "ProjectRole": {
-        "type": "string",
-        "enum": ["administrators", "developers", "users"]
       },
       "AddProjectMemberRequest": {
         "anyOf": [
@@ -12202,6 +12694,21 @@
           "favourite": {
             "type": "boolean"
           },
+          "permissionScheme": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+          },
           "issueTypes": {
             "type": "array",
             "items": {
@@ -12239,25 +12746,13 @@
           "issueCount",
           "createdAt",
           "favourite",
+          "permissionScheme",
           "issueTypes",
           "statuses",
           "permissions",
           "customFieldIds"
         ],
         "additionalProperties": false
-      },
-      "ProjectPermission": {
-        "type": "string",
-        "enum": [
-          "browse",
-          "create-issues",
-          "edit-issues",
-          "transition-issues",
-          "assign-issues",
-          "comment",
-          "delete-issues",
-          "administer"
-        ]
       },
       "IssueList": {
         "type": "object",

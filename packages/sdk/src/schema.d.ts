@@ -186,6 +186,58 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/permission-schemes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the permission schemes with the projects using them
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.list'];
+    put?: never;
+    /**
+     * Create a permission scheme as a copy of another (the default one if not given)
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Administration.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/permission-schemes/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a permission scheme with its grants
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.get'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a permission scheme no project uses
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Administration.delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Rename a permission scheme or replace its grants
+     * @description Requires the global permission `admin`.
+     */
+    patch: operations['Administration.update'];
+    trace?: never;
+  };
   '/api/v1/auth/login': {
     parameters: {
       query?: never;
@@ -1375,6 +1427,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/permission-scheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Give the project a permission scheme; null for the default one
+     * @description Requires the global permission `admin` (E-82).
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Projects.setPermissionScheme'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/members': {
     parameters: {
       query?: never;
@@ -2531,6 +2605,86 @@ export interface components {
       hoursPerDay: number;
       daysPerWeek: number;
     };
+    PermissionSchemeSummary: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      isDefault: boolean;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+    };
+    PermissionScheme: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      isDefault: boolean;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+      grants: components['schemas']['PermissionGrant'][];
+    };
+    PermissionGrant: {
+      permission: components['schemas']['ProjectPermission'];
+      grantee: components['schemas']['PermissionGrantee'];
+      role: components['schemas']['ProjectRole'] | null;
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+      user: components['schemas']['UserRef'] | null;
+    };
+    /** @enum {string} */
+    ProjectPermission:
+      | 'browse'
+      | 'create-issues'
+      | 'edit-issues'
+      | 'transition-issues'
+      | 'assign-issues'
+      | 'comment'
+      | 'delete-issues'
+      | 'administer';
+    /** @enum {string} */
+    PermissionGrantee: 'role' | 'group' | 'user';
+    /** @enum {string} */
+    ProjectRole: 'administrators' | 'developers' | 'users';
+    UserRef: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+    };
+    CreatePermissionSchemeRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      /** Format: uuid */
+      copyFromId?: string;
+    };
+    UpdatePermissionSchemeRequest: {
+      name?: string;
+      description?: string;
+      grants?: components['schemas']['PermissionGrantInput'][];
+    };
+    PermissionGrantInput:
+      | {
+          permission: components['schemas']['ProjectPermission'];
+          role: components['schemas']['ProjectRole'];
+        }
+      | {
+          permission: components['schemas']['ProjectPermission'];
+          /** Format: uuid */
+          groupId: string;
+        }
+      | {
+          permission: components['schemas']['ProjectPermission'];
+          /** Format: uuid */
+          userId: string;
+        };
     LoginRequest: {
       /** Format: email */
       email: string;
@@ -2741,11 +2895,6 @@ export interface components {
       name: string;
       icon: string;
       sequence: number;
-    };
-    UserRef: {
-      /** Format: uuid */
-      id: string;
-      displayName: string;
     };
     ResolutionInfo: {
       /** Format: uuid */
@@ -3570,6 +3719,9 @@ export interface components {
       /** Format: date-time */
       at: string;
     };
+    SetProjectPermissionSchemeRequest: {
+      schemeId: string | null;
+    };
     ProjectMember: {
       /** Format: uuid */
       id: string;
@@ -3581,8 +3733,6 @@ export interface components {
         name: string;
       } | null;
     };
-    /** @enum {string} */
-    ProjectRole: 'administrators' | 'developers' | 'users';
     AddProjectMemberRequest:
       | {
           role: components['schemas']['ProjectRole'];
@@ -3628,21 +3778,16 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       favourite: boolean;
+      permissionScheme: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      };
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
       customFieldIds: string[];
     };
-    /** @enum {string} */
-    ProjectPermission:
-      | 'browse'
-      | 'create-issues'
-      | 'edit-issues'
-      | 'transition-issues'
-      | 'assign-issues'
-      | 'comment'
-      | 'delete-issues'
-      | 'administer';
     IssueList: {
       issues: components['schemas']['IssueSummary'][];
       total: number;
@@ -4595,6 +4740,163 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['WorkingTime'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PermissionSchemeSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePermissionSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PermissionScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PermissionScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePermissionSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PermissionScheme'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -7515,6 +7817,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ActivityPage'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.setPermissionScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetProjectPermissionSchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

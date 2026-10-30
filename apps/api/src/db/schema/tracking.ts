@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   bigserial,
   boolean,
@@ -116,6 +117,10 @@ export const projects = pgTable(
       .references(() => workflowVersions.id),
     /** Last issue number handed out; incremented under a row lock. */
     issueCounter: integer().notNull().default(0),
+    /** Null uses the default permission scheme (TL-70, E-82). */
+    permissionSchemeId: uuid().references((): AnyPgColumn => permissionSchemes.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
   },
@@ -157,6 +162,50 @@ export const projectRoleMembers = pgTable(
       table.role,
       table.userId,
       table.groupId,
+    ),
+  ],
+);
+
+/** The default scheme, created by migration with exactly the former fixed rights. */
+export const DEFAULT_PERMISSION_SCHEME_ID = '01a00000-0000-7000-8000-00000000c0de';
+
+/**
+ * Named permission schemes shared by projects (P-PRM-02, TL-70, E-82): which project role,
+ * group or person holds which project permission.
+ */
+export const permissionSchemes = pgTable(
+  'permission_schemes',
+  {
+    id: uuid().primaryKey(),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('permission_schemes_name_unique').on(table.name)],
+);
+
+export const permissionGrantee = pgEnum('permission_grantee', ['role', 'group', 'user']);
+
+export const permissionSchemeGrants = pgTable(
+  'permission_scheme_grants',
+  {
+    id: uuid().primaryKey(),
+    schemeId: uuid()
+      .notNull()
+      .references(() => permissionSchemes.id, { onDelete: 'cascade' }),
+    permission: text().notNull(),
+    grantee: permissionGrantee().notNull(),
+    role: projectRole(),
+    groupId: uuid().references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('permission_scheme_grants_scheme_idx').on(table.schemeId, table.permission),
+    check(
+      'permission_scheme_grants_one_grantee',
+      sql`(grantee = 'role' and role is not null and group_id is null and user_id is null)
+        or (grantee = 'group' and group_id is not null and role is null and user_id is null)
+        or (grantee = 'user' and user_id is not null and role is null and group_id is null)`,
     ),
   ],
 );

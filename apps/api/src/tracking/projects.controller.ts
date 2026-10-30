@@ -24,6 +24,7 @@ import {
   ProjectWorkflow,
   PublishWorkflowRequest,
   ReleaseVersionRequest,
+  SetProjectPermissionSchemeRequest,
   Timeline,
   UpdateComponentRequest,
   UpdateVersionRequest,
@@ -31,11 +32,13 @@ import {
   Version,
 } from '@tasklore/shared';
 import { z } from 'zod';
+import { RequireGlobal } from '../access/require-global.js';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { ComponentService } from './component.service.js';
 import { IssueService } from './issue.service.js';
+import { PermissionSchemeService } from './permission-scheme.service.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { ProjectMemberService } from './project-member.service.js';
@@ -74,7 +77,24 @@ export class ProjectsController {
     @Inject(TimelineService) private readonly timelines: TimelineService,
     @Inject(WorkflowService) private readonly workflows: WorkflowService,
     @Inject(ProjectMemberService) private readonly members: ProjectMemberService,
+    @Inject(PermissionSchemeService) private readonly schemes: PermissionSchemeService,
   ) {}
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Give the project a permission scheme; null for the default one',
+    description: 'Requires the global permission `admin` (E-82).',
+  })
+  @RequireGlobal('admin')
+  @Put(':key/permission-scheme')
+  @HttpCode(204)
+  setPermissionScheme(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(SetProjectPermissionSchemeRequest) body: SetProjectPermissionSchemeRequest,
+  ): Promise<void> {
+    return this.schemes.assign(principal, key, body.schemeId);
+  }
 
   @Endpoint({
     tag: 'Projects',

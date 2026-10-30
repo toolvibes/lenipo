@@ -11,6 +11,7 @@ import { ISSUE_KEY } from '@tasklore/tql';
 import { useTranslation } from 'react-i18next';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
+import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
@@ -509,6 +510,21 @@ const templateRoute = createRoute({
   },
 });
 
+const permissionSchemesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/permission-schemes',
+  component: PermissionSchemesPage,
+});
+
+const permissionSchemeRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/permission-schemes/$id',
+  component: function PermissionScheme() {
+    const { id } = permissionSchemeRoute.useParams();
+    return <PermissionSchemeEditor key={id} id={id} />;
+  },
+});
+
 const customFieldsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/custom-fields',
@@ -567,6 +583,8 @@ const routeTree = rootRoute.addChildren([
       webhooksRoute,
       webhookRoute,
       timeTrackingRoute,
+      permissionSchemesRoute,
+      permissionSchemeRoute,
       customFieldsRoute,
       templatesRoute,
       templateRoute,
