@@ -1,6 +1,8 @@
 import type {
   Attachment,
   Favourite,
+  LabelCount,
+  LabelledPage,
   Page,
   PageComment,
   PageDiff,
@@ -644,5 +646,75 @@ describe('page and inline comments (E-63)', () => {
     );
     list = await comments(olaf);
     expect(list.map((comment) => comment.id)).toEqual([inline.id]);
+  });
+});
+
+describe('labels and watching (E-65)', () => {
+  let page: Page;
+
+  it('lets editors label pages; labels are lower case and outside the versions', async () => {
+    page = (await mira.request<Page>('POST', '/spaces/DOCS/pages', { title: 'Onboarding-Plan' }))
+      .body;
+    const labelled = await mira.request<Page>('PUT', `/pages/${page.id}/labels`, {
+      labels: ['Prozess', 'prozess', ' Team '],
+    });
+    expect(labelled.body).toMatchObject({ labels: ['prozess', 'team'], version: 0 });
+    expect((await olaf.request('PUT', `/pages/${page.id}/labels`, { labels: ['x'] })).status).toBe(
+      404,
+    );
+    expect(
+      (await mira.request('PUT', `/pages/${page.id}/labels`, { labels: ['zwei worte'] })).status,
+    ).toBe(400);
+
+    // A draft carries its labels only for editors.
+    const forOlaf = await olaf.request<LabelledPage[]>('GET', '/labels/prozess/pages');
+    expect(forOlaf.body).toEqual([]);
+    await mira.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Onboarding-Plan',
+      content: { type: 'doc', content: [{ type: 'paragraph' }] },
+    });
+    const found = await olaf.request<LabelledPage[]>('GET', '/labels/Prozess/pages?space=DOCS');
+    expect(found.body.map((entry) => [entry.title, entry.space.key])).toEqual([
+      ['Onboarding-Plan', 'DOCS'],
+    ]);
+    expect((await olaf.request('PUT', `/pages/${page.id}/labels`, { labels: ['x'] })).status).toBe(
+      403,
+    );
+    const counts = await olaf.request<LabelCount[]>('GET', '/spaces/DOCS/labels');
+    expect(counts.body).toEqual([
+      { label: 'prozess', pages: 1 },
+      { label: 'team', pages: 1 },
+    ]);
+  });
+
+  it('watches pages, subtrees and spaces; creating a page watches it', async () => {
+    expect((await mira.request<Page>('GET', `/pages/${page.id}`)).body.watch).toEqual({
+      page: true,
+      subtree: false,
+      inherited: null,
+    });
+    const child = (
+      await mira.request<Page>('POST', '/spaces/DOCS/pages', {
+        title: 'Woche 1',
+        parentId: page.id,
+      })
+    ).body;
+    await olaf.request('PUT', `/pages/${page.id}/watch`, { scope: 'subtree' });
+    expect((await olaf.request<Page>('GET', `/pages/${page.id}`)).body.watch).toEqual({
+      page: false,
+      subtree: true,
+      inherited: null,
+    });
+    expect((await mira.request<Page>('GET', `/pages/${child.id}`)).body.watch.inherited).toBeNull();
+    await mira.request('PUT', '/spaces/DOCS/watch');
+    expect((await mira.request<Space>('GET', '/spaces/DOCS')).body.watching).toBe(true);
+    expect((await mira.request<Page>('GET', `/pages/${child.id}`)).body.watch).toEqual({
+      page: true,
+      subtree: false,
+      inherited: 'space',
+    });
+    await olaf.request('DELETE', `/pages/${page.id}/watch?scope=subtree`);
+    expect((await olaf.request<Page>('GET', `/pages/${page.id}`)).body.watch.subtree).toBe(false);
+    await mira.request('DELETE', '/spaces/DOCS/watch');
   });
 });

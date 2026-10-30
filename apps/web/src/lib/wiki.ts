@@ -71,6 +71,23 @@ export const pageCommentsQuery = (id: string) =>
     queryFn: () => unwrap(client.GET('/api/v1/pages/{id}/comments', { params: { path: { id } } })),
   });
 
+export const spaceLabelsQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['space', key, 'labels'],
+    queryFn: () => unwrap(client.GET('/api/v1/spaces/{key}/labels', { params: { path: { key } } })),
+  });
+
+export const labelPagesQuery = (label: string, space?: string) =>
+  queryOptions({
+    queryKey: ['labels', label, space ?? null],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/labels/{label}/pages', {
+          params: { path: { label }, query: space ? { space } : {} },
+        }),
+      ),
+  });
+
 export const pageVersionsQuery = (id: string) =>
   queryOptions({
     queryKey: ['page', id, 'versions'],

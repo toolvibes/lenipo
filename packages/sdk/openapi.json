@@ -2662,6 +2662,59 @@
         }
       }
     },
+    "/api/v1/labels/{label}/pages": {
+      "get": {
+        "operationId": "Pages.pagesWithLabel",
+        "summary": "List the pages with a label",
+        "description": "In every space the caller can see, or only in `space`; sorted by title.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "label",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "space",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LabelledPage"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pages/{id}/attachments": {
       "get": {
         "operationId": "Pages.listAttachments",
@@ -3427,6 +3480,152 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageVersion"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/labels": {
+      "put": {
+        "operationId": "Pages.setLabels",
+        "summary": "Set the labels of a page",
+        "description": "Replaces all labels; they are lower-cased and not part of the versions. Requires the space permission `edit`.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPageLabelsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/watch": {
+      "put": {
+        "operationId": "Pages.watch",
+        "summary": "Watch a page, or the page with every page below it",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchPageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Pages.unwatch",
+        "summary": "Stop watching a page",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "page",
+              "type": "string",
+              "enum": ["page", "subtree"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
                 }
               }
             }
@@ -5212,6 +5411,125 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Space"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{key}/labels": {
+      "get": {
+        "operationId": "Spaces.labels",
+        "summary": "List the labels used in a space",
+        "description": "With the number of pages the caller can see that carry each label.",
+        "tags": ["Spaces"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LabelCount"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{key}/watch": {
+      "put": {
+        "operationId": "Spaces.watch",
+        "summary": "Watch everything in a space",
+        "tags": ["Spaces"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Space"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Spaces.unwatch",
+        "summary": "Stop watching a space",
+        "tags": ["Spaces"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -9522,7 +9840,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["created", "updated", "commented"]
+            "enum": ["created", "updated", "commented", "published"]
           },
           "items": {
             "type": "array",
@@ -9548,6 +9866,11 @@
           },
           "quote": {
             "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": ["kind", "items"],
@@ -9616,6 +9939,52 @@
           }
         },
         "required": ["emailEnabled", "emailCategories"]
+      },
+      "LabelledPage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "space": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "name"],
+            "additionalProperties": false
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["id", "title", "space", "labels", "publishedAt"],
+        "additionalProperties": false
       },
       "PageComment": {
         "type": "object",
@@ -9909,6 +10278,15 @@
           },
           "canComment": {
             "type": "boolean"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "watch": {
+            "$ref": "#/components/schemas/PageWatchState"
           }
         },
         "required": [
@@ -9925,7 +10303,9 @@
           "canEdit",
           "favourite",
           "draftChanged",
-          "canComment"
+          "canComment",
+          "labels",
+          "watch"
         ],
         "additionalProperties": false
       },
@@ -9942,6 +10322,30 @@
           }
         },
         "required": ["id", "title"],
+        "additionalProperties": false
+      },
+      "PageWatchState": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "boolean"
+          },
+          "subtree": {
+            "type": "boolean"
+          },
+          "inherited": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["ancestor", "space"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["page", "subtree", "inherited"],
         "additionalProperties": false
       },
       "UpdatePageRequest": {
@@ -10104,6 +10508,32 @@
           "content"
         ],
         "additionalProperties": false
+      },
+      "SetPageLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^\\S+$"
+            }
+          }
+        },
+        "required": ["labels"]
+      },
+      "WatchPageRequest": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "default": "page",
+            "type": "string",
+            "enum": ["page", "subtree"]
+          }
+        }
       },
       "PageDiff": {
         "type": "object",
@@ -11301,6 +11731,9 @@
           "favourite": {
             "type": "boolean"
           },
+          "watching": {
+            "type": "boolean"
+          },
           "project": {
             "anyOf": [
               {
@@ -11330,6 +11763,7 @@
           "homePageId",
           "createdAt",
           "favourite",
+          "watching",
           "project"
         ],
         "additionalProperties": false
@@ -11394,6 +11828,9 @@
           "favourite": {
             "type": "boolean"
           },
+          "watching": {
+            "type": "boolean"
+          },
           "project": {
             "anyOf": [
               {
@@ -11429,6 +11866,7 @@
           "homePageId",
           "createdAt",
           "favourite",
+          "watching",
           "project",
           "permissions"
         ],
@@ -11475,6 +11913,21 @@
             ]
           }
         }
+      },
+      "LabelCount": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["label", "pages"],
+        "additionalProperties": false
       },
       "SpaceMember": {
         "type": "object",

@@ -8,11 +8,13 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import {
   AddSpaceMemberRequest,
   CreatePageRequest,
   CreateSpaceRequest,
+  LabelCount,
   Page,
   PageTreeEntry,
   Space,
@@ -113,6 +115,32 @@ export class SpacesController {
     @ValidBody(UpdateSpaceRequest) body: UpdateSpaceRequest,
   ): Promise<Space> {
     return this.spaces.update(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Spaces',
+    summary: 'List the labels used in a space',
+    description: 'With the number of pages the caller can see that carry each label.',
+    response: z.array(LabelCount),
+  })
+  @Get(':key/labels')
+  labels(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<LabelCount[]> {
+    return this.pages.spaceLabels(principal, key);
+  }
+
+  @Endpoint({ tag: 'Spaces', summary: 'Watch everything in a space', response: Space })
+  @Put(':key/watch')
+  watch(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Space> {
+    return this.spaces.watch(principal, key, true);
+  }
+
+  @Endpoint({ tag: 'Spaces', summary: 'Stop watching a space', response: Space })
+  @Delete(':key/watch')
+  unwatch(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Space> {
+    return this.spaces.watch(principal, key, false);
   }
 
   @Endpoint({

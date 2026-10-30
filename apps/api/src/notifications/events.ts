@@ -43,8 +43,18 @@ export async function emitIssueEvent(
   await signalIssue(tx, issueId);
 }
 
-/** What happened on a wiki page (E-63); written to the outbox with the page's id. */
-export type PageEvent = {
+/** What happened on a wiki page (E-63, E-65); written to the outbox with the page's id. */
+export type PageEvent = PageCommented | PagePublished;
+
+export type PagePublished = {
+  type: 'page.published';
+  version: number;
+  title: string;
+  comment: string;
+  restoredFrom: number | null;
+};
+
+export type PageCommented = {
   type: 'page.commented';
   commentId: string;
   /** The comment that starts the thread; the comment itself for a new thread. */

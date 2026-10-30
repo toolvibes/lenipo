@@ -9,6 +9,8 @@ import { diffDocs, imageAttachmentIds, isValidDoc, richTextSchema } from '@taskl
 import type {
   ContentFormat,
   CreatePageRequest,
+  LabelCount,
+  LabelledPage,
   MovePageRequest,
   Page,
   PageDiff,
@@ -26,6 +28,7 @@ import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';
+import { AuditService } from '../audit/audit.service.js';
 import { DRAFT_FIELD, DRAFT_RESET_CHANNEL, draftName } from '../collab/document-name.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -39,6 +42,7 @@ import {
   spaces,
   users,
 } from '../db/schema/index.js';
+import { emitPageEvent } from '../notifications/events.js';
 import { signal } from '../realtime/signals.js';
 import { markdownOf } from '../tracking/content-format.js';
 import { rankBetween } from '../tracking/rank.js';
@@ -46,12 +50,12 @@ import { plainText } from '../tracking/rich-text.js';
 import { reanchorComments } from './comment-anchors.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
+import { autoWatch, setWatch, watchState } from './watches.js';
 
 type PageRow = typeof pages.$inferSelect;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Pages of a wiki space: tree, drafts, published versions and trash (W-PAG, E-59). */
 /** Key order of JSON objects does not matter when comparing documents. */
 function canonicalJson(value: unknown): string {
   return JSON.stringify(value, (_key, entry: unknown) =>
@@ -61,12 +65,14 @@ function canonicalJson(value: unknown): string {
   );
 }
 
+/** Pages of a wiki space: tree, drafts, published versions and trash (W-PAG, E-59). */
 @Injectable()
 export class PageService {
   constructor(
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(SpaceService) private readonly spaces: SpaceService,
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
+    @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
   /**
@@ -232,6 +238,7 @@ export class PageService {
       if (!space.homePageId) {
         await tx.update(spaces).set({ homePageId: id }).where(eq(spaces.id, space.id));
       }
+      await autoWatch(tx, principal.userId, id);
       await signal(tx, { type: 'space', spaceKey: space.key });
     });
     return this.get(principal, id);
@@ -285,6 +292,8 @@ export class PageService {
       favourite: await this.starred(principal.userId, page.id),
       draftChanged: permissions.has('edit') ? await this.draftChanged(page.id, content) : false,
       canComment: permissions.has('comment'),
+      labels: page.labels,
+      watch: await watchState(this.database.db, principal.userId, page.id),
     };
   }
 
@@ -402,6 +411,114 @@ export class PageService {
 
   // ---------------------------------------------------------------- changing
 
+  // ---------------------------------------------------------------- labels and watching (E-65)
+
+  /** Replaces the labels; they are page metadata, not part of a version. */
+  async setLabels(principal: Principal, id: string, labels: string[]): Promise<Page> {
+    const { page, space } = await this.authorize(principal, id, 'edit');
+    const next = [...new Set(labels)].sort();
+    if (next.join(' ') !== [...page.labels].sort().join(' ')) {
+      await this.database.db.transaction(async (tx) => {
+        await tx.update(pages).set({ labels: next }).where(eq(pages.id, page.id));
+        await signal(tx, { type: 'page', pageId: page.id, spaceKey: space.key });
+      });
+      await this.audit.record({
+        action: 'page.labels-changed',
+        actorId: principal.userId,
+        via: principal.via,
+        targetType: 'page',
+        targetId: page.id,
+        details: { from: page.labels, to: next },
+      });
+    }
+    return this.get(principal, id);
+  }
+
+  /** Labels used in a space with the number of pages the caller can see that carry them. */
+  async spaceLabels(principal: Principal, spaceKey: string): Promise<LabelCount[]> {
+    const pagesSeen = await this.labelledPages(principal, { spaceKey });
+    const counts = new Map<string, number>();
+    for (const page of pagesSeen) {
+      for (const label of page.labels) counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return [...counts]
+      .map(([label, pages]) => ({ label, pages }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  /**
+   * Pages with a label (or any label), across the spaces the caller can view or in one space;
+   * drafts only where the caller may edit.
+   */
+  async labelledPages(
+    principal: Principal,
+    filter: { label?: string; spaceKey?: string },
+  ): Promise<LabelledPage[]> {
+    const space = filter.spaceKey
+      ? (await this.spaces.find(principal, filter.spaceKey)).space
+      : null;
+    const rows = await this.database.db
+      .select({
+        id: pages.id,
+        title: pages.title,
+        labels: pages.labels,
+        version: pages.version,
+        publishedAt: pages.publishedAt,
+        spaceId: spaces.id,
+        spaceKey: spaces.key,
+        spaceName: spaces.name,
+      })
+      .from(pages)
+      .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+      .where(
+        and(
+          isNull(pages.deletedAt),
+          space ? eq(pages.spaceId, space.id) : undefined,
+          filter.label
+            ? sql`${pages.labels} @> array[${filter.label.toLowerCase()}]::text[]`
+            : sql`cardinality(${pages.labels}) > 0`,
+          await this.spaceAccess.viewableCondition(principal.userId),
+        ),
+      )
+      .orderBy(asc(pages.title));
+    const editable = new Map<string, boolean>();
+    const result: LabelledPage[] = [];
+    for (const row of rows) {
+      if (row.version === 0) {
+        if (!editable.has(row.spaceId)) {
+          const granted = await this.spaceAccess.permissions(principal.userId, row.spaceId);
+          editable.set(row.spaceId, granted.has('edit'));
+        }
+        if (!editable.get(row.spaceId)) continue;
+      }
+      result.push({
+        id: row.id,
+        title: row.title,
+        space: { key: row.spaceKey, name: row.spaceName },
+        labels: row.labels,
+        publishedAt: row.publishedAt?.toISOString() ?? null,
+      });
+    }
+    return result;
+  }
+
+  /** Follows or stops following the page alone or with everything below it. */
+  async watch(
+    principal: Principal,
+    id: string,
+    scope: 'page' | 'subtree',
+    on: boolean,
+  ): Promise<Page> {
+    const { page } = await this.authorize(principal, id, 'view');
+    await setWatch(
+      this.database.db,
+      principal.userId,
+      { kind: scope, spaceId: page.spaceId, pageId: page.id },
+      on,
+    );
+    return this.get(principal, id);
+  }
+
   async rename(principal: Principal, id: string, title: string): Promise<Page> {
     const { page, space } = await this.authorize(principal, id, 'edit');
     await this.database.db.transaction(async (tx) => {
@@ -495,6 +612,14 @@ export class PageService {
         .set({ title: version.title, version: number, publishedAt: now, updatedAt: now })
         .where(eq(pages.id, pageId));
       await reanchorComments(tx, pageId, version.content);
+      await autoWatch(tx, principal.userId, pageId);
+      await emitPageEvent(tx, pageId, principal.userId, {
+        type: 'page.published',
+        version: number,
+        title: version.title,
+        comment: version.comment,
+        restoredFrom: version.restoredFrom,
+      });
       if (version.restoredFrom !== null) {
         // After commit the collab service replaces the draft with the restored content.
         await tx.execute(sql`select pg_notify(${DRAFT_RESET_CHANNEL}, ${draftName(pageId)})`);

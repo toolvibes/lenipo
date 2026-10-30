@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import {
   DiffQuery,
@@ -20,7 +21,9 @@ import {
   PageVersionSummary,
   PublishPageRequest,
   RestoreVersionRequest,
+  SetPageLabelsRequest,
   UpdatePageRequest,
+  WatchPageRequest,
 } from '@tasklore/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
@@ -116,6 +119,46 @@ export class PagesController {
     @ValidQuery(FormatQuery) query: FormatQuery,
   ): Promise<PageVersion> {
     return this.pages.version(principal, id, number, query.format);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
+    summary: 'Set the labels of a page',
+    description:
+      'Replaces all labels; they are lower-cased and not part of the versions. Requires the space permission `edit`.',
+    response: Page,
+  })
+  @Put(':id/labels')
+  setLabels(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @ValidBody(SetPageLabelsRequest) body: SetPageLabelsRequest,
+  ): Promise<Page> {
+    return this.pages.setLabels(principal, id, body.labels);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
+    summary: 'Watch a page, or the page with every page below it',
+    response: Page,
+  })
+  @Put(':id/watch')
+  watch(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @ValidBody(WatchPageRequest) body: WatchPageRequest,
+  ): Promise<Page> {
+    return this.pages.watch(principal, id, body.scope, true);
+  }
+
+  @Endpoint({ tag: 'Pages', summary: 'Stop watching a page', response: Page })
+  @Delete(':id/watch')
+  unwatch(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @ValidQuery(WatchPageRequest) query: WatchPageRequest,
+  ): Promise<Page> {
+    return this.pages.watch(principal, id, query.scope, false);
   }
 
   @Endpoint({

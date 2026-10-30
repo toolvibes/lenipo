@@ -162,6 +162,13 @@
       "when": 1793334960337,
       "tag": "0022_page_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793335417519,
+      "tag": "0023_page_labels_watches",
+      "breakpoints": true
     }
   ]
 }

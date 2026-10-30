@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
+import { LabelsController } from './labels.controller.js';
 import { PageService } from './page.service.js';
 import { PageAttachmentService } from './page-attachment.service.js';
 import { PageAttachmentsController } from './page-attachments.controller.js';
@@ -20,6 +21,7 @@ import { SpacesController } from './spaces.controller.js';
     PageAttachmentsController,
     PageCommentsController,
     ProjectSpacesController,
+    LabelsController,
   ],
   providers: [
     SpaceAccessService,

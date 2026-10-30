@@ -27,6 +27,8 @@ export const SpaceSummary = z
     homePageId: Id.nullable(),
     createdAt: z.iso.datetime(),
     favourite: z.boolean(),
+    /** The caller watches the whole space (E-65). */
+    watching: z.boolean(),
     /** The linked tracking project; null if none or the caller may not browse it (E-60). */
     project: z.object({ key: z.string(), name: z.string() }).nullable(),
   })
@@ -95,6 +97,49 @@ export type PageTreeEntry = z.infer<typeof PageTreeEntry>;
 export const PageRef = z.object({ id: Id, title: z.string() }).meta({ id: 'PageRef' });
 export type PageRef = z.infer<typeof PageRef>;
 
+/** How the caller follows a page (E-65): directly, with its subtree, or through a parent or the space. */
+export const PageWatchState = z
+  .object({
+    page: z.boolean(),
+    subtree: z.boolean(),
+    /** Followed already through a page above it or the whole space. */
+    inherited: z.enum(['ancestor', 'space']).nullable(),
+  })
+  .meta({ id: 'PageWatchState' });
+export type PageWatchState = z.infer<typeof PageWatchState>;
+
+/** Labels as written: trimmed, lower case, without spaces (E-65). */
+export const PageLabels = z
+  .array(z.string().trim().toLowerCase().min(1).max(64).regex(/^\S+$/, 'Labels ohne Leerzeichen'))
+  .max(30);
+
+export const SetPageLabelsRequest = z
+  .object({ labels: PageLabels })
+  .meta({ id: 'SetPageLabelsRequest' });
+export type SetPageLabelsRequest = z.infer<typeof SetPageLabelsRequest>;
+
+export const LabelCount = z
+  .object({ label: z.string(), pages: z.number().int() })
+  .meta({ id: 'LabelCount' });
+export type LabelCount = z.infer<typeof LabelCount>;
+
+/** A page found by label, as far as the caller may see it. */
+export const LabelledPage = z
+  .object({
+    id: Id,
+    title: z.string(),
+    space: z.object({ key: z.string(), name: z.string() }),
+    labels: z.array(z.string()),
+    publishedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'LabelledPage' });
+export type LabelledPage = z.infer<typeof LabelledPage>;
+
+export const WatchPageRequest = z
+  .object({ scope: z.enum(['page', 'subtree']).default('page') })
+  .meta({ id: 'WatchPageRequest' });
+export type WatchPageRequest = z.infer<typeof WatchPageRequest>;
+
 /** A page as readers see it: the latest published version (E-59). */
 export const Page = z
   .object({
@@ -117,6 +162,9 @@ export const Page = z
     draftChanged: z.boolean(),
     /** May write, answer and resolve comments (E-63). */
     canComment: z.boolean(),
+    /** Free-text labels, lower case (W-PAG-08, E-65). */
+    labels: z.array(z.string()),
+    watch: PageWatchState,
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;

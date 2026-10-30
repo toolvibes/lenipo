@@ -13,10 +13,12 @@ import {
 import {
   CaretDown,
   CaretRight,
+  Eye,
   FolderSimple,
   GearSix,
   Kanban,
   Plus,
+  Tag,
   Trash,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -320,6 +322,21 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
     return result;
   }, [dragging, tree.data]);
 
+  const watchSpace = useMutation({
+    mutationFn: (on: boolean) => {
+      const options = { params: { path: { key: spaceKey } } };
+      return unwrap(
+        on
+          ? client.PUT('/api/v1/spaces/{key}/watch', options)
+          : client.DELETE('/api/v1/spaces/{key}/watch', options),
+      );
+    },
+    onSuccess: async (next) => {
+      queryClient.setQueryData(spaceQuery(spaceKey).queryKey, next);
+      await queryClient.invalidateQueries({ queryKey: ['page'] });
+    },
+  });
+
   const move = useMutation({
     mutationFn: ({ id, body }: { id: string; body: MovePageRequest }) =>
       unwrap(client.POST('/api/v1/pages/{id}/move', { params: { path: { id } }, body })),
@@ -373,12 +390,25 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
             <span className="tl-key text-[var(--ink-muted)]">{spaceKey}</span>
           </Link>
           {space.data && (
-            <FavouriteButton
-              kind="space"
-              refId={space.data.key}
-              active={space.data.favourite}
-              name={space.data.name}
-            />
+            <>
+              <button
+                type="button"
+                aria-pressed={space.data.watching}
+                disabled={watchSpace.isPending}
+                onClick={() => watchSpace.mutate(!space.data?.watching)}
+                aria-label={space.data.watching ? t('wiki.watch.stopSpace') : t('wiki.watch.space')}
+                title={space.data.watching ? t('wiki.watch.stopSpace') : t('wiki.watch.space')}
+                className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] aria-pressed:text-[var(--accent)]"
+              >
+                <Eye size={18} weight={space.data.watching ? 'fill' : 'regular'} aria-hidden />
+              </button>
+              <FavouriteButton
+                kind="space"
+                refId={space.data.key}
+                active={space.data.favourite}
+                name={space.data.name}
+              />
+            </>
           )}
         </div>
         {space.data?.project && <ProjectLinks project={space.data.project} />}
@@ -442,6 +472,14 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
           </DragOverlay>
         </DndContext>
         <div className="mt-auto flex flex-col gap-0.5">
+          <Link
+            to="/spaces/$key/labels"
+            params={{ key: spaceKey }}
+            className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink-muted)] no-underline hover:text-[var(--ink)]"
+          >
+            <Tag size={14} aria-hidden />
+            {t('wiki.labels.overview')}
+          </Link>
           {canEdit && (
             <Link
               to="/spaces/$key/trash"

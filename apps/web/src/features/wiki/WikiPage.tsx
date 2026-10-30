@@ -17,6 +17,7 @@ import { FavouriteButton } from '../personal/FavouriteButton';
 import { PageComments } from './comments';
 import { CommentedText, InlineThreads } from './InlineComments';
 import { PageAttachments } from './PageAttachments';
+import { PageLabelList, WatchMenu } from './PageMeta';
 import { CreatePageDialog } from './SpaceLayout';
 
 export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode }) {
@@ -212,7 +213,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
     <main className="flex flex-col gap-4 px-6 py-5">
       <Breadcrumbs page={data} />
       <header className="flex flex-wrap items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-[1_1_22rem] flex-col gap-1">
           <h1 className="tl-heading-xl m-0 flex items-center gap-2">
             {data.title}
             <FavouriteButton
@@ -222,6 +223,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
               name={data.title}
             />
           </h1>
+          <PageLabelList page={data} />
           <span className="text-sm text-[var(--ink-muted)]">
             {data.version === 0
               ? t('wiki.neverPublished')
@@ -243,6 +245,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
               {t('wiki.edit')}
             </Link>
           )}
+          <WatchMenu page={data} />
           {data.version > 0 && (
             <Link
               to="/spaces/$key/pages/$id/history"

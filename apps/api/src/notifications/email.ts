@@ -15,11 +15,15 @@ const TEXT = {
     open: 'Vorgang öffnen',
     openPage: 'Seite öffnen',
     commentedPage: (actor: string) => `${actor} hat auf der Seite kommentiert:`,
+    published: (actor: string, version: number) =>
+      version === 1
+        ? `${actor} hat die Seite veröffentlicht.`
+        : `${actor} hat Version ${version} veröffentlicht.`,
     onText: 'zu',
     footer:
       'Sie erhalten diese E-Mail, weil Sie den Vorgang beobachten oder erwähnt wurden. Welche E-Mails Sie bekommen, stellen Sie in Tasklore unter der Glocke ein.',
     footerPage:
-      'Sie erhalten diese E-Mail, weil Sie erwähnt wurden, an der Diskussion beteiligt sind oder die Seite angelegt haben. Welche E-Mails Sie bekommen, stellen Sie in Tasklore unter der Glocke ein.',
+      'Sie erhalten diese E-Mail, weil Sie die Seite beobachten, erwähnt wurden oder an der Diskussion beteiligt sind. Welche E-Mails Sie bekommen, stellen Sie in Tasklore unter der Glocke ein.',
     someone: 'Jemand',
     fields: {
       summary: 'Zusammenfassung',
@@ -49,11 +53,13 @@ const TEXT = {
     open: 'Open issue',
     openPage: 'Open page',
     commentedPage: (actor: string) => `${actor} commented on the page:`,
+    published: (actor: string, version: number) =>
+      version === 1 ? `${actor} published the page.` : `${actor} published version ${version}.`,
     onText: 'on',
     footer:
       'You receive this email because you watch the issue or were mentioned. Choose which emails you get under the bell in Tasklore.',
     footerPage:
-      'You receive this email because you were mentioned, took part in the discussion or created the page. Choose which emails you get under the bell in Tasklore.',
+      'You receive this email because you watch the page, were mentioned or took part in the discussion. Choose which emails you get under the bell in Tasklore.',
     someone: 'Someone',
     fields: {
       summary: 'Summary',
@@ -106,6 +112,14 @@ function block(
     return {
       text: [intro, ...(passage ? [passage] : []), ...quote.split('\n').map((line) => `> ${line}`)],
       html: `<p>${escapeHtml(intro)}</p>${passage ? `<p style="margin:0 0 8px;color:#55555e">${escapeHtml(passage)}</p>` : ''}<blockquote style="margin:0 0 16px;padding:8px 12px;border-left:3px solid #1f5fbf;color:#44444c">${escapeHtml(quote).replace(/\n/g, '<br>')}</blockquote>`,
+    };
+  }
+  if (details.kind === 'published') {
+    const intro = t.published(actor, details.version ?? 1);
+    const comment = details.excerpt ? [`> ${details.excerpt}`] : [];
+    return {
+      text: [intro, ...comment],
+      html: `<p>${escapeHtml(intro)}</p>${details.excerpt ? `<blockquote style="margin:0 0 16px;padding:8px 12px;border-left:3px solid #1f5fbf;color:#44444c">${escapeHtml(details.excerpt)}</blockquote>` : ''}`,
     };
   }
   if (details.kind === 'created') {

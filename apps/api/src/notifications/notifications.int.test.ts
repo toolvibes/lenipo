@@ -345,3 +345,49 @@ describe('page comment notifications (E-63)', () => {
     );
   });
 });
+
+describe('watching wiki pages (E-65)', () => {
+  it('tells watchers about published versions and new pages below a watched page', async () => {
+    const [page] = await test.database.sql<{ id: string }[]>`
+      select id from pages where title = 'Regeln'`;
+    const pageId = page?.id as string;
+    await jonas.request('PUT', '/spaces/DOCS/watch');
+    const before = {
+      jonas: (await inbox(jonas)).unreadCount,
+      mira: (await inbox(mira)).unreadCount,
+    };
+    await admin.request('POST', `/pages/${pageId}/publish`, {
+      title: 'Regeln',
+      content: docFromText('Der Sprint dauert drei Wochen.'),
+      comment: 'Länger geplant',
+    });
+    await work();
+    // Jonas follows the space, Mira the page since she answered on it.
+    expect((await inbox(jonas)).notifications[0]).toMatchObject({
+      page: { id: pageId },
+      category: 'other',
+      details: { kind: 'published', version: 2, excerpt: 'Länger geplant' },
+    });
+    expect((await inbox(mira)).unreadCount).toBe(before.mira + 1);
+
+    // Unwatching stops it; a subtree watch reaches new pages below.
+    await mira.request('DELETE', `/pages/${pageId}/watch?scope=page`);
+    await jonas.request('DELETE', '/spaces/DOCS/watch');
+    await jonas.request('PUT', `/pages/${pageId}/watch`, { scope: 'subtree' });
+    const child = await admin.request<{ id: string }>('POST', '/spaces/DOCS/pages', {
+      title: 'Ausnahmen',
+      parentId: pageId,
+    });
+    await admin.request('POST', `/pages/${child.body.id}/publish`, {
+      title: 'Ausnahmen',
+      content: docFromText('Feiertage verschieben den Sprint.'),
+    });
+    await work();
+    expect((await inbox(mira)).unreadCount).toBe(before.mira + 1);
+    expect((await inbox(jonas)).notifications[0]).toMatchObject({
+      page: { id: child.body.id, title: 'Ausnahmen' },
+      details: { kind: 'published', version: 1 },
+    });
+    expect((await inbox(jonas)).unreadCount).toBe(before.jonas + 2);
+  });
+});

@@ -26,6 +26,7 @@ import {
   favourites,
   groups,
   pages,
+  pageWatches,
   projects,
   spaceRoleMembers,
   spaces,
@@ -36,6 +37,7 @@ import { signal } from '../realtime/signals.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { SpaceAccessService } from './space-access.service.js';
+import { setWatch } from './watches.js';
 
 export type SpaceRow = typeof spaces.$inferSelect;
 
@@ -205,6 +207,13 @@ export class SpaceService {
     return project.id;
   }
 
+  /** Follows or stops following everything in the space (E-65). */
+  async watch(principal: Principal, key: string, on: boolean): Promise<Space> {
+    const { space } = await this.find(principal, key);
+    await setWatch(this.database.db, principal.userId, { kind: 'space', spaceId: space.id }, on);
+    return this.get(principal, key);
+  }
+
   // ---------------------------------------------------------------- role assignments
 
   async members(principal: Principal, key: string): Promise<SpaceMember[]> {
@@ -321,6 +330,23 @@ export class SpaceService {
           )
       ).map((row) => row.targetId),
     );
+    const watched = new Set(
+      (
+        await db
+          .select({ spaceId: pageWatches.spaceId })
+          .from(pageWatches)
+          .where(
+            and(
+              eq(pageWatches.userId, userId),
+              eq(pageWatches.kind, 'space'),
+              inArray(
+                pageWatches.spaceId,
+                rows.map((row) => row.id),
+              ),
+            ),
+          )
+      ).map((row) => row.spaceId),
+    );
     const projectIds = [...new Set(rows.flatMap((row) => (row.projectId ? [row.projectId] : [])))];
     const linked = new Map(
       projectIds.length === 0
@@ -345,6 +371,7 @@ export class SpaceService {
       homePageId: space.homePageId,
       createdAt: space.createdAt.toISOString(),
       favourite: starred.has(space.id),
+      watching: watched.has(space.id),
       project: (space.projectId && linked.get(space.projectId)) || null,
     }));
   }

@@ -29,6 +29,7 @@ import {
 import { signal } from '../realtime/signals.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { PageService } from '../wiki/page.service.js';
+import { pageWatcherIds } from '../wiki/watches.js';
 import { notificationEmail } from './email.js';
 import type { ChangedItem, IssueEvent, PageEvent } from './events.js';
 import { Mailer } from './mailer.js';
@@ -121,19 +122,23 @@ export class NotificationService {
   }
 
   /**
-   * Page comments (E-63): mentioned people, everyone who wrote in the thread and the page's
-   * creator, minus the actor; only who may still see the page. Edits tell new mentions only.
+   * Wiki pages (E-63, E-65): watchers of the page, its subtree or space hear about published
+   * versions and comments; comments also reach mentioned people and the thread's participants.
+   * Never the actor, only who may still see the page; edits tell new mentions only.
    */
   private async handlePage(tx: Executor, row: EventRow, pageId: string): Promise<void> {
     const [page] = await tx
-      .select({ id: pages.id, createdById: pages.createdById, deletedAt: pages.deletedAt })
+      .select({ id: pages.id, deletedAt: pages.deletedAt })
       .from(pages)
       .where(eq(pages.id, pageId));
     if (!page || page.deletedAt) return;
     const event = { type: row.type, ...(row.payload as object) } as PageEvent;
-    const mentions = new Set(event.mentions);
+    const mentions = new Set(event.type === 'page.commented' ? event.mentions : []);
     let candidates: string[] = [...mentions];
-    if (!event.edited) {
+    if (event.type === 'page.published' || !event.edited) {
+      candidates.push(...(await pageWatcherIds(tx, page.id)));
+    }
+    if (event.type === 'page.commented' && !event.edited) {
       const thread = await tx
         .select({ authorId: pageComments.authorId })
         .from(pageComments)
@@ -144,7 +149,6 @@ export class NotificationService {
           ),
         );
       candidates.push(...thread.flatMap((entry) => (entry.authorId ? [entry.authorId] : [])));
-      if (page.createdById) candidates.push(page.createdById);
     }
     candidates = [...new Set(candidates)].filter((id) => id !== row.actorId);
     if (candidates.length === 0) return;
@@ -157,14 +161,22 @@ export class NotificationService {
       if ((await this.pages.visible(id, [page.id])).has(page.id)) recipients.push(id);
     }
     if (recipients.length === 0) return;
-    const details: NotificationDetails = {
-      kind: 'commented',
-      items: [],
-      excerpt: event.excerpt,
-      ...(event.quote ? { quote: event.quote } : {}),
-    };
+    const details: NotificationDetails =
+      event.type === 'page.published'
+        ? {
+            kind: 'published',
+            items: [],
+            version: event.version,
+            ...(event.comment ? { excerpt: event.comment } : {}),
+          }
+        : {
+            kind: 'commented',
+            items: [],
+            excerpt: event.excerpt,
+            ...(event.quote ? { quote: event.quote } : {}),
+          };
     await this.deliver(tx, row, { pageId: page.id }, recipients, details, (userId) =>
-      mentions.has(userId) ? 'mention' : 'comment',
+      mentions.has(userId) ? 'mention' : event.type === 'page.commented' ? 'comment' : 'other',
     );
   }
 

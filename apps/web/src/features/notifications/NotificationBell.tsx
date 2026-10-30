@@ -44,6 +44,15 @@ function useDescribe() {
         detail: excerpt,
       };
     }
+    if (details.kind === 'published') {
+      return {
+        title:
+          details.version === 1
+            ? t('notifications.publishedFirst', { actor })
+            : t('notifications.published', { actor, version: details.version ?? 1 }),
+        detail: details.excerpt ?? null,
+      };
+    }
     if (details.kind === 'created') {
       return {
         title:

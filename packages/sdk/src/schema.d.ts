@@ -865,6 +865,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/labels/{label}/pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the pages with a label
+     * @description In every space the caller can see, or only in `space`; sorted by title.
+     */
+    get: operations['Pages.pagesWithLabel'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/attachments': {
     parameters: {
       query?: never;
@@ -1074,6 +1094,44 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/labels': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the labels of a page
+     * @description Replaces all labels; they are lower-cased and not part of the versions. Requires the space permission `edit`.
+     */
+    put: operations['Pages.setLabels'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/watch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Watch a page, or the page with every page below it */
+    put: operations['Pages.watch'];
+    post?: never;
+    /** Stop watching a page */
+    delete: operations['Pages.unwatch'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1643,6 +1701,44 @@ export interface paths {
      * @description Requires the space permission `administer`; linking or unlinking a project also requires `administer` on that project.
      */
     patch: operations['Spaces.update'];
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/labels': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the labels used in a space
+     * @description With the number of pages the caller can see that carry each label.
+     */
+    get: operations['Spaces.labels'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/watch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Watch everything in a space */
+    put: operations['Spaces.watch'];
+    post?: never;
+    /** Stop watching a space */
+    delete: operations['Spaces.unwatch'];
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/api/v1/spaces/{key}/members': {
@@ -2848,7 +2944,7 @@ export interface components {
     };
     NotificationDetails: {
       /** @enum {string} */
-      kind: 'created' | 'updated' | 'commented';
+      kind: 'created' | 'updated' | 'commented' | 'published';
       items: {
         field: string;
         from: string | null;
@@ -2856,6 +2952,7 @@ export interface components {
       }[];
       excerpt?: string;
       quote?: string;
+      version?: number;
     };
     UnreadCount: {
       count: number;
@@ -2873,6 +2970,17 @@ export interface components {
     UpdateNotificationSettings: {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
+    };
+    LabelledPage: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      space: {
+        key: string;
+        name: string;
+      };
+      labels: string[];
+      publishedAt: string | null;
     };
     PageComment: {
       /** Format: uuid */
@@ -2937,11 +3045,18 @@ export interface components {
       favourite: boolean;
       draftChanged: boolean;
       canComment: boolean;
+      labels: string[];
+      watch: components['schemas']['PageWatchState'];
     };
     PageRef: {
       /** Format: uuid */
       id: string;
       title: string;
+    };
+    PageWatchState: {
+      page: boolean;
+      subtree: boolean;
+      inherited: ('ancestor' | 'space') | null;
     };
     UpdatePageRequest: {
       title: string;
@@ -2974,6 +3089,16 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       content: components['schemas']['RichTextOutput'];
+    };
+    SetPageLabelsRequest: {
+      labels: string[];
+    };
+    WatchPageRequest: {
+      /**
+       * @default page
+       * @enum {string}
+       */
+      scope?: 'page' | 'subtree';
     };
     PageDiff: {
       from: components['schemas']['PageVersionSummary'];
@@ -3317,6 +3442,7 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       favourite: boolean;
+      watching: boolean;
       project: {
         key: string;
         name: string;
@@ -3339,6 +3465,7 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       favourite: boolean;
+      watching: boolean;
       project: {
         key: string;
         name: string;
@@ -3352,6 +3479,10 @@ export interface components {
       description?: string;
       homePageId?: string | null;
       projectKey?: string | null;
+    };
+    LabelCount: {
+      label: string;
+      pages: number;
     };
     SpaceMember: {
       /** Format: uuid */
@@ -5632,6 +5763,39 @@ export interface operations {
       };
     };
   };
+  'Pages.pagesWithLabel': {
+    parameters: {
+      query?: {
+        space?: string;
+      };
+      header?: never;
+      path: {
+        label: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LabelledPage'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Pages.listAttachments': {
     parameters: {
       query?: never;
@@ -6177,6 +6341,109 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PageVersion'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.setLabels': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetPageLabelsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.watch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WatchPageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.unwatch': {
+    parameters: {
+      query?: {
+        scope?: 'page' | 'subtree';
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -7431,6 +7698,99 @@ export interface operations {
         'application/json': components['schemas']['UpdateSpaceRequest'];
       };
     };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Space'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.labels': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LabelCount'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.watch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Space'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.unwatch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Success */
       200: {

@@ -92,10 +92,13 @@ export const pages = pgTable(
     /** In the space's trash (W-PAG-13), together with the pages below it. */
     deletedAt: timestamp({ withTimezone: true }),
     deletedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** Free-text labels, lower case (W-PAG-08, E-65); not part of the versions. */
+    labels: text().array().notNull().default(sql`'{}'::text[]`),
   },
   (table) => [
     index('pages_space_idx').on(table.spaceId),
     index('pages_parent_idx').on(table.parentId, table.rank),
+    index('pages_labels_idx').using('gin', table.labels),
   ],
 );
 
@@ -173,5 +176,34 @@ export const pageComments = pgTable(
   (table) => [
     index('page_comments_page_idx').on(table.pageId, table.createdAt),
     index('page_comments_parent_idx').on(table.parentId),
+  ],
+);
+
+export const watchKind = pgEnum('watch_kind', ['page', 'subtree', 'space']);
+
+/**
+ * Who follows what in the wiki (W-PAG-09, E-65): one page, a page with everything below it, or
+ * a whole space. `pageId` is null for space watches.
+ */
+export const pageWatches = pgTable(
+  'page_watches',
+  {
+    id: uuid().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: watchKind().notNull(),
+    spaceId: uuid()
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('page_watches_unique')
+      .on(table.userId, table.kind, table.spaceId, table.pageId)
+      .nullsNotDistinct(),
+    index('page_watches_page_idx').on(table.pageId),
+    index('page_watches_space_idx').on(table.spaceId),
   ],
 );

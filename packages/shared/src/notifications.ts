@@ -15,7 +15,7 @@ export type NotificationCategory = z.infer<typeof NotificationCategory>;
 
 export const NotificationDetails = z
   .object({
-    kind: z.enum(['created', 'updated', 'commented']),
+    kind: z.enum(['created', 'updated', 'commented', 'published']),
     items: z.array(
       z.object({ field: z.string(), from: z.string().nullable(), to: z.string().nullable() }),
     ),
@@ -23,6 +23,8 @@ export const NotificationDetails = z
     excerpt: z.string().optional(),
     /** The quoted page text of an inline comment (E-63). */
     quote: z.string().optional(),
+    /** A published page version (E-65); `excerpt` holds its change comment. */
+    version: z.number().int().optional(),
   })
   .meta({ id: 'NotificationDetails' });
 export type NotificationDetails = z.infer<typeof NotificationDetails>;

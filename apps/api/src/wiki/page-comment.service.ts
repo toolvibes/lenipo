@@ -27,6 +27,7 @@ import { signal } from '../realtime/signals.js';
 import { mentionedUserIds, plainText } from '../tracking/rich-text.js';
 import { PageService } from './page.service.js';
 import { SpaceAccessService } from './space-access.service.js';
+import { autoWatch } from './watches.js';
 
 type CommentRow = typeof pageComments.$inferSelect;
 
@@ -174,6 +175,7 @@ export class PageCommentService {
         bodyText: text,
         anchor,
       });
+      await autoWatch(tx, principal.userId, page.id);
       await emitPageEvent(tx, page.id, principal.userId, {
         type: 'page.commented',
         commentId: id,

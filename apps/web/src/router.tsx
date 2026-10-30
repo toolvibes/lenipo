@@ -24,6 +24,7 @@ import { HomePage } from './features/shell/HomePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
+import { LabelPages, SpaceLabelsPage } from './features/wiki/LabelPages';
 import { PageEditor } from './features/wiki/PageEditor';
 import { PageHistory } from './features/wiki/PageHistory';
 import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
@@ -160,6 +161,27 @@ const trashRoute = createRoute({
   path: '/trash',
   component: function Trash() {
     return <TrashPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
+  },
+});
+
+const spaceLabelsRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/labels',
+  component: function SpaceLabels() {
+    return <SpaceLabelsPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
+  },
+});
+
+const labelRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/labels/$label',
+  validateSearch: (search: Record<string, unknown>): { space?: string } => ({
+    space: typeof search.space === 'string' && search.space ? search.space : undefined,
+  }),
+  component: function Label() {
+    const { label } = labelRoute.useParams();
+    const { space } = labelRoute.useSearch();
+    return <LabelPages key={`${label}:${space ?? ''}`} label={label} space={space} />;
   },
 });
 
@@ -351,7 +373,9 @@ const routeTree = rootRoute.addChildren([
       pageHistoryRoute,
       trashRoute,
       spaceSettingsRoute,
+      spaceLabelsRoute,
     ]),
+    labelRoute,
     projectsRoute,
     projectRoute,
     searchRoute,
