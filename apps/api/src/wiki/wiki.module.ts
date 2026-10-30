@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
+import { DraftService } from './draft.service.js';
 import { IssuePagesController } from './issue-pages.controller.js';
 import { LabelsController } from './labels.controller.js';
 import { PageService } from './page.service.js';
@@ -32,10 +33,11 @@ import { TemplatesController } from './templates.controller.js';
     SpaceAccessService,
     SpaceService,
     TemplateService,
+    DraftService,
     PageService,
     PageAttachmentService,
     PageCommentService,
   ],
-  exports: [SpaceAccessService, SpaceService, PageService],
+  exports: [SpaceAccessService, SpaceService, PageService, DraftService, PageCommentService],
 })
 export class WikiModule {}

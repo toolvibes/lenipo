@@ -1,15 +1,26 @@
 import { Server } from '@hocuspocus/server';
-import { richTextSchema } from '@tasklore/editor';
-import { prosemirrorJSONToYDoc, updateYFragment } from '@tiptap/y-tiptap';
+import { replaceSection, richTextSchema } from '@tasklore/editor';
+import {
+  prosemirrorJSONToYDoc,
+  updateYFragment,
+  yXmlFragmentToProsemirrorJSON,
+} from '@tiptap/y-tiptap';
+import { and, eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as Y from 'yjs';
 import { AccessService } from '../access/access.service.js';
 import type { AppDependencies } from '../app.module.js';
+import { collabWrites } from '../db/schema/index.js';
 import { isForeignOrigin } from '../identity/request-guards.js';
 import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
 import { SessionService } from '../identity/session.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
-import { DRAFT_FIELD, DRAFT_RESET_CHANNEL, pageIdOf } from './document-name.js';
+import {
+  DRAFT_FIELD,
+  DRAFT_RESET_CHANNEL,
+  DRAFT_WRITE_CHANNEL,
+  pageIdOf,
+} from './document-name.js';
 import { CollabDocumentStore } from './document-store.js';
 
 export { DRAFT_FIELD } from './document-name.js';
@@ -111,6 +122,11 @@ export function createCollabServer(
           log.error({ err: error, documentName }, 'Could not reset the draft'),
         );
       });
+      await listener.listen(DRAFT_WRITE_CHANNEL, (id) => {
+        applyWrite(id).catch((error: unknown) =>
+          log.error({ err: error, id }, 'Could not apply an agent change'),
+        );
+      });
     },
 
     async onDestroy() {
@@ -143,5 +159,66 @@ export function createCollabServer(
     log.debug({ documentName }, 'Draft reset to the published content');
   }
 
+  /**
+   * Applies a queued agent change to a draft (E-74) in one Yjs transaction, like
+   * {@link resetDraft}: the whole draft, or one section of what is in the draft right now,
+   * so people's changes elsewhere stay. While it arrives, editors see the agent in the
+   * presence list for a few seconds.
+   */
+  async function applyWrite(id: string): Promise<void> {
+    const db = database.db;
+    // Claimed once, even if several instances hear the notification.
+    const [write] = await db
+      .update(collabWrites)
+      .set({ status: 'working' })
+      .where(and(eq(collabWrites.id, id), eq(collabWrites.status, 'pending')))
+      .returning();
+    if (!write) return;
+    let error: string | null = null;
+    const connection = await server.hocuspocus.openDirectConnection(write.document);
+    try {
+      await connection.transact((document) => {
+        const fragment = document.getXmlFragment(DRAFT_FIELD);
+        let target = write.content as { type: 'doc'; content?: never[] };
+        if (write.section !== null) {
+          const current = yXmlFragmentToProsemirrorJSON(fragment) as typeof target;
+          const result = replaceSection(
+            current,
+            write.section,
+            target,
+            write.newHeading ?? undefined,
+          );
+          if ('error' in result) {
+            error = `Section "${write.section}" ${result.error === 'ambiguous' ? 'is not unique' : 'not found'}. Headings: ${result.headings.join(' | ') || 'none'}`;
+            return;
+          }
+          target = result.doc as typeof target;
+        }
+        updateYFragment(document, fragment, richTextSchema.nodeFromJSON(target), {
+          mapping: new Map(),
+          isOMark: new Map(),
+        });
+        const awareness = (document as { awareness?: AgentAwareness }).awareness;
+        if (awareness) {
+          awareness.setLocalState({ user: { name: write.actorName, color: '#6a45bf' } });
+          setTimeout(() => awareness.setLocalState(null), 5_000).unref();
+        }
+      });
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : String(cause);
+    } finally {
+      await connection.disconnect();
+    }
+    await db
+      .update(collabWrites)
+      .set({ status: error ? 'error' : 'done', error })
+      .where(eq(collabWrites.id, id));
+    log.debug({ id, document: write.document, error }, 'Agent change applied');
+  }
+
   return server;
+}
+
+interface AgentAwareness {
+  setLocalState(state: Record<string, unknown> | null): void;
 }

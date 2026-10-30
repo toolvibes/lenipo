@@ -36,8 +36,9 @@ import {
   projectLine,
   projectMarkdown,
 } from './format.js';
+import { registerWikiTools, type WikiToolServices } from './wiki-tools.js';
 
-export interface ToolServices {
+export interface ToolServices extends WikiToolServices {
   database: DatabaseHandle;
   boards: BoardService;
   sprints: SprintService;
@@ -745,4 +746,6 @@ export function registerTools(server: McpServer, principal: Principal, services:
       );
     },
   );
+
+  registerWikiTools(tool, principal, services);
 }

@@ -11,6 +11,6 @@ import { SearchService } from './search.service.js';
   imports: [IdentityModule, TrackingModule, WikiModule],
   controllers: [SearchController],
   providers: [SearchService, FilterService, EverythingService],
-  exports: [FilterService, SearchService],
+  exports: [FilterService, SearchService, EverythingService],
 })
 export class SearchModule {}

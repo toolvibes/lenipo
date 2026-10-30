@@ -225,13 +225,21 @@ export class PageService {
   }
 
   /** A new page starts as a draft (W-PAG-03); the first page becomes the space's home. */
-  async create(principal: Principal, spaceKey: string, request: CreatePageRequest): Promise<Page> {
+  /** `initial` starts the draft with this content when no template is given (MCP, E-74). */
+  async create(
+    principal: Principal,
+    spaceKey: string,
+    request: CreatePageRequest,
+    initial?: RichText,
+  ): Promise<Page> {
     const { space } = await this.spaces.find(principal, spaceKey, 'edit');
     const parentId = await this.checkParent(space.id, request.parentId);
     // A template's content becomes the new draft right away (E-72).
     const template = request.template
       ? await this.templates.resolve(principal, space.id, request.template)
-      : null;
+      : initial
+        ? { content: initial }
+        : null;
     const id = uuidv7();
     await this.database.db.transaction(async (tx) => {
       if (template) {
