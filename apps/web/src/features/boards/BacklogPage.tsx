@@ -44,6 +44,39 @@ import { CompleteSprintDialog, SprintDialog, useEstimate } from './SprintDialogs
 
 const BACKLOG = 'backlog';
 
+/**
+ * The backlog with `keys` moved into section `sectionId`, after `afterKey` or before
+ * `beforeKey` (or at the end): shown at once on drop, before the server answers.
+ */
+export function applyMove(
+  data: BacklogData,
+  move: { keys: string[]; sectionId: string; afterKey?: string | null; beforeKey?: string | null },
+): BacklogData {
+  const lists = [
+    ...data.sprints.map((entry) => ({ id: entry.sprint.id, issues: entry.issues })),
+    { id: BACKLOG, issues: data.backlog },
+  ];
+  const moving = move.keys.flatMap((key) =>
+    lists.flatMap((list) => list.issues.filter((issue) => issue.key === key)),
+  );
+  const place = (id: string, issues: IssueSummary[]) => {
+    const rest = issues.filter((issue) => !move.keys.includes(issue.key));
+    if (id !== move.sectionId) return rest;
+    const after = move.afterKey ? rest.findIndex((issue) => issue.key === move.afterKey) : -1;
+    const before = move.beforeKey ? rest.findIndex((issue) => issue.key === move.beforeKey) : -1;
+    const at = after >= 0 ? after + 1 : before >= 0 ? before : move.afterKey ? rest.length : 0;
+    return [...rest.slice(0, at), ...moving, ...rest.slice(at)];
+  };
+  return {
+    ...data,
+    sprints: data.sprints.map((entry) => ({
+      ...entry,
+      issues: place(entry.sprint.id, entry.issues),
+    })),
+    backlog: place(BACKLOG, data.backlog),
+  };
+}
+
 interface Section {
   id: string;
   sprint: Sprint | null;
@@ -408,12 +441,25 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
         after = key;
       }
     },
+    // A fetch still under way must not put the old order back (see moveNow).
+    onMutate: () => queryClient.cancelQueries({ queryKey }),
     onSuccess: () => {
       setChecked([]);
       void refresh();
     },
     onError: fail,
   });
+
+  /**
+   * Moves rows on screen in the same frame as the drop, then saves; the server's order follows
+   * on success, the old one comes back on failure.
+   */
+  function moveNow(variables: Parameters<typeof move.mutate>[0]) {
+    queryClient.setQueryData<BacklogData>(queryKey, (current) =>
+      current ? applyMove(current, variables) : current,
+    );
+    move.mutate(variables);
+  }
 
   /** Adds a fix version to the selected issues of its project. */
   const assignVersion = useMutation({
@@ -536,7 +582,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
       ];
     }
     const first = order.indexOf(block[0] as string);
-    move.mutate({
+    moveNow({
       keys: block,
       sectionId: target.id,
       afterKey: order[first - 1] ?? null,
@@ -549,7 +595,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     if (!target) return;
     const block = all.map((issue) => issue.key).filter((key) => checked.includes(key));
     const rest = target.issues.map((issue) => issue.key).filter((key) => !block.includes(key));
-    move.mutate(
+    moveNow(
       where === 'top'
         ? { keys: block, sectionId, beforeKey: rest[0] ?? null }
         : { keys: block, sectionId, afterKey: rest.at(-1) ?? null },
@@ -570,11 +616,11 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
   function moveOne(key: string, sectionId: string, where: RowMove) {
     if (typeof where === 'object') {
       const target = fullLists.get(where.sectionId) ?? [];
-      move.mutate({ keys: [key], sectionId: where.sectionId, afterKey: target.at(-1) ?? null });
+      moveNow({ keys: [key], sectionId: where.sectionId, afterKey: target.at(-1) ?? null });
       return;
     }
     const rest = (fullLists.get(sectionId) ?? []).filter((entry) => entry !== key);
-    move.mutate(
+    moveNow(
       where === 'top'
         ? { keys: [key], sectionId, beforeKey: rest[0] ?? null }
         : { keys: [key], sectionId, afterKey: rest.at(-1) ?? null },
@@ -895,7 +941,8 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                     </section>
                   );
                 })}
-                <DragOverlay>
+                {/* No flight back to the old place: the list has already moved. */}
+                <DragOverlay dropAnimation={null}>
                   {active && (
                     <ul className="m-0 list-none p-0">
                       <RowView
