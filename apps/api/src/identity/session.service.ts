@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SessionInfo } from '@tasklore/shared';
-import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { AppConfig } from '../core/config.js';
 import { CONFIG, DATABASE } from '../core/tokens.js';
@@ -110,5 +110,21 @@ export class SessionService {
       )
       .returning({ id: sessions.id });
     return result.length > 0;
+  }
+
+  /** Ends every other active session of a user, e.g. after a password change (E-80). */
+  async revokeOthers(userId: string, keepSessionId: string): Promise<number> {
+    const result = await this.database.db
+      .update(sessions)
+      .set({ revokedAt: sql`now()` })
+      .where(
+        and(
+          eq(sessions.userId, userId),
+          ne(sessions.id, keepSessionId),
+          isNull(sessions.revokedAt),
+        ),
+      )
+      .returning({ id: sessions.id });
+    return result.length;
   }
 }

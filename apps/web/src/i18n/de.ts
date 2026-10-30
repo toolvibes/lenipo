@@ -897,6 +897,16 @@ export const de = {
     readOnly: 'Nur die Administration kann diese Vorlage ändern.',
   },
   profile: {
+    password: 'Passwort',
+    currentPassword: 'Aktuelles Passwort',
+    newPassword: 'Neues Passwort',
+    repeatPassword: 'Neues Passwort wiederholen',
+    passwordHelp:
+      'Mindestens 12 Zeichen. Danach werden Sie überall sonst abgemeldet; Zugriffstoken bleiben gültig.',
+    passwordMismatch: 'Die Passwörter stimmen nicht überein.',
+    changePassword: 'Passwort ändern',
+    passwordChanged_one: 'Passwort geändert, {{count}} andere Sitzung abgemeldet.',
+    passwordChanged_other: 'Passwort geändert, {{count}} andere Sitzungen abgemeldet.',
     title: 'Profil',
     intro: 'Ihre Angaben, Darstellung, Benachrichtigungen, Zugriffstoken und Sitzungen.',
     profile: 'Angaben',

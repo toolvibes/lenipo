@@ -13,9 +13,11 @@ import {
   Req,
 } from '@nestjs/common';
 import {
+  ChangePasswordRequest,
   CreatedToken,
   CreateTokenRequest,
   Me,
+  PasswordChanged,
   SessionInfo,
   TokenInfo,
   UpdateMeRequest,
@@ -26,6 +28,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { AuthService } from './auth.service.js';
 import { clientOf } from './request-guards.js';
 import { SessionService } from './session.service.js';
 import { TokenService } from './token.service.js';
@@ -45,6 +48,7 @@ export class MeController {
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(TokenService) private readonly tokens: TokenService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuthService) private readonly auth: AuthService,
   ) {}
 
   @Endpoint({ tag: 'Me', summary: 'Get the signed-in user', response: Me })
@@ -65,6 +69,26 @@ export class MeController {
   ): Promise<Me> {
     await this.users.updateProfile(principal.userId, body);
     return this.users.me(principal.userId, principal.via);
+  }
+
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Change the own password; other sessions end',
+    description:
+      'Needs the current password and a browser session. Failures count against the same limit as the login (429 when exceeded); accounts without a local password get 409. Personal access tokens stay valid.',
+    response: PasswordChanged,
+  })
+  @Post('password')
+  @HttpCode(200)
+  changePassword(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(ChangePasswordRequest) body: ChangePasswordRequest,
+    @Req() request: Request,
+  ): Promise<PasswordChanged> {
+    if (principal.via !== 'session') {
+      throw new ForbiddenException('Changing the password requires a browser session');
+    }
+    return this.auth.changePassword(principal.userId, principal.sessionId, body, clientOf(request));
   }
 
   @Endpoint({

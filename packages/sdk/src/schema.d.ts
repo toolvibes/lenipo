@@ -765,6 +765,26 @@ export interface paths {
     patch: operations['Me.update'];
     trace?: never;
   };
+  '/api/v1/me/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Change the own password; other sessions end
+     * @description Needs the current password and a browser session. Failures count against the same limit as the login (429 when exceeded); accounts without a local password get 409. Personal access tokens stay valid.
+     */
+    post: operations['Me.changePassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me/sessions': {
     parameters: {
       query?: never;
@@ -2490,6 +2510,7 @@ export interface components {
       authenticatedVia: 'session' | 'token' | 'mcp';
       onboarded: boolean;
       keyboardShortcuts: boolean;
+      hasPassword: boolean;
     };
     AuthProviders: {
       password: boolean;
@@ -3118,6 +3139,13 @@ export interface components {
       locale?: 'de' | 'en';
       timeZone?: string;
       keyboardShortcuts?: boolean;
+    };
+    ChangePasswordRequest: {
+      currentPassword: string;
+      newPassword: string;
+    };
+    PasswordChanged: {
+      endedSessions: number;
     };
     SessionInfo: {
       id: string;
@@ -6011,6 +6039,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.changePassword': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PasswordChanged'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

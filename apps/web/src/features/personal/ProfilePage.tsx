@@ -128,6 +128,82 @@ function ProfileForm({ me }: { me: Me }) {
   );
 }
 
+function PasswordForm() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [repeat, setRepeat] = useState('');
+  const change = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/me/password', {
+          body: { currentPassword: current, newPassword: next },
+        }),
+      ),
+    onSuccess: () => {
+      setCurrent('');
+      setNext('');
+      setRepeat('');
+      void queryClient.invalidateQueries({ queryKey: sessionsQuery.queryKey });
+    },
+  });
+  const mismatch = repeat.length > 0 && repeat !== next;
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        change.mutate();
+      }}
+      className="flex max-w-[480px] flex-col gap-4"
+    >
+      {change.error && <FormError message={change.error.message} />}
+      {change.isSuccess && (
+        <p role="status" className="m-0 flex items-center gap-1.5 text-[13px]">
+          <Check size={14} aria-hidden />
+          {t('profile.passwordChanged', { count: change.data.endedSessions })}
+        </p>
+      )}
+      <TextField
+        label={t('profile.currentPassword')}
+        type="password"
+        autoComplete="current-password"
+        value={current}
+        required
+        onChange={(event) => setCurrent(event.target.value)}
+      />
+      <TextField
+        label={t('profile.newPassword')}
+        type="password"
+        autoComplete="new-password"
+        value={next}
+        required
+        minLength={12}
+        help={t('profile.passwordHelp')}
+        onChange={(event) => setNext(event.target.value)}
+      />
+      <TextField
+        label={t('profile.repeatPassword')}
+        type="password"
+        autoComplete="new-password"
+        value={repeat}
+        required
+        error={mismatch ? t('profile.passwordMismatch') : undefined}
+        onChange={(event) => setRepeat(event.target.value)}
+      />
+      <div>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={!current || next.length < 12 || next !== repeat || change.isPending}
+        >
+          {t('profile.changePassword')}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function Appearance({ me }: { me: Me }) {
   const { t } = useTranslation();
   const save = useSaveMe();
@@ -445,7 +521,8 @@ function Sessions() {
 }
 
 /**
- * The person's own page (TL-4, E-78): profile, appearance with the shortcut switch (TL-7),
+ * The person's own page (TL-4, E-78): profile, password (TL-59, E-80), appearance with the
+ * shortcut switch (TL-7),
  * e-mail notifications, personal access tokens for agents and the API, and sessions.
  */
 export function ProfilePage() {
@@ -465,6 +542,11 @@ export function ProfilePage() {
         <Section id="profile" title={t('profile.profile')}>
           <ProfileForm me={me.data} />
         </Section>
+        {me.data.hasPassword && (
+          <Section id="password" title={t('profile.password')}>
+            <PasswordForm />
+          </Section>
+        )}
         <Section id="appearance" title={t('profile.appearance')}>
           <Appearance me={me.data} />
         </Section>

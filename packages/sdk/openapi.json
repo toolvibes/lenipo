@@ -2424,6 +2424,46 @@
         }
       }
     },
+    "/api/v1/me/password": {
+      "post": {
+        "operationId": "Me.changePassword",
+        "summary": "Change the own password; other sessions end",
+        "description": "Needs the current password and a browser session. Failures count against the same limit as the login (429 when exceeded); accounts without a local password get 409. Personal access tokens stay valid.",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordChanged"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/sessions": {
       "get": {
         "operationId": "Me.listSessions",
@@ -7767,6 +7807,9 @@
           },
           "keyboardShortcuts": {
             "type": "boolean"
+          },
+          "hasPassword": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -7778,7 +7821,8 @@
           "globalPermissions",
           "authenticatedVia",
           "onboarded",
-          "keyboardShortcuts"
+          "keyboardShortcuts",
+          "hasPassword"
         ],
         "additionalProperties": false
       },
@@ -10376,6 +10420,34 @@
             "type": "boolean"
           }
         }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 256
+          }
+        },
+        "required": ["currentPassword", "newPassword"]
+      },
+      "PasswordChanged": {
+        "type": "object",
+        "properties": {
+          "endedSessions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["endedSessions"],
+        "additionalProperties": false
       },
       "SessionInfo": {
         "type": "object",

@@ -884,6 +884,16 @@ export const en: Messages = {
     readOnly: 'Only the administration can change this template.',
   },
   profile: {
+    password: 'Password',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    repeatPassword: 'Repeat new password',
+    passwordHelp:
+      'At least 12 characters. You are then signed out everywhere else; access tokens stay valid.',
+    passwordMismatch: 'The passwords do not match.',
+    changePassword: 'Change password',
+    passwordChanged_one: 'Password changed, {{count}} other session signed out.',
+    passwordChanged_other: 'Password changed, {{count}} other sessions signed out.',
     title: 'Profile',
     intro: 'Your details, appearance, notifications, access tokens and sessions.',
     profile: 'Details',

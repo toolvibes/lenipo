@@ -9,7 +9,10 @@ import type {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../db/schema/index.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
+import { SESSION_COOKIE } from './secrets.js';
+import { SessionService } from './session.service.js';
 import { SetupService } from './setup.service.js';
+import { UserService } from './user.service.js';
 
 const ADMIN = {
   email: 'Lena.Vogt@example.org',
@@ -281,5 +284,126 @@ describe('administration', () => {
     ]) {
       expect(actions).toContain(action);
     }
+  });
+});
+
+describe('password change and attempt limits (TL-59)', () => {
+  const signIn = async (email: string, password: string) => {
+    const client = new TestClient(test.baseUrl);
+    const response = await client.request('POST', '/auth/login', { email, password });
+    return { client, status: response.status };
+  };
+
+  it('changes the password with the current one and ends the other sessions', async () => {
+    await admin.request('POST', '/admin/users', {
+      email: 'ayse@example.org',
+      displayName: 'Ayşe Demir',
+      password: 'erstes-langes-passwort',
+    });
+    const here = (await signIn('ayse@example.org', 'erstes-langes-passwort')).client;
+    const elsewhere = (await signIn('ayse@example.org', 'erstes-langes-passwort')).client;
+    const token = await here.request<CreatedToken>('POST', '/me/tokens', {
+      name: 'Skript',
+      scopes: ['issues:read'],
+      expiresInDays: 30,
+    });
+    expect((await here.request<Me>('GET', '/me')).body.hasPassword).toBe(true);
+
+    const wrong = await here.request<Problem>('POST', '/me/password', {
+      currentPassword: 'falsch',
+      newPassword: 'zweites-langes-passwort',
+    });
+    expect(wrong.status).toBe(403);
+    expect(
+      (
+        await here.request('POST', '/me/password', {
+          currentPassword: 'erstes-langes-passwort',
+          newPassword: 'kurz',
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await here.request('POST', '/me/password', {
+          currentPassword: 'erstes-langes-passwort',
+          newPassword: 'erstes-langes-passwort',
+        })
+      ).status,
+    ).toBe(409);
+
+    const changed = await here.request<{ endedSessions: number }>('POST', '/me/password', {
+      currentPassword: 'erstes-langes-passwort',
+      newPassword: 'zweites-langes-passwort',
+    });
+    expect(changed.status).toBe(200);
+    expect(changed.body.endedSessions).toBe(1);
+    expect((await here.request('GET', '/me')).status).toBe(200);
+    expect((await elsewhere.request('GET', '/me')).status).toBe(401);
+    // Access tokens are separate credentials and keep working.
+    const viaToken = await fetch(`${test.baseUrl}/me`, {
+      headers: { authorization: `Bearer ${token.body.secret}` },
+    });
+    expect(viaToken.status).toBe(200);
+    expect((await signIn('ayse@example.org', 'erstes-langes-passwort')).status).toBe(401);
+    expect((await signIn('ayse@example.org', 'zweites-langes-passwort')).status).toBe(200);
+    // Not with a token, even one of the person.
+    const tokenChange = await fetch(`${test.baseUrl}/me/password`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token.body.secret}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword: 'zweites-langes-passwort',
+        newPassword: 'drittes-langes-passwort',
+      }),
+    });
+    expect(tokenChange.status).toBe(403);
+  });
+
+  it('stops guessing after ten failures, at the login and at the password change', async () => {
+    await admin.request('POST', '/admin/users', {
+      email: 'gast@example.org',
+      displayName: 'Gast',
+      password: 'richtiges-langes-passwort',
+    });
+    const inside = (await signIn('gast@example.org', 'richtiges-langes-passwort')).client;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      expect((await signIn('gast@example.org', `falsch-${attempt}`)).status).toBe(401);
+      expect(
+        (
+          await inside.request('POST', '/me/password', {
+            currentPassword: `falsch-${attempt}`,
+            newPassword: 'neues-langes-passwort',
+          })
+        ).status,
+      ).toBe(403);
+    }
+    // Ten failures in all: now even the right password is refused for a while.
+    const blocked = await signIn('gast@example.org', 'richtiges-langes-passwort');
+    expect(blocked.status).toBe(429);
+    const change = await inside.request<Problem>('POST', '/me/password', {
+      currentPassword: 'richtiges-langes-passwort',
+      newPassword: 'neues-langes-passwort',
+    });
+    expect(change.status).toBe(429);
+    expect(change.body.type).toBe('urn:tasklore:problem:too-many-attempts');
+    // Other people are not affected.
+    expect((await signIn('ayse@example.org', 'zweites-langes-passwort')).status).toBe(200);
+  });
+
+  it('refuses accounts that only sign in through OIDC', async () => {
+    const id = await test.app.get(UserService).create({
+      email: 'nur-oidc@example.org',
+      displayName: 'Nur OIDC',
+      passwordHash: null,
+      groupNames: [],
+    });
+    const session = await test.app.get(SessionService).create(id, 'oidc', {});
+    const client = new TestClient(test.baseUrl);
+    client.cookie = `${SESSION_COOKIE}=${session.secret}`;
+    expect((await client.request<Me>('GET', '/me')).body.hasPassword).toBe(false);
+    const change = await client.request('POST', '/me/password', {
+      currentPassword: 'irgendwas',
+      newPassword: 'neues-langes-passwort',
+    });
+    expect(change.status).toBe(409);
   });
 });

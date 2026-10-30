@@ -5,6 +5,7 @@ import { GlobalPermissionGuard } from '../access/require-global.js';
 import { SystemController } from '../admin/system.controller.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AdminController } from './admin.controller.js';
+import { AttemptLimiter } from './attempt-limiter.js';
 import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
@@ -31,6 +32,7 @@ import { GroupsController, UsersController } from './users.controller.js';
   ],
   providers: [
     AccessService,
+    AttemptLimiter,
     AuditService,
     AuthService,
     GroupService,

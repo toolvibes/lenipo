@@ -73,6 +73,7 @@ export class UserService {
       authenticatedVia: via,
       onboarded: user.onboardedAt !== null,
       keyboardShortcuts: user.keyboardShortcuts,
+      hasPassword: user.passwordHash !== null,
     };
   }
 

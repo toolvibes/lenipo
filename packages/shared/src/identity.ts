@@ -70,6 +70,8 @@ export const Me = z
     onboarded: z.boolean(),
     /** Single-key shortcuts in the web app (TL-7). */
     keyboardShortcuts: z.boolean(),
+    /** Has a local password to change; false for accounts that only sign in via OIDC (TL-59). */
+    hasPassword: z.boolean(),
   })
   .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;
@@ -86,6 +88,22 @@ export const SessionInfo = z
   })
   .meta({ id: 'SessionInfo' });
 export type SessionInfo = z.infer<typeof SessionInfo>;
+
+export const ChangePasswordRequest = z
+  .object({
+    currentPassword: z.string().min(1).max(256),
+    newPassword: Password,
+  })
+  .meta({ id: 'ChangePasswordRequest' });
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequest>;
+
+export const PasswordChanged = z
+  .object({
+    /** Other sessions of the person that were ended (E-80). */
+    endedSessions: z.number().int(),
+  })
+  .meta({ id: 'PasswordChanged' });
+export type PasswordChanged = z.infer<typeof PasswordChanged>;
 
 export const CreateTokenRequest = z
   .object({
