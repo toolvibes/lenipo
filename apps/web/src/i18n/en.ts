@@ -838,6 +838,17 @@ export const en: Messages = {
     showAll_one: 'Show all ({{count}})',
     showAll_other: 'Show all ({{count}})',
   },
+  print: {
+    action: 'Print',
+    print: 'Print',
+    withChildren: 'With child pages',
+    contents: 'Contents',
+    draft: 'This page is not published yet, so it cannot be printed.',
+    header: '{{space}} · version {{version}} · {{name}}, {{date}}',
+    limited_one: 'The first child page is printed.',
+    limited_other: 'The first {{count}} child pages are printed.',
+    back: 'Back to the page',
+  },
   templates: {
     title: 'Templates',
     globalTitle: 'Page templates',

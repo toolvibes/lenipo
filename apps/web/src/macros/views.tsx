@@ -9,7 +9,7 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
 } from '@tiptap/react';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { createContext, type FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IssueTypeIcon, StatusLozenge } from '../features/tracking/icons';
 import { client, unwrap } from '../lib/api';
@@ -378,9 +378,13 @@ function StatusView({ node, updateAttributes, editor, selected }: NodeViewProps)
 
 // ---------------------------------------------------------------- expand
 
+/** Set by the print view (W-EXP-04): collapsible sections print open. */
+export const PrintModeContext = createContext(false);
+
 function ExpandView({ node, updateAttributes, editor }: NodeViewProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const printing = useContext(PrintModeContext);
+  const [open, setOpen] = useState(printing);
   const title = String(node.attrs.title ?? '');
   if (editor.isEditable) {
     return (

@@ -8,6 +8,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { matchItems, SlashCommands, slashItems } from '../../collab/SlashMenu';
 import { Toolbar } from '../../collab/Toolbar';
+import { IssueKeyLinks } from '../../macros/issueLinks';
 import { macroViews } from '../../macros/views';
 import { Button } from '../../ui/Button';
 import { mentionExtension } from './mention';
@@ -131,11 +132,14 @@ export function RichTextView({
   doc,
   variant = 'compact',
   page,
+  liveKeys = false,
 }: {
   doc: RichText;
   variant?: 'compact' | 'page';
   /** The wiki page shown, for macros such as child pages. */
   page?: { spaceKey: string; pageId: string };
+  /** Issue keys in the text as live links with status (W-INT-01). */
+  liveKeys?: boolean;
 }) {
   const editor = useEditor(
     {
@@ -143,6 +147,7 @@ export function RichTextView({
         StarterKit.configure(starterKitOptions),
         ...blockExtensions({ views: macroViews, children: page ?? {} }),
         mentionExtension(),
+        ...(liveKeys ? [IssueKeyLinks] : []),
       ],
       content: doc as Content,
       editable: false,

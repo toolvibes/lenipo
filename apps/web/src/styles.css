@@ -679,3 +679,45 @@ body {
   vertical-align: 0.1em;
   white-space: nowrap;
 }
+
+/* Print view (W-EXP-04, E-75): A4, page text in the Lore serif, no breaks inside blocks. */
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+.tl-print-break {
+  break-before: page;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+  }
+
+  .tl-print-toolbar {
+    display: none;
+  }
+
+  .tl-print {
+    max-width: none;
+    padding: 0;
+  }
+
+  .tl-print :is(table, pre, figure, .tl-panel, .tl-macro, blockquote) {
+    break-inside: avoid;
+  }
+
+  .tl-print :is(h1, h2, h3) {
+    break-after: avoid;
+  }
+
+  /* On paper an external link needs its address. */
+  .tl-print .tl-prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: var(--ink-muted);
+    word-break: break-all;
+  }
+}

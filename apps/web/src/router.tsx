@@ -37,6 +37,7 @@ import { ProjectsPage } from './features/tracking/ProjectsPage';
 import { LabelPages, SpaceLabelsPage } from './features/wiki/LabelPages';
 import { PageEditor } from './features/wiki/PageEditor';
 import { PageHistory } from './features/wiki/PageHistory';
+import { PrintPage } from './features/wiki/PrintPage';
 import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
 import { SpaceSettingsPage } from './features/wiki/SpaceSettingsPage';
 import { SpacesPage } from './features/wiki/SpacesPage';
@@ -93,6 +94,33 @@ const welcomeRoute = createRoute({
   },
   component: function Welcome() {
     return <WelcomePage me={welcomeRoute.useRouteContext().me} />;
+  },
+});
+
+/** A page laid out for paper, outside the app shell (W-EXP-04, E-75). */
+const printRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/spaces/$key/pages/$id/print',
+  validateSearch: (search: Record<string, unknown>): { children?: boolean; auto?: boolean } => ({
+    children: search.children === true || search.children === 'true' ? true : undefined,
+    auto: search.auto === true || search.auto === 'true' || search.auto === 1 ? true : undefined,
+  }),
+  beforeLoad: async ({ context, location }) => {
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+    applyLocale(me.locale);
+  },
+  component: function Print() {
+    const { key, id } = printRoute.useParams();
+    const { children, auto } = printRoute.useSearch();
+    return (
+      <PrintPage
+        spaceKey={key.toUpperCase()}
+        id={id}
+        withChildren={children ?? false}
+        auto={auto ?? false}
+      />
+    );
   },
 });
 
@@ -499,6 +527,7 @@ const routeTree = rootRoute.addChildren([
   setupRoute,
   loginRoute,
   welcomeRoute,
+  printRoute,
   appRoute.addChildren([
     homeRoute,
     spacesRoute,

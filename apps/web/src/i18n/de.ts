@@ -851,6 +851,17 @@ export const de = {
     showAll_one: 'Alle anzeigen ({{count}})',
     showAll_other: 'Alle anzeigen ({{count}})',
   },
+  print: {
+    action: 'Drucken',
+    print: 'Drucken',
+    withChildren: 'Mit Unterseiten',
+    contents: 'Inhalt',
+    draft: 'Diese Seite ist noch nicht veröffentlicht und lässt sich daher nicht drucken.',
+    header: '{{space}} · Version {{version}} · {{name}}, {{date}}',
+    limited_one: 'Gedruckt wird die erste Unterseite.',
+    limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
+    back: 'Zurück zur Seite',
+  },
   templates: {
     title: 'Vorlagen',
     globalTitle: 'Seitenvorlagen',

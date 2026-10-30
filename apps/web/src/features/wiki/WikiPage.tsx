@@ -4,6 +4,7 @@ import {
   ClockCounterClockwise,
   DotsThree,
   PencilSimple,
+  Printer,
 } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -255,6 +256,17 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
               <a href="#page-comments" className={buttonClass('ghost', 'sm')}>
                 <ChatCircle size={16} aria-hidden />
                 {t('wiki.comments.title', { count: openComments })}
+              </a>
+            )}
+            {data.version > 0 && (
+              <a
+                href={`/spaces/${spaceKey}/pages/${data.id}/print?auto=true`}
+                target="_blank"
+                rel="noopener"
+                className={buttonClass('ghost', 'sm')}
+              >
+                <Printer size={16} aria-hidden />
+                {t('print.action')}
               </a>
             )}
             <WatchMenu page={data} />
