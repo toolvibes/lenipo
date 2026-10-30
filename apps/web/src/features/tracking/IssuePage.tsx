@@ -418,6 +418,9 @@ export function IssuePage({
   const Root = panel ? 'section' : 'main';
   const permissions = new Set(project.data?.permissions ?? []);
   const canEdit = permissions.has('edit-issues');
+  const sameLevelTypes = (project.data?.issueTypes ?? []).filter(
+    (type) => type.hierarchyLevel === data.issueType.hierarchyLevel,
+  );
   const error = update.error ?? transition.error;
 
   const copyLink = () =>
@@ -486,7 +489,23 @@ export function IssuePage({
           <header className="flex flex-col gap-2.5">
             <span className="flex flex-wrap items-center gap-2 text-[12.5px] font-semibold text-[var(--ink-muted)]">
               <IssueTypeIcon type={data.issueType} size={14} />
-              {metaName('issueType', data.issueType)}
+              {canEdit && sameLevelTypes.length > 1 ? (
+                // Only within the hierarchy level: a story can become a bug, not an epic (TL-56).
+                <select
+                  aria-label={t('issues.type')}
+                  value={data.issueType.key}
+                  onChange={(event) => update.mutate({ issueType: event.target.value })}
+                  className="-ml-1 cursor-pointer rounded-[var(--radius-sm)] border-0 bg-transparent py-0.5 pr-1 pl-1 text-[12.5px] font-semibold text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+                >
+                  {sameLevelTypes.map((type) => (
+                    <option key={type.id} value={type.key}>
+                      {metaName('issueType', type)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                metaName('issueType', data.issueType)
+              )}
               {panel && (
                 <>
                   <span aria-hidden>·</span>
