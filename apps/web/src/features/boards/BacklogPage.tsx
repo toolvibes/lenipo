@@ -29,13 +29,14 @@ import { formatDate } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
-import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
+import { projectQuery, trackingMetaQuery, versionsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { PageHeading, TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
+import { CreateIssueDialog } from '../tracking/CreateIssueDialog';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
-import { IssueTypeIcon, PriorityIcon, StatusLozenge } from '../tracking/icons';
+import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
 import { BoardTabs } from './BoardTabs';
 import { CompleteSprintDialog, SprintDialog, useEstimate } from './SprintDialogs';
@@ -196,6 +197,9 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
   const [editing, setEditing] = useState<{ sprint: Sprint; starting: boolean } | null>(null);
   const [completing, setCompleting] = useState<Sprint | null>(null);
   const [summary, setSummary] = useState('');
+  // Type of quick-created issues; the full dialog has every field (TL-57).
+  const [quickType, setQuickType] = useState('story');
+  const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -204,6 +208,12 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
   const board = data.data?.board;
   useRecordView('board', board?.id);
   useCurrentProject(board?.project.key);
+  const project = useQuery({
+    ...projectQuery(board?.project.key ?? ''),
+    enabled: !!board,
+  });
+  const metaName = useMetaName();
+  const quickTypes = (project.data?.issueTypes ?? []).filter((type) => type.hierarchyLevel === 0);
   useRealtimeRooms([
     `board:${id}`,
     ...(board ? [`project:${board.project.key}`] : []),
@@ -368,7 +378,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     mutationFn: async (text: string) => {
       const issue = await unwrap(
         client.POST('/api/v1/issues', {
-          body: { projectKey: board?.project.key ?? '', issueType: 'story', summary: text },
+          body: { projectKey: board?.project.key ?? '', issueType: quickType, summary: text },
         }),
       );
       // New issues join the bottom of the backlog.
@@ -503,10 +513,18 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
         title={t('sprints.backlog')}
         subtitle={board.name}
         actions={
-          <Button onClick={() => createSprint.mutate()} disabled={createSprint.isPending}>
-            <Plus size={14} aria-hidden />
-            {t('sprints.create')}
-          </Button>
+          <>
+            <Button onClick={() => createSprint.mutate()} disabled={createSprint.isPending}>
+              <Plus size={14} aria-hidden />
+              {t('sprints.create')}
+            </Button>
+            {project.data?.permissions.includes('create-issues') && (
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                <Plus size={14} aria-hidden />
+                {t('issues.create')}
+              </Button>
+            )}
+          </>
         }
       />
       <div className="flex flex-col gap-4 px-6 pb-6">
@@ -725,6 +743,28 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                       </SectionList>
                       {!sprint && (
                         <form onSubmit={addIssue} className="flex gap-2">
+                          {quickTypes.length > 1 && (
+                            <span className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] pl-2">
+                              <IssueTypeIcon
+                                type={
+                                  quickTypes.find((type) => type.key === quickType) ??
+                                  (quickTypes[0] as (typeof quickTypes)[number])
+                                }
+                              />
+                              <select
+                                aria-label={t('issues.type')}
+                                value={quickType}
+                                onChange={(event) => setQuickType(event.target.value)}
+                                className="h-[calc(var(--control-sm)-2px)] border-0 bg-transparent pr-1 text-[13px]"
+                              >
+                                {quickTypes.map((type) => (
+                                  <option key={type.id} value={type.key}>
+                                    {metaName('issueType', type)}
+                                  </option>
+                                ))}
+                              </select>
+                            </span>
+                          )}
                           <input
                             aria-label={t('sprints.quickCreate')}
                             placeholder={t('sprints.quickCreate')}
@@ -785,6 +825,14 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           doneStatusIds={doneStatusIds}
           open
           onOpenChange={(open) => !open && setCompleting(null)}
+        />
+      )}
+      {project.data && (
+        <CreateIssueDialog
+          project={project.data}
+          open={creating}
+          onOpenChange={setCreating}
+          myId={me.id}
         />
       )}
     </main>
