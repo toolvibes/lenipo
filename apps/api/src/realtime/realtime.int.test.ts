@@ -96,9 +96,12 @@ beforeAll(async () => {
   });
 }, 60_000);
 
+/** The last test shuts the API down itself. */
+let closed = false;
+
 afterAll(async () => {
   for (const socket of sockets) socket.close();
-  await test?.close();
+  if (!closed) await test?.close();
 });
 
 describe('realtime', () => {
@@ -147,5 +150,18 @@ describe('realtime', () => {
     });
     await test.app.get(EventProcessor).drain();
     expect(await change).toEqual({ type: 'notification', userId: miraId });
+  });
+
+  it('let the API shut down while sockets are connected', async () => {
+    const socket = connect(mira.cookie);
+    await connected(socket);
+    const disconnected = new Promise((resolve) => socket.once('disconnect', resolve));
+    closed = true;
+    const outcome = await Promise.race([
+      test.close().then(() => 'closed'),
+      new Promise((resolve) => setTimeout(() => resolve('hung'), 5_000)),
+    ]);
+    expect(outcome).toBe('closed');
+    await disconnected;
   });
 });

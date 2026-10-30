@@ -38,8 +38,15 @@ async function start(): Promise<void> {
   }
 }
 
+/** A shutdown that hangs would block restarts (TL-54); after this long the process just ends. */
+const SHUTDOWN_LIMIT_MS = 10_000;
+
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'Shutting down');
+  setTimeout(() => {
+    logger.error({ signal }, 'Shutdown took too long, exiting');
+    process.exit(1);
+  }, SHUTDOWN_LIMIT_MS).unref();
   for (const close of closers.reverse()) {
     await close();
   }

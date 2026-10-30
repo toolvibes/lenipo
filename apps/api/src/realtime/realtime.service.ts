@@ -1,5 +1,10 @@
 import type { Server as HttpServer } from 'node:http';
-import { Inject, Injectable, type OnApplicationShutdown } from '@nestjs/common';
+import {
+  type BeforeApplicationShutdown,
+  Inject,
+  Injectable,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
 import postgres from 'postgres';
 import { Server, type Socket } from 'socket.io';
 import { BoardService } from '../boards/board.service.js';
@@ -30,7 +35,7 @@ interface SocketData {
  * instance listens to PostgreSQL NOTIFY on its own connection and tells its sockets.
  */
 @Injectable()
-export class RealtimeService implements OnApplicationShutdown {
+export class RealtimeService implements BeforeApplicationShutdown, OnApplicationShutdown {
   private io?: Server;
   private listener?: postgres.Sql;
   private recheck?: NodeJS.Timeout;
@@ -151,9 +156,16 @@ export class RealtimeService implements OnApplicationShutdown {
     }
   }
 
-  async onApplicationShutdown(): Promise<void> {
+  /**
+   * Before the HTTP server closes: it waits for every open connection, and the sockets would
+   * keep it open forever (TL-54).
+   */
+  async beforeApplicationShutdown(): Promise<void> {
     if (this.recheck) clearInterval(this.recheck);
     await this.io?.close();
+  }
+
+  async onApplicationShutdown(): Promise<void> {
     await this.listener?.end({ timeout: 2 });
   }
 }
