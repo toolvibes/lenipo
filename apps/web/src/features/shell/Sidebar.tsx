@@ -285,10 +285,15 @@ export function Sidebar({
         >
           {initials(me.displayName)}
         </span>
-        <span className="flex min-w-0 flex-1 flex-col leading-tight">
+        <Link
+          to="/profile"
+          aria-current={path === '/profile' ? 'page' : undefined}
+          title={t('profile.title')}
+          className="flex min-w-0 flex-1 flex-col rounded-[5px] px-1 leading-tight text-[var(--ink)] no-underline hover:bg-[var(--selected)]"
+        >
           <span className="truncate text-[13px] font-semibold">{me.displayName}</span>
           <span className="truncate text-[11.5px] text-[var(--ink-muted)]">{me.email}</span>
-        </span>
+        </Link>
         <button
           type="button"
           onClick={onSignOut}

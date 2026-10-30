@@ -24,6 +24,7 @@ import {
   type NotificationTab,
 } from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
+import { ProfilePage } from './features/personal/ProfilePage';
 import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
@@ -454,6 +455,12 @@ const notificationsRoute = createRoute({
   },
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/profile',
+  component: ProfilePage,
+});
+
 /** Administration needs the global permission "admin"; the API checks it again. */
 const adminRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -551,6 +558,7 @@ const routeTree = rootRoute.addChildren([
     issueRoute,
     activityRoute,
     notificationsRoute,
+    profileRoute,
     boardsRoute,
     boardRoute,
     backlogRoute,

@@ -55,7 +55,7 @@ export class MeController {
 
   @Endpoint({
     tag: 'Me',
-    summary: 'Change name, language or time zone of the signed-in user',
+    summary: 'Change name, language, time zone or shortcut setting of the signed-in user',
     response: Me,
   })
   @Patch()

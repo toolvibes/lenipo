@@ -73,7 +73,8 @@ export function useDescribe() {
   };
 }
 
-export function Settings({ onDone }: { onDone: () => void }) {
+/** E-mail settings; `onDone` adds a back button (notifications page), the profile embeds it without. */
+export function Settings({ onDone }: { onDone?: () => void }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const settings = useQuery(notificationSettingsQuery);
@@ -134,9 +135,11 @@ export function Settings({ onDone }: { onDone: () => void }) {
           </label>
         ))}
       </fieldset>
-      <div>
-        <Button onClick={onDone}>{t('notifications.back')}</Button>
-      </div>
+      {onDone && (
+        <div>
+          <Button onClick={onDone}>{t('notifications.back')}</Button>
+        </div>
+      )}
     </div>
   );
 }

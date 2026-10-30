@@ -1,8 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useMemo, useState } from 'react';
 import { client } from '../../lib/api';
+import { meQuery } from '../../lib/queries';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
 import { CurrentProjectProvider, ShortcutListener } from '../../lib/shortcuts';
 import { CommandPalette } from './CommandPalette';
@@ -10,7 +11,9 @@ import { GlobalShortcuts } from './Shortcuts';
 import { Sidebar } from './Sidebar';
 
 /** Layout of the signed-in app: the fixed sidebar of direction 1a beside the page (E-67). */
-export function AppShell({ me }: { me: Me }) {
+export function AppShell({ me: signedIn }: { me: Me }) {
+  // The cache, not the route context: profile changes (name, shortcuts) apply at once.
+  const me = useQuery(meQuery).data ?? signedIn;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -47,7 +50,7 @@ export function AppShell({ me }: { me: Me }) {
           <Outlet />
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
-        <ShortcutListener />
+        <ShortcutListener enabled={me.keyboardShortcuts} />
         <GlobalShortcuts me={me} onPalette={() => setPaletteOpen(true)} />
       </div>
     </CurrentProjectProvider>

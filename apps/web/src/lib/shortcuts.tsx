@@ -82,9 +82,13 @@ function typing(target: EventTarget | null): boolean {
 
 const SEQUENCE_MS = 1000;
 
-/** Listens once for the whole app; place it in the signed-in shell. */
-export function ShortcutListener(): null {
+/**
+ * Listens once for the whole app; place it in the signed-in shell. Off when the person switched
+ * the shortcuts off in the profile (TL-7, WCAG 2.1.4).
+ */
+export function ShortcutListener({ enabled }: { enabled: boolean }): null {
   useEffect(() => {
+    if (!enabled) return;
     let prefix: string | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     function onKeyDown(event: KeyboardEvent) {
@@ -118,7 +122,7 @@ export function ShortcutListener(): null {
       window.removeEventListener('keydown', onKeyDown);
       clearTimeout(timer);
     };
-  }, []);
+  }, [enabled]);
   return null;
 }
 

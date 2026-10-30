@@ -218,6 +218,13 @@
       "when": 1793347880681,
       "tag": "0030_collab_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793360681339,
+      "tag": "0031_keyboard_shortcuts",
+      "breakpoints": true
     }
   ]
 }

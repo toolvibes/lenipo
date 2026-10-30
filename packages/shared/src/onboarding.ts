@@ -21,6 +21,8 @@ export const UpdateMeRequest = z
     /** Language of the interface and of e-mails. */
     locale: z.enum(['de', 'en']),
     timeZone: TimeZone,
+    /** Switches the single-key shortcuts of the web app on or off (TL-7). */
+    keyboardShortcuts: z.boolean(),
   })
   .partial()
   .meta({ id: 'UpdateMeRequest' });

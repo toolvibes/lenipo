@@ -68,6 +68,8 @@ export const Me = z
     authenticatedVia: z.enum(['session', 'token', 'mcp']),
     /** Went through (or skipped) the welcome steps after the first sign-in (E-71). */
     onboarded: z.boolean(),
+    /** Single-key shortcuts in the web app (TL-7). */
+    keyboardShortcuts: z.boolean(),
   })
   .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;

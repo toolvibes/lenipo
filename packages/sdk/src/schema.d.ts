@@ -761,7 +761,7 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    /** Change name, language or time zone of the signed-in user */
+    /** Change name, language, time zone or shortcut setting of the signed-in user */
     patch: operations['Me.update'];
     trace?: never;
   };
@@ -2489,6 +2489,7 @@ export interface components {
       /** @enum {string} */
       authenticatedVia: 'session' | 'token' | 'mcp';
       onboarded: boolean;
+      keyboardShortcuts: boolean;
     };
     AuthProviders: {
       password: boolean;
@@ -3114,6 +3115,7 @@ export interface components {
       /** @enum {string} */
       locale?: 'de' | 'en';
       timeZone?: string;
+      keyboardShortcuts?: boolean;
     };
     SessionInfo: {
       id: string;

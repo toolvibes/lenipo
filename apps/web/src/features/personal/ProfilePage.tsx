@@ -1,0 +1,485 @@
+import { Check, Copy } from '@phosphor-icons/react';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type CreatedToken,
+  type Me,
+  TOKEN_SCOPES,
+  type TokenScope,
+  type UpdateMeRequest,
+} from '@tasklore/shared';
+import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { applyLocale } from '../../i18n';
+import { client, unwrap } from '../../lib/api';
+import { formatDate, formatRelative } from '../../lib/format';
+import { meQuery } from '../../lib/queries';
+import { applyTheme, readTheme, type ThemePreference } from '../../lib/theme';
+import { timeZones } from '../../lib/timeZones';
+import { Button } from '../../ui/Button';
+import { FormError } from '../../ui/FormError';
+import { Select } from '../../ui/Select';
+import { TextField } from '../../ui/TextField';
+import { TopBar } from '../../ui/TopBar';
+import { Settings as EmailSettings } from '../notifications/NotificationBell';
+
+const tokensQuery = queryOptions({
+  queryKey: ['me', 'tokens'],
+  queryFn: () => unwrap(client.GET('/api/v1/me/tokens')),
+});
+const sessionsQuery = queryOptions({
+  queryKey: ['me', 'sessions'],
+  queryFn: () => unwrap(client.GET('/api/v1/me/sessions')),
+});
+
+const EXPIRY_DAYS = [30, 90, 180, 366];
+const SCOPE_KEYS = {
+  'issues:read': 'issues_read',
+  'issues:write': 'issues_write',
+  'wiki:read': 'wiki_read',
+  'wiki:write': 'wiki_write',
+  admin: 'admin',
+} as const satisfies Record<TokenScope, string>;
+
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="flex scroll-mt-6 flex-col gap-4 border-t border-[var(--border)] pt-6"
+    >
+      <h2 id={`${id}-title`} className="m-0 text-base font-semibold">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function useSaveMe() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateMeRequest) => unwrap(client.PATCH('/api/v1/me', { body })),
+    onSuccess: (me) => queryClient.setQueryData(meQuery.queryKey, me),
+  });
+}
+
+function ProfileForm({ me }: { me: Me }) {
+  const { t } = useTranslation();
+  const save = useSaveMe();
+  const [displayName, setDisplayName] = useState(me.displayName);
+  const [locale, setLocale] = useState(me.locale === 'en' ? 'en' : 'de');
+  const [timeZone, setTimeZone] = useState(me.timeZone);
+  const zones = useMemo(() => timeZones(timeZone), [timeZone]);
+  const changed =
+    displayName.trim() !== me.displayName || locale !== me.locale || timeZone !== me.timeZone;
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    save.mutate(
+      { displayName: displayName.trim(), locale: locale as 'de' | 'en', timeZone },
+      { onSuccess: (saved) => applyLocale(saved.locale) },
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="flex max-w-[480px] flex-col gap-4">
+      {save.error && <FormError message={save.error.message} />}
+      <TextField
+        label={t('welcome.displayName')}
+        value={displayName}
+        required
+        maxLength={100}
+        onChange={(event) => setDisplayName(event.target.value)}
+      />
+      <TextField
+        label={t('profile.email')}
+        value={me.email}
+        readOnly
+        className="bg-[var(--surface-2)] text-[var(--ink-muted)]"
+        help={t('profile.emailHelp')}
+      />
+      <Select
+        label={t('welcome.language')}
+        value={locale}
+        onChange={(event) => setLocale(event.target.value === 'en' ? 'en' : 'de')}
+        options={[
+          { value: 'de', label: t('welcome.languages.de') },
+          { value: 'en', label: t('welcome.languages.en') },
+        ]}
+      />
+      <Select
+        label={t('welcome.timeZone')}
+        value={timeZone}
+        onChange={(event) => setTimeZone(event.target.value)}
+        options={zones.map((zone) => ({ value: zone, label: zone.replaceAll('_', ' ') }))}
+      />
+      <div className="flex items-center gap-3">
+        <Button type="submit" variant="primary" disabled={!changed || save.isPending}>
+          {t('common.save')}
+        </Button>
+        {save.isSuccess && !changed && (
+          <span className="flex items-center gap-1 text-[13px] text-[var(--ink-muted)]">
+            <Check size={14} aria-hidden />
+            {t('profile.saved')}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function Appearance({ me }: { me: Me }) {
+  const { t } = useTranslation();
+  const save = useSaveMe();
+  const [theme, setTheme] = useState<ThemePreference>(readTheme);
+  return (
+    <div className="flex flex-col gap-5">
+      <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+        <legend className="tl-field-label mb-1.5 p-0">{t('profile.theme')}</legend>
+        {(['system', 'light', 'dark'] as const).map((value) => (
+          <label key={value} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="theme"
+              checked={theme === value}
+              onChange={() => {
+                setTheme(value);
+                applyTheme(value);
+              }}
+            />
+            {t(`profile.themes.${value}`)}
+          </label>
+        ))}
+        <span className="text-xs text-[var(--ink-muted)]">{t('profile.themeHelp')}</span>
+      </fieldset>
+      <div className="flex flex-col gap-1.5">
+        {save.error && <FormError message={save.error.message} />}
+        <label className="flex items-center gap-2 font-semibold">
+          <input
+            type="checkbox"
+            checked={me.keyboardShortcuts}
+            disabled={save.isPending}
+            onChange={(event) => save.mutate({ keyboardShortcuts: event.target.checked })}
+          />
+          {t('profile.shortcuts')}
+        </label>
+        <span className="pl-6 text-xs text-[var(--ink-muted)]">{t('profile.shortcutsHelp')}</span>
+      </div>
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      size="sm"
+      onClick={() =>
+        void navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+      }
+    >
+      {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
+      {copied ? t('profile.copied') : t('profile.copy')}
+    </Button>
+  );
+}
+
+function Tokens({ me }: { me: Me }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const tokens = useQuery(tokensQuery);
+  const [name, setName] = useState('');
+  const [scopes, setScopes] = useState<TokenScope[]>(['issues:read', 'wiki:read']);
+  const [days, setDays] = useState(90);
+  const [created, setCreated] = useState<CreatedToken | null>(null);
+  const available = TOKEN_SCOPES.filter(
+    (scope) => scope !== 'admin' || me.globalPermissions.includes('admin'),
+  );
+  const create = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/me/tokens', {
+          body: { name: name.trim(), scopes, expiresInDays: days },
+        }),
+      ),
+    onSuccess: (token) => {
+      setCreated(token);
+      setName('');
+      void queryClient.invalidateQueries({ queryKey: tokensQuery.queryKey });
+    },
+  });
+  const revoke = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id } } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tokensQuery.queryKey }),
+  });
+  const mcpCommand = created
+    ? `claude mcp add --transport http tasklore ${window.location.origin}/mcp --header "Authorization: Bearer ${created.secret}"`
+    : '';
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('profile.tokensIntro')}</p>
+      {created && (
+        <div
+          role="status"
+          className="flex max-w-[720px] flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--success-soft)] p-4"
+        >
+          <strong>{t('profile.tokenCreated', { name: created.name })}</strong>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="min-w-0 flex-1 break-all">{created.secret}</code>
+            <CopyButton text={created.secret} />
+          </div>
+          <span className="text-[13px]">{t('profile.mcpHint')}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="min-w-0 flex-1 text-xs break-all">{mcpCommand}</code>
+            <CopyButton text={mcpCommand} />
+          </div>
+          <div>
+            <Button size="sm" onClick={() => setCreated(null)}>
+              {t('profile.tokenDone')}
+            </Button>
+          </div>
+        </div>
+      )}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+        className="flex max-w-[720px] flex-col gap-3"
+      >
+        {create.error && <FormError message={create.error.message} />}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1">
+            <TextField
+              label={t('profile.tokenName')}
+              placeholder={t('profile.tokenNamePlaceholder')}
+              value={name}
+              required
+              maxLength={80}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+          <Select
+            label={t('profile.tokenExpiry')}
+            value={String(days)}
+            onChange={(event) => setDays(Number(event.target.value))}
+            options={EXPIRY_DAYS.map((value) => ({
+              value: String(value),
+              label: t('profile.days', { count: value }),
+            }))}
+          />
+        </div>
+        <fieldset className="m-0 flex flex-wrap gap-x-5 gap-y-1.5 border-0 p-0">
+          <legend className="tl-field-label mb-1.5 p-0">{t('profile.tokenScopes')}</legend>
+          {available.map((scope) => (
+            <label key={scope} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={scopes.includes(scope)}
+                onChange={(event) =>
+                  setScopes((current) =>
+                    event.target.checked
+                      ? [...current, scope]
+                      : current.filter((entry) => entry !== scope),
+                  )
+                }
+              />
+              <span>
+                <code>{scope}</code> · {t(`profile.scopes.${SCOPE_KEYS[scope]}`)}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <div>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={!name.trim() || scopes.length === 0 || create.isPending}
+          >
+            {t('profile.createToken')}
+          </Button>
+        </div>
+      </form>
+      {tokens.data && tokens.data.length > 0 && (
+        <table className="w-full max-w-[880px] border-collapse text-[13px]">
+          <thead>
+            <tr className="text-left text-[var(--ink-muted)]">
+              <th className="tl-label py-1.5 pr-3 font-semibold">{t('profile.tokenName')}</th>
+              <th className="tl-label py-1.5 pr-3 font-semibold">{t('profile.tokenScopes')}</th>
+              <th className="tl-label py-1.5 pr-3 font-semibold">{t('profile.lastUsed')}</th>
+              <th className="tl-label py-1.5 pr-3 font-semibold">{t('profile.expires')}</th>
+              <th className="py-1.5" />
+            </tr>
+          </thead>
+          <tbody>
+            {tokens.data.map((token) => (
+              <tr key={token.id} className="border-t border-[var(--border)] align-top">
+                <td className="py-2 pr-3">
+                  <span className="font-semibold">{token.name}</span>
+                  <span className="block text-xs text-[var(--ink-muted)]">
+                    <code>{token.prefix}…</code>
+                  </span>
+                </td>
+                <td className="py-2 pr-3">{token.scopes.join(', ')}</td>
+                <td className="py-2 pr-3">
+                  {token.lastUsedAt ? formatRelative(token.lastUsedAt) : t('profile.never')}
+                </td>
+                <td className="py-2 pr-3">{formatDate(token.expiresAt.slice(0, 10))}</td>
+                <td className="py-2 text-right">
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={revoke.isPending}
+                    onClick={() => {
+                      if (window.confirm(t('profile.revokeConfirm', { name: token.name })))
+                        revoke.mutate(token.id);
+                    }}
+                  >
+                    {t('profile.revoke')}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+/** A short "Browser on system" from the user agent, enough to recognise a session. */
+function deviceOf(userAgent: string | null, unknown: string): string {
+  if (!userAgent) return unknown;
+  const browser = /Edg\//.test(userAgent)
+    ? 'Edge'
+    : /Firefox\//.test(userAgent)
+      ? 'Firefox'
+      : /Chrome\//.test(userAgent)
+        ? 'Chrome'
+        : /Safari\//.test(userAgent)
+          ? 'Safari'
+          : null;
+  const system = /Mac OS X/.test(userAgent)
+    ? 'macOS'
+    : /Windows/.test(userAgent)
+      ? 'Windows'
+      : /Android/.test(userAgent)
+        ? 'Android'
+        : /iPhone|iPad/.test(userAgent)
+          ? 'iOS'
+          : /Linux/.test(userAgent)
+            ? 'Linux'
+            : null;
+  return [browser, system].filter(Boolean).join(' · ') || unknown;
+}
+
+function Sessions() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const sessions = useQuery(sessionsQuery);
+  const revoke = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        await unwrap(client.DELETE('/api/v1/me/sessions/{id}', { params: { path: { id } } }));
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: sessionsQuery.queryKey }),
+  });
+  const others = (sessions.data ?? []).filter((session) => !session.current);
+  return (
+    <div className="flex flex-col gap-3">
+      {revoke.error && <FormError message={revoke.error.message} />}
+      <ul className="m-0 flex max-w-[720px] list-none flex-col p-0">
+        {(sessions.data ?? []).map((session) => (
+          <li
+            key={session.id}
+            className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] py-2.5 text-[13px]"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-semibold">
+                {deviceOf(session.userAgent, t('profile.unknownDevice'))}
+                {session.current && (
+                  <span className="ml-2 rounded-[var(--radius-sm)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
+                    {t('profile.thisSession')}
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-[var(--ink-muted)]">
+                {t('profile.sessionSeen', {
+                  when: formatRelative(session.lastSeenAt),
+                  ip: session.ip ?? '–',
+                })}
+              </span>
+            </span>
+            {!session.current && (
+              <Button
+                size="sm"
+                disabled={revoke.isPending}
+                onClick={() => revoke.mutate([session.id])}
+              >
+                {t('common.signOut')}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {others.length > 0 && (
+        <div>
+          <Button
+            variant="danger"
+            disabled={revoke.isPending}
+            onClick={() => revoke.mutate(others.map((session) => session.id))}
+          >
+            {t('profile.signOutOthers', { count: others.length })}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The person's own page (TL-4, E-78): profile, appearance with the shortcut switch (TL-7),
+ * e-mail notifications, personal access tokens for agents and the API, and sessions.
+ */
+export function ProfilePage() {
+  const { t } = useTranslation();
+  const me = useQuery(meQuery);
+  if (!me.data) return null;
+  return (
+    <>
+      <TopBar crumbs={[t('profile.title')]} />
+      <main className="flex max-w-[960px] flex-col gap-8 px-10 py-6">
+        <header className="flex flex-col gap-1">
+          <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+            {t('profile.title')}
+          </h1>
+          <p className="m-0 text-[var(--ink-muted)]">{t('profile.intro')}</p>
+        </header>
+        <Section id="profile" title={t('profile.profile')}>
+          <ProfileForm me={me.data} />
+        </Section>
+        <Section id="appearance" title={t('profile.appearance')}>
+          <Appearance me={me.data} />
+        </Section>
+        <Section id="notifications" title={t('profile.notifications')}>
+          <div className="max-w-[640px]">
+            <EmailSettings />
+          </div>
+        </Section>
+        <Section id="tokens" title={t('profile.tokens')}>
+          <Tokens me={me.data} />
+        </Section>
+        <Section id="sessions" title={t('profile.sessions')}>
+          <Sessions />
+        </Section>
+      </main>
+    </>
+  );
+}

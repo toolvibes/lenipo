@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { applyLocale } from '../../i18n';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
+import { timeZones } from '../../lib/timeZones';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
@@ -27,12 +28,6 @@ export function suggestKey(name: string): string {
     words.length > 1 ? words.map((word) => word[0]).join('') : (words[0] ?? '').slice(0, 4);
   const key = raw.replace(/^[0-9]+/, '').slice(0, 10);
   return key.length >= 2 ? key : '';
-}
-
-function timeZones(current: string): string[] {
-  const all =
-    typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
-  return all.includes(current) ? all : [current, ...all];
 }
 
 /** The welcome steps after the first sign-in (1a S1, E-71): profile, method, first project. */

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "keyboard_shortcuts" boolean DEFAULT true NOT NULL;

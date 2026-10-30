@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   index,
   inet,
   pgEnum,
@@ -30,6 +31,8 @@ export const users = pgTable(
     lastLoginAt: timestamp({ withTimezone: true }),
     /** Finished or skipped the welcome steps (E-71); null sends the web app to /welcome. */
     onboardedAt: timestamp({ withTimezone: true }),
+    /** Single-key shortcuts in the web app; off for people who type with speech or switches (TL-7). */
+    keyboardShortcuts: boolean().notNull().default(true),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
 );

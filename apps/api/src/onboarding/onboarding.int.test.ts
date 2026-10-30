@@ -48,6 +48,18 @@ describe('profile', () => {
     expect((await mira.request('PATCH', '/me', { timeZone: 'Mars/Olympus' })).status).toBe(400);
     expect((await mira.request('PATCH', '/me', { locale: 'fr' })).status).toBe(400);
   });
+
+  it('switches the keyboard shortcuts off and on again (TL-7)', async () => {
+    expect((await mira.request<Me>('GET', '/me')).body.keyboardShortcuts).toBe(true);
+    const off = await mira.request<Me>('PATCH', '/me', { keyboardShortcuts: false });
+    expect(off.body.keyboardShortcuts).toBe(false);
+    expect((await mira.request<Me>('GET', '/me')).body).toMatchObject({
+      keyboardShortcuts: false,
+      displayName: 'Mira K.',
+    });
+    expect((await mira.request('PATCH', '/me', { keyboardShortcuts: 'nein' })).status).toBe(400);
+    await mira.request('PATCH', '/me', { keyboardShortcuts: true });
+  });
 });
 
 describe('welcome steps', () => {

@@ -72,10 +72,11 @@ export class UserService {
       globalPermissions: await this.access.globalPermissions(userId),
       authenticatedVia: via,
       onboarded: user.onboardedAt !== null,
+      keyboardShortcuts: user.keyboardShortcuts,
     };
   }
 
-  /** Name, language and time zone of the signed-in user. */
+  /** Name, language, time zone and shortcut setting of the signed-in user. */
   async updateProfile(
     userId: string,
     request: UpdateMeRequest,
