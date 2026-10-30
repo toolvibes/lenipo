@@ -10,6 +10,17 @@ export const de = {
     no: 'Nein',
   },
   auth: {
+    tagline: 'Aufgaben, Sprints und Dokumentation an einem Ort – für Ihr Team.',
+    pitchLabel: 'Was Sie erwartet',
+    pitchTitle: 'Arbeit und Wissen an einem Ort',
+    pitch: {
+      issues: 'Aufgaben und Boards',
+      issuesText: 'Scrum oder Kanban, mit Backlog, Sprints und Berichten.',
+      lore: 'Lore',
+      loreText: 'Dokumentation, die gemeinsam und in Echtzeit entsteht.',
+      linked: 'Alles verknüpft',
+      linkedText: 'Vorgänge in Seiten, Seiten an Vorgängen – immer mit aktuellem Stand.',
+    },
     signInTitle: 'Anmelden',
     email: 'E-Mail-Adresse',
     password: 'Passwort',

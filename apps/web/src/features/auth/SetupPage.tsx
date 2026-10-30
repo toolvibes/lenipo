@@ -60,8 +60,7 @@ export function SetupPage() {
   const codeRejected = setup.error instanceof ApiError && setup.error.status === 403;
 
   return (
-    <AuthLayout title={t('setup.title')}>
-      <p className="text-[var(--ink-muted)]">{t('setup.intro')}</p>
+    <AuthLayout title={t('setup.title')} subtitle={t('setup.intro')}>
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         {codeRejected && <FormError message={t('setup.invalidCode')} />}
         {setup.isError && !codeRejected && <FormError message={setup.error.message} />}

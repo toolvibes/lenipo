@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
 import { ISSUE_KEY } from '@tasklore/tql';
+import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
@@ -349,7 +350,7 @@ const adminRoute = createRoute({
   beforeLoad: ({ context }) => {
     if (!context.me.globalPermissions.includes('admin')) throw redirect({ to: '/' });
   },
-  component: Outlet,
+  component: AdminLayout,
 });
 
 const webhooksRoute = createRoute({

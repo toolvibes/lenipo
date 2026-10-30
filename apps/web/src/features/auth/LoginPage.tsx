@@ -4,7 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { authProvidersQuery, meQuery } from '../../lib/queries';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { AuthLayout } from './AuthLayout';
@@ -33,7 +33,7 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
   }
 
   return (
-    <AuthLayout title={t('auth.signInTitle')}>
+    <AuthLayout title={t('auth.signInTitle')} subtitle={t('auth.tagline')}>
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         {login.isError && <FormError message={t('auth.invalidCredentials')} />}
         {!login.isError && error && (
@@ -57,7 +57,12 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        <Button type="submit" variant="primary" disabled={login.isPending}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="h-[42px] text-sm"
+          disabled={login.isPending}
+        >
           {login.isPending ? t('auth.signingIn') : t('auth.signIn')}
         </Button>
       </form>
@@ -71,7 +76,7 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
           {/* A full-page navigation: the identity provider redirects back to the API. */}
           <a
             href={`/api/v1/auth/oidc/start?redirect=${encodeURIComponent(redirect ?? '/')}`}
-            className="inline-flex h-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-3 font-semibold text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]"
+            className={`${buttonClass('secondary')} h-10 text-[13.5px]`}
           >
             {t('auth.signInWith', { provider: providers.data.oidc.displayName ?? 'SSO' })}
           </a>

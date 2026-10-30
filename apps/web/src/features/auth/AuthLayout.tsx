@@ -1,20 +1,63 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Centered card for sign-in and setup, on the page ground. */
-export function AuthLayout({ title, children }: { title: string; children: ReactNode }) {
+const PITCH = ['issues', 'lore', 'linked'] as const;
+
+/** Sign-in and setup (1a S1): the form on the left, what TaskLore offers on the right. */
+export function AuthLayout({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  children: ReactNode;
+}) {
   const { t } = useTranslation();
   return (
-    <main className="flex min-h-screen items-start justify-center px-4 py-16 sm:items-center">
-      <div className="flex w-full max-w-[420px] flex-col gap-6">
-        <span className="text-[26px] leading-[34px] font-semibold tracking-[-0.02em]">
-          {t('common.product')}
+    <div className="grid min-h-screen md:grid-cols-2">
+      <main className="flex flex-col px-6 py-10 sm:px-14">
+        <span className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="grid size-6 place-items-center rounded-[5px] bg-[var(--ink)] text-[13px] font-bold text-[var(--surface-1)]"
+          >
+            T
+          </span>
+          <span className="text-base font-bold">{t('common.product')}</span>
         </span>
-        <section className="flex flex-col gap-5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-6">
-          <h1 className="tl-heading-lg">{title}</h1>
+        <div className="flex w-full max-w-[360px] flex-1 flex-col justify-center gap-6 py-10">
+          <div className="flex flex-col gap-2">
+            <h1 className="m-0 text-[28px] leading-9 font-semibold tracking-[-0.02em]">{title}</h1>
+            {subtitle && (
+              <p className="m-0 text-sm leading-normal text-[var(--ink-muted)]">{subtitle}</p>
+            )}
+          </div>
           {children}
-        </section>
-      </div>
-    </main>
+        </div>
+      </main>
+      <aside
+        aria-label={t('auth.pitchLabel')}
+        className="hidden flex-col justify-center gap-5 border-l border-[var(--border)] bg-[var(--surface-2)] p-14 md:flex"
+      >
+        <span className="tl-label text-[var(--ink-muted)]">{t('auth.pitchLabel')}</span>
+        <h2 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+          {t('auth.pitchTitle')}
+        </h2>
+        <ul className="m-0 flex max-w-[460px] list-none flex-col gap-2.5 p-0">
+          {PITCH.map((item) => (
+            <li
+              key={item}
+              className="flex flex-col gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-[18px] py-4"
+            >
+              <span className="text-[14.5px] font-semibold">{t(`auth.pitch.${item}`)}</span>
+              <span className="text-[13px] leading-[1.45] text-[var(--ink-muted)]">
+                {t(`auth.pitch.${item}Text`)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </div>
   );
 }

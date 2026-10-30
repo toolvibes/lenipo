@@ -12,6 +12,17 @@ export const en: Messages = {
     no: 'No',
   },
   auth: {
+    tagline: 'Issues, sprints and documentation in one place – for your team.',
+    pitchLabel: 'What you get',
+    pitchTitle: 'Work and knowledge in one place',
+    pitch: {
+      issues: 'Issues and boards',
+      issuesText: 'Scrum or Kanban, with backlog, sprints and reports.',
+      lore: 'Lore',
+      loreText: 'Documentation written together, in real time.',
+      linked: 'Everything linked',
+      linkedText: 'Issues in pages, pages on issues – always up to date.',
+    },
     signInTitle: 'Sign in',
     email: 'Email address',
     password: 'Password',

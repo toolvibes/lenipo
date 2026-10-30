@@ -40,10 +40,11 @@ export function TimeTrackingSettingsPage() {
   }
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
+    <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
       <header className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--ink-muted)]">{t('webhooks.admin')}</span>
-        <h1 className="tl-heading-xl">{t('time.settingsTitle')}</h1>
+        <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+          {t('time.settingsTitle')}
+        </h1>
       </header>
       <p className="m-0 max-w-[720px] text-[var(--ink-muted)]">{t('time.settingsIntro')}</p>
       {settings.error && <FormError message={settings.error.message} />}

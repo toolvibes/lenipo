@@ -61,11 +61,12 @@ export function WebhooksPage() {
   const [secret, setSecret] = useState<{ id: string; value: string } | null>(null);
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
+    <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--ink-muted)]">{t('webhooks.admin')}</span>
-          <h1 className="tl-heading-xl">{t('webhooks.title')}</h1>
+          <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+            {t('webhooks.title')}
+          </h1>
         </div>
         <Button variant="primary" onClick={() => setCreating(true)}>
           <Plus size={16} aria-hidden />
@@ -208,7 +209,7 @@ export function WebhookPage({ id }: { id: string }) {
   const error = test.error ?? toggle.error ?? rotate.error ?? resend.error ?? remove.error;
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
+    <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex min-w-[min(100%,18rem)] flex-1 flex-col gap-1">
           <Link
