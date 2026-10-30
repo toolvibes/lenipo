@@ -137,7 +137,7 @@ export function RichTextView({
       content: doc as Content,
       editable: false,
       ...(variant === 'page'
-        ? { editorProps: { attributes: { class: 'tl-prose tl-prose-read' } } }
+        ? { editorProps: { attributes: { class: 'tl-prose tl-prose-read tl-lore' } } }
         : {}),
     },
     [JSON.stringify(doc), variant, page?.pageId],

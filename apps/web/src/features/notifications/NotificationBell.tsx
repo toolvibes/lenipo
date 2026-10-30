@@ -1,4 +1,4 @@
-import { Bell, GearSix } from '@phosphor-icons/react';
+import { GearSix } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -207,20 +207,17 @@ export function NotificationBell() {
         aria-label={
           count > 0 ? t('notifications.openWithCount', { count }) : t('notifications.title')
         }
-        className="flex h-8 items-center gap-2.5 rounded-[var(--radius-md)] px-2 text-left text-[var(--ink)] hover:bg-[var(--surface-1)]"
+        className="flex h-[30px] items-center gap-2 rounded-[5px] px-2.5 text-left text-[13.5px] font-medium text-[var(--ink-muted)] hover:bg-[var(--selected)] hover:text-[var(--ink)]"
       >
-        <span className="relative">
-          <Bell size={20} weight={count > 0 ? 'fill' : 'regular'} aria-hidden />
-          {count > 0 && (
-            <span
-              aria-hidden
-              className="absolute -top-1.5 -right-2 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]"
-            >
-              {count > 99 ? '99+' : count}
-            </span>
-          )}
-        </span>
-        {t('notifications.title')}
+        <span className="flex-1">{t('notifications.title')}</span>
+        {count > 0 && (
+          <span
+            aria-hidden
+            className="rounded-[4px] bg-[var(--accent)] px-1.5 font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[var(--on-accent)]"
+          >
+            {count > 99 ? '99+' : count}
+          </span>
+        )}
       </button>
 
       <Dialog

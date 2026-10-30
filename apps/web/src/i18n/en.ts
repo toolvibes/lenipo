@@ -2,7 +2,7 @@ import type { Messages } from './index';
 
 export const en: Messages = {
   common: {
-    product: 'Tasklore',
+    product: 'TaskLore',
     signOut: 'Sign out',
     loading: 'Loading …',
     close: 'Close',
@@ -37,6 +37,20 @@ export const en: Messages = {
     submitting: 'Setting up …',
     invalidCode:
       'The setup code is wrong or has expired. Restart the server to print a new code to its log.',
+  },
+  sidebar: {
+    search: 'Search …',
+    overview: 'Overview',
+    myIssues: 'My tasks',
+    issues: 'Tasks',
+    backlog: 'Backlog',
+    board: 'Board',
+    lore: 'Lore',
+    noProjects: 'No projects yet.',
+    allProjects: 'All projects',
+    allSpaces: 'All Lore spaces',
+    allBoards: 'All boards',
+    settings: 'Settings',
   },
   shell: {
     navigation: 'Main navigation',

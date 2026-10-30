@@ -78,7 +78,7 @@ export function CollabEditor({ session, identity, pageId, spaceKey, onEditor }: 
         CollaborationCaret.configure({ provider: session.provider, user: identity }),
       ],
       editorProps: {
-        attributes: { class: 'tl-prose', 'aria-label': t('editor.content') },
+        attributes: { class: 'tl-prose tl-lore', 'aria-label': t('editor.content') },
       },
     },
     [session],

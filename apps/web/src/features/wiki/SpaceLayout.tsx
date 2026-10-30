@@ -30,6 +30,7 @@ import { ApiError, client, unwrap } from '../../lib/api';
 import { boardsQuery } from '../../lib/boards';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
+import { useCurrentProject } from '../../lib/shortcuts';
 import { nest, pageTreeQuery, spaceQuery, type TreeNode } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
@@ -284,6 +285,7 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
   const tree = useQuery(pageTreeQuery(spaceKey));
   useRealtimeRooms([`space:${spaceKey}`]);
   useRecordView('space', space.data?.key);
+  useCurrentProject(space.data?.project?.key);
   const [toggled, setToggled] = useState<Map<string, boolean>>(new Map());
   const [creatingUnder, setCreatingUnder] = useState<string | null | undefined>(undefined);
   const [dragging, setDragging] = useState<string | null>(null);

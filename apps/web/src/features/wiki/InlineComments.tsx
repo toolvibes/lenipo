@@ -99,7 +99,7 @@ export function CommentedText({
       ],
       content: doc as Content,
       editable: false,
-      editorProps: { attributes: { class: 'tl-prose tl-prose-read' } },
+      editorProps: { attributes: { class: 'tl-prose tl-prose-read tl-lore' } },
     },
     [JSON.stringify(doc), JSON.stringify(threads), active],
   );

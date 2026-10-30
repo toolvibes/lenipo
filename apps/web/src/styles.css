@@ -6,8 +6,21 @@ body {
   background: var(--surface-0);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Section labels are set in capitals (E-67); form fields have their own, plain label. */
+.tl-label {
+  text-transform: uppercase;
+}
+.tl-field-label {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--ink);
 }
 
 :focus-visible {
@@ -15,14 +28,20 @@ body {
   outline-offset: 2px;
 }
 
-/* Editor content: wiki pages and long descriptions, in the reading sizes of the type scale. */
+/* Rich text: issue descriptions and comments in the interface font (E-67). */
 .tl-prose {
   min-height: 60vh;
   max-width: var(--prose-measure);
   outline: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+}
+/* Lore pages read like a document: Newsreader in the prose sizes of the type scale. */
+.tl-prose.tl-lore {
   font-family: var(--font-prose);
-  font-size: 16px;
-  line-height: 27px;
+  font-size: 17px;
+  line-height: 28px;
 }
 .tl-prose-read {
   min-height: 0;
@@ -31,24 +50,38 @@ body {
   margin-top: 0.75em;
 }
 .tl-prose h1 {
-  font-size: 32px;
-  line-height: 40px;
+  font-size: 22px;
+  line-height: 28px;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 .tl-prose h2 {
-  font-size: 22px;
-  line-height: 30px;
+  font-size: 18px;
+  line-height: 24px;
   font-weight: 600;
-  letter-spacing: -0.015em;
   margin-top: 1.5em;
 }
 .tl-prose h3 {
-  font-size: 17px;
-  line-height: 26px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 600;
   margin-top: 1.25em;
+}
+.tl-prose.tl-lore h1 {
+  font-size: 34px;
+  line-height: 42px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.tl-prose.tl-lore h2 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+}
+.tl-prose.tl-lore h3 {
+  font-size: 19px;
+  line-height: 28px;
 }
 .tl-prose ul {
   list-style: disc;
