@@ -912,6 +912,11 @@ export const en: Messages = {
     expandLines_other: 'Show {{count}} lines',
   },
   wiki: {
+    onThisPage: 'On this page',
+    linkedIssues: 'Linked issues',
+    readingTime_one: '{{count}} min read',
+    readingTime_other: '{{count}} min read',
+    updatedBy: '{{name}} · version {{number}} of {{date}}',
     nav: 'Wiki',
     spaces: 'Spaces',
     createSpace: 'Create space',

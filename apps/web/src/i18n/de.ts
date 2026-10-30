@@ -925,6 +925,11 @@ export const de = {
     expandLines_other: '{{count}} Zeilen anzeigen',
   },
   wiki: {
+    onThisPage: 'Auf dieser Seite',
+    linkedIssues: 'Verknüpfte Aufgaben',
+    readingTime_one: '{{count}} Min. Lesezeit',
+    readingTime_other: '{{count}} Min. Lesezeit',
+    updatedBy: '{{name}} · Version {{number}} vom {{date}}',
     nav: 'Wiki',
     spaces: 'Bereiche',
     createSpace: 'Bereich anlegen',

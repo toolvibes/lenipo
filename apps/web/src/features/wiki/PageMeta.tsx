@@ -6,6 +6,7 @@ import { type Page, PageLabels } from '@tasklore/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
+import { buttonClass } from '../../ui/Button';
 
 function useSetPage(pageId: string) {
   const queryClient = useQueryClient();
@@ -147,7 +148,7 @@ export function WatchMenu({ page }: { page: Page }) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className={`inline-flex h-[var(--control-md)] items-center gap-2 rounded-[var(--radius-md)] px-3 font-semibold hover:bg-[var(--surface-2)] ${watching ? 'text-[var(--accent)]' : 'text-[var(--ink)]'}`}
+        className={`${buttonClass('ghost', 'sm')} ${watching ? '!text-[var(--accent)]' : ''}`}
       >
         {watching ? (
           <Eye size={16} weight="fill" aria-hidden />

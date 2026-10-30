@@ -18,6 +18,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'md' | 'sm';
 }
 
+/** Classes of a Button, for links that look like one. */
+export function buttonClass(variant: Variant = 'secondary', size: 'md' | 'sm' = 'md') {
+  const height = size === 'md' ? 'h-[var(--control-md)]' : 'h-[var(--control-sm)] !px-2.5';
+  return `inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] text-[13px] no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${height} ${VARIANTS[variant]}`;
+}
+
 /** Design system Button (E-67): one primary action per view, verb first. */
 export function Button({
   variant = 'secondary',
@@ -26,12 +32,5 @@ export function Button({
   type = 'button',
   ...props
 }: ButtonProps) {
-  const height = size === 'md' ? 'h-[var(--control-md)]' : 'h-[var(--control-sm)] !px-2.5';
-  return (
-    <button
-      type={type}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${height} ${VARIANTS[variant]} ${className}`}
-      {...props}
-    />
-  );
+  return <button type={type} className={`${buttonClass(variant, size)} ${className}`} {...props} />;
 }

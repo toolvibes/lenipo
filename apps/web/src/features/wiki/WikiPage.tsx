@@ -1,23 +1,31 @@
-import { CaretRight, ClockCounterClockwise, DotsThree, PencilSimple } from '@phosphor-icons/react';
+import {
+  CaretRight,
+  ChatCircle,
+  ClockCounterClockwise,
+  DotsThree,
+  PencilSimple,
+} from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { Page, PageTreeEntry, RichText, TextAnchor } from '@tasklore/shared';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { pageCommentsQuery, pageQuery, pageTreeQuery } from '../../lib/wiki';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { PageComments } from './comments';
 import { CommentedText, InlineThreads } from './InlineComments';
 import { PageAttachments } from './PageAttachments';
 import { PageLabelList, WatchMenu } from './PageMeta';
+import { PageOutline, readingMinutes } from './PageOutline';
 import { CreatePageDialog } from './SpaceLayout';
 
 export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode }) {
@@ -195,6 +203,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | null>(null);
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [quote, setQuote] = useState<TextAnchor | null>(null);
+  const article = useRef<HTMLElement>(null);
   const close = (open: boolean) => !open && setDialog(null);
 
   if (page.error) {
@@ -209,136 +218,168 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const list = comments.data ?? [];
   const withThreads = quote !== null || list.some((comment) => !comment.parentId && comment.anchor);
 
+  const doc = data.content as RichText | null;
+  const openComments = list.filter((comment) => !comment.deleted).length;
+
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
-      <Breadcrumbs page={data} />
-      <header className="flex flex-wrap items-start gap-3">
-        <div className="flex min-w-0 flex-[1_1_22rem] flex-col gap-1">
-          <h1 className="tl-heading-xl m-0 flex items-center gap-2">
-            {data.title}
-            <FavouriteButton
-              kind="page"
-              refId={data.id}
-              active={data.favourite}
-              name={data.title}
-            />
-          </h1>
-          <PageLabelList page={data} />
-          <span className="text-sm text-[var(--ink-muted)]">
-            {data.version === 0
-              ? t('wiki.neverPublished')
-              : t('wiki.publishedBy', {
-                  number: data.version,
-                  name: data.publishedBy?.displayName ?? t('wiki.unknownAuthor'),
-                  date: formatDateTime(data.publishedAt ?? data.createdAt),
-                })}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          {data.canEdit && (
+    <main className="flex flex-col">
+      <TopBar
+        crumbs={[
+          <Link key="space" to="/spaces/$key" params={{ key: data.space.key }}>
+            {data.space.name}
+          </Link>,
+          ...data.ancestors.map((ancestor) => (
             <Link
-              to="/spaces/$key/pages/$id/edit"
-              params={{ key: spaceKey, id }}
-              className="inline-flex h-[var(--control-md)] items-center gap-1 rounded-[var(--radius-md)] bg-[var(--accent)] px-3 font-semibold text-[var(--on-accent)] no-underline hover:opacity-90"
+              key={ancestor.id}
+              to="/spaces/$key/pages/$id"
+              params={{ key: data.space.key, id: ancestor.id }}
             >
-              <PencilSimple size={16} aria-hidden />
-              {t('wiki.edit')}
+              {ancestor.title}
             </Link>
-          )}
-          <WatchMenu page={data} />
-          {data.version > 0 && (
-            <Link
-              to="/spaces/$key/pages/$id/history"
-              params={{ key: spaceKey, id: data.id }}
-              className="inline-flex h-[var(--control-md)] items-center gap-2 rounded-[var(--radius-md)] px-3 font-semibold text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]"
-            >
-              <ClockCounterClockwise size={16} aria-hidden />
-              {t('wiki.versions')}
-            </Link>
-          )}
-          {data.canEdit && (
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger
-                aria-label={t('wiki.pageActions')}
-                className="grid size-[var(--control-md)] place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+          )),
+          data.title,
+        ]}
+        actions={
+          <>
+            {data.version > 0 && (
+              <Link
+                to="/spaces/$key/pages/$id/history"
+                params={{ key: spaceKey, id: data.id }}
+                className={buttonClass('ghost', 'sm')}
               >
-                <DotsThree size={18} weight="bold" aria-hidden />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={4}
-                  className="z-50 min-w-48 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-1 shadow-[var(--shadow-float)]"
+                <ClockCounterClockwise size={16} aria-hidden />
+                {t('wiki.versions')}
+              </Link>
+            )}
+            {data.version > 0 && (
+              <a href="#page-comments" className={buttonClass('ghost', 'sm')}>
+                <ChatCircle size={16} aria-hidden />
+                {t('wiki.comments.title', { count: openComments })}
+              </a>
+            )}
+            <WatchMenu page={data} />
+            {data.canEdit && (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                  aria-label={t('wiki.pageActions')}
+                  className="grid size-[var(--control-sm)] place-items-center rounded-[var(--radius-md)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
                 >
-                  <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('child')}>
-                    {t('wiki.createChildPage')}
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('move')}>
-                    {t('wiki.moveEllipsis')}
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    className={`${menuItem} text-[var(--danger)]`}
-                    onSelect={() => setDialog('delete')}
+                  <DotsThree size={18} weight="bold" aria-hidden />
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={4}
+                    className="z-50 min-w-48 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-1 shadow-[var(--shadow-float)]"
                   >
-                    {t('wiki.deleteEllipsis')}
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+                    <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('child')}>
+                      {t('wiki.createChildPage')}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('move')}>
+                      {t('wiki.moveEllipsis')}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className={`${menuItem} text-[var(--danger)]`}
+                      onSelect={() => setDialog('delete')}
+                    >
+                      {t('wiki.deleteEllipsis')}
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            )}
+            {data.canEdit && (
+              <Link
+                to="/spaces/$key/pages/$id/edit"
+                params={{ key: spaceKey, id }}
+                className={`${buttonClass('secondary', 'sm')} ml-1.5`}
+              >
+                <PencilSimple size={16} aria-hidden />
+                {t('wiki.edit')}
+              </Link>
+            )}
+          </>
+        }
+      />
+
+      <div className="flex flex-wrap items-start gap-x-10 gap-y-6 px-12 py-9">
+        <div className="flex min-w-0 max-w-[680px] flex-[999_1_480px] flex-col gap-4">
+          <header className="flex flex-col gap-3">
+            <span className="text-[12.5px] text-[var(--ink-muted)]">
+              {data.version === 0
+                ? t('wiki.neverPublished')
+                : t('wiki.updatedBy', {
+                    number: data.version,
+                    name: data.publishedBy?.displayName ?? t('wiki.unknownAuthor'),
+                    date: formatDateTime(data.publishedAt ?? data.createdAt),
+                  })}
+              {doc && ` · ${t('wiki.readingTime', { count: readingMinutes(doc) })}`}
+            </span>
+            <h1 className="m-0 flex items-center gap-2 font-[family-name:var(--font-prose)] text-[40px] leading-[1.12] font-medium tracking-[-0.015em]">
+              {data.title}
+              <FavouriteButton
+                kind="page"
+                refId={data.id}
+                active={data.favourite}
+                name={data.title}
+              />
+            </h1>
+            <PageLabelList page={data} />
+          </header>
+          {doc ? (
+            <article ref={article}>
+              <CommentedText
+                doc={doc}
+                spaceKey={spaceKey}
+                pageId={data.id}
+                comments={list}
+                active={activeThread}
+                canComment={data.canComment}
+                onOpen={setActiveThread}
+                onQuote={(anchor) => {
+                  setQuote(anchor);
+                  setActiveThread(null);
+                }}
+              />
+            </article>
+          ) : (
+            <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('wiki.draftHelp')}</p>
           )}
         </div>
-      </header>
-      {data.content ? (
-        <div
-          className={
-            withThreads
-              ? 'grid items-start gap-6 xl:grid-cols-[minmax(0,var(--prose-measure))_minmax(260px,340px)]'
-              : ''
-          }
-        >
-          <article className="max-w-[var(--prose-measure)]">
-            <CommentedText
-              doc={data.content as RichText}
-              spaceKey={spaceKey}
-              pageId={data.id}
-              comments={list}
-              active={activeThread}
-              canComment={data.canComment}
-              onOpen={setActiveThread}
-              onQuote={(anchor) => {
-                setQuote(anchor);
-                setActiveThread(null);
-              }}
-            />
-          </article>
-          {withThreads && (
-            <InlineThreads
-              pageId={data.id}
-              spaceKey={spaceKey}
-              comments={list}
-              canComment={data.canComment}
-              active={activeThread}
-              onActivate={setActiveThread}
-              draft={quote}
-              onDraftDone={(created) => {
-                setQuote(null);
-                if (created) setActiveThread(created);
-              }}
-            />
-          )}
-        </div>
-      ) : (
-        <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('wiki.draftHelp')}</p>
-      )}
-      <PageAttachments pageId={data.id} canEdit={data.canEdit} />
-      {data.version > 0 && (
-        <PageComments
-          pageId={data.id}
-          spaceKey={spaceKey}
-          comments={list}
-          canComment={data.canComment}
-        />
-      )}
+        {doc && (
+          <aside
+            className={`sticky top-6 flex min-w-0 flex-col gap-6 ${withThreads ? 'flex-[1_1_280px] xl:max-w-[340px]' : 'flex-[1_1_200px] xl:max-w-[220px]'}`}
+          >
+            <PageOutline doc={doc} article={article} />
+            {withThreads && (
+              <InlineThreads
+                pageId={data.id}
+                spaceKey={spaceKey}
+                comments={list}
+                canComment={data.canComment}
+                active={activeThread}
+                onActivate={setActiveThread}
+                draft={quote}
+                onDraftDone={(created) => {
+                  setQuote(null);
+                  if (created) setActiveThread(created);
+                }}
+              />
+            )}
+          </aside>
+        )}
+      </div>
+      <div className="flex max-w-[728px] flex-col gap-6 px-12 pb-12">
+        <PageAttachments pageId={data.id} canEdit={data.canEdit} />
+        {data.version > 0 && (
+          <PageComments
+            pageId={data.id}
+            spaceKey={spaceKey}
+            comments={list}
+            canComment={data.canComment}
+          />
+        )}
+      </div>
       <MoveDialog
         key={`${data.id}:${data.parentId}`}
         page={data}
