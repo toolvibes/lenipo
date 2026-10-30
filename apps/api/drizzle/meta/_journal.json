@@ -232,6 +232,13 @@
       "when": 1793362558354,
       "tag": "0032_board_favourites",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793362809381,
+      "tag": "0033_page_comment_search",
+      "breakpoints": true
     }
   ]
 }

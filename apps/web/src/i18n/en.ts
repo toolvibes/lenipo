@@ -795,6 +795,8 @@ export const en: Messages = {
     themeSystem: 'Theme: Match system',
   },
   everything: {
+    inComment: 'Comment by {{name}}:',
+    inAttachment: 'Attachment:',
     title: 'Search',
     placeholder: 'Search issues, Lore, projects …',
     hits_one: '{{count}} result',

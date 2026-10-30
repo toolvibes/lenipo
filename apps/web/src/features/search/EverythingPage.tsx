@@ -1,7 +1,7 @@
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { ChatCircleText, MagnifyingGlass, Paperclip } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { EverythingResult, Snippet } from '@tasklore/shared';
+import type { EverythingResult, SearchMatch, Snippet } from '@tasklore/shared';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../lib/format';
@@ -32,6 +32,28 @@ function Marked({ snippet }: { snippet: Snippet }) {
         );
       })}
     </>
+  );
+}
+
+/** "In a comment by …" or "Attachment …" under a result found only there (TL-3). */
+function MatchNote({ match }: { match: SearchMatch }) {
+  const { t } = useTranslation();
+  return (
+    <span className="flex min-w-0 items-baseline gap-1.5 text-[12.5px] leading-normal text-[var(--ink-muted)]">
+      {match.in === 'comment' ? (
+        <ChatCircleText size={13} aria-hidden className="shrink-0 self-center" />
+      ) : (
+        <Paperclip size={13} aria-hidden className="shrink-0 self-center" />
+      )}
+      <span className="shrink-0 font-semibold">
+        {match.in === 'comment'
+          ? t('everything.inComment', { name: match.author ?? '?' })
+          : t('everything.inAttachment')}
+      </span>
+      <span className="min-w-0 truncate">
+        <Marked snippet={match.snippet} />
+      </span>
+    </span>
   );
 }
 
@@ -98,10 +120,14 @@ function Results({
             <span className="font-[family-name:var(--font-prose)] text-lg font-medium">
               {page.title}
             </span>
-            {page.snippet.length > 0 && (
-              <span className="text-[13.5px] leading-normal text-[var(--ink-muted)]">
-                <Marked snippet={page.snippet} />
-              </span>
+            {page.match ? (
+              <MatchNote match={page.match} />
+            ) : (
+              page.snippet.length > 0 && (
+                <span className="text-[13.5px] leading-normal text-[var(--ink-muted)]">
+                  <Marked snippet={page.snippet} />
+                </span>
+              )
             )}
             <span className="text-xs text-[var(--ink-muted)]">
               {[
@@ -130,13 +156,16 @@ function Results({
             >
               <IssueTypeIcon type={issue.issueType} />
               <span className="tl-key">{issue.key}</span>
-              <Link
-                to="/issues/$key"
-                params={{ key: issue.key }}
-                className="truncate text-[var(--ink)] no-underline hover:underline"
-              >
-                {issue.summary}
-              </Link>
+              <span className="flex min-w-0 flex-col">
+                <Link
+                  to="/issues/$key"
+                  params={{ key: issue.key }}
+                  className="truncate text-[var(--ink)] no-underline hover:underline"
+                >
+                  {issue.summary}
+                </Link>
+                {issue.match && <MatchNote match={issue.match} />}
+              </span>
               <StatusLozenge status={issue.status} />
               <span className="truncate text-right text-[12.5px] text-[var(--ink-muted)]">
                 {issue.project.name}

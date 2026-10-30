@@ -1,5 +1,8 @@
 import type { EverythingResult, Page } from '@tasklore/shared';
+import { eq } from 'drizzle-orm';
+import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { issueAttachments, issues } from '../db/schema/index.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 import { snippet } from './everything.service.js';
@@ -146,6 +149,51 @@ describe('global search', () => {
   it('shows nothing the caller may not see', async () => {
     const result = await find(outsider, 'Synchronisierung');
     expect(result.counts).toEqual({ issue: 0, page: 0, project: 0, space: 0 });
+  });
+
+  it('finds issues and pages through comments and attachment names (TL-3)', async () => {
+    await admin.request('POST', '/issues/ATL-3/comments', {
+      body: { markdown: 'Ohne Tresorschlüssel geht offline nichts.' },
+    });
+    const retro = (await find(admin, 'Retro')).pages[0];
+    await admin.request('POST', `/pages/${retro?.id}/comments`, {
+      body: { markdown: 'Den Tresorschlüssel bitte rotieren.' },
+    });
+    const [issue] = await test.database.db
+      .select({ id: issues.id })
+      .from(issues)
+      .where(eq(issues.key, 'KMP-1'));
+    await test.database.db.insert(issueAttachments).values({
+      id: uuidv7(),
+      issueId: issue?.id ?? '',
+      fileName: 'tresor-protokoll.pdf',
+      contentType: 'application/pdf',
+      size: 1,
+      sha256: 'x',
+      storageKey: `test/${uuidv7()}`,
+    });
+
+    const result = await find(admin, 'Tresorschlüssel');
+    expect(result.counts).toMatchObject({ issue: 1, page: 1 });
+    expect(result.issues[0]).toMatchObject({
+      key: 'ATL-3',
+      match: { in: 'comment', author: 'Lena Vogt' },
+    });
+    expect(result.issues[0]?.match?.snippet.some((part) => part.hit)).toBe(true);
+    expect(result.pages[0]).toMatchObject({ title: 'Retro 13', match: { in: 'comment' } });
+    const files = await find(admin, 'tresor-protokoll');
+    expect(files.issues.map((hit) => [hit.key, hit.match?.in])).toEqual([['KMP-1', 'attachment']]);
+    // Hits in the issue itself come before hits only in a comment.
+    const offline = await find(admin, 'offline');
+    expect(
+      offline.issues
+        .map((hit) => hit.key)
+        .slice(0, 2)
+        .sort(),
+    ).toEqual(['ATL-1', 'KMP-1']);
+    expect(offline.issues[2]).toMatchObject({ key: 'ATL-3', match: { in: 'comment' } });
+    expect(offline.issues[0]?.match).toBeUndefined();
+    expect((await find(outsider, 'Tresorschlüssel')).counts.issue).toBe(0);
   });
 });
 

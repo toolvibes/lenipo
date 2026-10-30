@@ -140,6 +140,24 @@ export const Snippet = z
   .meta({ id: 'Snippet' });
 export type Snippet = z.infer<typeof Snippet>;
 
+/**
+ * Where a result matched when not in its own title or text (TL-3): a comment, with its author
+ * and the marked words, or the file name of an attachment.
+ */
+export const SearchMatch = z
+  .object({
+    in: z.enum(['comment', 'attachment']),
+    author: z.string().nullable(),
+    snippet: Snippet,
+  })
+  .meta({ id: 'SearchMatch' });
+export type SearchMatch = z.infer<typeof SearchMatch>;
+
+export const IssueHit = IssueSummary.extend({ match: SearchMatch.optional() }).meta({
+  id: 'IssueHit',
+});
+export type IssueHit = z.infer<typeof IssueHit>;
+
 export const PageHit = z
   .object({
     id: Id,
@@ -148,6 +166,7 @@ export const PageHit = z
     parentTitle: z.string().nullable(),
     publishedAt: z.iso.datetime().nullable(),
     snippet: Snippet,
+    match: SearchMatch.optional(),
   })
   .meta({ id: 'PageHit' });
 export type PageHit = z.infer<typeof PageHit>;
@@ -160,7 +179,7 @@ export const EverythingResult = z
       project: z.number().int(),
       space: z.number().int(),
     }),
-    issues: z.array(IssueSummary),
+    issues: z.array(IssueHit),
     pages: z.array(PageHit),
     projects: z.array(z.object({ key: z.string(), name: z.string(), description: z.string() })),
     spaces: z.array(z.object({ key: z.string(), name: z.string(), description: z.string() })),

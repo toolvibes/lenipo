@@ -808,6 +808,8 @@ export const de = {
     themeSystem: 'Design: wie Betriebssystem',
   },
   everything: {
+    inComment: 'Kommentar von {{name}}:',
+    inAttachment: 'Anhang:',
     title: 'Suche',
     placeholder: 'Aufgaben, Lore, Projekte durchsuchen …',
     hits_one: '{{count}} Treffer',

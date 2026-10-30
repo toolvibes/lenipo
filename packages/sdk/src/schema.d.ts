@@ -3714,7 +3714,7 @@ export interface components {
         project: number;
         space: number;
       };
-      issues: components['schemas']['IssueSummary'][];
+      issues: components['schemas']['IssueHit'][];
       pages: components['schemas']['PageHit'][];
       projects: {
         key: string;
@@ -3727,6 +3727,72 @@ export interface components {
         description: string;
       }[];
     };
+    IssueHit: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      summary: string;
+      issueType: components['schemas']['IssueTypeInfo'];
+      status: components['schemas']['StatusInfo'];
+      priority: components['schemas']['PriorityInfo'];
+      assignee: components['schemas']['UserRef'] | null;
+      storyPoints: number | null;
+      labels: string[];
+      rank: string;
+      /** Format: date-time */
+      updatedAt: string;
+      reporter: components['schemas']['UserRef'] | null;
+      resolution: components['schemas']['ResolutionInfo'] | null;
+      startDate: string | null;
+      dueDate: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      components: components['schemas']['ComponentRef'][];
+      timeTracking: components['schemas']['TimeTracking'];
+      customFields: {
+        [key: string]:
+          | string
+          | number
+          | boolean
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              value: string;
+            }[]
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            };
+      };
+      parent: components['schemas']['IssueRef'] | null;
+      sprint: components['schemas']['SprintRef'] | null;
+      fixVersions: components['schemas']['VersionRef'][];
+      affectsVersions: components['schemas']['VersionRef'][];
+      canEdit: boolean;
+      canAssign: boolean;
+      canTransition: boolean;
+      match?: components['schemas']['SearchMatch'];
+    };
+    SearchMatch: {
+      /** @enum {string} */
+      in: 'comment' | 'attachment';
+      author: string | null;
+      snippet: components['schemas']['Snippet'];
+    };
+    Snippet: {
+      text: string;
+      hit: boolean;
+    }[];
     PageHit: {
       /** Format: uuid */
       id: string;
@@ -3738,11 +3804,8 @@ export interface components {
       parentTitle: string | null;
       publishedAt: string | null;
       snippet: components['schemas']['Snippet'];
+      match?: components['schemas']['SearchMatch'];
     };
-    Snippet: {
-      text: string;
-      hit: boolean;
-    }[];
     ValueSuggestion: {
       value: string;
       label: string;

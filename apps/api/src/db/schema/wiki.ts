@@ -171,6 +171,10 @@ export const pageComments = pgTable(
     authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     body: jsonb().notNull(),
     bodyText: text().notNull(),
+    /** For the global search (TL-3), like issue comments. */
+    searchVector: tsvector()
+      .notNull()
+      .generatedAlwaysAs(sql.raw(searchVector('body_text', 'A'))),
     /** Quote, context and block of an inline comment (TextAnchor); null for page comments. */
     anchor: jsonb(),
     /** The quote was not found again in a later version. */
@@ -183,6 +187,7 @@ export const pageComments = pgTable(
   },
   (table) => [
     index('page_comments_page_idx').on(table.pageId, table.createdAt),
+    index('page_comments_search_idx').using('gin', table.searchVector),
     index('page_comments_parent_idx').on(table.parentId),
   ],
 );

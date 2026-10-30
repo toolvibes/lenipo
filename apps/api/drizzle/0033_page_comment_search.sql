@@ -1,0 +1,2 @@
+ALTER TABLE "page_comments" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('german'::regconfig, coalesce(body_text, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(body_text, '')), 'A')) STORED NOT NULL;--> statement-breakpoint
+CREATE INDEX "page_comments_search_idx" ON "page_comments" USING gin ("search_vector");

@@ -1,12 +1,29 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { EverythingQuery, EverythingResult, PageHit, Snippet } from '@tasklore/shared';
+import type {
+  EverythingQuery,
+  EverythingResult,
+  PageHit,
+  SearchMatch,
+  Snippet,
+} from '@tasklore/shared';
 import { and, count, desc, eq, gt, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { escapeLike } from '../db/like.js';
-import { issues, pages, pageVersions, projects, spaces } from '../db/schema/index.js';
+import {
+  issueAttachments,
+  issueComments,
+  issues,
+  pageAttachments,
+  pageComments,
+  pages,
+  pageVersions,
+  projects,
+  spaces,
+  users,
+} from '../db/schema/index.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
@@ -80,28 +97,38 @@ export class EverythingService {
     const limit = (type: EverythingQuery['type'] & string) =>
       query.type === type ? query.limit : Math.min(query.limit, type === 'issue' ? 10 : 5);
 
-    // Issues: full text or the exact key.
+    // Issues: full text or the exact key, or one of their comments or attachment names (TL-3).
     const keyMatch = ISSUE_KEY.test(text) ? sql`lower(${issues.key}) = lower(${text})` : null;
+    const issueDirect = or(
+      sql`${issues.searchVector} @@ ${german}`,
+      sql`${issues.searchVector} @@ ${english}`,
+      keyMatch ?? undefined,
+    ) as SQL;
     const issueWhere = and(
       inArray(issues.projectId, projectIds),
       isNull(issues.deletedAt),
       or(
-        sql`${issues.searchVector} @@ ${german}`,
-        sql`${issues.searchVector} @@ ${english}`,
-        keyMatch ?? undefined,
+        issueDirect,
+        sql`exists (select 1 from ${issueComments} where ${issueComments.issueId} = ${issues.id} and ${issueComments.deletedAt} is null and (${issueComments.searchVector} @@ ${german} or ${issueComments.searchVector} @@ ${english}))`,
+        sql`exists (select 1 from ${issueAttachments} where ${issueAttachments.issueId} = ${issues.id} and ${issueAttachments.fileName} ilike ${like})`,
       ),
     );
     const issueRank = sql`greatest(ts_rank_cd(${issues.searchVector}, ${german}), ts_rank_cd(${issues.searchVector}, ${english}))`;
 
     // Pages: the latest published version of pages outside the trash.
     const parent = alias(pages, 'parent');
+    const pageDirect = or(
+      sql`${pageVersions.searchVector} @@ ${german}`,
+      sql`${pageVersions.searchVector} @@ ${english}`,
+    ) as SQL;
     const pageWhere = and(
       inArray(pages.spaceId, spaceIds),
       isNull(pages.deletedAt),
       gt(pages.version, 0),
       or(
-        sql`${pageVersions.searchVector} @@ ${german}`,
-        sql`${pageVersions.searchVector} @@ ${english}`,
+        pageDirect,
+        sql`exists (select 1 from ${pageComments} where ${pageComments.pageId} = ${pages.id} and ${pageComments.deletedAt} is null and (${pageComments.searchVector} @@ ${german} or ${pageComments.searchVector} @@ ${english}))`,
+        sql`exists (select 1 from ${pageAttachments} where ${pageAttachments.pageId} = ${pages.id} and ${pageAttachments.fileName} ilike ${like})`,
       ),
     );
     const pageJoin = and(eq(pageVersions.pageId, pages.id), eq(pageVersions.number, pages.version));
@@ -133,12 +160,14 @@ export class EverythingService {
       db.select({ n: count() }).from(spaces).where(spaceWhere),
       wants('issue')
         ? db
-            .select()
+            .select({ issue: issues, direct: sql<boolean>`${issueDirect}` })
             .from(issues)
             .where(issueWhere)
             .orderBy(
               ...(keyMatch ? [desc(keyMatch)] : []),
               desc(sql`lower(${issues.summary}) = lower(${text})`),
+              // Hits in the issue itself before hits only in its comments or attachments.
+              desc(issueDirect),
               desc(issueRank),
               desc(issues.updatedAt),
             )
@@ -153,6 +182,7 @@ export class EverythingService {
               spaceName: spaces.name,
               parentTitle: parent.title,
               publishedAt: pages.publishedAt,
+              direct: sql<boolean>`${pageDirect}`,
               headline: sql<string>`ts_headline('german', ${pageVersions.text}, ${german} || ${english}, ${`StartSel=${START}, StopSel=${STOP}, MaxWords=32, MinWords=12, ShortWord=2, MaxFragments=1, FragmentDelimiter=" … "`})`,
             })
             .from(pages)
@@ -162,6 +192,7 @@ export class EverythingService {
             .where(pageWhere)
             .orderBy(
               desc(sql`lower(${pages.title}) = lower(${text})`),
+              desc(pageDirect),
               desc(pageRank),
               desc(pages.publishedAt),
             )
@@ -185,6 +216,35 @@ export class EverythingService {
         : Promise.resolve([]),
     ]);
 
+    const headline = (column: SQL | typeof issueComments.bodyText) =>
+      sql<string>`ts_headline('german', ${column}, ${german} || ${english}, ${`StartSel=${START}, StopSel=${STOP}, MaxWords=24, MinWords=8, ShortWord=2, MaxFragments=1, FragmentDelimiter=" … "`})`;
+    const [issueMatches, pageMatches] = await Promise.all([
+      this.matches(
+        issueRows.filter((row) => !row.direct).map((row) => row.issue.id),
+        {
+          comments: issueComments,
+          owner: issueComments.issueId,
+          attachments: issueAttachments,
+          attachmentOwner: issueAttachments.issueId,
+        },
+        { german, english, like, headline },
+      ),
+      this.matches(
+        pageRows.filter((row) => !row.direct).map((row) => row.id),
+        {
+          comments: pageComments,
+          owner: pageComments.pageId,
+          attachments: pageAttachments,
+          attachmentOwner: pageAttachments.pageId,
+        },
+        { german, english, like, headline },
+      ),
+    ]);
+    const summaries = await this.issueService.summarize(
+      principal.userId,
+      issueRows.map((row) => row.issue),
+    );
+
     return {
       counts: {
         issue: issueCount[0]?.n ?? 0,
@@ -192,7 +252,10 @@ export class EverythingService {
         project: projectCount[0]?.n ?? 0,
         space: spaceCount[0]?.n ?? 0,
       },
-      issues: await this.issueService.summarize(principal.userId, issueRows),
+      issues: summaries.map((issue) => {
+        const match = issueMatches.get(issue.id);
+        return match ? { ...issue, match } : issue;
+      }),
       pages: pageRows.map(
         (row): PageHit => ({
           id: row.id,
@@ -201,10 +264,78 @@ export class EverythingService {
           parentTitle: row.parentTitle,
           publishedAt: row.publishedAt?.toISOString() ?? null,
           snippet: snippet(row.headline),
+          ...(pageMatches.has(row.id) ? { match: pageMatches.get(row.id) } : {}),
         }),
       ),
       projects: projectRows,
       spaces: spaceRows,
     };
+  }
+
+  /**
+   * For results found only through a comment or an attachment: the newest matching comment with
+   * its author and marked words, otherwise the first matching file name.
+   */
+  private async matches(
+    ids: string[],
+    tables: {
+      comments: typeof issueComments | typeof pageComments;
+      owner: typeof issueComments.issueId | typeof pageComments.pageId;
+      attachments: typeof issueAttachments | typeof pageAttachments;
+      attachmentOwner: typeof issueAttachments.issueId | typeof pageAttachments.pageId;
+    },
+    terms: {
+      german: SQL;
+      english: SQL;
+      like: string;
+      headline: (column: SQL) => SQL<string>;
+    },
+  ): Promise<Map<string, SearchMatch>> {
+    const found = new Map<string, SearchMatch>();
+    if (ids.length === 0) return found;
+    const db = this.database.db;
+    const { comments, owner, attachments, attachmentOwner } = tables;
+    const commentRows = await db
+      .selectDistinctOn([owner], {
+        owner: owner,
+        author: users.displayName,
+        headline: terms.headline(sql`${comments.bodyText}`),
+      })
+      .from(comments)
+      .leftJoin(users, eq(users.id, comments.authorId))
+      .where(
+        and(
+          inArray(owner, ids),
+          isNull(comments.deletedAt),
+          or(
+            sql`${comments.searchVector} @@ ${terms.german}`,
+            sql`${comments.searchVector} @@ ${terms.english}`,
+          ),
+        ),
+      )
+      .orderBy(owner, desc(comments.createdAt));
+    for (const row of commentRows) {
+      found.set(row.owner, { in: 'comment', author: row.author, snippet: snippet(row.headline) });
+    }
+    const rest = ids.filter((id) => !found.has(id));
+    if (rest.length === 0) return found;
+    const fileRows = await db
+      .selectDistinctOn([attachmentOwner], {
+        owner: attachmentOwner,
+        fileName: attachments.fileName,
+        author: users.displayName,
+      })
+      .from(attachments)
+      .leftJoin(users, eq(users.id, attachments.authorId))
+      .where(and(inArray(attachmentOwner, rest), ilike(attachments.fileName, terms.like)))
+      .orderBy(attachmentOwner, attachments.fileName);
+    for (const row of fileRows) {
+      found.set(row.owner, {
+        in: 'attachment',
+        author: row.author,
+        snippet: [{ text: row.fileName, hit: true }],
+      });
+    }
+    return found;
   }
 }
