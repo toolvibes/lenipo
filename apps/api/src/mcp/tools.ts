@@ -4,6 +4,7 @@ import { HttpException } from '@nestjs/common';
 import {
   CreateIssueLinkRequest,
   CreateIssueRequest,
+  CreateProjectRequest,
   CreateWorklogRequest,
   SearchRequest,
   TransitionRequest,
@@ -256,6 +257,53 @@ export function registerTools(server: McpServer, principal: Principal, services:
           fields,
           components.map((component) => component.name),
         )}${ids.length > 0 ? `\n\nCustom field ids:\n${ids.join('\n')}` : ''}`,
+      );
+    },
+  );
+
+  tool(
+    'create_project',
+    {
+      title: 'Create a project',
+      description:
+        'Creates a project from a template (scrum, kanban, basic, bugs). Scrum and Kanban projects get their board, so the backlog works at once; with lore: true also a Lore space of the same key, linked to the project. Needs a token with the admin scope and the global permission to create projects.',
+      inputSchema: {
+        ...CreateProjectRequest.shape,
+        lore: z.boolean().optional().describe('Also create a linked Lore space for its docs'),
+      },
+    },
+    async ({ lore, ...request }) => {
+      const project = await projects.create(principal, request);
+      const made = [`project ${project.key}`];
+      if (request.template === 'scrum' || request.template === 'kanban') {
+        const board = await services.boards.create(principal, {
+          name: project.name,
+          projectKey: project.key,
+          type: request.template,
+        });
+        made.push(`${request.template} board "${board.name}" (${board.id})`);
+      }
+      if (lore) {
+        await services.spaces.create(principal, {
+          key: project.key,
+          name: project.name,
+          description: request.description,
+        });
+        await services.spaces.update(principal, project.key, { projectKey: project.key });
+        made.push(`Lore space ${project.key}`);
+      }
+      await services.audit.record({
+        action: 'mcp.create_project',
+        actorId: principal.userId,
+        via: 'mcp',
+        targetType: 'project',
+        targetId: project.id,
+      });
+      return text(
+        `Created ${made.join(', ')}. Add issues with create_issue (projectKey ${project.key}).`,
+        {
+          key: project.key,
+        },
       );
     },
   );

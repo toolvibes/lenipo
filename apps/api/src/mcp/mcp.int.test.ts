@@ -215,4 +215,45 @@ describe('MCP', () => {
     });
     expect(noToken.status).toBe(401);
   });
+
+  it('creates a project with board and Lore space, only with the admin scope', async () => {
+    const denied = await call(client, 'create_project', {
+      key: 'APP',
+      name: 'App',
+      template: 'scrum',
+    });
+    expect(denied.isError).toBe(true);
+    expect(denied.text).toContain('admin scope');
+
+    const token = await admin.request<CreatedToken>('POST', '/me/tokens', {
+      name: 'Agent mit Admin',
+      scopes: ['issues:read', 'issues:write', 'wiki:read', 'wiki:write', 'admin'],
+      expiresInDays: 1,
+    });
+    const agent = await connect(token.body.secret);
+    const created = await call(agent, 'create_project', {
+      key: 'APP',
+      name: 'App',
+      template: 'scrum',
+      description: 'Eine App',
+      lore: true,
+    });
+    expect(created.isError).toBeFalsy();
+    expect(created.text).toContain('scrum board');
+    const issue = await call(agent, 'create_issue', {
+      projectKey: 'APP',
+      issueType: 'story',
+      summary: 'Anmelden',
+    });
+    expect(issue.text).toContain('APP-1');
+    const boards = (
+      await admin.request<Array<{ id: string; type: string }>>('GET', '/boards?project=APP')
+    ).body;
+    expect(boards.map((board) => board.type)).toEqual(['scrum']);
+    const backlog = await call(agent, 'get_backlog', { board: boards[0]?.id });
+    expect(backlog.text).toContain('APP-1');
+    const space = await admin.request<{ project: { key: string } | null }>('GET', '/spaces/APP');
+    expect(space.body.project?.key).toBe('APP');
+    await agent.close();
+  });
 });
