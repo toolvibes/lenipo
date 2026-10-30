@@ -23,7 +23,7 @@ import {
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, Outlet, useNavigate, useParams } from '@tanstack/react-router';
-import type { MovePageRequest, PageTreeEntry } from '@tasklore/shared';
+import type { MovePageRequest, PageTemplateSummary, PageTreeEntry } from '@tasklore/shared';
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
@@ -31,12 +31,19 @@ import { boardsQuery } from '../../lib/boards';
 import { useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
-import { nest, pageTreeQuery, spaceQuery, type TreeNode } from '../../lib/wiki';
+import {
+  nest,
+  pageTreeQuery,
+  spaceQuery,
+  spaceTemplatesQuery,
+  type TreeNode,
+} from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { FavouriteButton } from '../personal/FavouriteButton';
+import { fillTitle, TemplateGallery } from './templates';
 
 /** Asks for a title, creates the page as a draft and opens it for editing (W-PAG-02, -03). */
 export function CreatePageDialog({
@@ -54,18 +61,23 @@ export function CreatePageDialog({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState('');
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [template, setTemplate] = useState<PageTemplateSummary | null>(null);
+  const templates = useQuery({ ...spaceTemplatesQuery(spaceKey), enabled: open });
   const create = useMutation({
     mutationFn: () =>
       unwrap(
         client.POST('/api/v1/spaces/{key}/pages', {
           params: { path: { key: spaceKey } },
-          body: { title: title.trim(), parentId },
+          body: { title: title.trim(), parentId, template: template?.ref },
         }),
       ),
     onSuccess: async (page) => {
       await queryClient.invalidateQueries({ queryKey: ['space', spaceKey] });
       onOpenChange(false);
       setTitle('');
+      setTitleTouched(false);
+      setTemplate(null);
       await navigate({
         to: '/spaces/$key/pages/$id/edit',
         params: { key: spaceKey, id: page.id },
@@ -83,6 +95,7 @@ export function CreatePageDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={parentId ? t('wiki.createChildPage') : t('wiki.createPage')}
+      width={640}
     >
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
         {create.error && (
@@ -90,12 +103,26 @@ export function CreatePageDialog({
             message={create.error instanceof ApiError ? create.error.message : String(create.error)}
           />
         )}
+        {templates.data && (
+          <TemplateGallery
+            templates={templates.data}
+            value={template?.ref ?? ''}
+            onChange={(next) => {
+              setTemplate(next);
+              // The template's title suggestion, unless a title was typed already.
+              if (!titleTouched) setTitle(next ? fillTitle(next.title) : '');
+            }}
+          />
+        )}
         <TextField
           label={t('wiki.pageTitle')}
           value={title}
           maxLength={255}
           autoFocus
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            setTitleTouched(true);
+            setTitle(event.target.value);
+          }}
         />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

@@ -12,10 +12,13 @@ import { ProjectSpacesController } from './project-spaces.controller.js';
 import { SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 import { SpacesController } from './spaces.controller.js';
+import { TemplateService } from './template.service.js';
+import { TemplatesController } from './templates.controller.js';
 
 @Module({
   imports: [IdentityModule, TrackingModule],
   controllers: [
+    TemplatesController,
     SpacesController,
     PagesController,
     PageAttachmentsController,
@@ -26,6 +29,7 @@ import { SpacesController } from './spaces.controller.js';
   providers: [
     SpaceAccessService,
     SpaceService,
+    TemplateService,
     PageService,
     PageAttachmentService,
     PageCommentService,

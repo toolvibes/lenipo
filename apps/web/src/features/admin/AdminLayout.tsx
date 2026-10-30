@@ -5,6 +5,7 @@ const PAGES = [
   { to: '/admin/webhooks', label: 'webhooks.title' },
   { to: '/admin/custom-fields', label: 'fields.title' },
   { to: '/admin/time-tracking', label: 'time.settingsTitle' },
+  { to: '/admin/templates', label: 'templates.globalTitle' },
 ] as const;
 
 /** Administration with its own sub-navigation beside the page (1a S11). */

@@ -17,6 +17,7 @@ import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 import { Avatar } from '../tracking/UserPicker';
+import { TemplateList } from './templates';
 
 function Section({
   title,
@@ -360,6 +361,9 @@ export function SpaceSettingsPage({ spaceKey }: { spaceKey: string }) {
       <General space={space.data} />
       <ProjectLink space={space.data} />
       <Roles spaceKey={spaceKey} />
+      <Section title={t('templates.title')} help={t('templates.help')}>
+        <TemplateList spaceKey={spaceKey} canManage />
+      </Section>
     </main>
   );
 }

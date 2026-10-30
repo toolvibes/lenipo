@@ -176,6 +176,8 @@ export const CreatePageRequest = z
     title: PageTitle,
     /** Null or missing: a top-level page. */
     parentId: Id.nullable().optional(),
+    /** A template id or `blueprint:<key>`; its content becomes the new draft (E-72). */
+    template: z.string().max(64).optional(),
   })
   .meta({ id: 'CreatePageRequest' });
 export type CreatePageRequest = z.infer<typeof CreatePageRequest>;
@@ -345,3 +347,38 @@ export const UpdatePageCommentRequest = z
   .object({ body: RichTextInput })
   .meta({ id: 'UpdatePageCommentRequest' });
 export type UpdatePageCommentRequest = z.infer<typeof UpdatePageCommentRequest>;
+
+// ---------------------------------------------------------------- templates (E-72)
+
+export const PageTemplateSummary = z
+  .object({
+    /** What `template` takes when creating a page: the id, or `blueprint:<key>`. */
+    ref: z.string(),
+    kind: z.enum(['blueprint', 'space', 'global']),
+    id: Id.nullable(),
+    name: z.string(),
+    description: z.string(),
+    /** Suggested page title; `{date}` becomes today's date. */
+    title: z.string(),
+    spaceKey: z.string().nullable(),
+    updatedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'PageTemplateSummary' });
+export type PageTemplateSummary = z.infer<typeof PageTemplateSummary>;
+
+export const PageTemplate = PageTemplateSummary.extend({
+  content: RichText,
+  /** The caller may change or delete it (never for blueprints). */
+  canEdit: z.boolean(),
+}).meta({ id: 'PageTemplate' });
+export type PageTemplate = z.infer<typeof PageTemplate>;
+
+export const SavePageTemplateRequest = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    description: z.string().trim().max(300).default(''),
+    title: z.string().trim().max(255).default(''),
+    content: RichText,
+  })
+  .meta({ id: 'SavePageTemplateRequest' });
+export type SavePageTemplateRequest = z.infer<typeof SavePageTemplateRequest>;

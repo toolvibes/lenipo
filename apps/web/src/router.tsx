@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { safeRedirectPath } from '@tasklore/shared';
 import { ISSUE_KEY } from '@tasklore/tql';
+import { useTranslation } from 'react-i18next';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
@@ -40,6 +41,7 @@ import { SpaceHome, SpaceLayout } from './features/wiki/SpaceLayout';
 import { SpaceSettingsPage } from './features/wiki/SpaceSettingsPage';
 import { SpacesPage } from './features/wiki/SpacesPage';
 import { TrashPage } from './features/wiki/TrashPage';
+import { TemplateEditorPage, TemplateList } from './features/wiki/templates';
 import { WikiPage } from './features/wiki/WikiPage';
 import { applyLocale } from './i18n';
 import { meQuery, setupStatusQuery } from './lib/queries';
@@ -212,6 +214,22 @@ const labelRoute = createRoute({
     const { label } = labelRoute.useParams();
     const { space } = labelRoute.useSearch();
     return <LabelPages key={`${label}:${space ?? ''}`} label={label} space={space} />;
+  },
+});
+
+const spaceTemplateRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/templates/$id',
+  validateSearch: (search: Record<string, unknown>): { from?: string } => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+  }),
+  component: function SpaceTemplate() {
+    const { key } = spaceRoute.useParams();
+    const { id } = spaceTemplateRoute.useParams();
+    const { from } = spaceTemplateRoute.useSearch();
+    return (
+      <TemplateEditorPage key={`${id}:${from}`} spaceKey={key.toUpperCase()} id={id} from={from} />
+    );
   },
 });
 
@@ -424,6 +442,38 @@ const webhooksRoute = createRoute({
   component: WebhooksPage,
 });
 
+const templatesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/templates',
+  component: function Templates() {
+    const { t } = useTranslation();
+    return (
+      <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
+        <header className="flex flex-col gap-1">
+          <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+            {t('templates.globalTitle')}
+          </h1>
+          <p className="m-0 text-[13.5px] text-[var(--ink-muted)]">{t('templates.globalHelp')}</p>
+        </header>
+        <TemplateList canManage />
+      </main>
+    );
+  },
+});
+
+const templateRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/templates/$id',
+  validateSearch: (search: Record<string, unknown>): { from?: string } => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+  }),
+  component: function Template() {
+    const { id } = templateRoute.useParams();
+    const { from } = templateRoute.useSearch();
+    return <TemplateEditorPage key={`${id}:${from}`} id={id} from={from} />;
+  },
+});
+
 const customFieldsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/custom-fields',
@@ -459,6 +509,7 @@ const routeTree = rootRoute.addChildren([
       pageHistoryRoute,
       trashRoute,
       spaceSettingsRoute,
+      spaceTemplateRoute,
       spaceLabelsRoute,
     ]),
     labelRoute,
@@ -475,7 +526,14 @@ const routeTree = rootRoute.addChildren([
     boardRoute,
     backlogRoute,
     reportsRoute,
-    adminRoute.addChildren([webhooksRoute, webhookRoute, timeTrackingRoute, customFieldsRoute]),
+    adminRoute.addChildren([
+      webhooksRoute,
+      webhookRoute,
+      timeTrackingRoute,
+      customFieldsRoute,
+      templatesRoute,
+      templateRoute,
+    ]),
   ]),
 ]);
 

@@ -6,6 +6,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { matchItems, SlashCommands, slashItems } from '../../collab/SlashMenu';
 import { Toolbar } from '../../collab/Toolbar';
 import { macroViews } from '../../macros/views';
 import { Button } from '../../ui/Button';
@@ -39,6 +40,8 @@ interface RichTextEditorProps {
   mentionProjectKey?: string;
   /** Enables @-mentions of the people who can see this wiki space. */
   mentionSpaceKey?: string;
+  /** Slash menu and Lore typography, as for wiki page templates (E-72). */
+  lore?: boolean;
 }
 
 /** Rich text for descriptions and comments; the same document format as wiki pages. */
@@ -53,6 +56,7 @@ export function RichTextEditor({
   autoFocus = false,
   mentionProjectKey,
   mentionSpaceKey,
+  lore = false,
 }: RichTextEditorProps) {
   const { t } = useTranslation();
   // The shortcut extension is created once, so it calls the latest submit through a ref.
@@ -69,6 +73,9 @@ export function RichTextEditor({
             ? { space: mentionSpaceKey }
             : undefined,
       ),
+      ...(lore
+        ? [SlashCommands.configure({ items: (query) => matchItems(slashItems(t), query) })]
+        : []),
       Extension.create({
         name: 'submitShortcut',
         addKeyboardShortcuts: () => ({
@@ -83,7 +90,10 @@ export function RichTextEditor({
     content: (initial ?? undefined) as Content | undefined,
     autofocus: autoFocus ? 'end' : false,
     editorProps: {
-      attributes: { class: 'tl-prose !min-h-24 px-4 py-3', 'aria-label': placeholder },
+      attributes: {
+        class: lore ? 'tl-prose tl-lore !min-h-80 px-6 py-5' : 'tl-prose !min-h-24 px-4 py-3',
+        'aria-label': placeholder,
+      },
     },
   });
   if (!editor) return null;

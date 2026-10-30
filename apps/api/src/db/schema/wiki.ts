@@ -214,3 +214,26 @@ export const pageWatches = pgTable(
     index('page_watches_space_idx').on(table.spaceId),
   ],
 );
+
+/**
+ * Page templates (W-TPL-01, E-72): global without a space, otherwise for one space. Shipped
+ * blueprints are code, not rows.
+ */
+export const pageTemplates = pgTable(
+  'page_templates',
+  {
+    id: uuid().primaryKey(),
+    spaceId: uuid().references(() => spaces.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    /** Suggested page title; `{date}` becomes today's date. */
+    title: text().notNull().default(''),
+    /** ProseMirror JSON, validated against the shared schema. */
+    content: jsonb().notNull(),
+    createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    updatedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('page_templates_space_idx').on(table.spaceId)],
+);

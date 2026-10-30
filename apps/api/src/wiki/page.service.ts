@@ -24,7 +24,7 @@ import type {
   SpacePermission,
   TrashedPage,
 } from '@tasklore/shared';
-import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
+import { prosemirrorJSONToYDoc, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';
@@ -50,6 +50,7 @@ import { plainText } from '../tracking/rich-text.js';
 import { reanchorComments } from './comment-anchors.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
+import { TemplateService } from './template.service.js';
 import { autoWatch, setWatch, watchState } from './watches.js';
 
 type PageRow = typeof pages.$inferSelect;
@@ -73,6 +74,7 @@ export class PageService {
     @Inject(SpaceService) private readonly spaces: SpaceService,
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(TemplateService) private readonly templates: TemplateService,
   ) {}
 
   /**
@@ -225,8 +227,18 @@ export class PageService {
   async create(principal: Principal, spaceKey: string, request: CreatePageRequest): Promise<Page> {
     const { space } = await this.spaces.find(principal, spaceKey, 'edit');
     const parentId = await this.checkParent(space.id, request.parentId);
+    // A template's content becomes the new draft right away (E-72).
+    const template = request.template
+      ? await this.templates.resolve(principal, space.id, request.template)
+      : null;
     const id = uuidv7();
     await this.database.db.transaction(async (tx) => {
+      if (template) {
+        const draft = prosemirrorJSONToYDoc(richTextSchema, template.content, DRAFT_FIELD);
+        await tx
+          .insert(collabDocuments)
+          .values({ name: draftName(id), state: Y.encodeStateAsUpdate(draft) });
+      }
       await tx.insert(pages).values({
         id,
         spaceId: space.id,

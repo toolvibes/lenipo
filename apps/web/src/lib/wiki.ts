@@ -111,3 +111,23 @@ export function nest(entries: PageTreeEntry[]): TreeNode[] {
   }
   return roots;
 }
+
+/** Blueprints and templates offered when creating a page in a space (E-72). */
+export const spaceTemplatesQuery = (key: string) =>
+  queryOptions({
+    queryKey: ['templates', 'space', key],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/spaces/{key}/templates', { params: { path: { key } } })),
+  });
+
+export const globalTemplatesQuery = queryOptions({
+  queryKey: ['templates', 'global'],
+  queryFn: () => unwrap(client.GET('/api/v1/page-templates')),
+});
+
+export const templateQuery = (ref: string) =>
+  queryOptions({
+    queryKey: ['templates', 'one', ref],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/page-templates/{ref}', { params: { path: { ref } } })),
+  });
