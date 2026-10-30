@@ -100,7 +100,7 @@ export function IssueLinks({ issue, canEdit, onChanged }: IssueLinksProps) {
   return (
     <section aria-label={t('issues.links')} className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="tl-heading-md">{t('issues.links')}</h2>
+        <h2 className="tl-label text-[var(--ink-muted)]">{t('issues.links')}</h2>
         {canEdit && !adding && (
           <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
             <LinkSimple size={16} aria-hidden />

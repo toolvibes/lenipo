@@ -219,7 +219,7 @@ export function Attachments({ issueKey, canAttach }: { issueKey: string; canAtta
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="tl-heading-md">
+        <h2 className="tl-label text-[var(--ink-muted)]">
           {t('issues.attachments.title')}
           {all.length > 0 && <span className="ml-1.5 text-[var(--ink-muted)]">{all.length}</span>}
         </h2>

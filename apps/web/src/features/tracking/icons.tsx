@@ -75,7 +75,8 @@ export function PriorityIcon({ priority, size = 16 }: { priority: PriorityInfo; 
   );
 }
 
-const CATEGORY_STYLE = {
+/** Colours of a status by category, for badges and the status button of the issue page. */
+export const STATUS_TONE = {
   todo: 'bg-[var(--status-todo-bg)] text-[var(--status-todo-fg)]',
   in_progress: 'bg-[var(--status-progress-bg)] text-[var(--status-progress-fg)]',
   done: 'bg-[var(--status-done-bg)] text-[var(--status-done-fg)]',
@@ -86,7 +87,7 @@ export function StatusLozenge({ status }: { status: StatusInfo }) {
   const name = useMetaName();
   return (
     <span
-      className={`inline-flex items-center rounded-[4px] px-1.5 text-[11.5px] leading-[18px] font-medium whitespace-nowrap ${CATEGORY_STYLE[status.category]}`}
+      className={`inline-flex items-center rounded-[4px] px-1.5 text-[11.5px] leading-[18px] font-medium whitespace-nowrap ${STATUS_TONE[status.category]}`}
     >
       {name('status', status)}
     </span>

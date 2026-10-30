@@ -5,7 +5,7 @@ import type { IssueSummary } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { transitionsQuery } from '../../lib/tracking';
-import { StatusLozenge, useMetaName } from './icons';
+import { STATUS_TONE, StatusLozenge, useMetaName } from './icons';
 
 /** Editable fields shared by the issue page and the cells of result lists (T-ISS-14). */
 
@@ -43,15 +43,20 @@ export function InlineInput({
   );
 }
 
-/** The status as a menu of the workflow's transitions, loaded when it opens. */
+/**
+ * The status as a menu of the workflow's transitions, loaded when it opens. `block` shows it
+ * as the full-width status button of the issue page (1a).
+ */
 export function StatusMenu({
   issue,
   enabled,
   onTransition,
+  block = false,
 }: {
   issue: Pick<IssueSummary, 'key' | 'status'>;
   enabled: boolean;
   onTransition: (id: string) => void;
+  block?: boolean;
 }) {
   const { t } = useTranslation();
   const metaName = useMetaName();
@@ -67,10 +72,24 @@ export function StatusMenu({
         onPointerEnter={() => setWanted(true)}
         onFocus={() => setWanted(true)}
         aria-label={`${t('issues.changeStatus')}: ${metaName('status', issue.status)}`}
-        className="flex items-center gap-1 rounded-[var(--radius-sm)] disabled:cursor-default"
+        className={
+          block
+            ? `flex h-[34px] w-full items-center gap-1 rounded-[var(--radius-md)] border-0 px-3 text-left text-[13.5px] font-semibold disabled:cursor-default ${STATUS_TONE[issue.status.category]}`
+            : 'flex items-center gap-1 rounded-[var(--radius-sm)] disabled:cursor-default'
+        }
       >
-        <StatusLozenge status={issue.status} />
-        {enabled && <CaretDown size={14} aria-hidden className="text-[var(--ink-muted)]" />}
+        {block ? (
+          <span className="flex-1 truncate">{metaName('status', issue.status)}</span>
+        ) : (
+          <StatusLozenge status={issue.status} />
+        )}
+        {enabled && (
+          <CaretDown
+            size={14}
+            aria-hidden
+            className={block ? undefined : 'text-[var(--ink-muted)]'}
+          />
+        )}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content

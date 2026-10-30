@@ -10,6 +10,7 @@ import { useCurrentProject } from '../../lib/shortcuts';
 import { type IssueFilter, projectIssuesQuery, projectQuery } from '../../lib/tracking';
 import { projectSpacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
+import { CHIP, PageHeading, TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { ColumnPicker } from '../search/ColumnPicker';
 import { ComponentsDialog } from './ComponentsDialog';
@@ -77,27 +78,40 @@ export function ProjectIssuesPage({
       type="button"
       aria-pressed={preset === value}
       onClick={() => setPreset(value)}
-      className={`h-7 rounded-[var(--radius-md)] border px-2.5 ${
-        preset === value
-          ? 'border-[var(--accent)] bg-[var(--accent-soft)] font-semibold text-[var(--accent)]'
-          : 'border-[var(--border-strong)] bg-[var(--surface-1)] text-[var(--ink)]'
-      }`}
+      className={CHIP}
     >
       {label}
     </button>
   );
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <Link
-            to="/projects"
-            className="text-xs text-[var(--ink-muted)] no-underline hover:underline"
-          >
+    <main className="flex flex-col">
+      <TopBar
+        crumbs={[
+          <Link key="projects" to="/projects">
             {t('projects.title')}
-          </Link>
-          <h1 className="tl-heading-xl flex items-center gap-2">
+          </Link>,
+          project.data?.name ?? projectKey,
+        ]}
+        actions={
+          project.data?.permissions.includes('administer') && (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setManagingVersions(true)}>
+                {t('versions.title')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setManagingFields(true)}>
+                {t('fields.project.button')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setManagingComponents(true)}>
+                {t('projects.components.title')}
+              </Button>
+            </>
+          )
+        }
+      />
+      <PageHeading
+        title={
+          <>
             {project.data?.name ?? projectKey}
             {project.data && (
               <FavouriteButton
@@ -107,8 +121,10 @@ export function ProjectIssuesPage({
                 name={project.data.name}
               />
             )}
-          </h1>
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          </>
+        }
+        subtitle={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <Link
               to="/activity"
               search={{ project: projectKey }}
@@ -128,79 +144,72 @@ export function ProjectIssuesPage({
               </Link>
             ))}
           </span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {project.data?.permissions.includes('administer') && (
-            <>
-              <Button onClick={() => setManagingVersions(true)}>{t('versions.title')}</Button>
-              <Button onClick={() => setManagingFields(true)}>{t('fields.project.button')}</Button>
-              <Button onClick={() => setManagingComponents(true)}>
-                {t('projects.components.title')}
-              </Button>
-            </>
-          )}
-          {project.data?.permissions.includes('create-issues') && (
+        }
+        actions={
+          project.data?.permissions.includes('create-issues') && (
             <Button variant="primary" onClick={() => setCreating(true)}>
-              <Plus size={16} aria-hidden />
+              <Plus size={14} weight="bold" aria-hidden />
               {t('issues.create')}
             </Button>
-          )}
+          )
+        }
+      />
+
+      <div className="flex flex-col gap-3 px-6 pb-6">
+        <div
+          role="toolbar"
+          aria-label={t('issues.search')}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <label className="flex h-[26px] items-center gap-1.5 rounded-[5px] border border-[var(--border-control)] bg-[var(--surface-1)] px-2 text-[12.5px] text-[var(--ink-muted)]">
+            <MagnifyingGlass size={14} aria-hidden />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('issues.search')}
+              aria-label={t('issues.search')}
+              className="w-48 bg-transparent text-[var(--ink)] outline-none"
+            />
+          </label>
+          {chip('open', t('issues.filterOpen'))}
+          {chip('mine', t('issues.filterMine'))}
+          {chip('done', t('issues.filterDone'))}
+          {chip('all', t('issues.filterAll'))}
+          <span className="ml-auto flex items-center gap-2">
+            {issues.data && (
+              <span className="text-xs text-[var(--ink-muted)]">
+                {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
+              </span>
+            )}
+            <ColumnPicker columns={columns} />
+          </span>
         </div>
-      </header>
 
-      <div
-        role="toolbar"
-        aria-label={t('issues.search')}
-        className="flex flex-wrap items-center gap-2"
-      >
-        <label className="flex h-7 items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-[var(--ink-muted)]">
-          <MagnifyingGlass size={14} aria-hidden />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('issues.search')}
-            aria-label={t('issues.search')}
-            className="w-48 bg-transparent text-[var(--ink)] outline-none"
+        <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
+          <IssueTable
+            columns={columns}
+            selectedKey={selected}
+            onSelect={wide ? select : undefined}
+            issues={issues.data?.issues ?? []}
+            empty={
+              !issues.data
+                ? null
+                : project.data?.issueCount === 0
+                  ? t('issues.emptyProject')
+                  : t('issues.empty')
+            }
           />
-        </label>
-        {chip('open', t('issues.filterOpen'))}
-        {chip('mine', t('issues.filterMine'))}
-        {chip('done', t('issues.filterDone'))}
-        {chip('all', t('issues.filterAll'))}
-        <span className="ml-auto flex items-center gap-2">
-          {issues.data && (
-            <span className="text-xs text-[var(--ink-muted)]">
-              {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
-            </span>
+          {issues.data && issues.data.issues.length < issues.data.total && (
+            <Button
+              className="self-center"
+              onClick={() => setLimit((current) => Math.min(current + 50, 100))}
+              disabled={limit >= 100}
+            >
+              {t('issues.loadMore')}
+            </Button>
           )}
-          <ColumnPicker columns={columns} />
-        </span>
+        </IssueSplit>
       </div>
-
-      <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
-        <IssueTable
-          columns={columns}
-          selectedKey={selected}
-          onSelect={wide ? select : undefined}
-          issues={issues.data?.issues ?? []}
-          empty={
-            !issues.data
-              ? null
-              : project.data?.issueCount === 0
-                ? t('issues.emptyProject')
-                : t('issues.empty')
-          }
-        />
-        {issues.data && issues.data.issues.length < issues.data.total && (
-          <Button
-            className="self-center"
-            onClick={() => setLimit((current) => Math.min(current + 50, 100))}
-            disabled={limit >= 100}
-          >
-            {t('issues.loadMore')}
-          </Button>
-        )}
-      </IssueSplit>
       <ComponentsDialog
         projectKey={projectKey}
         open={managingComponents}

@@ -290,7 +290,7 @@ export function CustomFieldRows({
     return [
       <div key={id} className="contents">
         <dt
-          className="tl-label pt-1.5 text-[var(--ink-muted)]"
+          className="pt-1.5 text-[13px] text-[var(--ink-muted)]"
           title={field.description || undefined}
         >
           {field.name}

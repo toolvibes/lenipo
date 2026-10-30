@@ -4,61 +4,129 @@ import { Link } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { presenceColor } from '../../lib/presence';
 import { projectsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { CreateProjectDialog } from './CreateProjectDialog';
 
+type Tab = 'all' | 'favourites';
+
+/** Project directory as cards (1a S3): all or starred projects, filtered by name or key. */
 export function ProjectsPage({ me }: { me: Me }) {
   const { t } = useTranslation();
   const projects = useQuery(projectsQuery);
   const [creating, setCreating] = useState(false);
+  const [tab, setTab] = useState<Tab>('all');
+  const [filter, setFilter] = useState('');
   const canCreate =
     me.globalPermissions.includes('create-projects') ||
     me.globalPermissions.includes('system-admin');
+  const all = projects.data ?? [];
+  const favourites = all.filter((project) => project.favourite);
+  const needle = filter.trim().toLowerCase();
+  const shown = (tab === 'all' ? all : favourites).filter(
+    (project) =>
+      !needle ||
+      project.name.toLowerCase().includes(needle) ||
+      project.key.toLowerCase().includes(needle),
+  );
+  const tabs: Array<[Tab, string, number]> = [
+    ['all', t('projects.all'), all.length],
+    ['favourites', t('projects.favourites'), favourites.length],
+  ];
 
   return (
-    <main className="flex flex-col gap-5 px-6 py-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="tl-heading-xl">{t('projects.title')}</h1>
+    <main className="flex flex-col gap-5 px-9 py-8">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="m-0 text-[24px] leading-8 font-semibold tracking-[-0.02em]">
+          {t('projects.title')}
+        </h1>
         {canCreate && (
           <Button variant="primary" onClick={() => setCreating(true)}>
-            <Plus size={16} aria-hidden />
+            <Plus size={14} weight="bold" aria-hidden />
             {t('projects.create')}
           </Button>
         )}
       </header>
-      {projects.data?.length === 0 && (
-        <p className="max-w-xl text-[var(--ink-muted)]">{t('projects.empty')}</p>
-      )}
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
-        {projects.data?.map((project) => (
-          <li key={project.id}>
-            <Link
-              to="/projects/$key"
-              params={{ key: project.key }}
-              className="flex h-full flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-4 text-[var(--ink)] no-underline hover:border-[var(--border-strong)]"
+
+      <div className="flex flex-wrap items-center gap-x-5 border-b border-[var(--border)] text-[13.5px]">
+        <div role="tablist" className="flex gap-5">
+          {tabs.map(([id, label, count]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-0 pt-0 pb-2.5 text-[var(--ink-muted)] aria-selected:border-[var(--ink)] aria-selected:font-semibold aria-selected:text-[var(--ink)]"
             >
-              <div className="flex items-center gap-3">
-                <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[var(--accent)] font-bold text-[var(--on-accent)]">
-                  {project.key[0]}
+              {label} · {count}
+            </button>
+          ))}
+        </div>
+        <span className="flex-1" />
+        <input
+          type="search"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          placeholder={t('projects.filter')}
+          aria-label={t('projects.filter')}
+          className="mb-2 h-[30px] w-60 rounded-[var(--radius-md)] border border-[var(--border-control)] bg-[var(--surface-1)] px-2.5 text-[13px] text-[var(--ink)] placeholder:text-[var(--ink-muted)]"
+        />
+      </div>
+
+      {projects.data?.length === 0 && (
+        <p className="m-0 max-w-xl text-[var(--ink-muted)]">{t('projects.empty')}</p>
+      )}
+      {all.length > 0 && shown.length === 0 && (
+        <p className="m-0 text-[var(--ink-muted)]">{t('projects.noMatch')}</p>
+      )}
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 p-0">
+        {shown.map((project) => (
+          <li
+            key={project.id}
+            className="relative flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-[18px] hover:border-[var(--border-strong)]"
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className="grid size-8 shrink-0 place-items-center rounded-[7px] font-[family-name:var(--font-mono)] text-[10.5px] font-semibold text-white"
+                style={{ backgroundColor: presenceColor(project.key) }}
+                aria-hidden
+              >
+                {project.key.slice(0, 3)}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                {/* The link covers the whole card; the star sits above it. */}
+                <Link
+                  to="/projects/$key"
+                  params={{ key: project.key }}
+                  className="truncate text-[15px] font-semibold text-[var(--ink)] no-underline after:absolute after:inset-0 after:rounded-lg"
+                >
+                  {project.name}
+                </Link>
+                <span className="text-xs text-[var(--ink-muted)]">
+                  <span className="tl-key">{project.key}</span> ·{' '}
+                  {t(`projects.methods.${project.template}`)}
                 </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <strong className="truncate font-semibold">{project.name}</strong>
-                  <span className="tl-key text-[var(--ink-muted)]">{project.key}</span>
-                </div>
+              </div>
+              <span className="relative">
                 <FavouriteButton
                   kind="project"
                   refId={project.key}
                   active={project.favourite}
                   name={project.name}
                 />
-              </div>
-              <span className="text-xs text-[var(--ink-muted)]">
-                {t('projects.issues', { count: project.issueCount })}
-                {project.lead ? ` · ${t('projects.lead')}: ${project.lead.displayName}` : ''}
               </span>
-            </Link>
+            </div>
+            <p className="m-0 line-clamp-2 min-h-[39px] text-[13px] leading-normal text-[var(--ink-muted)]">
+              {project.description || t('projects.noDescription')}
+            </p>
+            <div className="flex gap-4 border-t border-[var(--border)] pt-2.5 text-[12.5px] text-[var(--ink-muted)]">
+              <span>{t('projects.issues', { count: project.issueCount })}</span>
+              <span className="flex-1" />
+              {project.lead && <span className="truncate">{project.lead.displayName}</span>}
+            </div>
           </li>
         ))}
       </ul>
