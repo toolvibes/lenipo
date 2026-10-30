@@ -18,7 +18,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DotsSixVertical, Plus } from '@phosphor-icons/react';
+import { DotsSixVertical, DotsThree, Plus } from '@phosphor-icons/react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { BacklogData, IssueSummary, Me, Sprint } from '@tasklore/shared';
@@ -53,6 +54,9 @@ function plainClick(event: MouseEvent): boolean {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
+/** Where the row menu moves an issue: to the top or bottom of its list, or into another one. */
+type RowMove = 'top' | 'bottom' | { sectionId: string };
+
 interface RowProps {
   issue: IssueSummary;
   checked: boolean;
@@ -60,6 +64,68 @@ interface RowProps {
   onCheck: (event: MouseEvent<HTMLInputElement>) => void;
   onOpen?: (key: string) => void;
   estimate: string | null;
+  /** Place in the unfiltered list, 1 for the most important. */
+  position?: number;
+  /** The other sprints and the backlog, for "Move to …". */
+  targets?: Array<{ id: string; name: string }>;
+  onMove?: (move: RowMove) => void;
+}
+
+const MENU_ITEM =
+  'cursor-pointer rounded-[var(--radius-sm)] px-2 py-1.5 outline-none data-[highlighted]:bg-[var(--surface-2)]';
+
+/** The row's "…" menu (TL-62): to the top or bottom of its list, or into another sprint. */
+function RowMenu({
+  issue,
+  targets,
+  onMove,
+}: {
+  issue: IssueSummary;
+  targets: Array<{ id: string; name: string }>;
+  onMove: (move: RowMove) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger
+        aria-label={t('sprints.rowMenu', { key: issue.key })}
+        className="grid size-6 shrink-0 place-items-center rounded-[var(--radius-sm)] text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--surface-1)] hover:text-[var(--ink)] focus-visible:opacity-100 data-[state=open]:opacity-100"
+      >
+        <DotsThree size={16} weight="bold" aria-hidden />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={4}
+          className="z-50 min-w-48 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-1 text-[13px] shadow-[var(--shadow-float)]"
+        >
+          <DropdownMenu.Item onSelect={() => onMove('top')} className={MENU_ITEM}>
+            {t('sprints.rowToTop')}
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onSelect={() => onMove('bottom')} className={MENU_ITEM}>
+            {t('sprints.rowToBottom')}
+          </DropdownMenu.Item>
+          {targets.length > 0 && (
+            <>
+              <DropdownMenu.Separator className="my-1 h-px bg-[var(--border)]" />
+              <DropdownMenu.Label className="px-2 py-1 text-xs text-[var(--ink-muted)]">
+                {t('boards.moveTo')}
+              </DropdownMenu.Label>
+              {targets.map((target) => (
+                <DropdownMenu.Item
+                  key={target.id}
+                  onSelect={() => onMove({ sectionId: target.id })}
+                  className={MENU_ITEM}
+                >
+                  {target.name}
+                </DropdownMenu.Item>
+              ))}
+            </>
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
 }
 
 function Row(props: RowProps) {
@@ -85,6 +151,9 @@ function RowView({
   onCheck,
   onOpen,
   estimate,
+  position,
+  targets = [],
+  onMove,
   nodeRef,
   style,
   dragging = false,
@@ -106,10 +175,17 @@ function RowView({
       data-selected={selected}
       className={`group flex min-h-9 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-1)] px-2 text-[13px] last:border-b-0 hover:bg-[var(--surface-2)] data-[checked=true]:bg-[var(--accent-soft)] data-[selected=true]:outline data-[selected=true]:outline-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'rounded-[var(--radius-md)] border shadow-[var(--shadow-float)]' : ''}`}
     >
+      {position !== undefined && (
+        <span className="w-6 shrink-0 text-right font-[family-name:var(--font-mono)] text-[11px] text-[var(--ink-muted)] tabular-nums">
+          <span className="sr-only">{t('sprints.position', { position })}</span>
+          <span aria-hidden>{position}</span>
+        </span>
+      )}
       <button
         type="button"
         aria-label={t('boards.dragCard', { key: issue.key })}
-        className="grid w-4 shrink-0 cursor-grab place-items-center text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--ink)]"
+        title={t('sprints.dragHint')}
+        className="grid w-4 shrink-0 cursor-grab place-items-center text-[var(--ink-muted)] opacity-70 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--ink)] active:cursor-grabbing"
         {...handle}
       >
         <DotsSixVertical size={16} aria-hidden />
@@ -151,6 +227,7 @@ function RowView({
       <span className="w-6 shrink-0">
         {issue.assignee && <Avatar user={issue.assignee} size={20} />}
       </span>
+      {onMove && <RowMenu issue={issue} targets={targets} onMove={onMove} />}
     </li>
   );
 }
@@ -479,6 +556,31 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
     );
   }
 
+  // Places in the unfiltered lists, so numbers and moves stay right while a filter is on.
+  const fullLists = new Map<string, string[]>([
+    ...(data.data?.sprints ?? []).map(
+      (entry) => [entry.sprint.id, entry.issues.map((issue) => issue.key)] as const,
+    ),
+    [BACKLOG, (data.data?.backlog ?? []).map((issue) => issue.key)],
+  ]);
+  const positionOf = (sectionId: string, key: string) =>
+    (fullLists.get(sectionId)?.indexOf(key) ?? -1) + 1 || undefined;
+
+  /** The row menu: one issue to the top or bottom of its list, or to the end of another. */
+  function moveOne(key: string, sectionId: string, where: RowMove) {
+    if (typeof where === 'object') {
+      const target = fullLists.get(where.sectionId) ?? [];
+      move.mutate({ keys: [key], sectionId: where.sectionId, afterKey: target.at(-1) ?? null });
+      return;
+    }
+    const rest = (fullLists.get(sectionId) ?? []).filter((entry) => entry !== key);
+    move.mutate(
+      where === 'top'
+        ? { keys: [key], sectionId, beforeKey: rest[0] ?? null }
+        : { keys: [key], sectionId, afterKey: rest.at(-1) ?? null },
+    );
+  }
+
   function addIssue(event: FormEvent) {
     event.preventDefault();
     if (summary.trim()) createIssue.mutate(summary.trim());
@@ -738,6 +840,14 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                             onCheck={(event) => check(issue.key, event)}
                             onOpen={wide ? select : undefined}
                             estimate={board.estimation === 'issueCount' ? null : estimate([issue])}
+                            position={positionOf(section.id, issue.key)}
+                            targets={sections
+                              .filter((other) => other.id !== section.id)
+                              .map((other) => ({
+                                id: other.id,
+                                name: other.sprint ? other.sprint.name : t('sprints.backlog'),
+                              }))}
+                            onMove={(where) => moveOne(issue.key, section.id, where)}
                           />
                         ))}
                       </SectionList>

@@ -659,6 +659,11 @@ export const de = {
     },
   },
   sprints: {
+    rowMenu: 'Aktionen für {{key}}',
+    rowToTop: 'Ganz nach oben',
+    rowToBottom: 'Ganz nach unten',
+    position: 'Position {{position}}',
+    dragHint: 'Ziehen zum Sortieren (oder Leertaste und Pfeiltasten)',
     backlog: 'Backlog',
     activeSprint: 'Aktiver Sprint',
     create: 'Sprint anlegen',

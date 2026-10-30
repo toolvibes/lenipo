@@ -645,6 +645,11 @@ export const en: Messages = {
     },
   },
   sprints: {
+    rowMenu: 'Actions for {{key}}',
+    rowToTop: 'Move to top',
+    rowToBottom: 'Move to bottom',
+    position: 'Position {{position}}',
+    dragHint: 'Drag to reorder (or Space and the arrow keys)',
     backlog: 'Backlog',
     activeSprint: 'Active sprint',
     create: 'Create sprint',
