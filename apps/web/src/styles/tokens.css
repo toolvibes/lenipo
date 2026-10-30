@@ -5,6 +5,7 @@
   --surface-2: #f4f4f2;
   --border: #e5e5e2;
   --border-strong: #8a8c91;
+  --border-control: #dcdcd8;
   --ink: #1b1c1e;
   --ink-muted: #696b71;
   --accent: #2f5fd0;
@@ -64,6 +65,7 @@
     --surface-2: #222326;
     --border: #2e3034;
     --border-strong: #6e7076;
+    --border-control: #3a3c40;
     --ink: #ececea;
     --ink-muted: #9a9ca1;
     --accent: #7c9cf0;
@@ -101,6 +103,7 @@
   --surface-2: #222326;
   --border: #2e3034;
   --border-strong: #6e7076;
+  --border-control: #3a3c40;
   --ink: #ececea;
   --ink-muted: #9a9ca1;
   --accent: #7c9cf0;

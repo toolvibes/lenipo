@@ -5,10 +5,7 @@ import {
   CaretDoubleUp,
   CaretDown,
   CaretUp,
-  CheckCircle,
   CheckSquare,
-  Circle,
-  CircleHalf,
   Equals,
   type Icon,
   Lightning,
@@ -79,24 +76,18 @@ export function PriorityIcon({ priority, size = 16 }: { priority: PriorityInfo; 
 }
 
 const CATEGORY_STYLE = {
-  todo: { icon: Circle, className: 'bg-[var(--status-todo-bg)] text-[var(--status-todo-fg)]' },
-  in_progress: {
-    icon: CircleHalf,
-    className: 'bg-[var(--status-progress-bg)] text-[var(--status-progress-fg)]',
-  },
-  done: { icon: CheckCircle, className: 'bg-[var(--status-done-bg)] text-[var(--status-done-fg)]' },
+  todo: 'bg-[var(--status-todo-bg)] text-[var(--status-todo-fg)]',
+  in_progress: 'bg-[var(--status-progress-bg)] text-[var(--status-progress-fg)]',
+  done: 'bg-[var(--status-done-bg)] text-[var(--status-done-fg)]',
 } as const;
 
-/** Status always shown with category icon and name, never by color alone (design: StatusLozenge). */
+/** Status as a quiet badge with its name, never by colour alone (E-67). */
 export function StatusLozenge({ status }: { status: StatusInfo }) {
   const name = useMetaName();
-  const style = CATEGORY_STYLE[status.category];
-  const IconComponent = style.icon;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-[var(--radius-sm)] px-2 py-0.5 text-xs leading-4 font-semibold tracking-[0.04em] whitespace-nowrap uppercase ${style.className}`}
+      className={`inline-flex items-center rounded-[4px] px-1.5 text-[11.5px] leading-[18px] font-medium whitespace-nowrap ${CATEGORY_STYLE[status.category]}`}
     >
-      <IconComponent size={14} aria-hidden />
       {name('status', status)}
     </span>
   );

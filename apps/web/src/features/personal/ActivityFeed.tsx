@@ -28,25 +28,32 @@ function useEntryText() {
   };
 }
 
-/** A list of activity entries (P-GEN-01); `showProject` adds the project to each line. */
+/**
+ * A list of activity entries (P-GEN-01); `showProject` adds the project to each line,
+ * `compact` drops the details for narrow columns.
+ */
 export function ActivityFeed({
   entries,
   showProject = true,
+  compact = false,
 }: {
   entries: ActivityEntry[];
   showProject?: boolean;
+  compact?: boolean;
 }) {
   const text = useEntryText();
   return (
-    <ol className="m-0 flex list-none flex-col gap-3 p-0">
+    <ol
+      className={`m-0 flex list-none flex-col gap-3 p-0 ${compact ? 'text-[13px] leading-[1.45]' : ''}`}
+    >
       {entries.map((entry) => {
         const { verb, detail } = text(entry);
         return (
           <li key={entry.id} className="flex gap-3">
             {entry.actor ? (
-              <Avatar user={entry.actor} size={28} />
+              <Avatar user={entry.actor} size={compact ? 24 : 28} />
             ) : (
-              <span className="size-7 shrink-0" aria-hidden />
+              <span className={`${compact ? 'size-6' : 'size-7'} shrink-0`} aria-hidden />
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="min-w-0">
@@ -59,7 +66,9 @@ export function ActivityFeed({
                   <span className="tl-key">{entry.issue.key}</span> {entry.issue.summary}
                 </Link>
               </span>
-              {detail && <span className="line-clamp-2 text-[var(--ink-muted)]">{detail}</span>}
+              {detail && !compact && (
+                <span className="line-clamp-2 text-[var(--ink-muted)]">{detail}</span>
+              )}
               <span className="text-xs text-[var(--ink-muted)]">
                 <span title={formatDateTime(entry.at)}>{formatRelative(entry.at)}</span>
                 {showProject && ` · ${entry.project.name}`}

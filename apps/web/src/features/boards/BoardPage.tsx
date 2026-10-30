@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DotsSixVertical, DotsThree, GearSix, Warning } from '@phosphor-icons/react';
+import { DotsSixVertical, DotsThree, GearSix, Plus, Warning } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -31,9 +31,11 @@ import { boardDataQuery } from '../../lib/boards';
 import { formatDate } from '../../lib/format';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { CHIP, PageHeading, TopBar } from '../../ui/TopBar';
+import { CreateIssueDialog } from '../tracking/CreateIssueDialog';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
@@ -132,12 +134,12 @@ function CardView({
       ref={nodeRef}
       style={style}
       data-selected={selected}
-      className={`flex gap-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] p-2 data-[selected=true]:border-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'shadow-[var(--shadow-float)]' : ''}`}
+      className={`group flex gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] py-2.5 pr-2.5 pl-1.5 text-[13px] leading-[18px] hover:border-[var(--border-control)] data-[selected=true]:border-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'shadow-[var(--shadow-float)]' : ''}`}
     >
       <button
         type="button"
         aria-label={t('boards.dragCard', { key: issue.key })}
-        className="-ml-1 grid w-5 shrink-0 cursor-grab place-items-start pt-0.5 text-[var(--ink-muted)] hover:text-[var(--ink)] active:cursor-grabbing"
+        className="grid w-4 shrink-0 cursor-grab place-items-start pt-px text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--ink)] active:cursor-grabbing"
         {...handle}
       >
         <DotsSixVertical size={16} aria-hidden />
@@ -158,13 +160,16 @@ function CardView({
         <span className="flex items-center gap-1.5">
           <IssueTypeIcon type={issue.issueType} size={14} />
           <PriorityIcon priority={issue.priority} />
-          <span className="tl-key text-xs">{issue.key}</span>
+          <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
+            {issue.key}
+          </span>
+          <span className="ml-auto" />
           {issue.storyPoints !== null && (
-            <span className="rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-1.5 text-xs font-semibold">
+            <span className="rounded-[4px] bg-[var(--surface-2)] px-1.5 font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
               {issue.storyPoints}
             </span>
           )}
-          <span className="ml-auto flex items-center gap-1">
+          <span className="flex items-center gap-1">
             {issue.assignee && <Avatar user={issue.assignee} size={20} />}
             {onMove && issue.canTransition && (
               <DropdownMenu.Root>
@@ -221,7 +226,7 @@ function Cell({
       <div
         ref={droppable.setNodeRef}
         data-state={state}
-        className="flex min-h-16 flex-col gap-2 rounded-[var(--radius-md)] bg-[var(--surface-2)] p-2 data-[state=allowed]:outline-2 data-[state=allowed]:outline-dashed data-[state=allowed]:outline-[var(--accent)] data-[state=blocked]:opacity-50"
+        className="flex min-h-16 flex-col gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-2)] p-2.5 data-[state=allowed]:outline-2 data-[state=allowed]:outline-dashed data-[state=allowed]:outline-[var(--accent)] data-[state=blocked]:opacity-50"
       >
         {children}
       </div>
@@ -251,6 +256,7 @@ export function BoardPage({
   const [message, setMessage] = useState<string | null>(null);
   const [configuring, setConfiguring] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const meta = useQuery(trackingMetaQuery).data;
   const doneStatusIds = useMemo(
     () =>
@@ -277,6 +283,10 @@ export function BoardPage({
   );
 
   const board = data.data?.board;
+  const project = useQuery({
+    ...projectQuery(board?.project.key ?? ''),
+    enabled: board !== undefined,
+  });
   const issues = data.data?.issues ?? [];
   // Others' changes on this board and its projects show up live (T-BRD-09).
   useCurrentProject(board?.project.key);
@@ -456,6 +466,16 @@ export function BoardPage({
   if (!board) return <p className="px-6 py-8 text-[var(--ink-muted)]">{t('common.loading')}</p>;
 
   const allowed = active ? allowedFor(active) : null;
+  const sprint = board.type === 'scrum' ? (data.data?.sprint ?? null) : null;
+  // Status colours only where status is shown (E-67): the column's first status decides.
+  const dotColor = (column: BoardColumn) => {
+    const category = meta?.statuses.find((status) => status.id === column.statusIds[0])?.category;
+    return category === 'done'
+      ? 'var(--success)'
+      : category === 'in_progress'
+        ? 'var(--accent)'
+        : 'var(--border-strong)';
+  };
   const quick = [
     { id: 'mine', name: t('boards.onlyMine') },
     { id: 'recent', name: t('boards.recent') },
@@ -463,180 +483,219 @@ export function BoardPage({
   ];
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <Link
-            to="/projects/$key"
-            params={{ key: board.project.key }}
-            search={{}}
-            className="text-xs text-[var(--ink-muted)] no-underline hover:underline"
-          >
+    <main className="flex flex-col">
+      <TopBar
+        crumbs={[
+          <Link key="project" to="/projects/$key" params={{ key: board.project.key }} search={{}}>
             {board.project.name}
-          </Link>
-          <h1 className="tl-heading-xl">{board.name}</h1>
-        </div>
-        {board.canConfigure && (
-          <Button onClick={() => setConfiguring(true)}>
-            <GearSix size={16} aria-hidden />
-            {t('boards.configure')}
-          </Button>
-        )}
-      </header>
-
-      <BoardTabs id={id} type={board.type} current="board" />
-      {board.type === 'scrum' && data.data?.sprint && (
-        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
-          <span className="font-semibold">{data.data.sprint.name}</span>
-          {data.data.sprint.endDate && (
-            <span className="text-xs text-[var(--ink-muted)]">
-              {t('sprints.until', { date: formatDate(data.data.sprint.endDate) })}
-            </span>
-          )}
-          {data.data.sprint.goal && (
-            <span className="min-w-0 flex-1 truncate text-[var(--ink-muted)]">
-              {data.data.sprint.goal}
-            </span>
-          )}
-          <Button size="sm" className="ml-auto" onClick={() => setCompleting(true)}>
-            {t('sprints.complete')}
-          </Button>
-        </div>
-      )}
-      {board.type === 'scrum' && data.data && !data.data.sprint && (
-        <p className="m-0 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] px-4 py-6 text-center text-[var(--ink-muted)]">
-          {t('sprints.noActive')}{' '}
-          <Link to="/boards/$id/backlog" params={{ id }} search={{}}>
-            {t('sprints.toBacklog')}
-          </Link>
-        </p>
-      )}
-
-      <div role="toolbar" aria-label={t('boards.quickFilters')} className="flex flex-wrap gap-2">
-        {quick.map((filter) => (
-          <button
-            key={filter.id}
-            type="button"
-            aria-pressed={filters.includes(filter.id)}
-            onClick={() => toggleFilter(filter.id)}
-            className="h-7 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2.5 aria-pressed:border-[var(--accent)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
-          >
-            {filter.name}
-          </button>
-        ))}
-      </div>
-
-      {message && <FormError message={message} />}
-      {data.data?.truncated && (
-        <p className="m-0 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-3 py-2">
-          {t('boards.truncated')}
-        </p>
-      )}
-
-      <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          onDragCancel={() => setActive(null)}
-          accessibility={{
-            announcements,
-            screenReaderInstructions: { draggable: t('boards.announce.instructions') },
-          }}
-        >
-          <div className="overflow-x-auto pb-2">
-            <div
-              className="grid gap-x-3 gap-y-2"
-              style={{ gridTemplateColumns: `repeat(${board.columns.length}, minmax(240px, 1fr))` }}
-            >
-              {board.columns.map((column) => {
-                const count = issues.filter((issue) =>
-                  column.statusIds.includes(issue.status.id),
-                ).length;
-                const over = column.wipMax !== null && count > column.wipMax;
-                const under = column.wipMin !== null && count < column.wipMin;
-                return (
-                  <div
-                    key={column.id}
-                    data-limit={over ? 'over' : under ? 'under' : 'ok'}
-                    className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 data-[limit=over]:bg-[var(--danger-soft)] data-[limit=under]:bg-[var(--warning-soft)]"
-                  >
-                    <h2 className="tl-label m-0 truncate text-[var(--ink-muted)]">{column.name}</h2>
-                    <span className="text-xs font-semibold">
-                      {count}
-                      {column.wipMax !== null && ` / ${column.wipMax}`}
-                    </span>
-                    {(over || under) && (
-                      <span className="ml-auto flex items-center gap-1 text-xs font-semibold">
-                        <Warning size={14} aria-hidden />
-                        {over ? t('boards.overLimit') : t('boards.underLimit')}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              {lanes.map((lane) => {
-                const laneIssues = issues.filter((issue) => laneOf(board, issue) === lane.id);
-                if (lane.title !== null && lane.id === 'none' && laneIssues.length === 0)
-                  return null;
-                return [
-                  lane.title !== null && (
-                    <h3
-                      key={`${lane.id}:title`}
-                      className="tl-label m-0 mt-2 text-[var(--ink-muted)]"
-                      style={{ gridColumn: '1 / -1' }}
-                    >
-                      {lane.title} · {laneIssues.length}
-                    </h3>
-                  ),
-                  ...board.columns.map((column) => {
-                    const id = cellId(lane.id, column.id);
-                    const keys = keysIn(id);
-                    const state = !allowed
-                      ? 'idle'
-                      : allowed.has(column.id)
-                        ? 'allowed'
-                        : 'blocked';
-                    return (
-                      <Cell key={id} id={id} keys={keys} state={state}>
-                        {keys.map((key) => {
-                          const issue = issues.find((entry) => entry.key === key) as IssueSummary;
-                          return (
-                            <SortableCard
-                              key={key}
-                              issue={issue}
-                              columns={board.columns}
-                              allowed={allowedFor(issue)}
-                              selected={key === selected}
-                              onOpen={wide ? select : undefined}
-                              onMove={(columnId) => moveTo(issue, columnId)}
-                            />
-                          );
-                        })}
-                      </Cell>
-                    );
-                  }),
-                ];
-              })}
-            </div>
-          </div>
-          <DragOverlay>
-            {active && (
-              <CardView
-                issue={active}
-                columns={board.columns}
-                allowed={new Set()}
-                selected={false}
-                floating
-              />
+          </Link>,
+          board.name,
+        ]}
+        actions={
+          board.canConfigure && (
+            <Button size="sm" onClick={() => setConfiguring(true)}>
+              <GearSix size={14} aria-hidden />
+              {t('boards.configure')}
+            </Button>
+          )
+        }
+      />
+      <PageHeading
+        title={sprint ? sprint.name : board.name}
+        subtitle={
+          sprint ? (
+            <>
+              {sprint.endDate && t('sprints.until', { date: formatDate(sprint.endDate) })}
+              {sprint.goal && ` · ${sprint.goal}`}
+            </>
+          ) : (
+            board.project.name
+          )
+        }
+        actions={
+          <>
+            {sprint && <Button onClick={() => setCompleting(true)}>{t('sprints.complete')}</Button>}
+            {project.data?.permissions.includes('create-issues') && (
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                <Plus size={14} aria-hidden />
+                {t('issues.create')}
+              </Button>
             )}
-          </DragOverlay>
-        </DndContext>
-      </IssueSplit>
+          </>
+        }
+      />
+      <div className="flex flex-col gap-3.5 px-6 pb-6">
+        <BoardTabs id={id} type={board.type} current="board" />
+        {board.type === 'scrum' && data.data && !data.data.sprint && (
+          <p className="m-0 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] px-4 py-6 text-center text-[var(--ink-muted)]">
+            {t('sprints.noActive')}{' '}
+            <Link to="/boards/$id/backlog" params={{ id }} search={{}}>
+              {t('sprints.toBacklog')}
+            </Link>
+          </p>
+        )}
+
+        <div
+          role="toolbar"
+          aria-label={t('boards.quickFilters')}
+          className="flex flex-wrap gap-1.5"
+        >
+          <button
+            type="button"
+            aria-pressed={filters.length === 0}
+            onClick={() =>
+              void navigate({
+                to: '/boards/$id',
+                params: { id },
+                search: (previous) => ({ ...previous, filters: undefined }),
+              })
+            }
+            className={CHIP}
+          >
+            {t('boards.allIssues')}
+          </button>
+          {quick.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              aria-pressed={filters.includes(filter.id)}
+              onClick={() => toggleFilter(filter.id)}
+              className={CHIP}
+            >
+              {filter.name}
+            </button>
+          ))}
+        </div>
+
+        {message && <FormError message={message} />}
+        {data.data?.truncated && (
+          <p className="m-0 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-3 py-2">
+            {t('boards.truncated')}
+          </p>
+        )}
+
+        <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={() => setActive(null)}
+            accessibility={{
+              announcements,
+              screenReaderInstructions: { draggable: t('boards.announce.instructions') },
+            }}
+          >
+            <div className="overflow-x-auto pb-2">
+              <div
+                className="grid gap-x-3 gap-y-2"
+                style={{
+                  gridTemplateColumns: `repeat(${board.columns.length}, minmax(240px, 1fr))`,
+                }}
+              >
+                {board.columns.map((column) => {
+                  const count = issues.filter((issue) =>
+                    column.statusIds.includes(issue.status.id),
+                  ).length;
+                  const over = column.wipMax !== null && count > column.wipMax;
+                  const under = column.wipMin !== null && count < column.wipMin;
+                  return (
+                    <div
+                      key={column.id}
+                      data-limit={over ? 'over' : under ? 'under' : 'ok'}
+                      className="flex items-center gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-2)] px-2.5 py-2 data-[limit=over]:bg-[var(--danger-soft)] data-[limit=under]:bg-[var(--warning-soft)]"
+                    >
+                      <span
+                        aria-hidden
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: dotColor(column) }}
+                      />
+                      <h2 className="m-0 truncate text-[13px] font-semibold">{column.name}</h2>
+                      <span className="text-[12px] text-[var(--ink-muted)]">{count}</span>
+                      {column.wipMax !== null && !(over || under) && (
+                        <span className="ml-auto font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
+                          WIP {count}/{column.wipMax}
+                        </span>
+                      )}
+                      {(over || under) && (
+                        <span className="ml-auto flex items-center gap-1 text-xs font-semibold">
+                          <Warning size={14} aria-hidden />
+                          {over ? t('boards.overLimit') : t('boards.underLimit')}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {lanes.map((lane) => {
+                  const laneIssues = issues.filter((issue) => laneOf(board, issue) === lane.id);
+                  if (lane.title !== null && lane.id === 'none' && laneIssues.length === 0)
+                    return null;
+                  return [
+                    lane.title !== null && (
+                      <h3
+                        key={`${lane.id}:title`}
+                        className="m-0 mt-2 text-[12.5px] font-semibold text-[var(--ink-muted)]"
+                        style={{ gridColumn: '1 / -1' }}
+                      >
+                        {lane.title} · {laneIssues.length}
+                      </h3>
+                    ),
+                    ...board.columns.map((column) => {
+                      const id = cellId(lane.id, column.id);
+                      const keys = keysIn(id);
+                      const state = !allowed
+                        ? 'idle'
+                        : allowed.has(column.id)
+                          ? 'allowed'
+                          : 'blocked';
+                      return (
+                        <Cell key={id} id={id} keys={keys} state={state}>
+                          {keys.map((key) => {
+                            const issue = issues.find((entry) => entry.key === key) as IssueSummary;
+                            return (
+                              <SortableCard
+                                key={key}
+                                issue={issue}
+                                columns={board.columns}
+                                allowed={allowedFor(issue)}
+                                selected={key === selected}
+                                onOpen={wide ? select : undefined}
+                                onMove={(columnId) => moveTo(issue, columnId)}
+                              />
+                            );
+                          })}
+                        </Cell>
+                      );
+                    }),
+                  ];
+                })}
+              </div>
+            </div>
+            <DragOverlay>
+              {active && (
+                <CardView
+                  issue={active}
+                  columns={board.columns}
+                  allowed={new Set()}
+                  selected={false}
+                  floating
+                />
+              )}
+            </DragOverlay>
+          </DndContext>
+        </IssueSplit>
+      </div>
 
       {board.canConfigure && (
         <BoardSettingsDialog board={board} open={configuring} onOpenChange={setConfiguring} />
+      )}
+      {project.data && (
+        <CreateIssueDialog
+          project={project.data}
+          open={creating}
+          onOpenChange={setCreating}
+          myId={me.id}
+        />
       )}
       {completing && data.data?.sprint && (
         <CompleteSprintDialog

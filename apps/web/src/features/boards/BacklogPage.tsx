@@ -31,6 +31,7 @@ import { useCurrentProject } from '../../lib/shortcuts';
 import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { PageHeading, TopBar } from '../../ui/TopBar';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
@@ -100,12 +101,12 @@ function RowView({
       style={style}
       data-checked={checked}
       data-selected={selected}
-      className={`flex min-h-10 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-1)] px-2 last:border-b-0 data-[checked=true]:bg-[var(--accent-soft)] data-[selected=true]:outline data-[selected=true]:outline-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'rounded-[var(--radius-md)] border shadow-[var(--shadow-float)]' : ''}`}
+      className={`group flex min-h-9 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-1)] px-2 text-[13px] last:border-b-0 hover:bg-[var(--surface-2)] data-[checked=true]:bg-[var(--accent-soft)] data-[selected=true]:outline data-[selected=true]:outline-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'rounded-[var(--radius-md)] border shadow-[var(--shadow-float)]' : ''}`}
     >
       <button
         type="button"
         aria-label={t('boards.dragCard', { key: issue.key })}
-        className="grid w-5 shrink-0 cursor-grab place-items-center text-[var(--ink-muted)] hover:text-[var(--ink)]"
+        className="grid w-4 shrink-0 cursor-grab place-items-center text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--ink)]"
         {...handle}
       >
         <DotsSixVertical size={16} aria-hidden />
@@ -127,21 +128,21 @@ function RowView({
           event.preventDefault();
           onOpen(issue.key);
         }}
-        className="tl-key shrink-0 no-underline hover:underline"
+        className="w-[70px] shrink-0 font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)] no-underline hover:text-[var(--ink)] hover:underline"
       >
         {issue.key}
       </Link>
       <span className="min-w-0 flex-1 truncate">{issue.summary}</span>
       {issue.parent && (
         <span
-          className="hidden max-w-40 truncate rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-1.5 text-xs font-semibold md:inline"
+          className="hidden max-w-40 truncate text-[12px] text-[var(--ink-muted)] md:inline"
           title={`${issue.parent.key} ${issue.parent.summary}`}
         >
           {issue.parent.summary}
         </span>
       )}
       <StatusLozenge status={issue.status} />
-      <span className="w-12 shrink-0 text-right text-xs font-semibold tabular-nums">
+      <span className="w-12 shrink-0 text-right font-[family-name:var(--font-mono)] text-[11px] text-[var(--ink-muted)] tabular-nums">
         {estimate ?? '–'}
       </span>
       <span className="w-6 shrink-0">
@@ -165,7 +166,7 @@ function SectionList({
     <SortableContext id={id} items={keys} strategy={verticalListSortingStrategy}>
       <ul
         ref={droppable.setNodeRef}
-        className="m-0 flex min-h-12 list-none flex-col overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] p-0"
+        className="m-0 flex min-h-12 list-none flex-col overflow-hidden p-0"
       >
         {children}
       </ul>
@@ -478,264 +479,278 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
       : null;
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-xs text-[var(--ink-muted)]">{board.project.name}</span>
-          <h1 className="tl-heading-xl">{board.name}</h1>
-        </div>
-        <Button onClick={() => createSprint.mutate()} disabled={createSprint.isPending}>
-          <Plus size={16} aria-hidden />
-          {t('sprints.create')}
-        </Button>
-      </header>
-      <BoardTabs id={id} type={board.type} current="backlog" />
-      {message && <FormError message={message} />}
-      {data.data?.truncated && (
-        <p className="m-0 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-3 py-2">
-          {t('sprints.truncated')}
-        </p>
-      )}
+    <main className="flex flex-col">
+      <TopBar
+        crumbs={[
+          <Link key="project" to="/projects/$key" params={{ key: board.project.key }} search={{}}>
+            {board.project.name}
+          </Link>,
+          t('sprints.backlog'),
+        ]}
+      />
+      <PageHeading
+        title={t('sprints.backlog')}
+        subtitle={board.name}
+        actions={
+          <Button onClick={() => createSprint.mutate()} disabled={createSprint.isPending}>
+            <Plus size={14} aria-hidden />
+            {t('sprints.create')}
+          </Button>
+        }
+      />
+      <div className="flex flex-col gap-4 px-6 pb-6">
+        <BoardTabs id={id} type={board.type} current="backlog" />
+        {message && <FormError message={message} />}
+        {data.data?.truncated && (
+          <p className="m-0 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-3 py-2">
+            {t('sprints.truncated')}
+          </p>
+        )}
 
-      {checked.length > 0 && (
-        <div
-          role="toolbar"
-          aria-label={t('sprints.selection')}
-          className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[var(--surface-1)] px-3 py-2"
-        >
-          <span className="font-semibold">{t('sprints.checked', { count: checked.length })}</span>
-          <select
-            aria-label={t('sprints.moveSelection')}
-            value=""
-            onChange={(event) => event.target.value && moveSelection(event.target.value)}
-            className="h-[var(--control-sm)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+        {checked.length > 0 && (
+          <div
+            role="toolbar"
+            aria-label={t('sprints.selection')}
+            className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[var(--surface-1)] px-3 py-2"
           >
-            <option value="">{t('sprints.moveSelection')}</option>
-            {sections.map((section) => (
-              <option key={section.id} value={section.id}>
-                {section.sprint ? section.sprint.name : t('sprints.backlog')}
-              </option>
-            ))}
-          </select>
-          {versions.length > 0 && (
+            <span className="font-semibold">{t('sprints.checked', { count: checked.length })}</span>
             <select
-              aria-label={t('versions.assign')}
+              aria-label={t('sprints.moveSelection')}
               value=""
-              onChange={(event) => event.target.value && assignVersion.mutate(event.target.value)}
+              onChange={(event) => event.target.value && moveSelection(event.target.value)}
               className="h-[var(--control-sm)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
             >
-              <option value="">{t('versions.assign')}</option>
-              {versions.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {projectKeys.length > 1 ? `${entry.projectKey} ` : ''}
-                  {entry.name}
+              <option value="">{t('sprints.moveSelection')}</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.sprint ? section.sprint.name : t('sprints.backlog')}
                 </option>
               ))}
             </select>
-          )}
-          {checkedSection && (
-            <>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => moveSelection(checkedSection.id, 'top')}
-              >
-                {t('sprints.toTop')}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => moveSelection(checkedSection.id, 'bottom')}
-              >
-                {t('sprints.toBottom')}
-              </Button>
-            </>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => setChecked([])}>
-            {t('sprints.clearSelection')}
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        {(epics.length > 0 || versions.length > 0) && (
-          <div className="flex shrink-0 flex-col gap-4 lg:w-52">
             {versions.length > 0 && (
-              <nav aria-label={t('versions.panel')} className="flex flex-col gap-0.5">
-                <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('versions.panel')}</h2>
-                {[{ id: null, name: t('versions.all'), projectKey: '' }, ...versions].map(
-                  (entry) => (
-                    <button
-                      key={entry.id ?? 'all'}
-                      type="button"
-                      aria-pressed={version === entry.id}
-                      onClick={() => setVersion(entry.id)}
-                      className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
-                    >
-                      {entry.name}
-                      {entry.id && projectKeys.length > 1 && (
-                        <span className="ml-1 text-xs text-[var(--ink-muted)]">
-                          {entry.projectKey}
-                        </span>
-                      )}
-                    </button>
-                  ),
-                )}
-              </nav>
-            )}
-            {epics.length > 0 && (
-              <nav aria-label={t('sprints.epics')} className="flex flex-col gap-0.5">
-                <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('sprints.epics')}</h2>
-                {[[null, t('sprints.allEpics')] as const, ...epics].map(([key, name]) => (
-                  <button
-                    key={key ?? 'all'}
-                    type="button"
-                    aria-pressed={epic === key}
-                    onClick={() => setEpic(key)}
-                    className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
-                  >
-                    {name}
-                  </button>
+              <select
+                aria-label={t('versions.assign')}
+                value=""
+                onChange={(event) => event.target.value && assignVersion.mutate(event.target.value)}
+                className="h-[var(--control-sm)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+              >
+                <option value="">{t('versions.assign')}</option>
+                {versions.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {projectKeys.length > 1 ? `${entry.projectKey} ` : ''}
+                    {entry.name}
+                  </option>
                 ))}
-              </nav>
+              </select>
             )}
+            {checkedSection && (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => moveSelection(checkedSection.id, 'top')}
+                >
+                  {t('sprints.toTop')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => moveSelection(checkedSection.id, 'bottom')}
+                >
+                  {t('sprints.toBottom')}
+                </Button>
+              </>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setChecked([])}>
+              {t('sprints.clearSelection')}
+            </Button>
           </div>
         )}
-        <div className="min-w-0 flex-1">
-          <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-              onDragCancel={() => setActive(null)}
-              accessibility={{
-                screenReaderInstructions: { draggable: t('boards.announce.instructions') },
-              }}
-            >
-              {sections.map((section) => {
-                const sprint = section.sprint;
-                return (
-                  <section
-                    key={section.id}
-                    aria-label={sprint ? sprint.name : t('sprints.backlog')}
-                    className="flex flex-col gap-2"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="tl-heading-md m-0">
-                        {sprint ? sprint.name : t('sprints.backlog')}
-                      </h2>
-                      {sprint?.state === 'active' && (
-                        <span className="rounded-[var(--radius-sm)] bg-[var(--accent-soft)] px-1.5 text-xs font-semibold text-[var(--accent)] uppercase">
-                          {t('sprints.active')}
-                        </span>
-                      )}
-                      {sprint?.startDate && (
+
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          {(epics.length > 0 || versions.length > 0) && (
+            <div className="flex shrink-0 flex-col gap-4 lg:w-52">
+              {versions.length > 0 && (
+                <nav aria-label={t('versions.panel')} className="flex flex-col gap-0.5">
+                  <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('versions.panel')}</h2>
+                  {[{ id: null, name: t('versions.all'), projectKey: '' }, ...versions].map(
+                    (entry) => (
+                      <button
+                        key={entry.id ?? 'all'}
+                        type="button"
+                        aria-pressed={version === entry.id}
+                        onClick={() => setVersion(entry.id)}
+                        className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+                      >
+                        {entry.name}
+                        {entry.id && projectKeys.length > 1 && (
+                          <span className="ml-1 text-xs text-[var(--ink-muted)]">
+                            {entry.projectKey}
+                          </span>
+                        )}
+                      </button>
+                    ),
+                  )}
+                </nav>
+              )}
+              {epics.length > 0 && (
+                <nav aria-label={t('sprints.epics')} className="flex flex-col gap-0.5">
+                  <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('sprints.epics')}</h2>
+                  {[[null, t('sprints.allEpics')] as const, ...epics].map(([key, name]) => (
+                    <button
+                      key={key ?? 'all'}
+                      type="button"
+                      aria-pressed={epic === key}
+                      onClick={() => setEpic(key)}
+                      className="truncate rounded-[var(--radius-md)] px-2 py-1 text-left hover:bg-[var(--surface-2)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </nav>
+              )}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <IssueSplit me={me} selected={selected} onClose={() => select(undefined)}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                onDragCancel={() => setActive(null)}
+                accessibility={{
+                  screenReaderInstructions: { draggable: t('boards.announce.instructions') },
+                }}
+              >
+                {sections.map((section) => {
+                  const sprint = section.sprint;
+                  return (
+                    <section
+                      key={section.id}
+                      aria-label={sprint ? sprint.name : t('sprints.backlog')}
+                      className="flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)]"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-[12.5px]">
+                        <h2 className="m-0 text-[13px] font-semibold">
+                          {sprint ? sprint.name : t('sprints.backlog')}
+                        </h2>
+                        {sprint?.state === 'active' && (
+                          <span className="text-[12px] text-[var(--ink-muted)]">
+                            {t('sprints.active')}
+                          </span>
+                        )}
+                        {sprint?.startDate && (
+                          <span className="text-xs text-[var(--ink-muted)]">
+                            {formatDate(sprint.startDate)} –{' '}
+                            {sprint.endDate ? formatDate(sprint.endDate) : '…'}
+                          </span>
+                        )}
                         <span className="text-xs text-[var(--ink-muted)]">
-                          {formatDate(sprint.startDate)} –{' '}
-                          {sprint.endDate ? formatDate(sprint.endDate) : '…'}
+                          {t('sprints.count', { count: section.issues.length })} ·{' '}
+                          {estimate(section.issues)}
                         </span>
-                      )}
-                      <span className="text-xs text-[var(--ink-muted)]">
-                        {t('sprints.count', { count: section.issues.length })} ·{' '}
-                        {estimate(section.issues)}
-                      </span>
-                      {sprint && (
-                        <span className="ml-auto flex flex-wrap gap-1">
-                          {sprint.state === 'future' && !running && (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => setEditing({ sprint, starting: true })}
-                            >
-                              {t('sprints.startAction')}
-                            </Button>
-                          )}
-                          {sprint.state === 'active' && (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => setCompleting(sprint)}
-                            >
-                              {t('sprints.complete')}
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditing({ sprint, starting: false })}
-                          >
-                            {t('sprints.edit')}
-                          </Button>
-                          {sprint.state === 'future' && (
+                        {sprint && (
+                          <span className="ml-auto flex flex-wrap gap-1">
+                            {sprint.state === 'future' && !running && (
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => setEditing({ sprint, starting: true })}
+                              >
+                                {t('sprints.startAction')}
+                              </Button>
+                            )}
+                            {sprint.state === 'active' && (
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => setCompleting(sprint)}
+                              >
+                                {t('sprints.complete')}
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => deleteSprint.mutate(sprint.id)}
+                              onClick={() => setEditing({ sprint, starting: false })}
                             >
-                              {t('sprints.delete')}
+                              {t('sprints.edit')}
                             </Button>
-                          )}
-                        </span>
+                            {sprint.state === 'future' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => deleteSprint.mutate(sprint.id)}
+                              >
+                                {t('sprints.delete')}
+                              </Button>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      {sprint?.goal && (
+                        <p className="m-0 border-b border-[var(--border)] px-3 py-1.5 text-[12.5px] text-[var(--ink-muted)]">
+                          {sprint.goal}
+                        </p>
                       )}
-                    </div>
-                    {sprint?.goal && <p className="m-0 text-[var(--ink-muted)]">{sprint.goal}</p>}
-                    <SectionList id={section.id} keys={section.issues.map((issue) => issue.key)}>
-                      {section.issues.length === 0 && (
-                        <li className="px-3 py-3 text-[var(--ink-muted)]">
-                          {sprint ? t('sprints.emptySprint') : t('sprints.emptyBacklog')}
-                        </li>
+                      <SectionList id={section.id} keys={section.issues.map((issue) => issue.key)}>
+                        {section.issues.length === 0 && (
+                          <li className="px-3 py-3 text-[var(--ink-muted)]">
+                            {sprint ? t('sprints.emptySprint') : t('sprints.emptyBacklog')}
+                          </li>
+                        )}
+                        {section.issues.map((issue) => (
+                          <Row
+                            key={issue.key}
+                            issue={issue}
+                            checked={checked.includes(issue.key)}
+                            selected={issue.key === selected}
+                            onCheck={(event) => check(issue.key, event)}
+                            onOpen={wide ? select : undefined}
+                            estimate={board.estimation === 'issueCount' ? null : estimate([issue])}
+                          />
+                        ))}
+                      </SectionList>
+                      {!sprint && (
+                        <form onSubmit={addIssue} className="flex gap-2">
+                          <input
+                            aria-label={t('sprints.quickCreate')}
+                            placeholder={t('sprints.quickCreate')}
+                            value={summary}
+                            maxLength={255}
+                            onChange={(event) => setSummary(event.target.value)}
+                            className="h-[var(--control-sm)] min-w-0 flex-1 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+                          />
+                          <Button
+                            size="sm"
+                            type="submit"
+                            disabled={!summary.trim() || createIssue.isPending}
+                          >
+                            {t('sprints.add')}
+                          </Button>
+                        </form>
                       )}
-                      {section.issues.map((issue) => (
-                        <Row
-                          key={issue.key}
-                          issue={issue}
-                          checked={checked.includes(issue.key)}
-                          selected={issue.key === selected}
-                          onCheck={(event) => check(issue.key, event)}
-                          onOpen={wide ? select : undefined}
-                          estimate={board.estimation === 'issueCount' ? null : estimate([issue])}
-                        />
-                      ))}
-                    </SectionList>
-                    {!sprint && (
-                      <form onSubmit={addIssue} className="flex gap-2">
-                        <input
-                          aria-label={t('sprints.quickCreate')}
-                          placeholder={t('sprints.quickCreate')}
-                          value={summary}
-                          maxLength={255}
-                          onChange={(event) => setSummary(event.target.value)}
-                          className="h-[var(--control-sm)] min-w-0 flex-1 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
-                        />
-                        <Button
-                          size="sm"
-                          type="submit"
-                          disabled={!summary.trim() || createIssue.isPending}
-                        >
-                          {t('sprints.add')}
-                        </Button>
-                      </form>
-                    )}
-                  </section>
-                );
-              })}
-              <DragOverlay>
-                {active && (
-                  <ul className="m-0 list-none p-0">
-                    <RowView
-                      issue={active}
-                      checked={checked.includes(active.key)}
-                      selected={false}
-                      onCheck={() => undefined}
-                      estimate={null}
-                      floating
-                    />
-                  </ul>
-                )}
-              </DragOverlay>
-            </DndContext>
-          </IssueSplit>
+                    </section>
+                  );
+                })}
+                <DragOverlay>
+                  {active && (
+                    <ul className="m-0 list-none p-0">
+                      <RowView
+                        issue={active}
+                        checked={checked.includes(active.key)}
+                        selected={false}
+                        onCheck={() => undefined}
+                        estimate={null}
+                        floating
+                      />
+                    </ul>
+                  )}
+                </DragOverlay>
+              </DndContext>
+            </IssueSplit>
+          </div>
         </div>
       </div>
 
