@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -262,5 +263,30 @@ export const pageIssueRefs = pgTable(
   (table) => [
     primaryKey({ columns: [table.pageId, table.issueId] }),
     index('page_issue_refs_issue_idx').on(table.issueId),
+  ],
+);
+
+/** View or edit restriction of a page (TL-14, E-95). */
+export const pageRestrictionKind = pgEnum('page_restriction_kind', ['view', 'edit']);
+
+/**
+ * Who may see or edit a page beyond the space permission (W-PAG-07, E-95): a page with entries
+ * of a kind is open only to them. View entries also cover every page below; edit entries only
+ * the page itself.
+ */
+export const pageRestrictions = pgTable(
+  'page_restrictions',
+  {
+    id: uuid().primaryKey(),
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    kind: pageRestrictionKind().notNull(),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+    groupId: uuid().references(() => groups.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('page_restrictions_page_idx').on(table.pageId, table.kind),
+    check('page_restrictions_one_target', sql`(user_id is null) <> (group_id is null)`),
   ],
 );

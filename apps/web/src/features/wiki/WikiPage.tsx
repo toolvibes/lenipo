@@ -3,6 +3,7 @@ import {
   ChatCircle,
   ClockCounterClockwise,
   DotsThree,
+  Lock,
   PencilSimple,
   Printer,
 } from '@phosphor-icons/react';
@@ -27,6 +28,7 @@ import { CommentedText, InlineThreads } from './InlineComments';
 import { PageAttachments } from './PageAttachments';
 import { PageLabelList, WatchMenu } from './PageMeta';
 import { PageOutline, readingMinutes } from './PageOutline';
+import { PageRestrictionsDialog } from './PageRestrictions';
 import { CreatePageDialog } from './SpaceLayout';
 
 export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode }) {
@@ -201,7 +203,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const comments = useQuery(pageCommentsQuery(id));
   useRealtimeRooms([`page:${id}`]);
   useRecordView('page', page.data?.id);
-  const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | null>(null);
+  const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | 'restrict' | null>(null);
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [quote, setQuote] = useState<TextAnchor | null>(null);
   const article = useRef<HTMLElement>(null);
@@ -290,6 +292,9 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
                     <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('move')}>
                       {t('wiki.moveEllipsis')}
                     </DropdownMenu.Item>
+                    <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('restrict')}>
+                      {t('restrictions.menu')}
+                    </DropdownMenu.Item>
                     <DropdownMenu.Item
                       className={`${menuItem} text-[var(--danger)]`}
                       onSelect={() => setDialog('delete')}
@@ -329,6 +334,13 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
             </span>
             <h1 className="m-0 flex items-center gap-2 font-[family-name:var(--font-prose)] text-[40px] leading-[1.12] font-medium tracking-[-0.015em]">
               {data.title}
+              {(data.restrictions.view ||
+                data.restrictions.edit ||
+                data.restrictions.inherited) && (
+                <span title={t('restrictions.badge')} className="text-[var(--ink-muted)]">
+                  <Lock size={22} aria-label={t('restrictions.badge')} />
+                </span>
+              )}
               <FavouriteButton
                 kind="page"
                 refId={data.id}
@@ -399,6 +411,12 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
         onOpenChange={close}
       />
       <DeleteDialog page={data} open={dialog === 'delete'} onOpenChange={close} />
+      <PageRestrictionsDialog
+        pageId={data.id}
+        spaceKey={spaceKey}
+        open={dialog === 'restrict'}
+        onOpenChange={close}
+      />
       <CreatePageDialog
         spaceKey={spaceKey}
         parentId={data.id}

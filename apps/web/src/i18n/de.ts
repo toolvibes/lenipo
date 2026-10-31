@@ -1039,6 +1039,28 @@ export const de = {
     level: 'Sicherheit',
     noLevel: 'Keine Stufe',
   },
+  restrictions: {
+    title: 'Seitenbeschränkungen',
+    intro: 'Wer diese Seite ansehen und bearbeiten darf, zusätzlich zu den Rechten des Bereichs.',
+    menu: 'Beschränkungen …',
+    badge: 'Diese Seite ist beschränkt',
+    view: 'Ansehen',
+    viewHelp: 'Gilt auch für alle Seiten darunter. Leer: alle, die den Bereich sehen.',
+    edit: 'Bearbeiten',
+    editHelp: 'Gilt nur für diese Seite. Leer: alle mit Bearbeitungsrecht im Bereich.',
+    open: 'Keine Beschränkung',
+    group: 'Gruppe {{name}}',
+    remove: '{{name}} entfernen',
+    addPerson: 'Person suchen …',
+    addGroup: 'Gruppe hinzufügen …',
+    inherited: 'Auch beschränkt durch: {{pages}}',
+    self: 'Wer eine Liste setzt, bleibt darin – so sperrt sich niemand aus.',
+    spaceTitle: 'Beschränkte Seiten',
+    spaceHelp:
+      'Die Administration sieht beschränkte Seiten nur, wenn sie in der Liste steht, kann die Beschränkung aber hier aufheben.',
+    none: 'Keine Seite ist beschränkt.',
+    lift: 'Aufheben',
+  },
   notificationSchemes: {
     title: 'Benachrichtigungsschemata',
     intro:

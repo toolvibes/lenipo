@@ -183,6 +183,61 @@ function Roles({ spaceKey }: { spaceKey: string }) {
 }
 
 /** Settings of a space for its administrators (W-SPC-03, -04). */
+/** Restricted pages, which administrators may lift even where they cannot see them (E-95). */
+function RestrictedPages({ spaceKey }: { spaceKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const restricted = useQuery({
+    queryKey: ['space', spaceKey, 'restricted-pages'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/spaces/{key}/restricted-pages', {
+          params: { path: { key: spaceKey } },
+        }),
+      ),
+  });
+  const lift = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        client.DELETE('/api/v1/spaces/{key}/restricted-pages/{id}', {
+          params: { path: { key: spaceKey, id } },
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['space', spaceKey] });
+      void queryClient.invalidateQueries({ queryKey: ['page'] });
+    },
+  });
+  return (
+    <Section title={t('restrictions.spaceTitle')} help={t('restrictions.spaceHelp')}>
+      {lift.error && <FormError message={lift.error.message} />}
+      {restricted.data?.length === 0 ? (
+        <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('restrictions.none')}</p>
+      ) : (
+        <ul className="m-0 flex list-none flex-col gap-1 p-0">
+          {restricted.data?.map((page) => (
+            <li key={page.id} className="flex flex-wrap items-center gap-3 text-[13.5px]">
+              <span className="font-medium">{page.title}</span>
+              <span className="text-xs text-[var(--ink-muted)]">
+                {[page.view && t('restrictions.view'), page.edit && t('restrictions.edit')]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+              <Button
+                variant="ghost"
+                disabled={lift.isPending}
+                onClick={() => lift.mutate(page.id)}
+              >
+                {t('restrictions.lift')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 export function SpaceSettingsPage({ spaceKey }: { spaceKey: string }) {
   const { t } = useTranslation();
   const space = useQuery(spaceQuery(spaceKey));
@@ -200,6 +255,7 @@ export function SpaceSettingsPage({ spaceKey }: { spaceKey: string }) {
       <General space={space.data} />
       <ProjectLink space={space.data} />
       <Roles spaceKey={spaceKey} />
+      <RestrictedPages spaceKey={spaceKey} />
       <Section title={t('templates.title')} help={t('templates.help')}>
         <TemplateList spaceKey={spaceKey} canManage />
       </Section>

@@ -17,11 +17,14 @@ import {
   MovePageRequest,
   Page,
   PageDiff,
+  PageRestrictions,
   PageVersion,
   PageVersionSummary,
   PublishPageRequest,
   RestoreVersionRequest,
+  RestrictedPage,
   SetPageLabelsRequest,
+  SetPageRestrictionsRequest,
   UpdatePageRequest,
   WatchPageRequest,
 } from '@tasklore/shared';
@@ -139,6 +142,35 @@ export class PagesController {
 
   @Endpoint({
     tag: 'Pages',
+    summary: 'Who may see and edit the page (TL-14)',
+    response: PageRestrictions,
+  })
+  @Get(':id/restrictions')
+  restrictions(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+  ): Promise<PageRestrictions> {
+    return this.pages.restrictions(principal, id);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
+    summary: 'Limit who may see and edit the page',
+    description:
+      'Replaces both lists; empty lists lift the restriction. View lists also cover every page below, edit lists only this page. Needs edit on the page; whoever sets a list stays in it (E-95).',
+    response: PageRestrictions,
+  })
+  @Put(':id/restrictions')
+  setRestrictions(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', PageId) id: string,
+    @ValidBody(SetPageRestrictionsRequest) body: SetPageRestrictionsRequest,
+  ): Promise<PageRestrictions> {
+    return this.pages.setRestrictions(principal, id, body);
+  }
+
+  @Endpoint({
+    tag: 'Pages',
     summary: 'Watch a page, or the page with every page below it',
     response: Page,
   })
@@ -213,5 +245,41 @@ export class PagesController {
     @Param('id', PageId) id: string,
   ): Promise<Page> {
     return this.pages.restore(principal, id);
+  }
+}
+
+/** Restricted pages of a space for its administrators (TL-14, E-95). */
+@Controller('spaces')
+export class RestrictedPagesController {
+  constructor(@Inject(PageService) private readonly pages: PageService) {}
+
+  @Endpoint({
+    tag: 'Spaces',
+    summary: 'List the restricted pages of a space',
+    description:
+      'Needs the space permission `administer`; lists pages even where the administrator cannot see them.',
+    response: z.array(RestrictedPage),
+  })
+  @Get(':key/restricted-pages')
+  restrictedPages(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<RestrictedPage[]> {
+    return this.pages.restrictedPages(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Spaces',
+    summary: 'Lift all restrictions of a page',
+    description: 'Needs the space permission `administer`, not access to the page itself.',
+  })
+  @Delete(':key/restricted-pages/:id')
+  @HttpCode(204)
+  async liftRestrictions(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @Param('id', PageId) id: string,
+  ): Promise<void> {
+    await this.pages.clearRestrictions(principal, key, id);
   }
 }

@@ -323,6 +323,13 @@
       "when": 1793422106977,
       "tag": "0045_issue_security",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793423320398,
+      "tag": "0046_page_restrictions",
+      "breakpoints": true
     }
   ]
 }

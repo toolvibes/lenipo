@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -15,17 +16,20 @@ import type {
   Page,
   PageDiff,
   PageRef,
+  PageRestrictions,
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
   PublishPageRequest,
   RestoreVersionRequest,
+  RestrictedPage,
   RichText,
+  SetPageRestrictionsRequest,
   SpacePermission,
   TrashedPage,
 } from '@tasklore/shared';
 import { prosemirrorJSONToYDoc, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
-import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, not, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';
 import { AuditService } from '../audit/audit.service.js';
@@ -36,7 +40,9 @@ import type { DatabaseHandle, Executor } from '../db/client.js';
 import {
   collabDocuments,
   favourites,
+  groups,
   pageAttachments,
+  pageRestrictions,
   pages,
   pageVersions,
   spaces,
@@ -49,6 +55,7 @@ import { rankBetween } from '../tracking/rank.js';
 import { plainText } from '../tracking/rich-text.js';
 import { reanchorComments } from './comment-anchors.js';
 import { indexIssueRefs } from './issue-refs.js';
+import { pageVisible, passesEditList, seesPage } from './page-restrictions.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 import { TemplateService } from './template.service.js';
@@ -110,9 +117,22 @@ export class PageService {
     if (row.page.version === 0 && !found.permissions.has('edit')) {
       throw new NotFoundException('Page not found');
     }
+    // Page restrictions (TL-14, E-95): a view list that leaves the user out hides the page.
+    if (!(await seesPage(this.database.db, principal.userId, row.page.id))) {
+      throw new NotFoundException('Page not found');
+    }
     if (permission !== 'view')
       await this.spaceAccess.require(principal, found.space.id, permission);
-    return { page: row.page, ...found };
+    // The page's own edit list narrows editing further.
+    const editable =
+      found.permissions.has('edit') &&
+      (await passesEditList(this.database.db, principal.userId, row.page.id));
+    if (permission === 'edit' && !editable) {
+      throw new ForbiddenException('The page is restricted for editing');
+    }
+    const permissions = new Set(found.permissions);
+    if (!editable) permissions.delete('edit');
+    return { page: row.page, ...found, permissions };
   }
 
   /**
@@ -139,6 +159,7 @@ export class PageService {
           inArray(pages.id, ids),
           isNull(pages.deletedAt),
           await this.spaceAccess.viewableCondition(userId),
+          pageVisible(userId),
         ),
       );
     const editable = new Map<string, boolean>();
@@ -174,6 +195,22 @@ export class PageService {
       .from(pages)
       .where(and(eq(pages.spaceId, space.id), isNull(pages.deletedAt)))
       .orderBy(asc(pages.rank), asc(pages.createdAt));
+    // A view list that leaves the user out hides the page and everything below (E-95).
+    const hidden = new Set(
+      (
+        await this.database.db
+          .select({ id: pages.id })
+          .from(pages)
+          .where(
+            and(
+              eq(pages.spaceId, space.id),
+              isNull(pages.deletedAt),
+              sql`exists (select 1 from ${pageRestrictions} r where r.page_id = ${pages.id} and r.kind = 'view')`,
+              not(pageVisible(principal.userId)),
+            ),
+          )
+      ).map((row) => row.id),
+    );
     const children = new Map<string | null, typeof rows>();
     for (const row of rows) {
       const list = children.get(row.parentId) ?? [];
@@ -184,6 +221,7 @@ export class PageService {
     const walk = (parentId: string | null) => {
       for (const row of children.get(parentId) ?? []) {
         if (row.version === 0 && !permissions.has('edit')) continue;
+        if (hidden.has(row.id)) continue;
         result.push({
           id: row.id,
           parentId: row.parentId,
@@ -315,7 +353,161 @@ export class PageService {
       canComment: permissions.has('comment'),
       labels: page.labels,
       watch: await watchState(this.database.db, principal.userId, page.id),
+      restrictions: await this.restrictionFlags(page.id),
     };
+  }
+
+  // ---------------------------------------------------------------- restrictions (TL-14, E-95)
+
+  /** Whether the page has view or edit lists, and whether a page above limits viewing. */
+  private async restrictionFlags(pageId: string) {
+    const own = await this.database.db
+      .selectDistinct({ kind: pageRestrictions.kind })
+      .from(pageRestrictions)
+      .where(eq(pageRestrictions.pageId, pageId));
+    return {
+      view: own.some((row) => row.kind === 'view'),
+      edit: own.some((row) => row.kind === 'edit'),
+      inherited: (await this.restrictedAncestors(pageId)).length > 0,
+    };
+  }
+
+  /** Pages above this one with a view list. */
+  private async restrictedAncestors(pageId: string): Promise<PageRef[]> {
+    const ancestors = await this.ancestors(pageId);
+    if (ancestors.length === 0) return [];
+    const restricted = await this.database.db
+      .selectDistinct({ pageId: pageRestrictions.pageId })
+      .from(pageRestrictions)
+      .where(
+        and(
+          inArray(
+            pageRestrictions.pageId,
+            ancestors.map((ancestor) => ancestor.id),
+          ),
+          eq(pageRestrictions.kind, 'view'),
+        ),
+      );
+    const ids = new Set(restricted.map((row) => row.pageId));
+    return ancestors.filter((ancestor) => ids.has(ancestor.id));
+  }
+
+  async restrictions(principal: Principal, id: string): Promise<PageRestrictions> {
+    const { page } = await this.authorize(principal, id, 'view');
+    return this.presentRestrictions(page.id);
+  }
+
+  private async presentRestrictions(pageId: string): Promise<PageRestrictions> {
+    const rows = await this.database.db
+      .select({
+        kind: pageRestrictions.kind,
+        userId: users.id,
+        userName: users.displayName,
+        groupId: groups.id,
+        groupName: groups.name,
+      })
+      .from(pageRestrictions)
+      .leftJoin(users, eq(users.id, pageRestrictions.userId))
+      .leftJoin(groups, eq(groups.id, pageRestrictions.groupId))
+      .where(eq(pageRestrictions.pageId, pageId));
+    const list = (kind: 'view' | 'edit') => ({
+      users: rows.flatMap((row) =>
+        row.kind === kind && row.userId
+          ? [{ id: row.userId, displayName: row.userName ?? '' }]
+          : [],
+      ),
+      groups: rows.flatMap((row) =>
+        row.kind === kind && row.groupId ? [{ id: row.groupId, name: row.groupName ?? '' }] : [],
+      ),
+    });
+    return {
+      view: list('view'),
+      edit: list('edit'),
+      inheritedFrom: await this.restrictedAncestors(pageId),
+    };
+  }
+
+  /**
+   * Replaces the page's lists; needs edit on the page. Whoever sets a non-empty list stays in
+   * it, so nobody locks themselves out (E-95).
+   */
+  async setRestrictions(
+    principal: Principal,
+    id: string,
+    request: SetPageRestrictionsRequest,
+  ): Promise<PageRestrictions> {
+    const { page } = await this.authorize(principal, id, 'edit');
+    const withSelf = (input: SetPageRestrictionsRequest['view']) => {
+      const userIds = new Set(input.userIds);
+      if (userIds.size > 0 || input.groupIds.length > 0) userIds.add(principal.userId);
+      return { userIds: [...userIds], groupIds: [...new Set(input.groupIds)] };
+    };
+    const lists = { view: withSelf(request.view), edit: withSelf(request.edit) };
+    const userIds = [...new Set([...lists.view.userIds, ...lists.edit.userIds])];
+    const groupIds = [...new Set([...lists.view.groupIds, ...lists.edit.groupIds])];
+    if (userIds.length > 0) {
+      const found = await this.database.db
+        .select({ id: users.id })
+        .from(users)
+        .where(inArray(users.id, userIds));
+      if (found.length !== userIds.length) throw new BadRequestException('Unknown user');
+    }
+    if (groupIds.length > 0) {
+      const found = await this.database.db
+        .select({ id: groups.id })
+        .from(groups)
+        .where(inArray(groups.id, groupIds));
+      if (found.length !== groupIds.length) throw new BadRequestException('Unknown group');
+    }
+    await this.database.db.transaction(async (tx) => {
+      await tx.delete(pageRestrictions).where(eq(pageRestrictions.pageId, page.id));
+      const values = (['view', 'edit'] as const).flatMap((kind) => [
+        ...lists[kind].userIds.map((userId) => ({ id: uuidv7(), pageId: page.id, kind, userId })),
+        ...lists[kind].groupIds.map((groupId) => ({
+          id: uuidv7(),
+          pageId: page.id,
+          kind,
+          groupId,
+        })),
+      ]);
+      if (values.length > 0) await tx.insert(pageRestrictions).values(values);
+    });
+    return this.presentRestrictions(page.id);
+  }
+
+  /** Restricted pages of a space, for its administrators even where they cannot see them. */
+  async restrictedPages(principal: Principal, spaceKey: string): Promise<RestrictedPage[]> {
+    const { space } = await this.spaces.find(principal, spaceKey);
+    await this.spaceAccess.require(principal, space.id, 'administer');
+    const rows = await this.database.db
+      .selectDistinct({ id: pages.id, title: pages.title, kind: pageRestrictions.kind })
+      .from(pageRestrictions)
+      .innerJoin(pages, eq(pages.id, pageRestrictions.pageId))
+      .where(and(eq(pages.spaceId, space.id), isNull(pages.deletedAt)));
+    const byPage = new Map<string, RestrictedPage>();
+    for (const row of rows) {
+      const entry = byPage.get(row.id) ?? {
+        id: row.id,
+        title: row.title,
+        view: false,
+        edit: false,
+      };
+      entry[row.kind] = true;
+      byPage.set(row.id, entry);
+    }
+    return [...byPage.values()].sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  /** Lifts all restrictions of a page; for space administrators, who may not see it. */
+  async clearRestrictions(principal: Principal, spaceKey: string, id: string): Promise<void> {
+    const { space } = await this.spaces.find(principal, spaceKey);
+    await this.spaceAccess.require(principal, space.id, 'administer');
+    const [page] = await this.database.db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, id), eq(pages.spaceId, space.id)));
+    if (!page) throw new NotFoundException('Page not found');
+    await this.database.db.delete(pageRestrictions).where(eq(pageRestrictions.pageId, page.id));
   }
 
   /**
@@ -499,6 +691,7 @@ export class PageService {
             ? sql`${pages.labels} @> array[${filter.label.toLowerCase()}]::text[]`
             : sql`cardinality(${pages.labels}) > 0`,
           await this.spaceAccess.viewableCondition(principal.userId),
+          pageVisible(principal.userId),
         ),
       )
       .orderBy(asc(pages.title));

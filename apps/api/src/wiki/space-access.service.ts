@@ -18,6 +18,7 @@ import {
   spaces,
   users,
 } from '../db/schema/index.js';
+import { passesEditList, seesPage } from './page-restrictions.js';
 
 /** What each space role may do (W-SPC-03, E-59). */
 const ROLE_PERMISSIONS: Record<SpaceRole, readonly SpacePermission[]> = {
@@ -116,7 +117,10 @@ export class SpaceAccessService {
       .innerJoin(spaces, eq(spaces.id, pages.spaceId))
       .where(and(eq(pages.id, pageId), isNull(pages.deletedAt), isNull(spaces.archivedAt)));
     if (!page) return false;
-    return (await this.permissions(userId, page.spaceId)).has('edit');
+    if (!(await this.permissions(userId, page.spaceId)).has('edit')) return false;
+    // Page restrictions apply to live editing too (TL-14, E-95).
+    const db = this.database.db;
+    return (await seesPage(db, userId, pageId)) && passesEditList(db, userId, pageId);
   }
 
   /**

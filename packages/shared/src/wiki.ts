@@ -165,6 +165,8 @@ export const Page = z
     /** Free-text labels, lower case (W-PAG-08, E-65). */
     labels: z.array(z.string()),
     watch: PageWatchState,
+    /** Restrictions on this page, and whether a page above limits who sees it (E-95). */
+    restrictions: z.object({ view: z.boolean(), edit: z.boolean(), inherited: z.boolean() }),
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;
@@ -395,3 +397,38 @@ export const IssuePageRef = z
   })
   .meta({ id: 'IssuePageRef' });
 export type IssuePageRef = z.infer<typeof IssuePageRef>;
+
+// ---------------------------------------------------------------- restrictions (TL-14, E-95)
+
+const RestrictionList = z.object({
+  users: z.array(UserRef),
+  groups: z.array(z.object({ id: Id, name: z.string() })),
+});
+
+/** Who may see and edit a page; empty lists mean the space permissions alone decide. */
+export const PageRestrictions = z
+  .object({
+    view: RestrictionList,
+    edit: RestrictionList,
+    /** Pages above that limit who sees this one too. */
+    inheritedFrom: z.array(PageRef),
+  })
+  .meta({ id: 'PageRestrictions' });
+export type PageRestrictions = z.infer<typeof PageRestrictions>;
+
+const RestrictionInput = z.object({
+  userIds: z.array(Id).max(100).default([]),
+  groupIds: z.array(Id).max(100).default([]),
+});
+
+/** Replaces both lists; whoever sets them stays in every non-empty list. */
+export const SetPageRestrictionsRequest = z
+  .object({ view: RestrictionInput, edit: RestrictionInput })
+  .meta({ id: 'SetPageRestrictionsRequest' });
+export type SetPageRestrictionsRequest = z.infer<typeof SetPageRestrictionsRequest>;
+
+/** A restricted page of a space, for its administrators (who may not see it otherwise). */
+export const RestrictedPage = z
+  .object({ id: Id, title: z.string(), view: z.boolean(), edit: z.boolean() })
+  .meta({ id: 'RestrictedPage' });
+export type RestrictedPage = z.infer<typeof RestrictedPage>;

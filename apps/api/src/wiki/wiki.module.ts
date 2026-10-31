@@ -9,7 +9,7 @@ import { PageAttachmentService } from './page-attachment.service.js';
 import { PageAttachmentsController } from './page-attachments.controller.js';
 import { PageCommentService } from './page-comment.service.js';
 import { PageCommentsController } from './page-comments.controller.js';
-import { PagesController } from './pages.controller.js';
+import { PagesController, RestrictedPagesController } from './pages.controller.js';
 import { ProjectSpacesController } from './project-spaces.controller.js';
 import { SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
@@ -22,6 +22,7 @@ import { TemplatesController } from './templates.controller.js';
   controllers: [
     TemplatesController,
     IssuePagesController,
+    RestrictedPagesController,
     SpacesController,
     PagesController,
     PageAttachmentsController,

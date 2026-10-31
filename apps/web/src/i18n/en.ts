@@ -1025,6 +1025,28 @@ export const en: Messages = {
     level: 'Security',
     noLevel: 'No level',
   },
+  restrictions: {
+    title: 'Page restrictions',
+    intro: 'Who may view and edit this page, on top of the space permissions.',
+    menu: 'Restrictions …',
+    badge: 'This page is restricted',
+    view: 'View',
+    viewHelp: 'Also applies to every page below. Empty: everyone who sees the space.',
+    edit: 'Edit',
+    editHelp: 'Applies to this page only. Empty: everyone who may edit in the space.',
+    open: 'No restriction',
+    group: 'Group {{name}}',
+    remove: 'Remove {{name}}',
+    addPerson: 'Find a person …',
+    addGroup: 'Add a group …',
+    inherited: 'Also restricted by: {{pages}}',
+    self: 'Whoever sets a list stays on it, so nobody locks themselves out.',
+    spaceTitle: 'Restricted pages',
+    spaceHelp:
+      'Administrators see restricted pages only when listed, but can lift the restriction here.',
+    none: 'No page is restricted.',
+    lift: 'Lift',
+  },
   notificationSchemes: {
     title: 'Notification schemes',
     intro:

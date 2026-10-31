@@ -27,6 +27,7 @@ import {
 import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { pageVisible } from '../wiki/page-restrictions.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
 
 /** Marks around hits in ts_headline output; control characters never occur in page text. */
@@ -126,6 +127,7 @@ export class EverythingService {
     const pageWhere = and(
       inArray(pages.spaceId, spaceIds),
       isNull(pages.deletedAt),
+      pageVisible(principal.userId),
       gt(pages.version, 0),
       or(
         pageDirect,

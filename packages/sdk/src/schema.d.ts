@@ -1358,6 +1358,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}/restrictions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Who may see and edit the page (TL-14) */
+    get: operations['Pages.restrictions'];
+    /**
+     * Limit who may see and edit the page
+     * @description Replaces both lists; empty lists lift the restriction. View lists also cover every page below, edit lists only this page. Needs edit on the page; whoever sets a list stays in it (E-95).
+     */
+    put: operations['Pages.setRestrictions'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/watch': {
     parameters: {
       query?: never;
@@ -1999,6 +2020,46 @@ export interface paths {
     /** Create the first administrator with the setup code and sign in */
     post: operations['Setup.complete'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/restricted-pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the restricted pages of a space
+     * @description Needs the space permission `administer`; lists pages even where the administrator cannot see them.
+     */
+    get: operations['Spaces.restrictedPages'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/restricted-pages/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Lift all restrictions of a page
+     * @description Needs the space permission `administer`, not access to the page itself.
+     */
+    delete: operations['Spaces.liftRestrictions'];
     options?: never;
     head?: never;
     patch?: never;
@@ -3882,6 +3943,11 @@ export interface components {
       canComment: boolean;
       labels: string[];
       watch: components['schemas']['PageWatchState'];
+      restrictions: {
+        view: boolean;
+        edit: boolean;
+        inherited: boolean;
+      };
     };
     PageRef: {
       /** Format: uuid */
@@ -3927,6 +3993,39 @@ export interface components {
     };
     SetPageLabelsRequest: {
       labels: string[];
+    };
+    PageRestrictions: {
+      view: {
+        users: components['schemas']['UserRef'][];
+        groups: {
+          /** Format: uuid */
+          id: string;
+          name: string;
+        }[];
+      };
+      edit: {
+        users: components['schemas']['UserRef'][];
+        groups: {
+          /** Format: uuid */
+          id: string;
+          name: string;
+        }[];
+      };
+      inheritedFrom: components['schemas']['PageRef'][];
+    };
+    SetPageRestrictionsRequest: {
+      view: {
+        /** @default [] */
+        userIds?: string[];
+        /** @default [] */
+        groupIds?: string[];
+      };
+      edit: {
+        /** @default [] */
+        userIds?: string[];
+        /** @default [] */
+        groupIds?: string[];
+      };
     };
     WatchPageRequest: {
       /**
@@ -4485,6 +4584,13 @@ export interface components {
         displayName: string;
         password: string;
       };
+    };
+    RestrictedPage: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      view: boolean;
+      edit: boolean;
     };
     SpaceSummary: {
       /** Format: uuid */
@@ -8255,6 +8361,72 @@ export interface operations {
       };
     };
   };
+  'Pages.restrictions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageRestrictions'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.setRestrictions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetPageRestrictionsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageRestrictions'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Pages.watch': {
     parameters: {
       query?: never;
@@ -9640,6 +9812,67 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Me'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.restrictedPages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestrictedPage'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.liftRestrictions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
