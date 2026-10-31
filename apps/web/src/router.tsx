@@ -21,6 +21,7 @@ import {
   NotificationSchemeEditor,
   NotificationSchemesPage,
 } from './features/admin/NotificationSchemes';
+import { OperationsPage } from './features/admin/OperationsPage';
 import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
 import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/SecuritySchemes';
 import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
@@ -53,6 +54,7 @@ import { EverythingPage } from './features/search/EverythingPage';
 import { IssuePrintPage } from './features/search/IssueExport';
 import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
+import { MaintenanceScreen } from './features/shell/Announcement';
 import { AppShell } from './features/shell/AppShell';
 import { TimesheetPage } from './features/time/TimesheetPage';
 import { TimelinePage } from './features/timeline/TimelinePage';
@@ -71,6 +73,7 @@ import { TrashPage } from './features/wiki/TrashPage';
 import { TemplateEditorPage, TemplateList } from './features/wiki/templates';
 import { WikiPage } from './features/wiki/WikiPage';
 import { applyLocale } from './i18n';
+import { ApiError } from './lib/api';
 import { meQuery, setupStatusQuery } from './lib/queries';
 import type { EverythingType } from './lib/search';
 
@@ -228,12 +231,22 @@ const printRoute = createRoute({
   },
 });
 
+/** While maintenance mode keeps people out (TL-40, E-121). */
+const maintenanceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/maintenance',
+  component: MaintenanceScreen,
+});
+
 /** Everything below requires a signed-in user. */
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
   beforeLoad: async ({ context, location }) => {
-    const me = await context.queryClient.ensureQueryData(meQuery);
+    const me = await context.queryClient.ensureQueryData(meQuery).catch((error: unknown) => {
+      if (error instanceof ApiError && error.status === 503) throw redirect({ to: '/maintenance' });
+      throw error;
+    });
     if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
     if (me.twoFactor.pending) {
       throw redirect({ to: '/two-factor', search: { redirect: location.href } });
@@ -780,10 +793,16 @@ const directoriesRoute = createRoute({
   component: DirectoriesPage,
 });
 
-const maintenanceRoute = createRoute({
+const maintenancePageRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/maintenance',
   component: MaintenancePage,
+});
+
+const operationsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/operations',
+  component: OperationsPage,
 });
 
 const importRoute = createRoute({
@@ -876,6 +895,7 @@ const webhookRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   setupRoute,
+  maintenanceRoute,
   twoFactorRoute,
   loginRoute,
   welcomeRoute,
@@ -931,7 +951,8 @@ const routeTree = rootRoute.addChildren([
       embedHostsRoute,
       gitConnectionsRoute,
       importRoute,
-      maintenanceRoute,
+      maintenancePageRoute,
+      operationsRoute,
       directoriesRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,

@@ -31,6 +31,7 @@ import type { Principal } from '../core/http/principal.js';
 import { CONFIG, DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { systemSettings, users } from '../db/schema/index.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { PageService } from './page.service.js';
 import { SpaceService } from './space.service.js';
 
@@ -41,6 +42,7 @@ const escapeXml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Blog, page status, personal spaces and feeds (TL-29, E-110). */
+@RequireModule('wiki')
 @Controller()
 export class BlogController {
   constructor(

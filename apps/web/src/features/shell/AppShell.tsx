@@ -6,6 +6,7 @@ import { client } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
 import { CurrentProjectProvider, ShortcutListener } from '../../lib/shortcuts';
+import { Announcement } from './Announcement';
 import { CommandPalette } from './CommandPalette';
 import { GlobalShortcuts } from './Shortcuts';
 import { Sidebar } from './Sidebar';
@@ -47,6 +48,7 @@ export function AppShell({ me: signedIn }: { me: Me }) {
       <div className="flex min-h-screen flex-wrap">
         <Sidebar me={me} onSearch={() => setPaletteOpen(true)} onSignOut={signOut} />
         <div className="min-w-0 flex-[999_1_560px]">
+          <Announcement />
           <Outlet />
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />

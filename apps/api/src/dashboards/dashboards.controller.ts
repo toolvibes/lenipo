@@ -40,6 +40,7 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { AnalysisService } from './analysis.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { StatisticsService } from './statistics.service.js';
@@ -47,6 +48,7 @@ import { StatisticsService } from './statistics.service.js';
 /** Unknown and malformed ids are both "not found". */
 const Uuid = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
+@RequireModule('dashboards')
 @Controller()
 export class DashboardsController {
   constructor(

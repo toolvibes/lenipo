@@ -94,6 +94,8 @@ Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL
 
 Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Daten und Anhängen im Dateispeicher ab (die letzten drei bleiben), von Hand oder per Cronjob mit `tl admin backup create` und `tl admin backup download <id>`. Wiederhergestellt wird in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das Backup hochladen.
 
+Betrieb (E-121): Administration → Betrieb schaltet Module ab, setzt den Wartungsmodus und einen Ankündigungsbanner und begrenzt Anfragen je Person, Token und IP. Mit `REDIS_URL` (Valkey) gelten die Grenzen über alle Instanzen; `RATE_LIMITS=false` schaltet sie ab, wenn ein Gateway davor schon begrenzt.
+
 ### Aufbau
 
 ```

@@ -20,6 +20,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { UserService } from '../identity/user.service.js';
+import { OperationsService } from '../operations/operations.service.js';
 import { EverythingService } from '../search/everything.service.js';
 import { SearchService } from '../search/search.service.js';
 import { ComponentService } from '../tracking/component.service.js';
@@ -62,6 +63,7 @@ export class McpController {
     @Inject(DraftService) drafts: DraftService,
     @Inject(PageCommentService) pageComments: PageCommentService,
     @Inject(EverythingService) everything: EverythingService,
+    @Inject(OperationsService) private readonly operations: OperationsService,
   ) {
     this.services = {
       database,
@@ -96,7 +98,8 @@ export class McpController {
     }
     const server = new McpServer({ name: 'tasklore', version: '1.0.0' });
     const caller: Principal = { ...principal, via: 'mcp' };
-    const handlers = registerTools(server, caller, this.services);
+    const { modules } = await this.operations.snapshot();
+    const handlers = registerTools(server, caller, this.services, modules);
     registerResources(server, caller, handlers, this.services.search);
     registerPrompts(server, handlers);
     const transport = new StreamableHTTPServerTransport({

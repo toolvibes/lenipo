@@ -3971,6 +3971,36 @@
         }
       }
     },
+    "/api/v1/instance/notice": {
+      "get": {
+        "operationId": "Instance.notice",
+        "summary": "Modules, maintenance mode and the current announcement",
+        "tags": ["Instance"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceNotice"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/invitations": {
       "post": {
         "operationId": "Invitations.invite",
@@ -7025,6 +7055,361 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OAuthSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags": {
+      "get": {
+        "operationId": "Operations.featureFlags",
+        "summary": "Modules that are on",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlags"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Operations.setFeatureFlags",
+        "summary": "Switch modules on or off",
+        "description": "A module that is off disappears from the web app, MCP and the API; its data stays.\n\nRequires the global permission `admin`.",
+        "tags": ["Operations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlags"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rate-limits": {
+      "get": {
+        "operationId": "Operations.rateLimits",
+        "summary": "Request limits",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Operations.setRateLimits",
+        "summary": "Change the request limits",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateLimitSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/maintenance-mode": {
+      "get": {
+        "operationId": "Operations.maintenance",
+        "summary": "Maintenance mode",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceMode"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Operations.setMaintenance",
+        "summary": "Switch maintenance mode",
+        "description": "While on, only administrators can sign in and use Tasklore; others see the message.\n\nRequires the global permission `admin`.",
+        "tags": ["Operations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceModeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceMode"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/announcement": {
+      "get": {
+        "operationId": "Operations.announcement",
+        "summary": "Announcement banner",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Announcement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Operations.setAnnouncement",
+        "summary": "Set the announcement banner",
+        "description": "Empty text removes it.\n\nRequires the global permission `admin`.",
+        "tags": ["Operations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Announcement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tokens": {
+      "get": {
+        "operationId": "Operations.tokens",
+        "summary": "All active API tokens with their limits",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminToken"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tokens/{id}/limits": {
+      "put": {
+        "operationId": "Operations.setTokenLimits",
+        "summary": "Set the limits of one token",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Operations"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenLimitsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenLimits"
                 }
               }
             }
@@ -20081,6 +20466,115 @@
         },
         "required": ["url", "token", "projectKeys"]
       },
+      "InstanceNotice": {
+        "type": "object",
+        "properties": {
+          "modules": {
+            "$ref": "#/components/schemas/FeatureFlags"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/MaintenanceMode"
+          },
+          "announcement": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "level": {
+                    "default": "info",
+                    "type": "string",
+                    "enum": ["info", "warning"]
+                  },
+                  "startsAt": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "endsAt": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                },
+                "required": ["text", "level", "startsAt", "endsAt", "version"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["modules", "maintenance", "announcement"],
+        "additionalProperties": false
+      },
+      "FeatureFlags": {
+        "type": "object",
+        "properties": {
+          "wiki": {
+            "default": true,
+            "type": "boolean"
+          },
+          "boards": {
+            "default": true,
+            "type": "boolean"
+          },
+          "time-tracking": {
+            "default": true,
+            "type": "boolean"
+          },
+          "automation": {
+            "default": true,
+            "type": "boolean"
+          },
+          "dashboards": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": ["wiki", "boards", "time-tracking", "automation", "dashboards"],
+        "additionalProperties": false
+      },
+      "MaintenanceMode": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "default": false,
+            "type": "boolean"
+          },
+          "message": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["enabled", "message"],
+        "additionalProperties": false
+      },
       "CreateInvitationRequest": {
         "type": "object",
         "properties": {
@@ -22484,6 +22978,304 @@
           }
         },
         "required": ["registrationOpen"]
+      },
+      "FeatureFlagsInput": {
+        "type": "object",
+        "properties": {
+          "wiki": {
+            "default": true,
+            "type": "boolean"
+          },
+          "boards": {
+            "default": true,
+            "type": "boolean"
+          },
+          "time-tracking": {
+            "default": true,
+            "type": "boolean"
+          },
+          "automation": {
+            "default": true,
+            "type": "boolean"
+          },
+          "dashboards": {
+            "default": true,
+            "type": "boolean"
+          }
+        }
+      },
+      "RateLimitSettings": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "default": 600,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "tokens": {
+            "default": 300,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "anonymous": {
+            "default": 60,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          }
+        },
+        "required": ["people", "tokens", "anonymous"],
+        "additionalProperties": false
+      },
+      "RateLimitSettingsInput": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "default": 600,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "tokens": {
+            "default": 300,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "anonymous": {
+            "default": 60,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          }
+        }
+      },
+      "MaintenanceModeInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "default": false,
+            "type": "boolean"
+          },
+          "message": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "Announcement": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "level": {
+            "default": "info",
+            "type": "string",
+            "enum": ["info", "warning"]
+          },
+          "startsAt": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "endsAt": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["text", "level", "startsAt", "endsAt"],
+        "additionalProperties": false
+      },
+      "AnnouncementInput": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "level": {
+            "default": "info",
+            "type": "string",
+            "enum": ["info", "warning"]
+          },
+          "startsAt": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "endsAt": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "AdminToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName", "email"],
+            "additionalProperties": false
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": ["string", "null"]
+          },
+          "limits": {
+            "$ref": "#/components/schemas/TokenLimits"
+          },
+          "usedToday": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "owner",
+          "scopes",
+          "expiresAt",
+          "lastUsedAt",
+          "limits",
+          "usedToday"
+        ],
+        "additionalProperties": false
+      },
+      "TokenLimits": {
+        "type": "object",
+        "properties": {
+          "perMinute": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "perDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["perMinute", "perDay"],
+        "additionalProperties": false
+      },
+      "TokenLimitsInput": {
+        "type": "object",
+        "properties": {
+          "perMinute": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "perDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["perMinute", "perDay"]
       },
       "SetPageStatusRequest": {
         "type": "object",

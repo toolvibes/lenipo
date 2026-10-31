@@ -3,14 +3,17 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { ChangePasswordRequest, LoginRequest, PasswordChanged } from '@tasklore/shared';
 import { eq } from 'drizzle-orm';
+import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
+import { OperationsService } from '../operations/operations.service.js';
 import { AttemptLimiter } from './attempt-limiter.js';
 import { DirectoryService } from './directory.service.js';
 import { PasswordService } from './password.service.js';
@@ -29,6 +32,8 @@ export class AuthService {
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
     @Inject(DirectoryService) private readonly directories: DirectoryService,
+    @Inject(OperationsService) private readonly operations: OperationsService,
+    @Inject(AccessService) private readonly access: AccessService,
   ) {}
 
   /** Checks credentials and opens a session. One message for every failure, so emails stay private. */
@@ -54,6 +59,14 @@ export class AuthService {
       throw new UnauthorizedException({
         message: 'Invalid email or password',
         type: 'urn:tasklore:problem:invalid-credentials',
+      });
+    }
+    // In maintenance mode only administrators get in (TL-40, E-121).
+    const { maintenance } = await this.operations.snapshot();
+    if (maintenance.enabled && !(await this.access.hasGlobal(user.id, 'admin'))) {
+      throw new ServiceUnavailableException({
+        message: maintenance.message || 'Tasklore is being maintained',
+        type: 'urn:tasklore:problem:maintenance',
       });
     }
     // A second factor follows the password where it is on, or must be set up first (E-100).

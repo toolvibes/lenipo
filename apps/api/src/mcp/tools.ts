@@ -6,6 +6,8 @@ import {
   CreateIssueRequest,
   CreateProjectRequest,
   CreateWorklogRequest,
+  type FeatureFlags,
+  type ModuleName,
   SearchRequest,
   TransitionRequest,
   UpdateIssueRequest,
@@ -94,11 +96,32 @@ function failure(error: unknown): CallToolResult {
  */
 export type ToolHandler = (args: Record<string, unknown>) => Promise<CallToolResult>;
 
+/** Tools that belong to a module an administrator can switch off (TL-40, E-121). */
+const MODULE_TOOLS: Partial<Record<ModuleName, string[]>> = {
+  boards: [
+    'list_boards',
+    'get_board',
+    'move_card',
+    'rank_issue',
+    'get_backlog',
+    'get_active_sprint',
+    'move_to_sprint',
+    'get_sprint_report',
+  ],
+  'time-tracking': ['log_work'],
+};
+
 export function registerTools(
   server: McpServer,
   principal: Principal,
   services: ToolServices,
+  modules?: FeatureFlags,
 ): Map<string, ToolHandler> {
+  const hidden = new Set(
+    Object.entries(MODULE_TOOLS).flatMap(([module, names]) =>
+      modules && !modules[module as ModuleName] ? names : [],
+    ),
+  );
   const { issues, search, projects, customFields } = services;
   // Resources and prompts reuse the tools, so rights and formatting are the same (TL-33).
   const handlers = new Map<string, ToolHandler>();
@@ -108,6 +131,7 @@ export function registerTools(
     config: { title: string; description: string; inputSchema: Shape; readOnly?: boolean },
     handler: (args: z.infer<z.ZodObject<Shape>>) => Promise<CallToolResult>,
   ) => {
+    if (hidden.has(name)) return;
     server.registerTool(
       name,
       {
@@ -810,6 +834,6 @@ export function registerTools(
     },
   );
 
-  registerWikiTools(tool, principal, services);
+  if (!modules || modules.wiki) registerWikiTools(tool, principal, services);
   return handlers;
 }

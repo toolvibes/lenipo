@@ -6,6 +6,7 @@ const PAGES = [
   { to: '/admin/git', label: 'git.title' },
   { to: '/admin/import', label: 'imports.title' },
   { to: '/admin/maintenance', label: 'maintenance.title' },
+  { to: '/admin/operations', label: 'operations.title' },
   { to: '/admin/permission-schemes', label: 'schemes.title' },
   { to: '/admin/notification-schemes', label: 'notificationSchemes.title' },
   { to: '/admin/security-schemes', label: 'security.title' },

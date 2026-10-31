@@ -4,12 +4,14 @@ import { Public } from '../../core/http/decorators.js';
 import { Endpoint } from '../../core/http/endpoint.js';
 import { DATABASE } from '../../core/tokens.js';
 import type { DatabaseHandle } from '../../db/client.js';
+import { SkipRateLimit } from '../../operations/operations.guard.js';
 
 const HealthStatus = z
   .object({ status: z.enum(['ok', 'error']), database: z.enum(['ok', 'unreachable']).optional() })
   .meta({ id: 'HealthStatus' });
 
 @Public()
+@SkipRateLimit()
 @Controller('health')
 export class HealthController {
   constructor(@Inject(DATABASE) private readonly database: DatabaseHandle) {}

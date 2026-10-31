@@ -40,6 +40,7 @@ import {
   users,
 } from '../db/schema/index.js';
 import { Mailer } from '../notifications/mailer.js';
+import { OperationsService } from '../operations/operations.service.js';
 import { SearchService } from '../search/search.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
@@ -158,6 +159,7 @@ export class AutomationEngine implements OnApplicationBootstrap {
     @Inject(PageService) private readonly pages: PageService,
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(Mailer) private readonly mailer: Mailer,
+    @Inject(OperationsService) private readonly operations: OperationsService,
   ) {}
 
   /** The actor exists as a deactivated account: it shows in histories but never signs in. */
@@ -229,6 +231,7 @@ export class AutomationEngine implements OnApplicationBootstrap {
 
   /** Scheduled rules whose cron matches this minute, once per minute (call every minute). */
   async tickSchedules(now = new Date()): Promise<void> {
+    if (!(await this.operations.moduleEnabled('automation'))) return;
     const minute = new Date(Math.floor(now.getTime() / 60_000) * 60_000);
     const rules = await this.database.db
       .select({ rule: automationRules, timeZone: users.timeZone })
@@ -320,6 +323,11 @@ export class AutomationEngine implements OnApplicationBootstrap {
 
   /** Takes queued runs and executes them one after another; returns how many ran. */
   async runDue(limit = 20): Promise<number> {
+    // While the module is off, rules do not run; what triggered them meanwhile is dropped (TL-40).
+    if (!(await this.operations.moduleEnabled('automation'))) {
+      await this.database.db.delete(automationQueue);
+      return 0;
+    }
     const items = await this.database.db.transaction(async (tx) => {
       const rows = await tx
         .select()

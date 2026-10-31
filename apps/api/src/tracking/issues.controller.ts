@@ -36,6 +36,7 @@ import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { CONFIG } from '../core/tokens.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { commentIn, issueIn } from './content-format.js';
 import { CustomFieldService } from './custom-field.service.js';
 import { IssueService } from './issue.service.js';
@@ -289,6 +290,7 @@ export class IssuesController {
     summary: 'List the work logged on an issue, newest first',
     response: z.array(Worklog),
   })
+  @RequireModule('time-tracking')
   @Get('issues/:key/worklogs')
   worklogList(
     @CurrentPrincipal() principal: Principal,
@@ -304,6 +306,7 @@ export class IssuesController {
       'Needs `edit-issues`. Durations like "1d 4h" use the instance’s working time (`workingTime` in /tracking/meta). The remaining estimate drops by the logged time unless `remaining` says otherwise.',
     response: Worklog,
   })
+  @RequireModule('time-tracking')
   @Post('issues/:key/worklogs')
   @HttpCode(201)
   logWork(
@@ -315,6 +318,7 @@ export class IssuesController {
   }
 
   @Endpoint({ tag: 'Issues', summary: 'Change an own worklog', response: Worklog })
+  @RequireModule('time-tracking')
   @Patch('issues/:key/worklogs/:worklogId')
   updateWorklog(
     @CurrentPrincipal() principal: Principal,
@@ -329,6 +333,7 @@ export class IssuesController {
     tag: 'Issues',
     summary: 'Delete a worklog (own, or any as project administrator)',
   })
+  @RequireModule('time-tracking')
   @Delete('issues/:key/worklogs/:worklogId')
   @HttpCode(204)
   deleteWorklog(

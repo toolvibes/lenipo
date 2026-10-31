@@ -23,11 +23,13 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { BoardService } from './board.service.js';
 
 const BoardListQuery = z.object({ project: z.string().max(10).optional() });
 type BoardListQuery = z.infer<typeof BoardListQuery>;
 
+@RequireModule('boards')
 @Controller('boards')
 export class BoardsController {
   constructor(@Inject(BoardService) private readonly boards: BoardService) {}

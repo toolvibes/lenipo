@@ -18,12 +18,14 @@ import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { disposition } from '../storage/disposition.js';
 import { PageAttachmentService } from './page-attachment.service.js';
 
 /** Unknown and malformed ids are both "not found". */
 const Uuid = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
+@RequireModule('wiki')
 @Controller()
 export class PageAttachmentsController {
   constructor(@Inject(PageAttachmentService) private readonly attachments: PageAttachmentService) {}

@@ -37,6 +37,8 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
     NODE_ENV: 'test',
     LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'fatal',
     STORAGE_LOCAL_DIR: files,
+    // Tests send many requests quickly; the limiter test turns limits back on.
+    RATE_LIMITS: 'false',
     ...env,
   });
   const database = createDatabase(config.DATABASE_URL);

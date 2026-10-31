@@ -9,6 +9,8 @@ const configSchema = z.object({
   COLLAB_PORT: z.coerce.number().int().positive().default(4001),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
+  /** Request limits per person, token and IP (TL-40); off behind a gateway that limits already. */
+  RATE_LIMITS: z.stringbool().default(true),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */
   WEB_DIST_DIR: z.string().min(1).optional(),
   /** Public address of this installation, used in log messages and links (e.g. https://tasklore.example.org). */

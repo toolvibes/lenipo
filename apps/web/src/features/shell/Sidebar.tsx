@@ -5,6 +5,7 @@ import type { Favourite, Me } from '@tasklore/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { boardsQuery } from '../../lib/boards';
+import { useModules } from '../../lib/instance';
 import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
 import { useCurrentProjectKey } from '../../lib/shortcuts';
@@ -56,11 +57,12 @@ function SectionLabel({ children }: { children: ReactNode }) {
 /** The sub-pages of the project being worked on: its issues, backlog, board and Lore. */
 function ProjectPages({ projectKey, path }: { projectKey: string; path: string }) {
   const { t } = useTranslation();
-  const boards = useQuery(boardsQuery(projectKey));
-  const spaces = useQuery(projectSpacesQuery(projectKey));
-  const board = boards.data?.[0];
-  const scrum = boards.data?.find((entry) => entry.type === 'scrum');
-  const lore = spaces.data?.[0];
+  const modules = useModules();
+  const boards = useQuery({ ...boardsQuery(projectKey), enabled: modules.boards });
+  const spaces = useQuery({ ...projectSpacesQuery(projectKey), enabled: modules.wiki });
+  const board = modules.boards ? boards.data?.[0] : undefined;
+  const scrum = modules.boards ? boards.data?.find((entry) => entry.type === 'scrum') : undefined;
+  const lore = modules.wiki ? spaces.data?.[0] : undefined;
   return (
     <div className="flex flex-col gap-px pl-[17px]">
       <NavRow
@@ -231,6 +233,7 @@ export function Sidebar({
     .sort((a, b) => Number(b.favourite) - Number(a.favourite) || a.name.localeCompare(b.name))
     .slice(0, 8);
   const isAdmin = me.globalPermissions.includes('admin');
+  const modules = useModules();
 
   return (
     <nav
@@ -306,27 +309,35 @@ export function Sidebar({
 
       <OtherFavourites path={path} />
 
-      <TimerBar />
+      {modules['time-tracking'] && <TimerBar />}
 
       <div className="mt-auto flex flex-col gap-px">
         <NavRow to="/projects" active={path === '/projects'}>
           {t('sidebar.allProjects')}
         </NavRow>
-        <NavRow to="/spaces" active={path === '/spaces'}>
-          {t('sidebar.allSpaces')}
-        </NavRow>
-        <NavRow to="/boards" active={path === '/boards'}>
-          {t('sidebar.allBoards')}
-        </NavRow>
-        <NavRow to="/dashboards" active={path === '/dashboards'}>
-          {t('dashboards.title')}
-        </NavRow>
+        {modules.wiki && (
+          <NavRow to="/spaces" active={path === '/spaces'}>
+            {t('sidebar.allSpaces')}
+          </NavRow>
+        )}
+        {modules.boards && (
+          <NavRow to="/boards" active={path === '/boards'}>
+            {t('sidebar.allBoards')}
+          </NavRow>
+        )}
+        {modules.dashboards && (
+          <NavRow to="/dashboards" active={path === '/dashboards'}>
+            {t('dashboards.title')}
+          </NavRow>
+        )}
         <NavRow to="/activity" active={path === '/activity'}>
           {t('activity.title')}
         </NavRow>
-        <NavRow to="/timesheet" search={{}} active={path === '/timesheet'}>
-          {t('timesheet.title')}
-        </NavRow>
+        {modules['time-tracking'] && (
+          <NavRow to="/timesheet" search={{}} active={path === '/timesheet'}>
+            {t('timesheet.title')}
+          </NavRow>
+        )}
         {isAdmin && (
           <NavRow to="/admin/webhooks" active={path.startsWith('/admin')}>
             {t('sidebar.settings')}

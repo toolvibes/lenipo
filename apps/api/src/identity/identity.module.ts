@@ -4,6 +4,9 @@ import { AccessService } from '../access/access.service.js';
 import { GlobalPermissionGuard } from '../access/require-global.js';
 import { SystemController } from '../admin/system.controller.js';
 import { AuditService } from '../audit/audit.service.js';
+import { InstanceController, OperationsController } from '../operations/operations.controller.js';
+import { OperationsGuard } from '../operations/operations.guard.js';
+import { OperationsService } from '../operations/operations.service.js';
 import { AdminController } from './admin.controller.js';
 import { AttemptLimiter } from './attempt-limiter.js';
 import { AuthController } from './auth.controller.js';
@@ -32,6 +35,8 @@ import { GroupsController, UsersController } from './users.controller.js';
 @Module({
   controllers: [
     SetupController,
+    InstanceController,
+    OperationsController,
     AuthController,
     MeController,
     AdminController,
@@ -60,13 +65,17 @@ import { GroupsController, UsersController } from './users.controller.js';
     TokenService,
     UserService,
     UserLifecycleService,
+    OperationsService,
     AuthGuard,
+    OperationsGuard,
     GlobalPermissionGuard,
     // Order matters: authentication runs before the permission check.
     { provide: APP_GUARD, useExisting: AuthGuard },
+    { provide: APP_GUARD, useExisting: OperationsGuard },
     { provide: APP_GUARD, useExisting: GlobalPermissionGuard },
   ],
   exports: [
+    OperationsService,
     AccessService,
     AuditService,
     SessionService,

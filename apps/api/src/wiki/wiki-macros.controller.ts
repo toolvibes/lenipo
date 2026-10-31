@@ -10,8 +10,10 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { WikiMacrosService } from './wiki-macros.service.js';
 
+@RequireModule('wiki')
 @Controller()
 export class WikiMacrosController {
   constructor(@Inject(WikiMacrosService) private readonly macros: WikiMacrosService) {}

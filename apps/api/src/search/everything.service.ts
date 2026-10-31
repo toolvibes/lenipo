@@ -24,6 +24,7 @@ import {
   spaces,
   users,
 } from '../db/schema/index.js';
+import { OperationsService } from '../operations/operations.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
@@ -71,6 +72,7 @@ export class EverythingService {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(IssueService) private readonly issueService: IssueService,
+    @Inject(OperationsService) private readonly operations: OperationsService,
   ) {}
 
   async search(principal: Principal, query: EverythingQuery): Promise<EverythingResult> {
@@ -87,10 +89,18 @@ export class EverythingService {
       .select({ id: projects.id })
       .from(projects)
       .where(and(browsable, projectFilter));
+    // Without the wiki module, no pages or spaces are found (TL-40).
+    const wiki = await this.operations.moduleEnabled('wiki');
     const spaceIds = db
       .select({ id: spaces.id })
       .from(spaces)
-      .where(and(viewable, query.project ? inArray(spaces.projectId, projectIds) : undefined));
+      .where(
+        and(
+          viewable,
+          query.project ? inArray(spaces.projectId, projectIds) : undefined,
+          wiki ? undefined : sql`false`,
+        ),
+      );
 
     const german = tsQuery('german', text);
     const english = tsQuery('english', text);

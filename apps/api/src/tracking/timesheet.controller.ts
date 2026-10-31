@@ -10,9 +10,11 @@ import {
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { TimesheetService } from './timesheet.service.js';
 
 /** The weekly timesheet and the running timer (TL-24, E-105). */
+@RequireModule('time-tracking')
 @Controller()
 export class TimesheetController {
   constructor(@Inject(TimesheetService) private readonly timesheets: TimesheetService) {}

@@ -4,9 +4,11 @@ import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { SpaceService } from './space.service.js';
 
 /** The wiki side of a project: its linked spaces (W-SPC-04, E-60). */
+@RequireModule('wiki')
 @Controller('projects')
 export class ProjectSpacesController {
   constructor(@Inject(SpaceService) private readonly spaces: SpaceService) {}

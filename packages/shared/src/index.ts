@@ -15,6 +15,7 @@ export * from './invitations.js';
 export * from './maintenance.js';
 export * from './notifications.js';
 export * from './onboarding.js';
+export * from './operations.js';
 export * from './problem.js';
 export * from './releases.js';
 export * from './reports.js';

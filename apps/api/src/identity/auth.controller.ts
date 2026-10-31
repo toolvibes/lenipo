@@ -26,6 +26,7 @@ import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, LOGGER } from '../core/tokens.js';
+import { AllowDuringMaintenance } from '../operations/operations.guard.js';
 import { AttemptLimiter } from './attempt-limiter.js';
 import { AllowPartialSession } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
@@ -103,6 +104,7 @@ export class AuthController {
 
   @Endpoint({ tag: 'Auth', summary: 'Sign out and end the current session' })
   @AllowPartialSession('second-factor', 'setup-2fa')
+  @AllowDuringMaintenance()
   @Post('logout')
   @HttpCode(204)
   async logout(

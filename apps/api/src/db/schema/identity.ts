@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  date,
   index,
   inet,
   integer,
@@ -139,6 +140,12 @@ export const personalAccessTokens = pgTable(
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     lastUsedAt: timestamp({ withTimezone: true }),
     revokedAt: timestamp({ withTimezone: true }),
+    /** Requests per minute instead of the default for tokens (TL-40, E-121). */
+    rateLimitPerMinute: integer(),
+    /** Requests per UTC day; null: no quota. */
+    dailyQuota: integer(),
+    quotaDay: date({ mode: 'string' }),
+    quotaUsed: integer().notNull().default(0),
   },
   (table) => [
     uniqueIndex('personal_access_tokens_hash_unique').on(table.tokenHash),

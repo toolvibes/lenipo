@@ -8,10 +8,12 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { pageIssueRefs, pages, spaces } from '../db/schema/index.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 
 /** "Wiki-Seiten" on an issue (W-INT-03, E-73). */
+@RequireModule('wiki')
 @Controller()
 export class IssuePagesController {
   constructor(

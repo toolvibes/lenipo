@@ -1389,6 +1389,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/instance/notice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Modules, maintenance mode and the current announcement */
+    get: operations['Instance.notice'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/invitations': {
     parameters: {
       query?: never;
@@ -2527,6 +2544,148 @@ export interface paths {
      * @description Requires the global permission `admin`.
      */
     put: operations['OAuth.setSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/feature-flags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Modules that are on
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Operations.featureFlags'];
+    /**
+     * Switch modules on or off
+     * @description A module that is off disappears from the web app, MCP and the API; its data stays.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Operations.setFeatureFlags'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/rate-limits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Request limits
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Operations.rateLimits'];
+    /**
+     * Change the request limits
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Operations.setRateLimits'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/maintenance-mode': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Maintenance mode
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Operations.maintenance'];
+    /**
+     * Switch maintenance mode
+     * @description While on, only administrators can sign in and use Tasklore; others see the message.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Operations.setMaintenance'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/announcement': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Announcement banner
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Operations.announcement'];
+    /**
+     * Set the announcement banner
+     * @description Empty text removes it.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Operations.setAnnouncement'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/tokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * All active API tokens with their limits
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Operations.tokens'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/tokens/{id}/limits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the limits of one token
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Operations.setTokenLimits'];
     post?: never;
     delete?: never;
     options?: never;
@@ -6606,6 +6765,42 @@ export interface components {
       /** @default true */
       dryRun?: boolean;
     };
+    InstanceNotice: {
+      modules: components['schemas']['FeatureFlags'];
+      maintenance: components['schemas']['MaintenanceMode'];
+      announcement: {
+        /** @default  */
+        text: string;
+        /**
+         * @default info
+         * @enum {string}
+         */
+        level: 'info' | 'warning';
+        /** @default null */
+        startsAt: string | null;
+        /** @default null */
+        endsAt: string | null;
+        version: string;
+      } | null;
+    };
+    FeatureFlags: {
+      /** @default true */
+      wiki: boolean;
+      /** @default true */
+      boards: boolean;
+      /** @default true */
+      'time-tracking': boolean;
+      /** @default true */
+      automation: boolean;
+      /** @default true */
+      dashboards: boolean;
+    };
+    MaintenanceMode: {
+      /** @default false */
+      enabled: boolean;
+      /** @default  */
+      message: string;
+    };
     CreateInvitationRequest: {
       /** Format: email */
       email: string;
@@ -7193,6 +7388,91 @@ export interface components {
     };
     OAuthSettingsInput: {
       registrationOpen: boolean;
+    };
+    FeatureFlagsInput: {
+      /** @default true */
+      wiki?: boolean;
+      /** @default true */
+      boards?: boolean;
+      /** @default true */
+      'time-tracking'?: boolean;
+      /** @default true */
+      automation?: boolean;
+      /** @default true */
+      dashboards?: boolean;
+    };
+    RateLimitSettings: {
+      /** @default 600 */
+      people: number;
+      /** @default 300 */
+      tokens: number;
+      /** @default 60 */
+      anonymous: number;
+    };
+    RateLimitSettingsInput: {
+      /** @default 600 */
+      people?: number;
+      /** @default 300 */
+      tokens?: number;
+      /** @default 60 */
+      anonymous?: number;
+    };
+    MaintenanceModeInput: {
+      /** @default false */
+      enabled?: boolean;
+      /** @default  */
+      message?: string;
+    };
+    Announcement: {
+      /** @default  */
+      text: string;
+      /**
+       * @default info
+       * @enum {string}
+       */
+      level: 'info' | 'warning';
+      /** @default null */
+      startsAt: string | null;
+      /** @default null */
+      endsAt: string | null;
+    };
+    AnnouncementInput: {
+      /** @default  */
+      text?: string;
+      /**
+       * @default info
+       * @enum {string}
+       */
+      level?: 'info' | 'warning';
+      /** @default null */
+      startsAt?: string | null;
+      /** @default null */
+      endsAt?: string | null;
+    };
+    AdminToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      owner: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+        email: string;
+      };
+      scopes: string[];
+      expiresAt: string;
+      lastUsedAt: string | null;
+      limits: components['schemas']['TokenLimits'];
+      usedToday: number;
+    };
+    TokenLimits: {
+      perMinute: number | null;
+      perDay: number | null;
+    };
+    TokenLimitsInput: {
+      perMinute: number | null;
+      perDay: number | null;
     };
     SetPageStatusRequest: {
       status: components['schemas']['PageStatus'];
@@ -11917,6 +12197,35 @@ export interface operations {
       };
     };
   };
+  'Instance.notice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InstanceNotice'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Invitations.invite': {
     parameters: {
       query?: never;
@@ -14387,6 +14696,318 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OAuthSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.featureFlags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FeatureFlags'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setFeatureFlags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FeatureFlagsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FeatureFlags'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.rateLimits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RateLimitSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setRateLimits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RateLimitSettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RateLimitSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.maintenance': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MaintenanceMode'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setMaintenance': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MaintenanceModeInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MaintenanceMode'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.announcement': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Announcement'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setAnnouncement': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AnnouncementInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Announcement'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.tokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminToken'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setTokenLimits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TokenLimitsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenLimits'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

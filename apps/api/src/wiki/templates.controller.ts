@@ -4,9 +4,11 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { TemplateService } from './template.service.js';
 
 /** Page templates and blueprints (W-TPL-01, -03, E-72). */
+@RequireModule('wiki')
 @Controller()
 export class TemplatesController {
   constructor(@Inject(TemplateService) private readonly templates: TemplateService) {}

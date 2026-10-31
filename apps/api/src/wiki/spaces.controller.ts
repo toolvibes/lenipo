@@ -28,6 +28,7 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { PageService } from './page.service.js';
 import { SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
@@ -41,6 +42,7 @@ type SpaceUsersQuery = z.infer<typeof SpaceUsersQuery>;
 /** Unknown and malformed ids are both "not found". */
 const MemberId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
+@RequireModule('wiki')
 @Controller('spaces')
 export class SpacesController {
   constructor(

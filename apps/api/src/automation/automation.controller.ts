@@ -21,11 +21,13 @@ import { z } from 'zod';
 import { CurrentPrincipal, Public, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { AutomationEngine } from './automation.engine.js';
 import { AutomationService } from './automation.service.js';
 
 const RuleId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
+@RequireModule('automation')
 @Controller('automation')
 export class AutomationController {
   constructor(

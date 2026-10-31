@@ -4,9 +4,11 @@ import { RequireGlobal } from '../access/require-global.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { WorkingTimeService } from './working-time.service.js';
 
 @RequireGlobal('admin')
+@RequireModule('time-tracking')
 @Controller('admin/time-tracking')
 export class TimeTrackingController {
   constructor(@Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService) {}

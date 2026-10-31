@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { ReportService } from './report.service.js';
 import { SprintService } from './sprint.service.js';
 
@@ -33,6 +34,7 @@ const SprintListQuery = z.object({ state: SprintState.optional() });
 type SprintListQuery = z.infer<typeof SprintListQuery>;
 
 /** Sprints and backlog of Scrum boards (T-SPR, E-55); planning needs `edit-issues`. */
+@RequireModule('boards')
 @Controller()
 export class SprintsController {
   constructor(

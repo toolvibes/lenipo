@@ -32,11 +32,13 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { RequireModule } from '../operations/operations.guard.js';
 import { PageService } from './page.service.js';
 
 /** Unknown and malformed page ids are both "not found". */
 const PageId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 
+@RequireModule('wiki')
 @Controller('pages')
 export class PagesController {
   constructor(@Inject(PageService) private readonly pages: PageService) {}
@@ -249,6 +251,7 @@ export class PagesController {
 }
 
 /** Restricted pages of a space for its administrators (TL-14, E-95). */
+@RequireModule('wiki')
 @Controller('spaces')
 export class RestrictedPagesController {
   constructor(@Inject(PageService) private readonly pages: PageService) {}
