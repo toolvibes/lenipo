@@ -54,17 +54,19 @@ export function CreateIssueDialog({
     assignToMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Required custom fields of the project, filled in right here (TL-12, E-89).
+  // Custom fields filled in right here (TL-12, E-89; TL-81, E-93).
   const [custom, setCustom] = useState<Record<string, CustomFieldInput>>({});
   const [shown, setShown] = useState<Record<string, CustomFieldValue | undefined>>({});
   const typeId = project.issueTypes.find((type) => type.key === form.issueType)?.id ?? '';
-  const requiredFields = project.customFieldSettings
-    .filter(
-      (setting) =>
-        setting.required &&
-        !setting.hidden &&
-        (setting.issueTypeIds.length === 0 || setting.issueTypeIds.includes(typeId)),
-    )
+  // Required fields, and the fields of the first tab (TL-81, E-93).
+  const applying = project.customFieldSettings.filter(
+    (setting) =>
+      !setting.hidden &&
+      (setting.issueTypeIds.length === 0 || setting.issueTypeIds.includes(typeId)),
+  );
+  const firstTab = applying.find((setting) => setting.tab)?.tab ?? null;
+  const formFields = applying
+    .filter((setting) => setting.required || (firstTab !== null && setting.tab === firstTab))
     .flatMap((setting) => {
       const field = meta.data?.customFields.find((entry) => entry.id === setting.fieldId);
       return field && !field.archived ? [{ field, setting }] : [];
@@ -231,9 +233,12 @@ export function CreateIssueDialog({
             {t('issues.assignToMe')}
           </label>
         )}
-        {requiredFields.map(({ field, setting }) => (
+        {formFields.map(({ field, setting }) => (
           <div key={field.id} className="flex flex-col gap-1">
-            <span className="tl-label text-[var(--ink-muted)]">{field.name} *</span>
+            <span className="tl-label text-[var(--ink-muted)]">
+              {field.name}
+              {setting.required && ' *'}
+            </span>
             <FieldEditor
               field={field}
               // Until changed, the project's default shows; the server applies it (TL-80).

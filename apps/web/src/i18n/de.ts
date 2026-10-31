@@ -551,6 +551,7 @@ export const de = {
     saved: 'Gespeichert.',
   },
   fields: {
+    moreTab: 'Weitere',
     cascadeHelp:
       'Unteroptionen mit Pfeil schreiben, z. B. „Deutschland > Berlin“. Fehlende obere Optionen werden ergänzt.',
     cascadeChild: '{{name}}: Unteroption',
@@ -608,6 +609,8 @@ export const de = {
       hidden: 'Versteckt',
       help: 'Hilfetext für {{name}}',
       helpPlaceholder: 'Hilfetext (optional)',
+      tab: 'Tab für {{name}}',
+      tabPlaceholder: 'Tab (optional)',
       context: 'Kontext',
       contextSet: 'eingeschränkt',
       types: 'Nur für diese Vorgangstypen (keiner gewählt: alle)',

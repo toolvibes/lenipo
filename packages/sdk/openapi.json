@@ -13527,6 +13527,18 @@
               }
             ]
           },
+          "tab": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "fieldId": {
             "type": "string",
             "format": "uuid",
@@ -13540,6 +13552,7 @@
           "issueTypeIds",
           "optionIds",
           "defaultValue",
+          "tab",
           "fieldId"
         ],
         "additionalProperties": false
@@ -14088,6 +14101,18 @@
                   "minLength": 1,
                   "maxLength": 64
                 }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tab": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
               },
               {
                 "type": "null"

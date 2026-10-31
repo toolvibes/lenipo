@@ -309,6 +309,13 @@
       "when": 1793420937283,
       "tag": "0043_cascade_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793421072119,
+      "tag": "0044_field_tabs",
+      "breakpoints": true
     }
   ]
 }

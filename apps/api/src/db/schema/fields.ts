@@ -93,6 +93,8 @@ export const projectCustomFields = pgTable(
     optionIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
     /** Set on create when no value is given (a CustomFieldInput). */
     defaultValue: jsonb(),
+    /** The tab the field shows on (TL-81, E-93); null: "Weitere" once there are tabs. */
+    tab: text(),
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.fieldId] }),

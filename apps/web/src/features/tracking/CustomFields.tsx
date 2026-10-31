@@ -486,15 +486,20 @@ export function CustomFieldRows({
   disabled: boolean;
   onChange: (fieldId: string, value: CustomFieldInput) => void;
 }) {
+  const { t } = useTranslation();
   const fields = useQuery(trackingMetaQuery).data?.customFields ?? [];
-  return fieldIds.flatMap((id) => {
+  // A field whose context leaves out this issue type is not shown (TL-80, E-91).
+  const shown = fieldIds.filter((id) => {
+    const setting = settings.find((entry) => entry.fieldId === id);
+    return !setting?.issueTypeIds.length || setting.issueTypeIds.includes(issue.issueType.id);
+  });
+  const tabs = fieldTabs(shown, settings, t('fields.moreTab'));
+  const [chosen, setChosen] = useState(0);
+  const active = tabs[Math.min(chosen, tabs.length - 1)];
+  const rows = active?.fieldIds.flatMap((id) => {
     const field = fields.find((entry) => entry.id === id);
     if (!field || field.archived) return [];
     const setting = settings.find((entry) => entry.fieldId === id);
-    // A field whose context leaves out this issue type is not shown (TL-80, E-91).
-    if (setting?.issueTypeIds.length && !setting.issueTypeIds.includes(issue.issueType.id)) {
-      return [];
-    }
     return [
       <div key={id} className="contents">
         <dt
@@ -517,4 +522,46 @@ export function CustomFieldRows({
       </div>,
     ];
   });
+  if (tabs.length < 2) return rows;
+  return (
+    <>
+      <div role="tablist" className="col-span-2 mt-2 flex gap-1 border-b border-[var(--border)]">
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.name}
+            type="button"
+            role="tab"
+            aria-selected={tab === active}
+            onClick={() => setChosen(index)}
+            className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-2 py-1 text-[13px] text-[var(--ink-muted)] aria-selected:border-[var(--accent)] aria-selected:font-medium aria-selected:text-[var(--ink)]"
+          >
+            {tab.name}
+          </button>
+        ))}
+      </div>
+      {rows}
+    </>
+  );
+}
+
+/**
+ * The project's fields grouped into tabs (TL-81, E-93): tabs in the order of their first field,
+ * fields without a tab last under `more`. Without any tabs, one group with no name.
+ */
+export function fieldTabs(
+  fieldIds: string[],
+  settings: ProjectFieldConfig[],
+  more: string,
+): Array<{ name: string; fieldIds: string[] }> {
+  const tabOf = (id: string) => settings.find((entry) => entry.fieldId === id)?.tab || null;
+  if (!fieldIds.some((id) => tabOf(id))) return [{ name: '', fieldIds }];
+  const tabs: Array<{ name: string; fieldIds: string[] }> = [];
+  for (const id of fieldIds) {
+    const name = tabOf(id) ?? more;
+    const tab = tabs.find((entry) => entry.name === name);
+    if (tab) tab.fieldIds.push(id);
+    else tabs.push({ name, fieldIds: [id] });
+  }
+  // "Weitere" comes last, whatever the order.
+  return tabs.sort((a, b) => Number(a.name === more) - Number(b.name === more));
 }

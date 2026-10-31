@@ -4012,6 +4012,8 @@ export interface components {
       optionIds: string[];
       /** @default null */
       defaultValue: string | number | boolean | string[] | string[] | null;
+      /** @default null */
+      tab: string | null;
       /** Format: uuid */
       fieldId: string;
     };
@@ -4133,6 +4135,8 @@ export interface components {
       optionIds?: string[];
       /** @default null */
       defaultValue?: string | number | boolean | string[] | string[] | null;
+      /** @default null */
+      tab?: string | null;
     };
     Velocity: {
       /** @enum {string} */

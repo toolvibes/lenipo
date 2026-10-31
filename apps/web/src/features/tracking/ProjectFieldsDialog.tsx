@@ -17,6 +17,7 @@ const PLAIN: ProjectFieldSetting = {
   issueTypeIds: [],
   optionIds: [],
   defaultValue: null,
+  tab: null,
 };
 const toggled = (list: string[], id: string) =>
   list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id];
@@ -91,6 +92,13 @@ export function ProjectFieldsDialog({
         ) : (
           <fieldset className="m-0 flex flex-col gap-0.5 border-0 p-0">
             <legend className="sr-only">{t('fields.project.title')}</legend>
+            <datalist id="project-field-tabs">
+              {[...new Set(Object.values(settings).flatMap((entry) => entry.tab ?? []))].map(
+                (tab) => (
+                  <option key={tab} value={tab} />
+                ),
+              )}
+            </datalist>
             {fields.map((field) => {
               const setting = settings[field.id] ?? PLAIN;
               return (
@@ -139,6 +147,15 @@ export function ProjectFieldsDialog({
                           change(field.id, { description: event.target.value || null })
                         }
                         className="h-7 min-w-0 flex-1 rounded-[var(--radius-sm)] border border-[var(--border-control)] bg-[var(--surface-1)] px-2 text-[12.5px] text-[var(--ink)]"
+                      />
+                      <input
+                        aria-label={t('fields.project.tab', { name: field.name })}
+                        placeholder={t('fields.project.tabPlaceholder')}
+                        list="project-field-tabs"
+                        value={setting.tab ?? ''}
+                        maxLength={40}
+                        onChange={(event) => change(field.id, { tab: event.target.value || null })}
+                        className="h-7 w-32 rounded-[var(--radius-sm)] border border-[var(--border-control)] bg-[var(--surface-1)] px-2 text-[12.5px] text-[var(--ink)]"
                       />
                       <details className="w-full">
                         <summary className="cursor-pointer text-[var(--ink-muted)]">

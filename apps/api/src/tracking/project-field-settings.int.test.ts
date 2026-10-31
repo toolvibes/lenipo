@@ -53,7 +53,7 @@ describe('field configuration per project (TL-12)', () => {
     const project = await admin.request<ProjectDetails>('PUT', '/projects/WEB/custom-fields', {
       fieldIds: [kunde.id, intern.id],
       settings: {
-        [kunde.id]: { required: true, description: 'Für wen ist das?' },
+        [kunde.id]: { required: true, description: 'Für wen ist das?', tab: 'Vertrieb' },
         [intern.id]: { hidden: true },
       },
     });
@@ -61,8 +61,14 @@ describe('field configuration per project (TL-12)', () => {
     // Forms show only the visible fields; the settings list all of them.
     expect(project.body.customFieldIds).toEqual([kunde.id]);
     expect(project.body.customFieldSettings).toMatchObject([
-      { fieldId: kunde.id, required: true, hidden: false, description: 'Für wen ist das?' },
-      { fieldId: intern.id, required: false, hidden: true, description: null },
+      {
+        fieldId: kunde.id,
+        required: true,
+        hidden: false,
+        description: 'Für wen ist das?',
+        tab: 'Vertrieb',
+      },
+      { fieldId: intern.id, required: false, hidden: true, description: null, tab: null },
     ]);
   });
 

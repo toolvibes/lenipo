@@ -267,6 +267,7 @@ export class CustomFieldService {
         issueTypeIds: projectCustomFields.issueTypeIds,
         optionIds: projectCustomFields.optionIds,
         defaultValue: projectCustomFields.defaultValue,
+        tab: projectCustomFields.tab,
       })
       .from(projectCustomFields)
       .innerJoin(customFields, eq(customFields.id, projectCustomFields.fieldId))
@@ -377,6 +378,7 @@ export class CustomFieldService {
             issueTypeIds: [...new Set(settings[fieldId]?.issueTypeIds ?? [])],
             optionIds: [...new Set(settings[fieldId]?.optionIds ?? [])],
             defaultValue: settings[fieldId]?.defaultValue ?? null,
+            tab: settings[fieldId]?.tab || null,
           })),
         );
       }

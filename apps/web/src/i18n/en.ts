@@ -538,6 +538,7 @@ export const en: Messages = {
     saved: 'Saved.',
   },
   fields: {
+    moreTab: 'More',
     cascadeHelp:
       'Write sub-options with an arrow, e.g. “Germany > Berlin”. Missing top options are added.',
     cascadeChild: '{{name}}: sub-option',
@@ -594,6 +595,8 @@ export const en: Messages = {
       hidden: 'Hidden',
       help: 'Help text for {{name}}',
       helpPlaceholder: 'Help text (optional)',
+      tab: 'Tab for {{name}}',
+      tabPlaceholder: 'Tab (optional)',
       context: 'Context',
       contextSet: 'limited',
       types: 'Only for these issue types (none chosen: all)',

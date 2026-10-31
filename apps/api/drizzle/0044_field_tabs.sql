@@ -1,0 +1,1 @@
+ALTER TABLE "project_custom_fields" ADD COLUMN "tab" text;

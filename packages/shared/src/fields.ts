@@ -107,6 +107,11 @@ export const ProjectFieldSetting = z
     optionIds: z.array(Id).max(200).default([]),
     /** Set on create when no value is given, in the form the issue API takes. */
     defaultValue: CustomFieldInput.default(null),
+    /**
+     * The tab the field shows on (TL-81, E-93); tabs follow the order of their first field.
+     * Without a tab the field goes to "Weitere" once the project has any tabs.
+     */
+    tab: z.string().trim().max(40).nullable().default(null),
   })
   .meta({ id: 'ProjectFieldSetting' });
 export type ProjectFieldSetting = z.infer<typeof ProjectFieldSetting>;
