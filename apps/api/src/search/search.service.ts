@@ -36,6 +36,7 @@ import {
 import { UserService } from '../identity/user.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { securityVisible } from '../tracking/issue-security.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { WorkingTimeService } from '../tracking/working-time.service.js';
@@ -147,7 +148,12 @@ export class SearchService {
     if (compiler.errors.length > 0) {
       throw new QueryException(compiler.errors.sort((a, b) => a.start - b.start));
     }
-    return { ...compiled, projectIds };
+    // Issue security applies to every search, board and backlog built on TQL (TL-13, E-94).
+    return {
+      ...compiled,
+      where: and(compiled.where, securityVisible(principal.userId)),
+      projectIds,
+    };
   }
 
   async search(principal: Principal, request: SearchRequest): Promise<SearchResult> {
@@ -358,6 +364,7 @@ export class SearchService {
             and(
               inArray(issues.projectId, projectIds),
               isNull(issues.deletedAt),
+              securityVisible(principal.userId),
               prefix
                 ? or(ilike(issues.key, `${escapeLike(prefix)}%`), ilike(issues.summary, pattern))
                 : undefined,

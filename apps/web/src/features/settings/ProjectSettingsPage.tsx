@@ -23,6 +23,7 @@ import {
   permissionSchemeQuery,
   permissionSchemesQuery,
 } from '../admin/PermissionSchemes';
+import { securitySchemesQuery } from '../admin/SecuritySchemes';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
@@ -218,6 +219,77 @@ function Notifications({ projectKey }: { projectKey: string }) {
   );
 }
 
+/** The project's issue security scheme (TL-13, E-94); global administrators choose it. */
+function Security({ projectKey }: { projectKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const project = useQuery(projectQuery(projectKey));
+  const me = useQuery(meQuery);
+  const isAdmin = me.data?.globalPermissions.includes('admin') ?? false;
+  const schemes = useQuery({ ...securitySchemesQuery, enabled: isAdmin });
+  const current = project.data?.securityScheme ?? null;
+  const choose = useMutation({
+    mutationFn: (schemeId: string | null) =>
+      unwrap(
+        client.PUT('/api/v1/projects/{key}/security-scheme', {
+          params: { path: { key: projectKey } },
+          body: { schemeId },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project', projectKey] }),
+  });
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="tl-heading-md m-0">{t('security.level')}</h2>
+        <p className="m-0 text-sm text-[var(--ink-muted)]">
+          {t('security.intro')} {!isAdmin && t('security.projectHelp')}
+        </p>
+      </div>
+      {choose.error && <p className="m-0 text-[var(--danger)]">{choose.error.message}</p>}
+      {isAdmin && schemes.data ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <Select
+            label={t('security.scheme')}
+            value={current?.id ?? ''}
+            disabled={choose.isPending}
+            options={[
+              { value: '', label: t('security.none') },
+              ...schemes.data.map((entry) => ({ value: entry.id, label: entry.name })),
+            ]}
+            onChange={(event) => choose.mutate(event.target.value || null)}
+          />
+          {current && (
+            <Link
+              to="/admin/security-schemes/$id"
+              params={{ id: current.id }}
+              className="pb-2 text-[13px]"
+            >
+              {t('projectSettings.editScheme')}
+            </Link>
+          )}
+        </div>
+      ) : (
+        <p className="m-0">
+          <strong>{current?.name ?? t('security.none')}</strong>
+        </p>
+      )}
+      {project.data && project.data.securityLevels.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+          {project.data.securityLevels.map((level) => (
+            <li
+              key={level.id}
+              className="rounded-[var(--radius-sm)] bg-[var(--surface-2)] px-2 py-0.5 text-[13px]"
+            >
+              {level.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /** Project settings with a sub-navigation (1a S11): the workflow editor, other parts as dialogs. */
 export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const { t } = useTranslation();
@@ -226,9 +298,9 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const workflow = useQuery(projectWorkflowQuery(projectKey, workflowType));
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [view, setView] = useState<'workflow' | 'members' | 'permissions' | 'notifications'>(
-    'workflow',
-  );
+  const [view, setView] = useState<
+    'workflow' | 'members' | 'permissions' | 'notifications' | 'security'
+  >('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
   const close = (open: boolean) => !open && setDialog(null);
@@ -285,6 +357,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('projectSettings.notifications')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'security' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('security')}
+              >
+                {t('security.level')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -306,6 +386,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'members' && administer && <Members projectKey={projectKey} />}
           {view === 'permissions' && administer && <Permissions projectKey={projectKey} />}
           {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
+          {view === 'security' && administer && <Security projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

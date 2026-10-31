@@ -125,6 +125,10 @@ export const projects = pgTable(
     notificationSchemeId: uuid().references((): AnyPgColumn => notificationSchemes.id, {
       onDelete: 'set null',
     }),
+    /** Issue security (TL-13, E-94); null: no levels, every issue as browse allows. */
+    securitySchemeId: uuid().references((): AnyPgColumn => securitySchemes.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
   },
@@ -294,6 +298,57 @@ export const notificationSchemeRules = pgTable(
   ],
 );
 
+/** Issue security schemes (TL-13, E-94): levels that limit who sees an issue. */
+export const securitySchemes = pgTable(
+  'security_schemes',
+  {
+    id: uuid().primaryKey(),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('security_schemes_name_unique').on(table.name)],
+);
+
+export const securityLevels = pgTable(
+  'security_levels',
+  {
+    id: uuid().primaryKey(),
+    schemeId: uuid()
+      .notNull()
+      .references(() => securitySchemes.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    description: text().notNull().default(''),
+    position: integer().notNull(),
+    /** New issues of the scheme's projects get this level unless they choose another. */
+    isDefault: boolean().notNull().default(false),
+  },
+  (table) => [index('security_levels_scheme_idx').on(table.schemeId)],
+);
+
+export const securityLevelGrants = pgTable(
+  'security_level_grants',
+  {
+    id: uuid().primaryKey(),
+    levelId: uuid()
+      .notNull()
+      .references(() => securityLevels.id, { onDelete: 'cascade' }),
+    grantee: permissionGrantee().notNull(),
+    role: projectRole(),
+    groupId: uuid().references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    index('security_level_grants_level_idx').on(table.levelId),
+    check(
+      'security_level_grants_one_grantee',
+      sql`(grantee = 'role') = (role is not null)
+        and (grantee = 'group') = (group_id is not null)
+        and (grantee = 'user') = (user_id is not null)`,
+    ),
+  ],
+);
+
 export const permissionSchemeGrants = pgTable(
   'permission_scheme_grants',
   {
@@ -338,6 +393,10 @@ export const issues = pgTable(
       .notNull()
       .references(() => workflowVersions.id),
     resolutionId: uuid().references(() => resolutions.id),
+    /** Only people the level grants see the issue (TL-13, E-94); null: as browse allows. */
+    securityLevelId: uuid().references((): AnyPgColumn => securityLevels.id, {
+      onDelete: 'set null',
+    }),
     priorityId: uuid()
       .notNull()
       .references(() => priorities.id),

@@ -1,4 +1,4 @@
-import { ArrowsOut, Check, Eye, EyeSlash, LinkSimple, X } from '@phosphor-icons/react';
+import { ArrowsOut, Check, Eye, EyeSlash, LinkSimple, Lock, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Comment, Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
@@ -673,6 +673,34 @@ export function IssuePage({
                 </select>
               </span>
             </Field>
+            {(data.securityLevel || (project.data?.securityLevels.length ?? 0) > 0) && (
+              <Field label={t('security.level')}>
+                <span className="flex items-center gap-1 pl-1.5">
+                  {data.securityLevel && <Lock size={14} aria-hidden />}
+                  <select
+                    aria-label={t('security.level')}
+                    value={data.securityLevel?.id ?? ''}
+                    // Subtasks follow their parent (E-94).
+                    disabled={!canEdit || !permissions.has('set-issue-security') || !!data.parent}
+                    onChange={(event) =>
+                      update.mutate({ securityLevelId: event.target.value || null })
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">{t('security.noLevel')}</option>
+                    {data.securityLevel &&
+                      !project.data?.securityLevels.some(
+                        (l) => l.id === data.securityLevel?.id,
+                      ) && <option value={data.securityLevel.id}>{data.securityLevel.name}</option>}
+                    {project.data?.securityLevels.map((level) => (
+                      <option key={level.id} value={level.id}>
+                        {level.name}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </Field>
+            )}
             <Field label={t('issues.storyPoints')}>
               <InlineInput
                 type="number"

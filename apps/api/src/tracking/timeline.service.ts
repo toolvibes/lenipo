@@ -6,6 +6,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { issues, projectVersions, sprintIssues, sprints } from '../db/schema/index.js';
 import { IssueService } from './issue.service.js';
+import { securityVisible } from './issue-security.js';
 import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
 
@@ -58,6 +59,7 @@ export class TimelineService {
                 eq(issues.projectId, project.id),
                 isNull(issues.deletedAt),
                 inArray(issues.issueTypeId, epicTypes),
+                securityVisible(principal.userId),
               ),
             )
             .orderBy(asc(issues.rank), asc(issues.id));
@@ -74,6 +76,7 @@ export class TimelineService {
                   epicRows.map((row) => row.id),
                 ),
                 isNull(issues.deletedAt),
+                securityVisible(principal.userId),
               ),
             )
             .orderBy(asc(issues.rank), asc(issues.id));

@@ -16,6 +16,7 @@ import {
   NotificationSchemesPage,
 } from './features/admin/NotificationSchemes';
 import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
+import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/SecuritySchemes';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
@@ -544,6 +545,21 @@ const notificationSchemeRoute = createRoute({
   },
 });
 
+const securitySchemesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/security-schemes',
+  component: SecuritySchemesPage,
+});
+
+const securitySchemeRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/security-schemes/$id',
+  component: function SecurityScheme() {
+    const { id } = securitySchemeRoute.useParams();
+    return <SecuritySchemeEditor key={id} id={id} />;
+  },
+});
+
 const customFieldsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/custom-fields',
@@ -606,6 +622,8 @@ const routeTree = rootRoute.addChildren([
       permissionSchemeRoute,
       notificationSchemesRoute,
       notificationSchemeRoute,
+      securitySchemesRoute,
+      securitySchemeRoute,
       customFieldsRoute,
       templatesRoute,
       templateRoute,

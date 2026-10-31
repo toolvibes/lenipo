@@ -316,6 +316,13 @@
       "when": 1793421072119,
       "tag": "0044_field_tabs",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793422106977,
+      "tag": "0045_issue_security",
+      "breakpoints": true
     }
   ]
 }

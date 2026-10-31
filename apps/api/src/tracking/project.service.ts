@@ -12,7 +12,7 @@ import type {
   ProjectSummary,
   ProjectTemplate,
 } from '@tasklore/shared';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -31,6 +31,8 @@ import {
   projectRoleMembers,
   projects,
   projectTypeWorkflows,
+  securityLevels,
+  securitySchemes,
   users,
   workflowVersions,
 } from '../db/schema/index.js';
@@ -167,6 +169,7 @@ export class ProjectService {
       .where(and(eq(issues.projectId, project.id), sql`${issues.deletedAt} is null`));
     const statusIds = await this.statusIds(project);
     const fieldConfig = await this.customFields.projectFieldConfig(project.id);
+    const security = await this.projectLevels(project.id);
     const hidden = new Set(await this.hiddenIssueTypeIds(project.id));
     const [favourite] = await this.database.db
       .select({ targetId: favourites.targetId })
@@ -192,6 +195,9 @@ export class ProjectService {
       ...this.summary(project, lead?.name ?? null, issueCount?.total ?? 0, !!favourite),
       permissionScheme: scheme ?? { id: DEFAULT_PERMISSION_SCHEME_ID, name: '' },
       notificationScheme: notices ?? { id: DEFAULT_NOTIFICATION_SCHEME_ID, name: '' },
+      securityScheme: security.scheme,
+      securityLevels: security.levels,
+      securityDefaultLevelId: security.defaultLevelId,
       issueTypes: meta.issueTypes.filter((type) => !hidden.has(type.id)),
       statuses: statusIds.flatMap((statusId) => meta.status.get(statusId) ?? []),
       permissions: [...permissions].sort(),
@@ -218,6 +224,30 @@ export class ProjectService {
       .from(projectHiddenIssueTypes)
       .where(eq(projectHiddenIssueTypes.projectId, projectId));
     return rows.map((row) => row.id);
+  }
+
+  /** The levels a project's issues can take, and the default for new ones. */
+  async projectLevels(projectId: string) {
+    const [project] = await this.database.db
+      .select({ schemeId: projects.securitySchemeId, name: securitySchemes.name })
+      .from(projects)
+      .leftJoin(securitySchemes, eq(securitySchemes.id, projects.securitySchemeId))
+      .where(eq(projects.id, projectId));
+    if (!project?.schemeId) return { scheme: null, levels: [], defaultLevelId: null };
+    const levels = await this.database.db
+      .select({
+        id: securityLevels.id,
+        name: securityLevels.name,
+        isDefault: securityLevels.isDefault,
+      })
+      .from(securityLevels)
+      .where(eq(securityLevels.schemeId, project.schemeId))
+      .orderBy(asc(securityLevels.position));
+    return {
+      scheme: { id: project.schemeId, name: project.name ?? '' },
+      levels: levels.map(({ id, name }) => ({ id, name })),
+      defaultLevelId: levels.find((level) => level.isDefault)?.id ?? null,
+    };
   }
 
   /** Workflow version by issue type, for the types with a workflow of their own (TL-76). */

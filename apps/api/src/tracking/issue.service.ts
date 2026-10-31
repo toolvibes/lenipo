@@ -50,6 +50,7 @@ import {
   issueVersions,
   issueWatchers,
   projects,
+  securityLevels,
   sprintIssues,
   sprints,
   statuses,
@@ -62,6 +63,7 @@ import { ComponentService } from './component.service.js';
 import { CustomFieldService, type StoredValues } from './custom-field.service.js';
 import { durationSeconds } from './duration.js';
 import { type Change, displayText, recordChanges } from './history.js';
+import { securityVisible } from './issue-security.js';
 import { LinkService } from './link.service.js';
 import { type MetaIndex, MetaService } from './meta.service.js';
 import { type ProjectRow, ProjectService } from './project.service.js';
@@ -387,7 +389,13 @@ export class IssueService {
     const children = await db
       .select()
       .from(issues)
-      .where(and(eq(issues.parentId, issue.id), isNull(issues.deletedAt)))
+      .where(
+        and(
+          eq(issues.parentId, issue.id),
+          isNull(issues.deletedAt),
+          viewer ? securityVisible(viewer) : undefined,
+        ),
+      )
       .orderBy(asc(issues.rank));
     const watchers = await db
       .select({ userId: issueWatchers.userId })
@@ -397,8 +405,15 @@ export class IssueService {
       this.summaryContext(viewer, [issue, ...children]),
       this.links.linksFor(viewer, issue.id),
     ]);
+    const [level] = issue.securityLevelId
+      ? await db
+          .select({ id: securityLevels.id, name: securityLevels.name })
+          .from(securityLevels)
+          .where(eq(securityLevels.id, issue.securityLevelId))
+      : [];
     return {
       ...this.toSummary(issue, context),
+      securityLevel: level ?? null,
       description: (issue.description as RichText | null) ?? null,
       children: children.map((child) => this.toSummary(child, context)),
       resolvedAt: issue.resolvedAt?.toISOString() ?? null,
@@ -439,6 +454,7 @@ export class IssueService {
       const pattern = `%${escapeLike(filter.query.trim())}%`;
       conditions.push(sql`(${issues.summary} ilike ${pattern} or ${issues.key} ilike ${pattern})`);
     }
+    conditions.push(securityVisible(principal.userId));
     const where = and(...conditions);
     const [rows, [total]] = await Promise.all([
       this.database.db
@@ -554,6 +570,23 @@ export class IssueService {
     const priority = this.priorityByKey(meta, request.priority);
     if (!priority) throw new Error('No priorities configured');
     const parent = await this.resolveParent(project, type.hierarchyLevel, request.parentKey, meta);
+    // Issue security (TL-13, E-94): subtasks take their parent's level; others the chosen one
+    // (needs set-issue-security) or the scheme's default.
+    const security = await this.projectService.projectLevels(project.id);
+    let securityLevelId = security.defaultLevelId;
+    if (parent) securityLevelId = parent.securityLevelId;
+    else if (request.securityLevelId !== undefined && request.securityLevelId !== securityLevelId) {
+      if (!permissions.has('set-issue-security')) {
+        throw new ForbiddenException('Requires the project permission "set-issue-security"');
+      }
+      if (
+        request.securityLevelId &&
+        !security.levels.some((l) => l.id === request.securityLevelId)
+      ) {
+        throw new BadRequestException('Unknown security level');
+      }
+      securityLevelId = request.securityLevelId;
+    }
     if (request.assigneeId) {
       if (request.assigneeId !== principal.userId && !permissions.has('assign-issues')) {
         throw new ForbiddenException('Requires the project permission "assign-issues"');
@@ -596,6 +629,7 @@ export class IssueService {
         issueTypeId: type.id,
         statusId: workflow.initialStatusId,
         workflowVersionId,
+        securityLevelId,
         priorityId: priority.id,
         summary: request.summary,
         description: request.description,
@@ -761,6 +795,9 @@ export class IssueService {
     if (request.parentKey !== undefined) {
       const level = meta.issueType.get(patch.issueTypeId ?? issue.issueTypeId)?.hierarchyLevel ?? 0;
       const parent = await this.resolveParent(project, level, request.parentKey, meta, issue.id);
+      if (parent && parent.securityLevelId !== issue.securityLevelId) {
+        patch.securityLevelId = parent.securityLevelId;
+      }
       if ((parent?.id ?? null) !== issue.parentId) {
         const [previous] = issue.parentId
           ? await this.database.db
@@ -777,6 +814,27 @@ export class IssueService {
         );
         patch.parentId = parent?.id ?? null;
       }
+    }
+    if (
+      request.securityLevelId !== undefined &&
+      request.securityLevelId !== issue.securityLevelId
+    ) {
+      if (!permissions.has('set-issue-security')) {
+        throw new ForbiddenException('Requires the project permission "set-issue-security"');
+      }
+      if (issue.parentId) throw new BadRequestException('Subtasks follow their parent');
+      const security = await this.projectService.projectLevels(project.id);
+      const next = security.levels.find((entry) => entry.id === request.securityLevelId);
+      if (request.securityLevelId && !next) throw new BadRequestException('Unknown security level');
+      const previous = security.levels.find((entry) => entry.id === issue.securityLevelId);
+      track(
+        'security',
+        issue.securityLevelId,
+        request.securityLevelId,
+        previous?.name ?? null,
+        next?.name ?? null,
+      );
+      patch.securityLevelId = request.securityLevelId;
     }
     if (request.labels !== undefined) {
       const labels = [...new Set(request.labels)].sort();
@@ -903,6 +961,12 @@ export class IssueService {
           .set({ ...patch, updatedAt: sql`now()` })
           .where(eq(issues.id, issue.id));
         if (componentIds) await this.components.replaceOnIssue(tx, issue.id, componentIds);
+        if (patch.securityLevelId !== undefined) {
+          await tx
+            .update(issues)
+            .set({ securityLevelId: patch.securityLevelId })
+            .where(eq(issues.parentId, issue.id));
+        }
         for (const kind of ['fix', 'affects'] as const) {
           const ids = versionIds[kind];
           if (ids) await this.versions.replaceOnIssue(tx, issue.id, kind, ids);

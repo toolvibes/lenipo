@@ -54,6 +54,10 @@ export function CreateIssueDialog({
     assignToMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Issue security (TL-13, E-94): the scheme's default unless someone allowed picks another.
+  const [securityLevelId, setSecurityLevelId] = useState<string | undefined>(undefined);
+  const canSecure =
+    project.permissions.includes('set-issue-security') && project.securityLevels.length > 0;
   // Custom fields filled in right here (TL-12, E-89; TL-81, E-93).
   const [custom, setCustom] = useState<Record<string, CustomFieldInput>>({});
   const [shown, setShown] = useState<Record<string, CustomFieldValue | undefined>>({});
@@ -108,6 +112,7 @@ export function CreateIssueDialog({
       storyPoints: form.storyPoints === '' ? null : Number(form.storyPoints),
       assigneeId: form.assignToMe ? myId : null,
       components: componentIds,
+      ...(securityLevelId !== undefined ? { securityLevelId: securityLevelId || null } : {}),
       customFields: Object.fromEntries(
         Object.entries(custom).filter(([, value]) => value !== null),
       ),
@@ -222,6 +227,17 @@ export function CreateIssueDialog({
               ))}
             </div>
           </fieldset>
+        )}
+        {canSecure && (
+          <Select
+            label={t('security.level')}
+            value={securityLevelId ?? project.securityDefaultLevelId ?? ''}
+            options={[
+              { value: '', label: t('security.noLevel') },
+              ...project.securityLevels.map((level) => ({ value: level.id, label: level.name })),
+            ]}
+            onChange={(event) => setSecurityLevelId(event.target.value)}
+          />
         )}
         {canAssign && (
           <label className="flex items-center gap-2">

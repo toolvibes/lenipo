@@ -13,6 +13,7 @@ import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import { issueLinks, issues, projects } from '../db/schema/index.js';
 import { recordChanges } from './history.js';
+import { securityVisible } from './issue-security.js';
 import { MetaService } from './meta.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 
@@ -54,6 +55,7 @@ export class LinkService {
           inArray(issues.id, otherIds),
           isNull(issues.deletedAt),
           visibleProjects ? inArray(issues.projectId, visibleProjects) : undefined,
+          userId ? securityVisible(userId) : undefined,
         ),
       );
     const meta = await this.meta.load();

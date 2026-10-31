@@ -10,9 +10,11 @@ import {
   DEFAULT_PERMISSION_SCHEME_ID,
   globalPermissionGrants,
   groupMembers,
+  issues,
   projects,
   users,
 } from '../db/schema/index.js';
+import { securityVisible } from './issue-security.js';
 import type { RuleViewer } from './workflow.js';
 
 export interface Relational {
@@ -164,12 +166,31 @@ export class ProjectAccessService {
   /** Like {@link require}, but with the rights on one issue. */
   async requireForIssue(
     principal: Principal,
-    issue: { projectId: string; assigneeId: string | null; reporterId: string | null },
+    issue: {
+      id?: string;
+      projectId: string;
+      assigneeId: string | null;
+      reporterId: string | null;
+      securityLevelId?: string | null;
+    },
     permission: ProjectPermission,
   ): Promise<Set<ProjectPermission>> {
     this.checkScope(principal, permission);
+    // A level the user is not granted hides the issue like a missing one (TL-13, E-94).
+    if (issue.securityLevelId && !(await this.seesIssue(principal.userId, issue.id ?? ''))) {
+      throw new NotFoundException('Issue not found');
+    }
     const granted = await this.issuePermissions(principal.userId, issue);
     return this.checkGranted(granted, permission);
+  }
+
+  /** Whether issue security lets the user see the issue (TL-13, E-94). */
+  async seesIssue(userId: string, issueId: string): Promise<boolean> {
+    const [row] = await this.database.db
+      .select({ id: issues.id })
+      .from(issues)
+      .where(and(eq(issues.id, issueId), securityVisible(userId)));
+    return !!row;
   }
 
   /**

@@ -1007,6 +1007,24 @@ export const en: Messages = {
       'Your administrators create projects. Afterwards you see everything you are invited to.',
     taken: 'The key {{key}} is already taken.',
   },
+  security: {
+    title: 'Security schemes',
+    intro:
+      'Security levels limit who sees an issue. Without a level the project’s browse permission applies; with one, only those granted the level.',
+    levelName: 'Level name',
+    default: 'Default for new issues',
+    noDefault: 'No default',
+    sees: 'May see',
+    people: '{{count}} individual people (set through the API)',
+    addLevel: 'Add level',
+    newLevel: 'New level',
+    removeLevel: 'Remove {{name}}',
+    scheme: 'Security scheme',
+    none: 'None – all issues as browse allows',
+    projectHelp: 'Only global administration assigns security schemes.',
+    level: 'Security',
+    noLevel: 'No level',
+  },
   notificationSchemes: {
     title: 'Notification schemes',
     intro:
@@ -1051,6 +1069,7 @@ export const en: Messages = {
       'assign-issues': 'Assign',
       comment: 'Comment',
       'delete-issues': 'Delete issues',
+      'set-issue-security': 'Set issue security',
       administer: 'Administer the project',
     },
   },

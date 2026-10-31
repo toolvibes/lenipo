@@ -23,6 +23,7 @@ import {
 } from '../db/schema/index.js';
 import { FilterService } from '../search/filter.service.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { PageService } from '../wiki/page.service.js';
@@ -241,6 +242,7 @@ export class PersonalService {
                 inArray(issues.id, issueIds),
                 isNull(issues.deletedAt),
                 inArray(issues.projectId, visible),
+                securityVisible(principal.userId),
               ),
             )
         : [];

@@ -20,6 +20,8 @@ export const PROJECT_PERMISSIONS = [
   'comment',
   'delete-issues',
   'administer',
+  // TL-13, E-94: choose or change an issue's security level.
+  'set-issue-security',
 ] as const;
 export const ProjectPermission = z.enum(PROJECT_PERMISSIONS).meta({ id: 'ProjectPermission' });
 export type ProjectPermission = z.infer<typeof ProjectPermission>;
@@ -208,6 +210,83 @@ export const UpdateNotificationSchemeRequest = z
   .meta({ id: 'UpdateNotificationSchemeRequest' });
 export type UpdateNotificationSchemeRequest = z.infer<typeof UpdateNotificationSchemeRequest>;
 
+// ---------------------------------------------------------------- issue security (TL-13, E-94)
+
+/** Who sees issues of a security level: a role, a group, a person, the reporter or assignee. */
+export const SecurityGrantInput = z
+  .union([
+    z.strictObject({ role: ProjectRole }),
+    z.strictObject({ groupId: Id }),
+    z.strictObject({ userId: Id }),
+    z.strictObject({ grantee: z.enum(['assignee', 'reporter']) }),
+  ])
+  .meta({ id: 'SecurityGrantInput' });
+export type SecurityGrantInput = z.infer<typeof SecurityGrantInput>;
+
+export const SecurityGrant = z
+  .object({
+    grantee: PermissionGrantee,
+    role: ProjectRole.nullable(),
+    group: z.object({ id: Id, name: z.string() }).nullable(),
+    user: UserRef.nullable(),
+  })
+  .meta({ id: 'SecurityGrant' });
+export type SecurityGrant = z.infer<typeof SecurityGrant>;
+
+export const SecurityLevel = z
+  .object({ id: Id, name: z.string(), description: z.string(), grants: z.array(SecurityGrant) })
+  .meta({ id: 'SecurityLevel' });
+export type SecurityLevel = z.infer<typeof SecurityLevel>;
+
+export const SecuritySchemeSummary = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    projects: z.array(z.object({ key: z.string(), name: z.string() })),
+  })
+  .meta({ id: 'SecuritySchemeSummary' });
+export type SecuritySchemeSummary = z.infer<typeof SecuritySchemeSummary>;
+
+export const SecurityScheme = SecuritySchemeSummary.extend({
+  levels: z.array(SecurityLevel),
+  /** New issues get this level unless they choose another (or none). */
+  defaultLevelId: Id.nullable(),
+}).meta({ id: 'SecurityScheme' });
+export type SecurityScheme = z.infer<typeof SecurityScheme>;
+
+export const CreateSecuritySchemeRequest = z
+  .object({ name: SchemeName, description: z.string().max(500).default('') })
+  .meta({ id: 'CreateSecuritySchemeRequest' });
+export type CreateSecuritySchemeRequest = z.infer<typeof CreateSecuritySchemeRequest>;
+
+export const UpdateSecuritySchemeRequest = z
+  .object({
+    name: SchemeName,
+    description: z.string().max(500),
+    /** Replaces the levels; entries with an id keep it, so issues stay on their level. */
+    levels: z
+      .array(
+        z.object({
+          id: Id.optional(),
+          name: z.string().trim().min(1).max(60),
+          description: z.string().max(500).default(''),
+          grants: z.array(SecurityGrantInput).max(100),
+        }),
+      )
+      .max(30),
+    /** Index into `levels`, or null for no default. */
+    defaultLevel: z.number().int().min(0).nullable(),
+  })
+  .partial()
+  .meta({ id: 'UpdateSecuritySchemeRequest' });
+export type UpdateSecuritySchemeRequest = z.infer<typeof UpdateSecuritySchemeRequest>;
+
+export const SetProjectSecuritySchemeRequest = z
+  .object({ schemeId: Id.nullable() })
+  .meta({ id: 'SetProjectSecuritySchemeRequest' });
+export type SetProjectSecuritySchemeRequest = z.infer<typeof SetProjectSecuritySchemeRequest>;
+
 export const AddProjectMemberRequest = z
   .union([
     z.strictObject({ role: ProjectRole, userId: Id }),
@@ -343,6 +422,11 @@ export const ProjectDetails = ProjectSummary.extend({
   permissionScheme: z.object({ id: Id, name: z.string() }),
   /** The notification scheme the project uses (E-83). */
   notificationScheme: z.object({ id: Id, name: z.string() }),
+  /** The issue security scheme, if any (TL-13, E-94), and its levels to choose from. */
+  securityScheme: z.object({ id: Id, name: z.string() }).nullable(),
+  securityLevels: z.array(z.object({ id: Id, name: z.string() })),
+  /** The level new issues get unless another is chosen. */
+  securityDefaultLevelId: Id.nullable(),
   issueTypes: z.array(IssueTypeInfo),
   statuses: z.array(StatusInfo),
   permissions: z.array(ProjectPermission),
@@ -370,6 +454,8 @@ const VersionNames = z.array(z.string().trim().min(1).max(100)).max(20);
 export const CreateIssueRequest = z
   .object({
     projectKey: ProjectKey,
+    /** A level of the project's security scheme; left out: the scheme's default (E-94). */
+    securityLevelId: Id.nullable().optional(),
     issueType: z.string().min(1),
     summary: Summary,
     description: RichTextInput.nullable().default(null),
@@ -390,6 +476,8 @@ export type CreateIssueRequest = z.infer<typeof CreateIssueRequest>;
 
 export const UpdateIssueRequest = z
   .object({
+    /** Needs the permission `set-issue-security`; subtasks follow their parent (E-94). */
+    securityLevelId: Id.nullable(),
     summary: Summary,
     description: RichTextInput.nullable(),
     issueType: z.string().min(1),
@@ -548,6 +636,8 @@ export const UpdateComponentRequest = z
 export type UpdateComponentRequest = z.infer<typeof UpdateComponentRequest>;
 
 export const Issue = IssueSummary.extend({
+  /** Only people the level grants see the issue (TL-13, E-94). */
+  securityLevel: z.object({ id: Id, name: z.string() }).nullable(),
   description: RichTextOutput.nullable(),
   children: z.array(IssueSummary),
   resolvedAt: z.iso.datetime().nullable(),

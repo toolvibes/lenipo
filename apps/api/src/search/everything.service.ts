@@ -25,6 +25,7 @@ import {
   users,
 } from '../db/schema/index.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
 
@@ -107,6 +108,7 @@ export class EverythingService {
     const issueWhere = and(
       inArray(issues.projectId, projectIds),
       isNull(issues.deletedAt),
+      securityVisible(principal.userId),
       or(
         issueDirect,
         sql`exists (select 1 from ${issueComments} where ${issueComments.issueId} = ${issues.id} and ${issueComments.deletedAt} is null and (${issueComments.searchVector} @@ ${german} or ${issueComments.searchVector} @@ ${english}))`,

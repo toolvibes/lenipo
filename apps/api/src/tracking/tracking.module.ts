@@ -16,6 +16,8 @@ import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 import { ProjectMemberService } from './project-member.service.js';
 import { ProjectsController } from './projects.controller.js';
+import { SecuritySchemeService } from './security-scheme.service.js';
+import { SecuritySchemesController } from './security-schemes.controller.js';
 import { TimeTrackingController } from './time-tracking.controller.js';
 import { TimelineService } from './timeline.service.js';
 import { VersionService } from './version.service.js';
@@ -32,6 +34,7 @@ import { WorklogService } from './worklog.service.js';
     TimeTrackingController,
     CustomFieldsController,
     PermissionSchemesController,
+    SecuritySchemesController,
   ],
   providers: [
     TrackingBootstrapService,
@@ -40,6 +43,7 @@ import { WorklogService } from './worklog.service.js';
     ProjectService,
     ProjectMemberService,
     PermissionSchemeService,
+    SecuritySchemeService,
     ComponentService,
     CustomFieldService,
     LinkService,

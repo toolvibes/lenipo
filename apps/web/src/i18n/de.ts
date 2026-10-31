@@ -1021,6 +1021,24 @@ export const de = {
       'Projekte legt bei Ihnen die Administration an. Danach sehen Sie alles, wozu Sie eingeladen sind.',
     taken: 'Der Schlüssel {{key}} ist schon vergeben.',
   },
+  security: {
+    title: 'Sicherheitsschemata',
+    intro:
+      'Sicherheitsstufen begrenzen, wer einen Vorgang sieht. Ohne Stufe gilt das Recht „Durchsuchen“ des Projekts; mit Stufe nur, wer ihr zugeordnet ist.',
+    levelName: 'Name der Stufe',
+    default: 'Standard für neue Vorgänge',
+    noDefault: 'Kein Standard',
+    sees: 'Sehen dürfen',
+    people: '{{count}} einzelne Personen (über die API gesetzt)',
+    addLevel: 'Stufe hinzufügen',
+    newLevel: 'Neue Stufe',
+    removeLevel: '{{name}} entfernen',
+    scheme: 'Sicherheitsschema',
+    none: 'Keines – alle Vorgänge wie „Durchsuchen“ erlaubt',
+    projectHelp: 'Nur die globale Administration ordnet Sicherheitsschemata zu.',
+    level: 'Sicherheit',
+    noLevel: 'Keine Stufe',
+  },
   notificationSchemes: {
     title: 'Benachrichtigungsschemata',
     intro:
@@ -1065,6 +1083,7 @@ export const de = {
       'assign-issues': 'Zuweisen',
       comment: 'Kommentieren',
       'delete-issues': 'Vorgänge löschen',
+      'set-issue-security': 'Sicherheitsstufe setzen',
       administer: 'Projekt administrieren',
     },
   },

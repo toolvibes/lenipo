@@ -5,6 +5,7 @@ const PAGES = [
   { to: '/admin/webhooks', label: 'webhooks.title' },
   { to: '/admin/permission-schemes', label: 'schemes.title' },
   { to: '/admin/notification-schemes', label: 'notificationSchemes.title' },
+  { to: '/admin/security-schemes', label: 'security.title' },
   { to: '/admin/custom-fields', label: 'fields.title' },
   { to: '/admin/time-tracking', label: 'time.settingsTitle' },
   { to: '/admin/templates', label: 'templates.globalTitle' },

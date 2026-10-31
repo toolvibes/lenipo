@@ -238,6 +238,60 @@ export interface paths {
     patch: operations['Administration.updatePermissionScheme'];
     trace?: never;
   };
+  '/api/v1/admin/security-schemes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the issue security schemes with the projects using them
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.listSecuritySchemes'];
+    put?: never;
+    /**
+     * Create an empty issue security scheme
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Administration.createSecurityScheme'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/security-schemes/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get an issue security scheme with its levels
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Administration.getSecurityScheme'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete an issue security scheme no project uses
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Administration.deleteSecurityScheme'];
+    options?: never;
+    head?: never;
+    /**
+     * Rename an issue security scheme or replace its levels
+     * @description Levels with an id keep it. Removing a level that issues still use answers 409, so no issue becomes visible to everyone by accident.
+     *
+     *     Requires the global permission `admin`.
+     */
+    patch: operations['Administration.updateSecurityScheme'];
+    trace?: never;
+  };
   '/api/v1/admin/notification-schemes': {
     parameters: {
       query?: never;
@@ -1761,6 +1815,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/security-scheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Give the project an issue security scheme, or none
+     * @description Requires the global permission `admin` (E-94). Answers 409 while issues use levels the new scheme lacks.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Projects.setSecurityScheme'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/notification-scheme': {
     parameters: {
       query?: never;
@@ -2776,7 +2852,8 @@ export interface components {
       | 'assign-issues'
       | 'comment'
       | 'delete-issues'
-      | 'administer';
+      | 'administer'
+      | 'set-issue-security';
     /** @enum {string} */
     PermissionGrantee: 'role' | 'group' | 'user' | 'assignee' | 'reporter';
     /** @enum {string} */
@@ -2821,6 +2898,79 @@ export interface components {
             | 'assign-issues'
             | 'comment'
             | 'delete-issues';
+          /** @enum {string} */
+          grantee: 'assignee' | 'reporter';
+        };
+    SecuritySchemeSummary: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+    };
+    SecurityScheme: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+      levels: components['schemas']['SecurityLevel'][];
+      defaultLevelId: string | null;
+    };
+    SecurityLevel: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      grants: components['schemas']['SecurityGrant'][];
+    };
+    SecurityGrant: {
+      grantee: components['schemas']['PermissionGrantee'];
+      role: components['schemas']['ProjectRole'] | null;
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+      user: components['schemas']['UserRef'] | null;
+    };
+    CreateSecuritySchemeRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+    };
+    UpdateSecuritySchemeRequest: {
+      name?: string;
+      description?: string;
+      levels?: {
+        /** Format: uuid */
+        id?: string;
+        name: string;
+        /** @default  */
+        description?: string;
+        grants: components['schemas']['SecurityGrantInput'][];
+      }[];
+      defaultLevel?: number | null;
+    };
+    SecurityGrantInput:
+      | {
+          role: components['schemas']['ProjectRole'];
+        }
+      | {
+          /** Format: uuid */
+          groupId: string;
+        }
+      | {
+          /** Format: uuid */
+          userId: string;
+        }
+      | {
           /** @enum {string} */
           grantee: 'assignee' | 'reporter';
         };
@@ -3195,6 +3345,11 @@ export interface components {
       canEdit: boolean;
       canAssign: boolean;
       canTransition: boolean;
+      securityLevel: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
       description: components['schemas']['RichTextOutput'] | null;
       children: components['schemas']['IssueSummary'][];
       resolvedAt: string | null;
@@ -3358,6 +3513,7 @@ export interface components {
     };
     CreateIssueRequest: {
       projectKey: string;
+      securityLevelId?: string | null;
       issueType: string;
       summary: string;
       /** @default null */
@@ -3392,6 +3548,7 @@ export interface components {
           markdown: string;
         };
     UpdateIssueRequest: {
+      securityLevelId?: string | null;
       summary?: string;
       description?: components['schemas']['RichTextInput'] | null;
       issueType?: string;
@@ -3993,6 +4150,17 @@ export interface components {
         id: string;
         name: string;
       };
+      securityScheme: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+      securityLevels: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      }[];
+      securityDefaultLevelId: string | null;
       issueTypes: components['schemas']['IssueTypeInfo'][];
       statuses: components['schemas']['StatusInfo'][];
       permissions: components['schemas']['ProjectPermission'][];
@@ -4137,6 +4305,9 @@ export interface components {
       defaultValue?: string | number | boolean | string[] | string[] | null;
       /** @default null */
       tab?: string | null;
+    };
+    SetProjectSecuritySchemeRequest: {
+      schemeId: string | null;
     };
     Velocity: {
       /** @enum {string} */
@@ -5254,6 +5425,163 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PermissionScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.listSecuritySchemes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecuritySchemeSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.createSecurityScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateSecuritySchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecurityScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.getSecurityScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecurityScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.deleteSecurityScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.updateSecurityScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateSecuritySchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecurityScheme'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -8991,6 +9319,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ProjectDetails'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.setSecurityScheme': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetProjectSecuritySchemeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

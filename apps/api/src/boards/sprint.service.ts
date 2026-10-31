@@ -26,6 +26,7 @@ import { signal } from '../realtime/signals.js';
 import { SearchService } from '../search/search.service.js';
 import { recordChanges } from '../tracking/history.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { securityVisible } from '../tracking/issue-security.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { BoardService } from './board.service.js';
@@ -407,6 +408,7 @@ export class SprintService {
                   inArray(issues.id, ids),
                   inArray(issues.projectId, visible.projectIds),
                   isNull(issues.deletedAt),
+                  securityVisible(principal.userId),
                 ),
               )
               .orderBy(asc(issues.rank), asc(issues.id))

@@ -115,7 +115,11 @@ export class NotificationService {
       .where(and(inArray(users.id, candidates), eq(users.status, 'active')));
     const recipients: string[] = [];
     for (const { id } of active) {
-      if ((await this.projectAccess.permissions(id, issue.projectId)).has('browse'))
+      // Nobody hears of what they may not see, issue security included (TL-13, E-94).
+      if (
+        (await this.projectAccess.permissions(id, issue.projectId)).has('browse') &&
+        (!issue.securityLevelId || (await this.projectAccess.seesIssue(id, issue.id)))
+      )
         recipients.push(id);
     }
     if (recipients.length === 0) return;
