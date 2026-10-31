@@ -10,7 +10,13 @@ export type Operator =
   | 'in'
   | 'not in'
   | 'is'
-  | 'is not';
+  | 'is not'
+  // History operators (TL-17, T-QRY-02, E-98).
+  | 'was'
+  | 'was not'
+  | 'was in'
+  | 'was not in'
+  | 'changed';
 
 /** What kind of values a field holds; decides operators, functions and value suggestions. */
 export type FieldType =
@@ -77,6 +83,9 @@ export interface CustomFieldInfo {
 
 const EQUALITY: readonly Operator[] = ['=', '!=', 'in', 'not in'];
 const EMPTINESS: readonly Operator[] = ['is', 'is not'];
+/** Was the field ever this value, or did it change (TL-17, E-98). */
+export const HISTORY: Operator[] = ['was', 'was not', 'was in', 'was not in', 'changed'];
+export const HISTORY_FIELDS = ['status', 'assignee', 'priority', 'resolution'] as const;
 const COMPARISON: readonly Operator[] = ['>', '>=', '<', '<='];
 const TEXT: readonly Operator[] = ['~', '!~'];
 const DATES: readonly Operator[] = ['=', '!=', ...COMPARISON];
@@ -90,7 +99,13 @@ export const FIELDS: readonly FieldDef[] = [
     operators: EQUALITY,
     orderable: true,
   },
-  { id: 'status', aliases: [], type: 'status', operators: EQUALITY, orderable: true },
+  {
+    id: 'status',
+    aliases: [],
+    type: 'status',
+    operators: [...EQUALITY, ...HISTORY],
+    orderable: true,
+  },
   {
     id: 'statusCategory',
     aliases: ['category'],
@@ -98,19 +113,25 @@ export const FIELDS: readonly FieldDef[] = [
     operators: EQUALITY,
     orderable: false,
   },
-  { id: 'priority', aliases: [], type: 'priority', operators: EQUALITY, orderable: true },
+  {
+    id: 'priority',
+    aliases: [],
+    type: 'priority',
+    operators: [...EQUALITY, ...HISTORY],
+    orderable: true,
+  },
   {
     id: 'resolution',
     aliases: [],
     type: 'resolution',
-    operators: [...EQUALITY, ...EMPTINESS],
+    operators: [...EQUALITY, ...EMPTINESS, ...HISTORY],
     orderable: true,
   },
   {
     id: 'assignee',
     aliases: [],
     type: 'user',
-    operators: [...EQUALITY, ...EMPTINESS],
+    operators: [...EQUALITY, ...EMPTINESS, ...HISTORY],
     orderable: true,
   },
   {
@@ -324,6 +345,8 @@ export const FUNCTIONS: readonly FunctionDef[] = [
   { name: 'membersOf', result: 'users', minArgs: 1, maxArgs: 1 },
   /** Issues linked to the given one, optionally only through one link type or direction. */
   { name: 'linkedIssues', result: 'issues', minArgs: 1, maxArgs: 2 },
+  /** The caller's recently viewed issues (TL-17). */
+  { name: 'issueHistory', result: 'issues', minArgs: 0, maxArgs: 0 },
   { name: 'now', result: 'datetime', minArgs: 0, maxArgs: 0 },
   /** Active and planned sprints, as in JQL (E-55). */
   { name: 'openSprints', result: 'sprints', minArgs: 0, maxArgs: 0 },
@@ -364,7 +387,11 @@ export function customFieldNameClash(name: string): 'field' | 'function' | 'keyw
 
 /** Functions usable as a value of this field with this operator. */
 export function functionsFor(field: FieldDef, operator: Operator): FunctionDef[] {
-  const list = operator === 'in' || operator === 'not in';
+  const list =
+    operator === 'in' ||
+    operator === 'not in' ||
+    operator === 'was in' ||
+    operator === 'was not in';
   return FUNCTIONS.filter((fn) => {
     if (fn.result === 'datetime') return field.type === 'date' || field.type === 'datetime';
     if (fn.result === 'issues') return field.type === 'issue' && list;

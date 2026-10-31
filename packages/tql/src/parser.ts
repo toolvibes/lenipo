@@ -2,6 +2,7 @@ import type {
   Clause,
   Expression,
   FunctionOperand,
+  HistoryPredicate,
   ListOperand,
   Operand,
   OrderItem,
@@ -16,6 +17,7 @@ import {
   type FieldDef,
   findFunction,
   functionsFor,
+  HISTORY,
   ISSUE_KEY,
   NUMBER,
   type Operator,
@@ -204,11 +206,18 @@ class Parser {
     const operatorSpan = join(spanOf(operatorStart), spanOf(this.peek(-1)));
 
     let operand: Operand;
-    if (operator === 'is' || operator === 'is not') {
+    if (operator === 'changed') {
+      operand = { kind: 'empty', span: operatorSpan };
+    } else if (operator === 'is' || operator === 'is not') {
       this.expect({ type: 'keyword', keyword: 'EMPTY' });
       if (!this.isKeyword('empty') && !this.isKeyword('null')) this.fail('expected-empty');
       operand = { kind: 'empty', span: spanOf(this.next()) };
-    } else if (operator === 'in' || operator === 'not in') {
+    } else if (
+      operator === 'in' ||
+      operator === 'not in' ||
+      operator === 'was in' ||
+      operator === 'was not in'
+    ) {
       operand = this.parseListOperand(field, operator);
     } else {
       operand = this.parseSingleOperand(field, operator);
@@ -219,7 +228,8 @@ class Parser {
     if (operand.kind === 'empty' && operator === '=') normalized = 'is';
     else if (operand.kind === 'empty' && operator === '!=') normalized = 'is not';
 
-    const span = join(spanOf(fieldToken), operand.span);
+    const history = HISTORY.includes(operator) ? this.parseHistory(field, operator) : undefined;
+    const span = join(spanOf(fieldToken), history?.at(-1)?.span ?? operand.span);
     const resolved = field ?? {
       id: fieldToken.value,
       aliases: [],
@@ -237,7 +247,49 @@ class Parser {
         this.validateOperand(field, normalized, operand);
       }
     }
-    return { kind: 'clause', field: resolved, operator: normalized, operand, span };
+    return {
+      kind: 'clause',
+      field: resolved,
+      operator: normalized,
+      operand,
+      ...(history ? { history } : {}),
+      span,
+    };
+  }
+
+  /** BY, AFTER, BEFORE, ON, DURING (and FROM, TO for CHANGED) after a history operator. */
+  private parseHistory(field: FieldDef | null, operator: Operator): HistoryPredicate[] {
+    const kinds: HistoryPredicate['kind'][] =
+      operator === 'changed'
+        ? ['from', 'to', 'by', 'after', 'before', 'on', 'during']
+        : ['by', 'after', 'before', 'on', 'during'];
+    const predicates: HistoryPredicate[] = [];
+    for (;;) {
+      const kind = kinds.find((entry) => this.isKeyword(entry));
+      if (!kind) break;
+      const start = this.next();
+      let operand: Operand;
+      if (kind === 'during') {
+        operand = this.parseListOperand(null, 'in');
+        if (operand.kind !== 'list' || operand.items.length !== 2) {
+          this.report('expected-list', operand.span, { operator: 'DURING' });
+        }
+      } else {
+        operand = this.parseSingleValue();
+        if (operand.kind === 'empty') {
+          this.report('expected-value', operand.span, {});
+        }
+      }
+      if (operand.kind !== 'empty' && operand.kind !== 'list') {
+        if (kind === 'from' || kind === 'to') {
+          if (field) this.validateOperand(field, '=', operand);
+        } else if (kind !== 'by' && operand.kind === 'value' && !parseDateValue(operand.value)) {
+          this.report('invalid-date', operand.span, { field: kind, value: operand.value });
+        }
+      }
+      predicates.push({ kind, operand, span: join(spanOf(start), operand.span) });
+    }
+    return predicates;
   }
 
   private parseOperator(fieldName: string): Operator {
@@ -249,6 +301,20 @@ class Parser {
     if (this.isKeyword('in')) {
       this.next();
       return 'in';
+    }
+    if (this.isKeyword('changed')) {
+      this.next();
+      return 'changed';
+    }
+    if (this.isKeyword('was')) {
+      this.next();
+      const not = this.isKeyword('not');
+      if (not) this.next();
+      if (this.isKeyword('in')) {
+        this.next();
+        return not ? 'was not in' : 'was in';
+      }
+      return not ? 'was not' : 'was';
     }
     if (this.isKeyword('not')) {
       this.next();

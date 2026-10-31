@@ -27,7 +27,17 @@ describe('completion', () => {
   });
 
   it('offers the operators of the field', () => {
-    expect(at('status |').labels).toEqual(['=', '!=', 'IN', 'NOT IN']);
+    expect(at('status |').labels).toEqual([
+      '=',
+      '!=',
+      'IN',
+      'NOT IN',
+      'WAS',
+      'WAS NOT',
+      'WAS IN',
+      'WAS NOT IN',
+      'CHANGED',
+    ]);
     expect(at('assignee i|').labels).toEqual(['IN', 'IS', 'IS NOT']);
     expect(at('summary |').labels).toEqual(['~', '!~']);
     expect(at('status not |').labels).toEqual(['IN']);
@@ -46,7 +56,7 @@ describe('completion', () => {
     expect(at('assignee = |').labels).toEqual(['currentUser()', 'EMPTY']);
     expect(at('assignee in |').labels).toEqual(['(', 'currentUser()', 'membersOf()']);
     expect(at('created > start|').labels).toContain('startOfWeek()');
-    expect(at('key in |').labels).toEqual(['(', 'linkedIssues()']);
+    expect(at('key in |').labels).toEqual(['(', 'linkedIssues()', 'issueHistory()']);
     expect(at('comp|').labels).toEqual(['component']);
   });
 

@@ -32,12 +32,21 @@ export interface ListOperand {
 
 export type Operand = ValueOperand | FunctionOperand | EmptyOperand | ListOperand;
 
+/** A condition on a history operator: who, when, from or to which value (TL-17, E-98). */
+export interface HistoryPredicate {
+  kind: 'by' | 'after' | 'before' | 'on' | 'during' | 'from' | 'to';
+  operand: Operand;
+  span: Span;
+}
+
 export interface Clause {
   kind: 'clause';
   field: FieldDef;
   /** `= EMPTY` and `!= EMPTY` are normalized to `is` and `is not`. */
   operator: Operator;
   operand: Operand;
+  /** Only with history operators. */
+  history?: HistoryPredicate[];
   span: Span;
 }
 

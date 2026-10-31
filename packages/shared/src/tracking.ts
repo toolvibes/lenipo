@@ -1024,9 +1024,7 @@ export type BulkRequest = z.infer<typeof BulkRequest>;
 
 export const BulkResult = z
   .object({
-    results: z.array(
-      z.object({ key: z.string(), ok: z.boolean(), error: z.string().nullable() }),
-    ),
+    results: z.array(z.object({ key: z.string(), ok: z.boolean(), error: z.string().nullable() })),
   })
   .meta({ id: 'BulkResult' });
 export type BulkResult = z.infer<typeof BulkResult>;

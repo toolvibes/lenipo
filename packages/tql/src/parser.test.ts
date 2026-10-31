@@ -187,4 +187,19 @@ describe('dates', () => {
     expect(parseIncrement('+2d', 'w')).toEqual({ amount: 2, unit: 'd' });
     expect(parseIncrement('soon', 'd')).toBeUndefined();
   });
+
+  it('parses history operators with their predicates (TL-17)', () => {
+    const was = clause('status WAS Done BY currentUser() AFTER -1w');
+    expect(was.operator).toBe('was');
+    expect(was.history?.map((entry) => entry.kind)).toEqual(['by', 'after']);
+    expect(clause('status WAS NOT IN (Done, Review)').operator).toBe('was not in');
+    expect(clause('assignee was in (a@x.de)').operator).toBe('was in');
+    const changed = clause('status CHANGED FROM Open TO Done DURING (2026-01-01, now())');
+    expect(changed.operator).toBe('changed');
+    expect(changed.history?.map((entry) => entry.kind)).toEqual(['from', 'to', 'during']);
+    expect(clause('key in issueHistory()').operand.kind).toBe('function');
+    expect(codes('summary WAS x')).toContain('operator-not-supported');
+    expect(codes('status WAS Done AFTER tomorrow')).toContain('invalid-date');
+    expect(codes('status CHANGED DURING (2026-01-01)')).toContain('expected-list');
+  });
 });

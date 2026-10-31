@@ -6,6 +6,8 @@ import {
   type Expression,
   type FieldDef,
   type FunctionOperand,
+  HISTORY,
+  type HistoryPredicate,
   type Operand,
   type Operator,
   parseDateValue,
@@ -142,10 +144,21 @@ export class TqlCompiler {
     const issueKeys = new Set<string>();
     const sprintValues = new Set<string>();
     const versionValues = new Set<string>();
+    const visitedBy = new Set<Expression>();
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
-      else if (node.field.type === 'user') {
+      else if (node.history?.some((predicate) => predicate.kind === 'by') && !visitedBy.has(node)) {
+        // People named in BY (TL-17) are looked up with the other users.
+        visitedBy.add(node);
+        for (const predicate of node.history) {
+          if (predicate.kind !== 'by') continue;
+          for (const item of items(predicate.operand)) {
+            if (item.kind === 'value') userValues.add(item.value.toLowerCase());
+          }
+        }
+        visit(node);
+      } else if (node.field.type === 'user') {
         for (const item of items(node.operand)) {
           if (item.kind === 'value') userValues.add(item.value.toLowerCase());
           else if (item.fn.name === 'membersOf' && item.args[0]) {
@@ -286,6 +299,7 @@ export class TqlCompiler {
   }
 
   private clause(clause: Clause): SQL {
+    if (HISTORY.includes(clause.operator)) return this.history(clause);
     if (clause.field.custom) return this.custom(clause);
     switch (clause.field.type) {
       case 'project':
@@ -784,6 +798,14 @@ export class TqlCompiler {
       }
     }
     for (const item of items(clause.operand)) {
+      // The caller's recently viewed issues (TL-17).
+      if (item.kind === 'function' && item.fn.name === 'issueHistory') {
+        matches.push(
+          sql`${column} in (select r.target_id from recent_items r where r.user_id = ${this.context.userId} and r.kind = 'issue')`,
+        );
+      }
+    }
+    for (const item of items(clause.operand)) {
       if (item.kind !== 'function' || item.fn.name !== 'linkedIssues') continue;
       const linked = this.linkedIssues(clause.field, item);
       if (linked) matches.push(sql`${column} in ${linked}`);
@@ -794,6 +816,143 @@ export class TqlCompiler {
     return clause.field.id === 'parent'
       ? (and(isNotNull(issues.parentId), not(match)) as SQL)
       : not(match);
+  }
+
+  // ---------------------------------------------------------------- history (TL-17, E-98)
+
+  /** The ids a history clause names: statuses, priorities, resolutions or people. */
+  private historyIds(field: FieldDef, operand: Operand): string[] {
+    const ids: string[] = [];
+    for (const item of items(operand)) {
+      if (field.type === 'user') {
+        if (item.kind === 'function') {
+          if (item.fn.name === 'currentUser') ids.push(this.context.userId);
+          continue;
+        }
+        const id = this.usersByValue.get(item.value.toLowerCase());
+        if (id) ids.push(id);
+        else this.notFound(field, item, item.value);
+        continue;
+      }
+      if (item.kind !== 'value') continue;
+      const meta = this.context.meta;
+      const entries =
+        field.type === 'status'
+          ? meta.statuses
+          : field.type === 'priority'
+            ? meta.priorities
+            : meta.resolutions;
+      const found = this.metaIds(entries, item.value);
+      if (found.length === 0) this.notFound(field, item, item.value);
+      ids.push(...found);
+    }
+    return ids;
+  }
+
+  /** The time conditions of BY-less predicates on an instant or a period [start, finish). */
+  private historyTime(predicates: HistoryPredicate[], start: SQL, finish: SQL | null): SQL[] {
+    const conditions: SQL[] = [];
+    const open = (point: SQL) =>
+      finish ? sql`(${finish} is null or ${finish} > ${point})` : sql`${start} > ${point}`;
+    for (const predicate of predicates) {
+      if (!['after', 'before', 'on', 'during'].includes(predicate.kind)) continue;
+      const list = items(predicate.operand);
+      const first = list[0] ? this.instant(list[0]) : null;
+      switch (predicate.kind) {
+        case 'after':
+          if (first) conditions.push(open(first));
+          break;
+        case 'before':
+          if (first) conditions.push(sql`${start} < ${first}`);
+          break;
+        case 'on':
+          if (first) {
+            const day = sql`date_trunc('day', ${first})`;
+            conditions.push(sql`${start} < ${day} + interval '1 day'`, open(day));
+          }
+          break;
+        case 'during': {
+          const last = list[1] ? this.instant(list[1]) : null;
+          if (first && last) conditions.push(sql`${start} <= ${last}`, open(first));
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    return conditions;
+  }
+
+  /**
+   * WAS and CHANGED (TL-17, E-98). WAS looks at the periods a value held – from the creation
+   * with the first change's old value (or today's value if nothing changed), then each change –
+   * so it also matches the current and the original value, as in JQL. CHANGED looks at the
+   * changes themselves.
+   */
+  private history(clause: Clause): SQL {
+    const field = clause.field.id;
+    const predicates = clause.history ?? [];
+    const by = predicates
+      .filter((predicate) => predicate.kind === 'by')
+      .flatMap((predicate) =>
+        this.historyIds({ ...clause.field, type: 'user' }, predicate.operand),
+      );
+    const hasBy = predicates.some((predicate) => predicate.kind === 'by');
+    const changes = sql`from issue_change_items ci join issue_change_groups g on g.id = ci.group_id
+      where g.issue_id = ${issues.id} and ci.field = ${field}`;
+    const list = (ids: string[]) =>
+      sql.join(
+        ids.map((id) => sql`${id}`),
+        sql`, `,
+      );
+
+    if (clause.operator === 'changed') {
+      const conditions: SQL[] = [];
+      for (const predicate of predicates) {
+        if (predicate.kind !== 'from' && predicate.kind !== 'to') continue;
+        const ids = this.historyIds(clause.field, predicate.operand);
+        if (ids.length === 0) return sql`false`;
+        const column = predicate.kind === 'from' ? sql`ci.from_value` : sql`ci.to_value`;
+        conditions.push(sql`${column} in (${list(ids)})`);
+      }
+      if (hasBy) {
+        if (by.length === 0) return sql`false`;
+        conditions.push(sql`g.author_id in (${list(by)})`);
+      }
+      conditions.push(...this.historyTime(predicates, sql`g.created_at`, null));
+      const extra = conditions.length > 0 ? sql` and ${sql.join(conditions, sql` and `)}` : sql``;
+      return sql`exists (select 1 ${changes}${extra})`;
+    }
+
+    const ids = this.historyIds(clause.field, clause.operand);
+    if (ids.length === 0) return clause.operator.startsWith('was not') ? sql`true` : sql`false`;
+    const current =
+      field === 'status'
+        ? issues.statusId
+        : field === 'priority'
+          ? issues.priorityId
+          : field === 'resolution'
+            ? issues.resolutionId
+            : issues.assigneeId;
+    const conditions: SQL[] = [sql`p.value in (${list(ids)})`];
+    if (hasBy) {
+      if (by.length === 0) return sql`false`;
+      conditions.push(sql`p.author in (${list(by)})`);
+    }
+    conditions.push(...this.historyTime(predicates, sql`p.start`, sql`p.finish`));
+    const periods = sql`(
+      select ci.to_value as value, g.created_at as start, g.author_id as author,
+        lead(g.created_at) over (order by g.created_at, g.id) as finish
+      ${changes}
+      union all
+      select coalesce(
+          (select ci.from_value ${changes} order by g.created_at, g.id limit 1),
+          case when exists (select 1 ${changes}) then null else ${current}::text end
+        ), ${issues.createdAt}, ${issues.reporterId},
+        (select g.created_at ${changes} order by g.created_at, g.id limit 1)
+    ) p`;
+    const was = sql`exists (select 1 from ${periods} where ${sql.join(conditions, sql` and `)})`;
+    return clause.operator === 'was' || clause.operator === 'was in' ? was : not(was);
   }
 
   // ---------------------------------------------------------------- time tracking
