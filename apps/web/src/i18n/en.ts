@@ -846,6 +846,8 @@ export const en: Messages = {
     tql: 'Open as TQL search',
   },
   home: {
+    wikiTasks: 'My wiki tasks',
+    wikiTasksEmpty: 'No open wiki tasks that mention you.',
     title: 'Overview',
     morning: 'Good morning, {{name}}',
     day: 'Good afternoon, {{name}}',
@@ -1090,6 +1092,30 @@ export const en: Messages = {
     embedIntro:
       'Pages of these hosts may be embedded in wiki pages (https only, sandboxed). Everything else shows as a link.',
     embedHosts: 'Hosts, one per line',
+  },
+  projectPages: {
+    title: 'Wiki pages',
+    intro:
+      'Pages the project writes to the wiki by itself. They are created as “Automation” and can be edited as usual afterwards.',
+    space: 'Space for the pages',
+    off: 'Off',
+    retroOnSprintEnd: 'Create a retrospective when a sprint is completed',
+    reportOnSprintEnd: 'Create a sprint report when a sprint is completed',
+    notesOnRelease: 'Publish release notes when a version is released',
+  },
+  issuesFromText: {
+    button: 'Create issues from selection',
+    title: 'Issues from the selected text',
+    help: 'A line, list item or table row becomes an issue. Afterwards the issue with its status follows the line.',
+    project: 'Project',
+    chooseProject: 'Choose a project …',
+    type: 'Issue type',
+    empty: 'Select text in the editor first.',
+    include: 'Create as issue',
+    summary: 'Summary',
+    create_one: 'Create {{count}} issue',
+    create_other: 'Create {{count}} issues',
+    fromPage: 'From the wiki page: {{url}}',
   },
   releases: {
     title: 'Releases',

@@ -13,10 +13,13 @@ import {
   TextHTwo,
   TextItalic,
   TextStrikethrough,
+  Ticket,
 } from '@phosphor-icons/react';
 import { type Editor, useEditorState } from '@tiptap/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageBar, PanelBar, TableBar } from './BlockBars';
+import { IssuesFromText } from './IssuesFromText';
 
 interface ToolbarButtonProps {
   icon: Icon;
@@ -52,6 +55,7 @@ export function Separator() {
 /** Formatting for the editor; `onInsertFile` adds the upload button (wiki pages, E-61). */
 export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile?: () => void }) {
   const { t } = useTranslation();
+  const [issuesOpen, setIssuesOpen] = useState(false);
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -163,7 +167,16 @@ export function Toolbar({ editor, onInsertFile }: { editor: Editor; onInsertFile
             onClick={onInsertFile}
           />
         )}
+        {onInsertFile && (
+          <ToolbarButton
+            icon={Ticket}
+            title={t('issuesFromText.button')}
+            active={false}
+            onClick={() => setIssuesOpen(true)}
+          />
+        )}
       </div>
+      <IssuesFromText editor={editor} open={issuesOpen} onOpenChange={setIssuesOpen} />
       {state.table && <TableBar editor={editor} />}
       {state.image && <ImageBar editor={editor} />}
       {state.panel && <PanelBar editor={editor} />}

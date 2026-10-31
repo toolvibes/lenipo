@@ -7423,6 +7423,92 @@
         }
       }
     },
+    "/api/v1/projects/{key}/wiki-pages": {
+      "get": {
+        "operationId": "Projects.wikiPages",
+        "summary": "Wiki pages the project creates on sprint completion and release",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectWikiPages"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Projects.setWikiPages",
+        "summary": "Change the automatic wiki pages (project administrators)",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectWikiPagesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectWikiPages"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards/{id}/velocity": {
       "get": {
         "operationId": "Reports.velocity",
@@ -20146,6 +20232,61 @@
           }
         },
         "required": ["schemeId"]
+      },
+      "ProjectWikiPages": {
+        "type": "object",
+        "properties": {
+          "spaceKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retroOnSprintEnd": {
+            "type": "boolean"
+          },
+          "reportOnSprintEnd": {
+            "type": "boolean"
+          },
+          "notesOnRelease": {
+            "type": "boolean"
+          }
+        },
+        "required": ["spaceKey", "retroOnSprintEnd", "reportOnSprintEnd", "notesOnRelease"],
+        "additionalProperties": false
+      },
+      "ProjectWikiPagesInput": {
+        "type": "object",
+        "properties": {
+          "spaceKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retroOnSprintEnd": {
+            "type": "boolean"
+          },
+          "reportOnSprintEnd": {
+            "type": "boolean"
+          },
+          "notesOnRelease": {
+            "type": "boolean"
+          }
+        },
+        "required": ["spaceKey", "retroOnSprintEnd", "reportOnSprintEnd", "notesOnRelease"]
       },
       "Velocity": {
         "type": "object",

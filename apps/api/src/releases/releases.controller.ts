@@ -1,8 +1,14 @@
-import { Controller, Get, HttpCode, Inject, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { PublishReleaseNotesRequest, Release, ReleaseNotes } from '@tasklore/shared';
+import { Controller, Get, HttpCode, Inject, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common';
+import {
+  ProjectWikiPages,
+  PublishReleaseNotesRequest,
+  Release,
+  ReleaseNotes,
+} from '@tasklore/shared';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { ProjectPagesService } from './project-pages.service.js';
 import { ReleaseService } from './release.service.js';
 
 const VersionId = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
@@ -53,5 +59,38 @@ export class ReleasesController {
     @ValidBody(PublishReleaseNotesRequest) body: PublishReleaseNotesRequest,
   ): Promise<Release> {
     return this.releases.publish(principal, key.toUpperCase(), id, body);
+  }
+}
+
+/** The wiki pages a project creates by itself (TL-28, E-109). */
+@Controller('projects/:key/wiki-pages')
+export class ProjectWikiPagesController {
+  constructor(@Inject(ProjectPagesService) private readonly projectPages: ProjectPagesService) {}
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Wiki pages the project creates on sprint completion and release',
+    response: ProjectWikiPages,
+  })
+  @Get()
+  wikiPages(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<ProjectWikiPages> {
+    return this.projectPages.get(principal, key.toUpperCase());
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Change the automatic wiki pages (project administrators)',
+    response: ProjectWikiPages,
+  })
+  @Put()
+  setWikiPages(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(ProjectWikiPages) body: ProjectWikiPages,
+  ): Promise<ProjectWikiPages> {
+    return this.projectPages.set(principal, key.toUpperCase(), body);
   }
 }

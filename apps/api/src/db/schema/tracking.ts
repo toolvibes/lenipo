@@ -131,6 +131,8 @@ export const projects = pgTable(
     }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
+    /** Wiki pages created on sprint completion and release (TL-28, E-109), null when off. */
+    wikiPages: jsonb(),
   },
   (table) => [uniqueIndex('projects_key_unique').on(table.key)],
 );

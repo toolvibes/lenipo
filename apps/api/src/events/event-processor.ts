@@ -6,6 +6,7 @@ import { DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { domainEvents } from '../db/schema/index.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { ProjectPagesService } from '../releases/project-pages.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
 
 const MAX_ATTEMPTS = 5;
@@ -22,6 +23,7 @@ export class EventProcessor {
     @Inject(NotificationService) private readonly notifications: NotificationService,
     @Inject(WebhookService) private readonly webhooks: WebhookService,
     @Inject(AutomationEngine) private readonly automation: AutomationEngine,
+    @Inject(ProjectPagesService) private readonly projectPages: ProjectPagesService,
   ) {}
 
   /** Handles a batch of pending events; returns how many were taken. */
@@ -45,6 +47,8 @@ export class EventProcessor {
             .update(domainEvents)
             .set({ processedAt: sql`now()` })
             .where(eq(domainEvents.id, row.id));
+          // Pages are written on their own connections; labels keep a retry from doubling them.
+          await this.projectPages.handle(row);
         } catch (error) {
           const attempts = row.attempts + 1;
           this.logger.error({ err: error, event: row.id, attempts }, 'Processing an event failed');

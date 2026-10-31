@@ -2339,6 +2339,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/wiki-pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Wiki pages the project creates on sprint completion and release */
+    get: operations['Projects.wikiPages'];
+    /** Change the automatic wiki pages (project administrators) */
+    put: operations['Projects.setWikiPages'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/boards/{id}/velocity': {
     parameters: {
       query?: never;
@@ -6126,6 +6144,18 @@ export interface components {
     };
     SetProjectSecuritySchemeRequest: {
       schemeId: string | null;
+    };
+    ProjectWikiPages: {
+      spaceKey: string | null;
+      retroOnSprintEnd: boolean;
+      reportOnSprintEnd: boolean;
+      notesOnRelease: boolean;
+    };
+    ProjectWikiPagesInput: {
+      spaceKey: string | null;
+      retroOnSprintEnd: boolean;
+      reportOnSprintEnd: boolean;
+      notesOnRelease: boolean;
     };
     Velocity: {
       /** @enum {string} */
@@ -12662,6 +12692,72 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.wikiPages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectWikiPages'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.setWikiPages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProjectWikiPagesInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectWikiPages'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

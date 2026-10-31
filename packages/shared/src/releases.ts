@@ -49,3 +49,15 @@ export const PublishReleaseNotesRequest = z
   })
   .meta({ id: 'PublishReleaseNotesRequest' });
 export type PublishReleaseNotesRequest = z.infer<typeof PublishReleaseNotesRequest>;
+
+/** Wiki pages a project creates by itself (W-INT-05, W-INT-06, TL-28, E-109). */
+export const ProjectWikiPages = z
+  .object({
+    /** Where the pages go; null switches everything off. */
+    spaceKey: z.string().trim().min(1).max(20).nullable(),
+    retroOnSprintEnd: z.boolean(),
+    reportOnSprintEnd: z.boolean(),
+    notesOnRelease: z.boolean(),
+  })
+  .meta({ id: 'ProjectWikiPages' });
+export type ProjectWikiPages = z.infer<typeof ProjectWikiPages>;

@@ -29,6 +29,7 @@ import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
 import { RoleMembers } from './RoleMembers';
+import { WikiPagesSettings } from './WikiPagesSettings';
 import { WorkflowEditor } from './WorkflowEditor';
 
 const NAV_ITEM =
@@ -300,7 +301,13 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [view, setView] = useState<
-    'workflow' | 'members' | 'permissions' | 'notifications' | 'security' | 'automation'
+    | 'workflow'
+    | 'members'
+    | 'permissions'
+    | 'notifications'
+    | 'security'
+    | 'automation'
+    | 'wikiPages'
   >('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
@@ -374,6 +381,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('automation.title')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'wikiPages' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('wikiPages')}
+              >
+                {t('projectPages.title')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -397,6 +412,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
           {view === 'security' && administer && <Security projectKey={projectKey} />}
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
+          {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

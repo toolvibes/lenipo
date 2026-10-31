@@ -137,15 +137,16 @@ const BLUEPRINTS: Record<Locale, Record<BlueprintKey, Blueprint>> = {
       content: () =>
         doc(
           panel('info', 'Ziel in einem Satz: Wer soll was erreichen können?'),
+          p('Epic: ', { type: 'issue', attrs: { key: '{{input:Epic}}' } }),
           h(2, 'Hintergrund'),
           empty(),
           h(2, 'Anforderungen'),
           table(['#', 'Anforderung', 'Wichtigkeit', 'Hinweise'], [['1', '', 'Muss', '']]),
           h(2, 'Vorgänge'),
-          p('Die Abfrage im Makro unten auf das Vorhaben anpassen, z. B. mit labels = …'),
+          p('Die Vorgänge des Epics; die Abfrage lässt sich anpassen.'),
           {
             type: 'issueList',
-            attrs: { query: 'labels = vorhaben ORDER BY rank', display: 'table', limit: 20 },
+            attrs: { query: 'parent = {{input:Epic}} ORDER BY rank', display: 'table', limit: 20 },
           },
           h(2, 'Offene Fragen'),
           tasks(''),
@@ -330,15 +331,16 @@ const BLUEPRINTS: Record<Locale, Record<BlueprintKey, Blueprint>> = {
       content: () =>
         doc(
           panel('info', 'Goal in one sentence: who should be able to achieve what?'),
+          p('Epic: ', { type: 'issue', attrs: { key: '{{input:Epic}}' } }),
           h(2, 'Background'),
           empty(),
           h(2, 'Requirements'),
           table(['#', 'Requirement', 'Importance', 'Notes'], [['1', '', 'Must', '']]),
           h(2, 'Issues'),
-          p('Adjust the query in the macro below to the initiative, e.g. with labels = …'),
+          p('The issues of the epic; the query can be adjusted.'),
           {
             type: 'issueList',
-            attrs: { query: 'labels = initiative ORDER BY rank', display: 'table', limit: 20 },
+            attrs: { query: 'parent = {{input:Epic}} ORDER BY rank', display: 'table', limit: 20 },
           },
           h(2, 'Open questions'),
           tasks(''),

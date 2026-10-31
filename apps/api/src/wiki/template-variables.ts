@@ -58,6 +58,16 @@ export function fillDocument<T>(content: T, values: VariableValues): T {
       );
     }
     if (Array.isArray(value.content)) next.content = value.content.map(walk);
+    // An issue macro takes a key only; anything else leaves it to be chosen (TL-28).
+    if (next.type === 'issue' && next.attrs) {
+      const key = String((next.attrs as { key?: unknown }).key ?? '')
+        .trim()
+        .toUpperCase();
+      next.attrs = {
+        ...(next.attrs as object),
+        key: /^[A-Z][A-Z0-9]{1,9}-[1-9][0-9]*$/.test(key) ? key : '',
+      };
+    }
     // Text that became empty would make an invalid node.
     if (next.type === 'text' && next.text === '') return null;
     if (Array.isArray(next.content))

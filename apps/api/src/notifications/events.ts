@@ -90,6 +90,7 @@ export type ProjectEvent =
       type: 'sprint.started' | 'sprint.completed';
       projectId: string;
       sprintId: string;
+      boardId: string;
       name: string;
     }
   | { type: 'version.released'; projectId: string; versionId: string; name: string };

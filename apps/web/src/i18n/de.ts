@@ -859,6 +859,8 @@ export const de = {
     tql: 'Als TQL-Suche öffnen',
   },
   home: {
+    wikiTasks: 'Meine Wiki-Aufgaben',
+    wikiTasksEmpty: 'Keine offenen Aufgaben im Wiki, die dich erwähnen.',
     title: 'Übersicht',
     morning: 'Guten Morgen, {{name}}',
     day: 'Guten Tag, {{name}}',
@@ -1104,6 +1106,30 @@ export const de = {
     embedIntro:
       'Seiten dieser Hosts dürfen Wiki-Seiten einbetten (nur https, in einer Sandbox). Alles andere erscheint als Link.',
     embedHosts: 'Hosts, einer pro Zeile',
+  },
+  projectPages: {
+    title: 'Wiki-Seiten',
+    intro:
+      'Seiten, die das Projekt selbst im Wiki anlegt. Sie entstehen als „Automatisierung“ und lassen sich danach normal bearbeiten.',
+    space: 'Bereich für die Seiten',
+    off: 'Aus',
+    retroOnSprintEnd: 'Retrospektive anlegen, wenn ein Sprint abgeschlossen wird',
+    reportOnSprintEnd: 'Sprint-Bericht anlegen, wenn ein Sprint abgeschlossen wird',
+    notesOnRelease: 'Release Notes veröffentlichen, wenn eine Version veröffentlicht wird',
+  },
+  issuesFromText: {
+    button: 'Vorgänge aus Auswahl anlegen',
+    title: 'Vorgänge aus dem markierten Text',
+    help: 'Eine Zeile, ein Listenpunkt oder eine Tabellenzeile wird zu einem Vorgang. Danach steht der Vorgang mit Status hinter der Zeile.',
+    project: 'Projekt',
+    chooseProject: 'Projekt wählen …',
+    type: 'Vorgangstyp',
+    empty: 'Erst Text im Editor markieren.',
+    include: 'Als Vorgang anlegen',
+    summary: 'Zusammenfassung',
+    create_one: '{{count}} Vorgang anlegen',
+    create_other: '{{count}} Vorgänge anlegen',
+    fromPage: 'Aus der Wiki-Seite: {{url}}',
   },
   releases: {
     title: 'Releases',

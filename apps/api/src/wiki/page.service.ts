@@ -276,6 +276,7 @@ export class PageService {
     spaceKey: string,
     request: CreatePageRequest,
     initial?: RichText,
+    options: { publish?: boolean; labels?: string[] } = {},
   ): Promise<Page> {
     const { space } = await this.spaces.find(principal, spaceKey, 'edit');
     let parentId = await this.checkParent(space.id, request.parentId);
@@ -331,7 +332,7 @@ export class PageService {
         parentId,
         rank: await this.lastRank(tx, space.id, parentId),
         title,
-        labels,
+        labels: [...labels, ...(options.labels ?? [])],
         createdById: principal.userId,
       });
       if (!space.homePageId) {
@@ -340,6 +341,10 @@ export class PageService {
       await autoWatch(tx, principal.userId, id);
       await signal(tx, { type: 'space', spaceKey: space.key });
     });
+    // Pages made by the system are published right away (TL-28, E-109).
+    if (options.publish && template) {
+      await this.publish(principal, id, { title, content: template.content, comment: '' });
+    }
     return this.get(principal, id);
   }
 
@@ -347,7 +352,7 @@ export class PageService {
    * The index page of a blueprint in a space, created with the first page of that blueprint:
    * a report (or list) by the blueprint's label, so it stays current by itself (W-TPL-04).
    */
-  private async blueprintIndex(
+  async blueprintIndex(
     principal: Principal,
     space: SpaceRow,
     key: string,
@@ -367,7 +372,13 @@ export class PageService {
       .limit(1);
     if (existing) return existing.id;
     const index = await this.create(principal, space.key, { title: indexTitle });
-    const report = ['decision', 'project-plan', 'post-mortem', 'release-notes'].includes(key);
+    const report = [
+      'decision',
+      'project-plan',
+      'post-mortem',
+      'release-notes',
+      'sprint-report',
+    ].includes(key);
     await this.publish(principal, index.id, {
       title: indexTitle,
       comment: '',

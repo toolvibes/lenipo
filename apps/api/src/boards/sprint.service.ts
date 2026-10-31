@@ -92,6 +92,7 @@ export class SprintService {
       type,
       projectId: board.projectId,
       sprintId: sprint.id,
+      boardId,
       name: sprint.name,
     });
   }

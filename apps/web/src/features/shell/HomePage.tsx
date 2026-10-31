@@ -4,6 +4,7 @@ import type { IssueSummary, Me } from '@tasklore/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
+import { client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime, formatRelative } from '../../lib/format';
 import { notificationsByCategoryQuery } from '../../lib/notifications';
 import { activityQuery, recentQuery } from '../../lib/personal';
@@ -150,6 +151,14 @@ function greetingKey(hour: number): 'home.morning' | 'home.day' | 'home.evening'
 export function HomePage({ me }: { me: Me }) {
   const { t } = useTranslation();
   const assigned = useQuery(searchQuery(ASSIGNED, 0));
+  // Open wiki tasks that mention me (W-INT-07, TL-28).
+  const wikiTasks = useQuery({
+    queryKey: ['wiki-tasks', 'me'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/wiki/tasks', { params: { query: { assignee: 'me', limit: 10 } } }),
+      ),
+  });
   const due = useQuery(searchQuery(DUE, 0));
   const watched = useQuery(searchQuery(WATCHED, 0));
   const mentions = useQuery(notificationsByCategoryQuery('mention', 5));
@@ -224,6 +233,28 @@ export function HomePage({ me }: { me: Me }) {
                 <span className="text-xs text-[var(--ink-muted)]">
                   <span className="tl-key">{page.spaceKey}</span> ·{' '}
                   <span title={formatDateTime(page.viewedAt)}>{formatRelative(page.viewedAt)}</span>
+                </span>
+              </div>
+            ))}
+          </Card>
+
+          <Card title={t('home.wikiTasks')}>
+            {wikiTasks.data?.length === 0 && <Empty>{t('home.wikiTasksEmpty')}</Empty>}
+            {wikiTasks.data?.slice(0, 8).map((task) => (
+              <div
+                key={`${task.page.id}:${task.text}`}
+                className="flex min-w-0 flex-col gap-0.5 text-[13px]"
+              >
+                <span className="truncate">{task.text}</span>
+                <span className="text-xs text-[var(--ink-muted)]">
+                  {task.due && `${formatDate(task.due)} · `}
+                  <Link
+                    to="/spaces/$key/pages/$id"
+                    params={{ key: task.page.spaceKey, id: task.page.id }}
+                    className="text-[var(--ink-muted)]"
+                  >
+                    {task.page.title}
+                  </Link>
                 </span>
               </div>
             ))}
