@@ -1,4 +1,5 @@
 import {
+  ArrowSquareRight,
   ArrowsOut,
   Check,
   CopySimple,
@@ -11,7 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { Comment, Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { formatDateTime, formatRelative } from '../../lib/format';
@@ -36,6 +37,7 @@ import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
 import { IssueWikiPages } from './IssueWikiPages';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
+import { MoveIssueDialog } from './MoveIssueDialog';
 import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
 import { Avatar, UserPicker } from './UserPicker';
@@ -372,6 +374,13 @@ export function IssuePage({
 
   // A copy with fields, subtasks and a "clones" link (TL-16, E-97).
   const navigate = useNavigate();
+  const [moving, setMoving] = useState(false);
+  // An old key from before a move shows the issue under its new one (TL-86, E-99).
+  useEffect(() => {
+    if (issue.data && issue.data.key !== issueKey.toUpperCase() && variant === 'page') {
+      void navigate({ to: '/issues/$key', params: { key: issue.data.key }, replace: true });
+    }
+  }, [issue.data, issueKey, variant, navigate]);
   const cloneIssue = useMutation({
     mutationFn: () =>
       unwrap(
@@ -509,6 +518,13 @@ export function IssuePage({
                   {t('bulk.clone')}
                 </Button>
               )}
+              {permissions.has('edit-issues') && data.issueType.hierarchyLevel >= 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setMoving(true)}>
+                  <ArrowSquareRight size={16} aria-hidden />
+                  {t('move.action')}
+                </Button>
+              )}
+              <MoveIssueDialog issue={data} open={moving} onOpenChange={setMoving} />
               {watchButton}
             </>
           }

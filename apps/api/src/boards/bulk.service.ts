@@ -63,6 +63,13 @@ export class BulkService {
       case 'delete':
         await this.issues.deleteIssue(principal, key);
         return;
+      case 'move':
+        await this.issues.move(principal, key, {
+          projectKey: action.projectKey,
+          ...(action.issueType ? { issueType: action.issueType } : {}),
+          ...(action.statusId ? { statusId: action.statusId } : {}),
+        });
+        return;
       case 'watch':
       case 'unwatch':
         await this.issues.setWatching(principal, key, action.type === 'watch');

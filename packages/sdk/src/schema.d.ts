@@ -971,6 +971,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/{key}/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move an issue with its subtasks to another project
+     * @description New keys, the old ones keep working. Type and status are kept where the target allows, else mapped (same category, else initial); components and versions by name; security level kept or the target default. Needs edit-issues in the source and create-issues in the target.
+     */
+    post: operations['Issues.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me': {
     parameters: {
       query?: never;
@@ -3870,6 +3890,14 @@ export interface components {
         }
       | {
           /** @constant */
+          type: 'move';
+          projectKey: string;
+          issueType?: string;
+          /** Format: uuid */
+          statusId?: string;
+        }
+      | {
+          /** @constant */
           type: 'watch';
         }
       | {
@@ -3887,6 +3915,12 @@ export interface components {
       summary?: string;
       /** @default false */
       includeSubtasks?: boolean;
+    };
+    MoveIssueRequest: {
+      projectKey: string;
+      issueType?: string;
+      /** Format: uuid */
+      statusId?: string;
     };
     UpdateMeRequest: {
       displayName?: string;
@@ -7557,6 +7591,41 @@ export interface operations {
     responses: {
       /** @description Success */
       201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MoveIssueRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
         headers: {
           [name: string]: unknown;
         };

@@ -3089,6 +3089,56 @@
         }
       }
     },
+    "/api/v1/issues/{key}/move": {
+      "post": {
+        "operationId": "Issues.move",
+        "summary": "Move an issue with its subtasks to another project",
+        "description": "New keys, the old ones keep working. Type and status are kept where the target allows, else mapped (same category, else initial); components and versions by name; security level kept or the target default. Needs edit-issues in the source and create-issues in the target.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveIssueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "Me.me",
@@ -12798,6 +12848,29 @@
             "properties": {
               "type": {
                 "type": "string",
+                "const": "move"
+              },
+              "projectKey": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]{1,9}$"
+              },
+              "issueType": {
+                "type": "string",
+                "minLength": 1
+              },
+              "statusId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["type", "projectKey"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
                 "const": "watch"
               }
             },
@@ -12854,6 +12927,25 @@
             "type": "boolean"
           }
         }
+      },
+      "MoveIssueRequest": {
+        "type": "object",
+        "properties": {
+          "projectKey": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]{1,9}$"
+          },
+          "issueType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statusId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": ["projectKey"]
       },
       "UpdateMeRequest": {
         "type": "object",

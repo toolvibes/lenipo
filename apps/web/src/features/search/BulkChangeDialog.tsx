@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { projectsQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -13,7 +13,7 @@ import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 import { useMetaName } from '../tracking/icons';
 
-type Kind = 'edit' | 'transition' | 'delete' | 'watch' | 'unwatch';
+type Kind = 'edit' | 'transition' | 'move' | 'delete' | 'watch' | 'unwatch';
 
 /** One change for the ticked issues (T-ISS-11, TL-16, E-97); each issue reports back. */
 export function BulkChangeDialog({
@@ -38,6 +38,8 @@ export function BulkChangeDialog({
   const [addLabels, setAddLabels] = useState('');
   const [removeLabels, setRemoveLabels] = useState('');
   const [statusId, setStatusId] = useState('');
+  const [projectKey, setProjectKey] = useState('');
+  const projects = useQuery({ ...projectsQuery, enabled: open && kind === 'move' });
   const [result, setResult] = useState<BulkResult | null>(null);
   const words = (text: string) => text.split(/\s+/).filter(Boolean);
   const action = (): BulkAction => {
@@ -54,6 +56,8 @@ export function BulkChangeDialog({
         };
       case 'transition':
         return { type: 'transition', statusId };
+      case 'move':
+        return { type: 'move', projectKey };
       default:
         return { type: kind };
     }
@@ -72,7 +76,7 @@ export function BulkChangeDialog({
     if (!next) setResult(null);
     onOpenChange(next);
   };
-  const ready = kind !== 'transition' || !!statusId;
+  const ready = (kind !== 'transition' || !!statusId) && (kind !== 'move' || !!projectKey);
   return (
     <Dialog
       open={open}
@@ -113,7 +117,7 @@ export function BulkChangeDialog({
           <Select
             label={t('bulk.action')}
             value={kind}
-            options={(['edit', 'transition', 'watch', 'unwatch', 'delete'] as const).map(
+            options={(['edit', 'transition', 'move', 'watch', 'unwatch', 'delete'] as const).map(
               (value) => ({ value, label: t(`bulk.actions.${value}`) }),
             )}
             onChange={(event) => setKind(event.target.value as Kind)}
@@ -167,6 +171,23 @@ export function BulkChangeDialog({
               ]}
               onChange={(event) => setStatusId(event.target.value)}
             />
+          )}
+          {kind === 'move' && (
+            <>
+              <Select
+                label={t('move.project')}
+                value={projectKey}
+                options={[
+                  { value: '', label: t('move.chooseProject') },
+                  ...(projects.data ?? []).map((project) => ({
+                    value: project.key,
+                    label: `${project.name} (${project.key})`,
+                  })),
+                ]}
+                onChange={(event) => setProjectKey(event.target.value)}
+              />
+              <p className="m-0 text-xs text-[var(--ink-muted)]">{t('move.hint')}</p>
+            </>
           )}
           {kind === 'delete' && (
             <p className="m-0 text-[13px] text-[var(--danger)]">{t('bulk.deleteHint')}</p>

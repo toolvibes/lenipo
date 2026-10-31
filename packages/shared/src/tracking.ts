@@ -1011,6 +1011,13 @@ export const BulkAction = z
     /** Into a sprint, or the backlog with null. */
     z.object({ type: z.literal('sprint'), sprintId: Id.nullable() }),
     z.object({ type: z.literal('delete') }),
+    /** Into another project (TL-86, E-99); type and status as proposed unless given. */
+    z.object({
+      type: z.literal('move'),
+      projectKey: ProjectKey,
+      issueType: z.string().min(1).optional(),
+      statusId: Id.optional(),
+    }),
     z.object({ type: z.literal('watch') }),
     z.object({ type: z.literal('unwatch') }),
   ])
@@ -1037,3 +1044,17 @@ export const CloneIssueRequest = z
   })
   .meta({ id: 'CloneIssueRequest' });
 export type CloneIssueRequest = z.infer<typeof CloneIssueRequest>;
+
+/**
+ * Moves an issue with its subtasks to another project (T-ISS-10, TL-86, E-99). Without
+ * `issueType` it keeps its type if the target offers it; without `statusId` it keeps its status
+ * if the target workflow has it, else one of the same category, else the initial one.
+ */
+export const MoveIssueRequest = z
+  .object({
+    projectKey: ProjectKey,
+    issueType: z.string().min(1).optional(),
+    statusId: Id.optional(),
+  })
+  .meta({ id: 'MoveIssueRequest' });
+export type MoveIssueRequest = z.infer<typeof MoveIssueRequest>;

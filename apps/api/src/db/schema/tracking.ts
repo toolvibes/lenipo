@@ -186,6 +186,17 @@ export const workflowDrafts = pgTable(
   (table) => [primaryKey({ columns: [table.projectId, table.scope] })],
 );
 
+/**
+ * Keys an issue had before it moved to another project (TL-86, E-99): WEB-12 still opens the
+ * issue that is now OPS-5, so links, bookmarks and wiki pages keep working.
+ */
+export const issueKeyAliases = pgTable('issue_key_aliases', {
+  key: text().primaryKey(),
+  issueId: uuid()
+    .notNull()
+    .references((): AnyPgColumn => issues.id, { onDelete: 'cascade' }),
+});
+
 export const projectRole = pgEnum('project_role', ['administrators', 'developers', 'users']);
 
 /** Who holds which role in a project: a single user or a whole group. */

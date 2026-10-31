@@ -21,6 +21,7 @@ import type {
   IssueList,
   IssueLookup,
   IssueSummary,
+  MoveIssueRequest,
   ProjectPermission,
   RichText,
   RichTextInput,
@@ -59,12 +60,15 @@ import {
   issueChangeItems,
   issueComments,
   issueComponents,
+  issueKeyAliases,
   issueLinks,
   issueLinkTypes,
   issues,
   issueVersions,
   issueWatchers,
+  projectComponents,
   projects,
+  projectVersions,
   securityLevels,
   sprintIssues,
   sprints,
@@ -173,11 +177,21 @@ export class IssueService {
 
   /** Loads an issue by key and checks the permission; unknown and invisible issues are both 404. */
   private async load(principal: Principal, key: string, permission: ProjectPermission) {
+    // A key from before a move still finds the issue (TL-86, E-99).
+    const alias = this.database.db
+      .select({ issueId: issueKeyAliases.issueId })
+      .from(issueKeyAliases)
+      .where(eq(issueKeyAliases.key, key.toUpperCase()));
     const [row] = await this.database.db
       .select({ issue: issues, project: projects })
       .from(issues)
       .innerJoin(projects, eq(projects.id, issues.projectId))
-      .where(and(eq(issues.key, key.toUpperCase()), isNull(issues.deletedAt)));
+      .where(
+        and(
+          or(eq(issues.key, key.toUpperCase()), inArray(issues.id, alias)),
+          isNull(issues.deletedAt),
+        ),
+      );
     if (!row || row.project.archivedAt) throw new NotFoundException('Issue not found');
     try {
       const permissions = await this.projectAccess.requireForIssue(
@@ -1666,6 +1680,172 @@ export class IssueService {
         .filter((item) => item.groupId === group.id)
         .map((item) => ({ field: item.field, from: item.fromDisplay, to: item.toDisplay })),
     }));
+  }
+
+  /**
+   * Moves an issue with its subtasks to another project (T-ISS-10, TL-86, E-99): new keys with
+   * the old ones kept as aliases; type, status and security level mapped to the target;
+   * components and versions by name; the sprint and an epic of the old project are left
+   * behind; custom fields stay stored and show where the target uses them. Needs edit in the
+   * source and create in the target.
+   */
+  async move(principal: Principal, key: string, request: MoveIssueRequest): Promise<Issue> {
+    const { issue, project: source } = await this.load(principal, key, 'edit-issues');
+    const meta = await this.meta.load();
+    if ((meta.issueType.get(issue.issueTypeId)?.hierarchyLevel ?? 0) < 0) {
+      throw new BadRequestException('Subtasks move with their parent');
+    }
+    const target = await this.projectService.findBrowsable(principal, request.projectKey);
+    await this.projectAccess.require(principal, target.id, 'create-issues');
+    if (target.id === source.id) throw new BadRequestException('The issue is already there');
+    const hidden = new Set(await this.projectService.hiddenIssueTypeIds(target.id));
+    const offered = (typeId: string) => !hidden.has(typeId) && meta.issueType.has(typeId);
+    const type = request.issueType
+      ? meta.issueTypes.find((entry) => entry.key === request.issueType)
+      : meta.issueType.get(issue.issueTypeId);
+    if (!type || !offered(type.id)) {
+      throw new BadRequestException('Choose an issue type the target project offers');
+    }
+    if (type.hierarchyLevel !== meta.issueType.get(issue.issueTypeId)?.hierarchyLevel) {
+      throw new BadRequestException(
+        'The issue type can only change within the same hierarchy level',
+      );
+    }
+    const db = this.database.db;
+    const children = await db
+      .select()
+      .from(issues)
+      .where(and(eq(issues.parentId, issue.id), isNull(issues.deletedAt)));
+    for (const child of children) {
+      if (!offered(child.issueTypeId)) {
+        throw new BadRequestException('The target project does not offer the subtask type');
+      }
+    }
+    const security = await this.projectService.projectLevels(target.id);
+    const level =
+      issue.securityLevelId && security.levels.some((entry) => entry.id === issue.securityLevelId)
+        ? issue.securityLevelId
+        : security.defaultLevelId;
+    const named = async (table: 'components' | 'fix' | 'affects', issueId: string) => {
+      const names =
+        table === 'components'
+          ? (await this.components.refsFor(issueId)).map((entry) => entry.name)
+          : (await this.versions.refsFor(db, issueId, table)).map((entry) => entry.name);
+      if (names.length === 0) return [];
+      const lower = names.map((name) => name.toLowerCase());
+      const rows =
+        table === 'components'
+          ? await db
+              .select({ id: projectComponents.id, name: projectComponents.name })
+              .from(projectComponents)
+              .where(eq(projectComponents.projectId, target.id))
+          : await db
+              .select({ id: projectVersions.id, name: projectVersions.name })
+              .from(projectVersions)
+              .where(eq(projectVersions.projectId, target.id));
+      return rows.filter((row) => lower.includes(row.name.toLowerCase())).map((row) => row.id);
+    };
+    const plan = async (row: typeof issue, typeId: string, statusId?: string) => {
+      const workflowVersionId = await this.projectService.workflowVersionFor(target, typeId);
+      const definition = await this.projectService.workflow(workflowVersionId);
+      const status =
+        statusId && definition.statusIds.includes(statusId)
+          ? statusId
+          : landingStatus(definition, row.statusId, (id) => meta.status.get(id)?.category);
+      return {
+        row,
+        typeId,
+        workflowVersionId,
+        statusId: status,
+        components: await named('components', row.id),
+        fix: await named('fix', row.id),
+        affects: await named('affects', row.id),
+      };
+    };
+    const plans = [
+      await plan(issue, type.id, request.statusId),
+      ...(await Promise.all(children.map((child) => plan(child, child.issueTypeId)))),
+    ];
+
+    let newKey = '';
+    await db.transaction(async (tx) => {
+      for (const [index, entry] of plans.entries()) {
+        const [counter] = await tx
+          .update(projects)
+          .set({ issueCounter: sql`${projects.issueCounter} + 1` })
+          .where(eq(projects.id, target.id))
+          .returning({ number: projects.issueCounter });
+        if (!counter) throw new Error('Project vanished during the move');
+        const key = `${target.key}-${counter.number}`;
+        if (index === 0) newKey = key;
+        const from = entry.row;
+        const changes: Change[] = [
+          {
+            field: 'project',
+            fromValue: source.id,
+            fromDisplay: source.name,
+            toValue: target.id,
+            toDisplay: target.name,
+          },
+          {
+            field: 'key',
+            fromValue: from.key,
+            fromDisplay: from.key,
+            toValue: key,
+            toDisplay: key,
+          },
+        ];
+        if (entry.typeId !== from.issueTypeId) {
+          changes.push({
+            field: 'issuetype',
+            fromValue: from.issueTypeId,
+            fromDisplay: meta.issueType.get(from.issueTypeId)?.name ?? null,
+            toValue: entry.typeId,
+            toDisplay: meta.issueType.get(entry.typeId)?.name ?? null,
+          });
+        }
+        if (entry.statusId !== from.statusId) {
+          changes.push({
+            field: 'status',
+            fromValue: from.statusId,
+            fromDisplay: meta.status.get(from.statusId)?.name ?? null,
+            toValue: entry.statusId,
+            toDisplay: meta.status.get(entry.statusId)?.name ?? null,
+          });
+        }
+        const done = meta.status.get(entry.statusId)?.category === 'done';
+        // An epic of the old project stays there; subtasks keep their (moving) parent.
+        const keepParent = index > 0;
+        await tx
+          .update(issues)
+          .set({
+            projectId: target.id,
+            number: counter.number,
+            key,
+            issueTypeId: entry.typeId,
+            workflowVersionId: entry.workflowVersionId,
+            statusId: entry.statusId,
+            securityLevelId: level,
+            ...(keepParent ? {} : { parentId: null }),
+            ...(done ? {} : { resolutionId: null, resolvedAt: null }),
+            updatedAt: sql`now()`,
+          })
+          .where(eq(issues.id, from.id));
+        await tx
+          .insert(issueKeyAliases)
+          .values({ key: from.key, issueId: from.id })
+          .onConflictDoNothing();
+        await this.components.replaceOnIssue(tx, from.id, entry.components);
+        await this.versions.replaceOnIssue(tx, from.id, 'fix', entry.fix);
+        await this.versions.replaceOnIssue(tx, from.id, 'affects', entry.affects);
+        await tx
+          .update(sprintIssues)
+          .set({ removedAt: sql`now()` })
+          .where(and(eq(sprintIssues.issueId, from.id), isNull(sprintIssues.removedAt)));
+        await recordChanges(tx, from.id, principal, changes);
+      }
+    });
+    return this.get(principal, newKey);
   }
 
   /** Moves an issue and its subtasks to the trash (T-ISS-11); needs delete-issues. */

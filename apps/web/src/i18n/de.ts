@@ -1129,6 +1129,7 @@ export const de = {
     actions: {
       edit: 'Felder ändern',
       transition: 'Status wechseln',
+      move: 'In anderes Projekt verschieben',
       watch: 'Beobachten',
       unwatch: 'Nicht mehr beobachten',
       delete: 'Löschen',
@@ -1143,6 +1144,19 @@ export const de = {
     run_other: '{{count}} Vorgänge ändern',
     summary: '{{ok}} geändert, {{failed}} nicht.',
     clone: 'Klonen',
+  },
+  move: {
+    action: 'Verschieben',
+    title: '{{key}} verschieben',
+    intro: 'In ein anderes Projekt, mit allen Unteraufgaben.',
+    project: 'Zielprojekt',
+    chooseProject: 'Projekt wählen …',
+    type: 'Vorgangstyp',
+    keepType: 'Wie bisher: {{type}}',
+    status: 'Status',
+    proposedStatus: 'Vorschlag: gleicher Status, sonst gleiche Kategorie',
+    hint: 'Der Vorgang bekommt einen neuen Schlüssel; der alte führt weiter zu ihm. Komponenten und Versionen gleichen Namens bleiben, der Sprint entfällt, eigene Felder bleiben gespeichert.',
+    run: 'Verschieben',
   },
   notificationSchemes: {
     title: 'Benachrichtigungsschemata',

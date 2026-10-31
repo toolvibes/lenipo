@@ -1,5 +1,11 @@
 import { Controller, Delete, HttpCode, Inject, Param, Post } from '@nestjs/common';
-import { BulkRequest, BulkResult, CloneIssueRequest, Issue } from '@tasklore/shared';
+import {
+  BulkRequest,
+  BulkResult,
+  CloneIssueRequest,
+  Issue,
+  MoveIssueRequest,
+} from '@tasklore/shared';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
@@ -44,6 +50,23 @@ export class BulkController {
     @ValidBody(CloneIssueRequest) body: CloneIssueRequest,
   ): Promise<Issue> {
     return this.issues.clone(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Move an issue with its subtasks to another project',
+    description:
+      'New keys, the old ones keep working. Type and status are kept where the target allows, else mapped (same category, else initial); components and versions by name; security level kept or the target default. Needs edit-issues in the source and create-issues in the target.',
+    response: Issue,
+  })
+  @Post(':key/move')
+  @HttpCode(200)
+  move(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(MoveIssueRequest) body: MoveIssueRequest,
+  ): Promise<Issue> {
+    return this.issues.move(principal, key, body);
   }
 
   @Endpoint({

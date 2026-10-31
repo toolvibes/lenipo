@@ -1110,6 +1110,7 @@ export const en: Messages = {
     actions: {
       edit: 'Edit fields',
       transition: 'Change status',
+      move: 'Move to another project',
       watch: 'Watch',
       unwatch: 'Stop watching',
       delete: 'Delete',
@@ -1124,6 +1125,19 @@ export const en: Messages = {
     run_other: 'Change {{count}} issues',
     summary: '{{ok}} changed, {{failed}} not.',
     clone: 'Clone',
+  },
+  move: {
+    action: 'Move',
+    title: 'Move {{key}}',
+    intro: 'To another project, with all subtasks.',
+    project: 'Target project',
+    chooseProject: 'Choose a project …',
+    type: 'Issue type',
+    keepType: 'As before: {{type}}',
+    status: 'Status',
+    proposedStatus: 'Proposal: same status, else same category',
+    hint: 'The issue gets a new key; the old one still leads to it. Components and versions of the same name stay, the sprint is dropped, custom fields stay stored.',
+    run: 'Move',
   },
   notificationSchemes: {
     title: 'Notification schemes',
