@@ -909,6 +909,26 @@ export const en: Messages = {
     limited_other: 'The first {{count}} child pages are printed.',
     back: 'Back to the page',
   },
+  imports: {
+    title: 'Import',
+    intro:
+      'Brings over projects from Jira Server/Data Center through its REST API: issues with history, comments, logged work, attachments and links, versions, components, boards and sprints. Keys stay the same; people are matched by e-mail, unknown ones become deactivated accounts. A dry run first shows what would happen; a second run only adds what is new.',
+    url: 'Jira address',
+    token: 'Access',
+    tokenHelp:
+      'A personal access token from Jira, or user:password. It is kept only while the import runs.',
+    projects: 'Project keys',
+    projectsHelp: 'Separated by commas; the keys must not exist in Tasklore yet.',
+    dryRun: 'Dry run',
+    dryRunShort: 'dry run',
+    run: 'Import',
+    jobs: 'Imports',
+    none: 'No imports yet.',
+    details: 'Report and log',
+    mappings: 'Mapped',
+    skipped: 'Not imported',
+    states: { pending: 'waiting', running: 'running', done: 'done', failed: 'failed' },
+  },
   git: {
     title: 'Git integration',
     intro:

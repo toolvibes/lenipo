@@ -1041,6 +1041,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/imports': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List imports
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Import.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/imports/jira': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import from Jira Server/DC
+     * @description Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Tasklore. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Import.jira'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/imports/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get an import with its progress, log and report
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Import.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/issues/{key}/attachments': {
     parameters: {
       query?: never;
@@ -5761,6 +5823,43 @@ export interface components {
       /** @enum {string} */
       database?: 'ok' | 'unreachable';
     };
+    ImportJob: {
+      /** Format: uuid */
+      id: string;
+      source: components['schemas']['ImportSource'];
+      dryRun: boolean;
+      label: string;
+      /** @enum {string} */
+      state: 'pending' | 'running' | 'done' | 'failed';
+      progress: string;
+      log: string[];
+      report: components['schemas']['ImportReport'] | null;
+      createdBy: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      finishedAt: string | null;
+    };
+    /** @enum {string} */
+    ImportSource: 'jira' | 'confluence';
+    ImportReport: {
+      counts: {
+        [key: string]: number;
+      };
+      mappings: string[];
+      skipped: string[];
+    };
+    JiraImportRequest: {
+      /** Format: uri */
+      url: string;
+      token: string;
+      projectKeys: string[];
+      /** @default true */
+      dryRun?: boolean;
+    };
     Attachment: {
       /** Format: uuid */
       id: string;
@@ -10331,6 +10430,99 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HealthStatus'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.jira': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JiraImportRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

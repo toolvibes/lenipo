@@ -197,6 +197,7 @@ describe('tl, the command line (TL-37)', () => {
   it('prints completion scripts and explains missing commands', async () => {
     expect((await tl(['completion', 'bash'])).out).toContain('complete -F _tl tl tasklore');
     expect((await tl(['admin', 'backup'])).err).toContain('TL-39');
+    expect((await tl(['admin', 'import', 'jira'])).code).toBe(2);
     expect((await tl(['unbekannt'])).code).toBe(2);
   });
 });

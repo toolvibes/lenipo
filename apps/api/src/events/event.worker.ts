@@ -10,6 +10,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { OAuthService } from '../identity/oauth.service.js';
+import { ImportService } from '../imports/import.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
@@ -33,6 +34,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(PageService) private readonly pages: PageService,
     @Inject(FilterSubscriptionService) private readonly subscriptions: FilterSubscriptionService,
     @Inject(OAuthService) private readonly oauth: OAuthService,
+    @Inject(ImportService) private readonly imports: ImportService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
 
@@ -46,6 +48,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     // Digests and filter subscriptions go out at their hour; checked every few minutes (E-112).
     this.every('digests', 5 * 60_000, () => this.notifications.sendDigests().then(() => {}));
     this.every('subscriptions', 5 * 60_000, () => this.subscriptions.sendDue().then(() => {}));
+    // Imports run one at a time; a long one keeps the loop busy (TL-35).
+    this.every('imports', 5_000, () => this.imports.runPending().then(() => {}));
     this.every('automation', 2_000, async () => {
       while ((await this.automation.runDue()) > 0);
     });

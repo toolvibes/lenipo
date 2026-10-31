@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AutomationModule } from '../automation/automation.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
+import { ImportsModule } from '../imports/imports.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { ReleasesModule } from '../releases/releases.module.js';
 import { SearchModule } from '../search/search.module.js';
@@ -18,6 +19,7 @@ import { EventProcessor } from './event-processor.js';
     ReleasesModule,
     WikiModule,
     SearchModule,
+    ImportsModule,
   ],
   providers: [EventProcessor, EventWorker],
 })

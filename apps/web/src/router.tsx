@@ -14,6 +14,7 @@ import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
 import { GitConnectionsPage } from './features/admin/GitConnectionsPage';
+import { ImportPage } from './features/admin/ImportPage';
 import {
   NotificationSchemeEditor,
   NotificationSchemesPage,
@@ -748,6 +749,12 @@ const customFieldsRoute = createRoute({
   component: CustomFieldsPage,
 });
 
+const importRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/import',
+  component: ImportPage,
+});
+
 const gitConnectionsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/git',
@@ -884,6 +891,7 @@ const routeTree = rootRoute.addChildren([
       automationAdminRoute,
       embedHostsRoute,
       gitConnectionsRoute,
+      importRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,
       notificationSchemesRoute,

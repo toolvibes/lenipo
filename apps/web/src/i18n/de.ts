@@ -923,6 +923,27 @@ export const de = {
     limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
     back: 'Zurück zur Seite',
   },
+  imports: {
+    title: 'Import',
+    intro:
+      'Übernimmt Projekte aus Jira Server/Data Center über die REST-API: Vorgänge mit Historie, Kommentaren, Arbeitszeiten, Anhängen und Verknüpfungen, Versionen, Komponenten, Boards und Sprints. Schlüssel bleiben erhalten; Personen werden über die E-Mail zugeordnet, Unbekannte als deaktivierte Konten angelegt. Erst ein Probelauf zeigt, was passieren würde; ein zweiter Lauf ergänzt nur Neues.',
+    url: 'Jira-Adresse',
+    token: 'Zugriff',
+    tokenHelp:
+      'Ein persönliches Zugriffstoken aus Jira oder benutzer:passwort. Es wird nur während des Imports aufbewahrt.',
+    projects: 'Projektschlüssel',
+    projectsHelp:
+      'Durch Komma getrennt; die Schlüssel dürfen in Tasklore noch nicht vergeben sein.',
+    dryRun: 'Probelauf',
+    dryRunShort: 'Probelauf',
+    run: 'Importieren',
+    jobs: 'Importe',
+    none: 'Noch keine Importe.',
+    details: 'Bericht und Protokoll',
+    mappings: 'Zugeordnet',
+    skipped: 'Nicht übernommen',
+    states: { pending: 'wartet', running: 'läuft', done: 'fertig', failed: 'fehlgeschlagen' },
+  },
   git: {
     title: 'Git-Anbindung',
     intro:

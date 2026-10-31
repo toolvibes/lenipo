@@ -53,6 +53,7 @@ Wiki-Seiten als Markdown
 Weiteres
   tl mcp                      lokaler MCP-Server (stdio) als Brücke zu <adresse>/mcp
   tl admin users              Personen der Instanz (Administration)
+  tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]
   tl completion bash|zsh|fish
 
 Optionen überall: --profile <name>, --output table|json|md
@@ -651,13 +652,11 @@ async function page(args: string[], io: Io) {
 
 async function admin(args: string[], io: Io) {
   const [sub, ...rest] = args;
-  if (sub === 'backup' || sub === 'restore' || sub === 'import' || sub === 'reindex') {
-    // The server features follow in TL-39 (backup, restore) and TL-35 (import).
-    throw new CliError(
-      `tl admin ${sub} gibt es noch nicht; es kommt mit ${sub === 'import' ? 'TL-35' : 'TL-39'}.`,
-      2,
-    );
+  if (sub === 'backup' || sub === 'restore' || sub === 'reindex') {
+    // The server features follow in TL-39.
+    throw new CliError(`tl admin ${sub} gibt es noch nicht; es kommt mit TL-39.`, 2);
   }
+  if (sub === 'import') return adminImport(rest, io);
   if (sub !== 'users') throw new CliError('tl admin users', 2);
   const { values } = parseArgs({ args: rest, options: COMMON });
   const format = formatOf(values.output);
@@ -676,4 +675,78 @@ async function admin(args: string[], io: Io) {
     user.displayName,
   ]);
   io.out(render(format, ['E-MAIL', 'ZUSTAND', 'GRUPPEN', 'NAME'], rows, users, io.columns));
+}
+
+/** `tl admin import jira …` starts an import and follows it until it ends (TL-35, E-118). */
+async function adminImport(args: string[], io: Io) {
+  const [source, ...rest] = args;
+  const { values, positionals } = parseArgs({
+    args: rest,
+    allowPositionals: true,
+    options: {
+      ...COMMON,
+      url: { type: 'string' },
+      token: { type: 'string' },
+      projects: { type: 'string' },
+      run: { type: 'boolean' },
+    },
+  });
+  const format = formatOf(values.output);
+  const { client } = await openSession(io, values.profile);
+  let job: { id: string; state: string; progress: string; log: string[]; report: unknown };
+  if (source === 'status') {
+    const id = positionals[0];
+    if (!id) throw new CliError('tl admin import status <id>', 2);
+    job = await unwrap(client.GET('/api/v1/admin/imports/{id}', { params: { path: { id } } }));
+  } else if (source === 'jira') {
+    if (!values.url || !values.token || !values.projects) {
+      throw new CliError(
+        'tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]',
+        2,
+      );
+    }
+    job = await unwrap(
+      client.POST('/api/v1/admin/imports/jira', {
+        body: {
+          url: values.url,
+          token: values.token,
+          projectKeys: values.projects.split(',').map((key) => key.trim().toUpperCase()),
+          dryRun: !values.run,
+        },
+      }),
+    );
+    if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
+  } else {
+    throw new CliError('tl admin import jira|status', 2);
+  }
+  let shown = '';
+  while (job.state === 'pending' || job.state === 'running') {
+    if (job.progress && job.progress !== shown) {
+      shown = job.progress;
+      io.err(shown);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    job = await unwrap(
+      client.GET('/api/v1/admin/imports/{id}', { params: { path: { id: job.id } } }),
+    );
+  }
+  if (format === 'json') {
+    io.out(JSON.stringify(job, null, 2));
+  } else {
+    const report = job.report as {
+      counts: Record<string, number>;
+      mappings: string[];
+      skipped: string[];
+    } | null;
+    const lines = [`Import ${job.id}: ${job.state}`];
+    for (const [what, count] of Object.entries(report?.counts ?? {}))
+      lines.push(`  ${what}: ${count}`);
+    if (report?.mappings.length)
+      lines.push('Zugeordnet:', ...report.mappings.map((line) => `  ${line}`));
+    if (report?.skipped.length)
+      lines.push('Nicht übernommen:', ...report.skipped.map((line) => `  ${line}`));
+    lines.push(...job.log);
+    io.out(lines.join('\n'));
+  }
+  if (job.state === 'failed') throw new CliError('Import fehlgeschlagen', 1);
 }
