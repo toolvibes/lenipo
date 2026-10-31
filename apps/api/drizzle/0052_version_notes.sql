@@ -1,0 +1,1 @@
+ALTER TABLE "project_versions" ADD COLUMN "notes_page_id" uuid;

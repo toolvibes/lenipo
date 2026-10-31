@@ -1047,6 +1047,36 @@ export const en: Messages = {
     none: 'No page is restricted.',
     lift: 'Lift',
   },
+  releases: {
+    title: 'Releases',
+    none: 'No versions yet. Create versions in the project settings.',
+    releasedOn: 'Released on {{date}}',
+    planned: 'Planned for {{date}}',
+    noDate: 'No date',
+    counts: '{{done}} of {{total}} issues done',
+    points: '{{done}} of {{total}} story points',
+    warnings_one: '{{count}} note before the release',
+    warnings_other: '{{count}} notes before the release',
+    warning: {
+      overdue: 'is still open although the release date has passed.',
+      blocked: 'is still blocked by {{key}}.',
+      unassigned: 'has nobody working on it.',
+    },
+    scmLater:
+      'Notes about open pull requests and builds follow with the source-hosting integration.',
+    notes: 'Release notes',
+    notesTitle: 'Publish release notes',
+    notesHelp:
+      'Generated from the done issues by type. Adjust the text; it is published as a wiki page.',
+    notesUpdate:
+      'The notes are published already; publishing again adds a new version of the same page.',
+    notesPage: 'Release notes in the wiki',
+    pageTitle: 'Page title',
+    space: 'Space',
+    chooseSpace: 'Choose a space …',
+    markdown: 'Content (Markdown)',
+    publish: 'Publish',
+  },
   timesheet: {
     title: 'Timesheet',
     mine: 'Your week',

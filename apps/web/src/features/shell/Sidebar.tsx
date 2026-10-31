@@ -108,6 +108,14 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       >
         {t('analysis.title')}
       </NavRow>
+      <NavRow
+        small
+        to="/projects/$key/releases"
+        params={{ key: projectKey }}
+        active={path.startsWith(`/projects/${projectKey}/releases`)}
+      >
+        {t('releases.title')}
+      </NavRow>
       {lore && (
         <NavRow
           small

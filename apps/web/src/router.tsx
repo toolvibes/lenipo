@@ -38,6 +38,7 @@ import {
 } from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { ProfilePage } from './features/personal/ProfilePage';
+import { ReleasePage, ReleasesPage } from './features/releases/ReleasesPage';
 import { ProjectReportsPage } from './features/reports/ProjectReportsPage';
 import { type ReportKind as BoardReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { EverythingPage } from './features/search/EverythingPage';
@@ -344,6 +345,24 @@ const timelineRoute = createRoute({
   component: function Timeline() {
     const { key } = timelineRoute.useParams();
     return <TimelinePage key={key} projectKey={key.toUpperCase()} />;
+  },
+});
+
+const releasesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/releases',
+  component: function Releases() {
+    const { key } = releasesRoute.useParams();
+    return <ReleasesPage key={key} projectKey={key.toUpperCase()} />;
+  },
+});
+
+const releaseRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/releases/$id',
+  component: function ReleaseView() {
+    const { key, id } = releaseRoute.useParams();
+    return <ReleasePage key={id} projectKey={key.toUpperCase()} id={id} />;
   },
 });
 
@@ -735,6 +754,8 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     timelineRoute,
     projectReportsRoute,
+    releasesRoute,
+    releaseRoute,
     newRuleRoute,
     timesheetRoute,
     ruleRoute,

@@ -580,6 +580,8 @@ export const projectVersions = pgTable(
     releaseDate: date({ mode: 'string' }),
     released: boolean().notNull().default(false),
     archived: boolean().notNull().default(false),
+    /** The wiki page its release notes were published to (TL-25, E-106). */
+    notesPageId: uuid(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

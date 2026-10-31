@@ -3174,6 +3174,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/releases/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A version’s progress, issues by status and warnings */
+    get: operations['Versions.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/releases/{id}/notes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Release notes as Markdown, grouped by issue type */
+    get: operations['Versions.notes'];
+    put?: never;
+    /** Publish the release notes as a wiki page (project administrators) */
+    post: operations['Versions.publish'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/webhooks': {
     parameters: {
       query?: never;
@@ -6527,6 +6562,42 @@ export interface components {
       /** Format: uuid */
       id: string;
       name: string;
+    };
+    Release: {
+      version: components['schemas']['Version'];
+      progress: {
+        issues: number;
+        done: number;
+        points: number;
+        donePoints: number;
+      };
+      todo: components['schemas']['IssueSummary'][];
+      inProgress: components['schemas']['IssueSummary'][];
+      done: components['schemas']['IssueSummary'][];
+      warnings: components['schemas']['ReleaseWarning'][];
+      notesPage: {
+        /** Format: uuid */
+        id: string;
+        title: string;
+        spaceKey: string;
+      } | null;
+      canEdit: boolean;
+    };
+    ReleaseWarning: {
+      /** @enum {string} */
+      kind: 'overdue' | 'blocked' | 'unassigned';
+      issueKey: string;
+      blockerKey: string | null;
+    };
+    ReleaseNotes: {
+      title: string;
+      markdown: string;
+    };
+    PublishReleaseNotesRequest: {
+      title: string;
+      markdown: string;
+      spaceKey?: string;
+      parentId?: string | null;
     };
     Webhook: {
       /** Format: uuid */
@@ -14192,6 +14263,106 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['GroupRef'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Versions.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Release'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Versions.notes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReleaseNotes'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Versions.publish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublishReleaseNotesRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Release'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

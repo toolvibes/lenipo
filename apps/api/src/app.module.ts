@@ -17,6 +17,7 @@ import { OnboardingModule } from './onboarding/onboarding.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { PersonalModule } from './personal/personal.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
+import { ReleasesModule } from './releases/releases.module.js';
 import { SearchModule } from './search/search.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
@@ -46,6 +47,7 @@ export class AppModule {
         BoardsModule,
         DashboardsModule,
         AutomationModule,
+        ReleasesModule,
         WikiModule,
         OnboardingModule,
         McpModule,
