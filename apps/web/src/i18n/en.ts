@@ -538,6 +538,9 @@ export const en: Messages = {
     saved: 'Saved.',
   },
   fields: {
+    cascadeHelp:
+      'Write sub-options with an arrow, e.g. “Germany > Berlin”. Missing top options are added.',
+    cascadeChild: '{{name}}: sub-option',
     addPerson: 'Add a person to {{name}}',
     removePerson: 'Remove {{name}}',
     title: 'Custom fields',
@@ -580,6 +583,7 @@ export const en: Messages = {
       group: 'Group',
       version: 'Version',
       labels: 'Labels',
+      cascade: 'Selection (two levels)',
     },
     project: {
       button: 'Fields',

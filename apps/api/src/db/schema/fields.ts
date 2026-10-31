@@ -29,6 +29,7 @@ export const customFieldType = pgEnum('custom_field_type', [
   'group',
   'version',
   'labels',
+  'cascade',
 ]);
 
 /** Instance-wide custom fields (T-FLD-01, E-50); archived instead of deleted. */

@@ -64,7 +64,8 @@ export type CustomFieldKind =
   | 'users'
   | 'group'
   | 'version'
-  | 'labels';
+  | 'labels'
+  | 'cascade';
 
 /** What the query language needs to know about a custom field. */
 export interface CustomFieldInfo {
@@ -257,6 +258,7 @@ const CUSTOM_TYPES: Record<
   group: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
   version: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
   labels: { type: 'label', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  cascade: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
 };
 
 export const CUSTOM_FIELD_ID = /^cf\[(\d+)\]$/i;

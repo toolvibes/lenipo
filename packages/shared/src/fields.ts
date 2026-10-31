@@ -18,6 +18,8 @@ export const CustomFieldType = z.enum([
   'group',
   'version',
   'labels',
+  // TL-82, E-92: two levels of options, written as "Deutschland › Berlin".
+  'cascade',
 ]);
 export type CustomFieldType = z.infer<typeof CustomFieldType>;
 

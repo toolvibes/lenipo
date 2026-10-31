@@ -128,6 +128,7 @@ function CustomValue({
   if (value === undefined) return null;
   switch (field.type) {
     case 'select':
+    case 'cascade':
       return (value as { value: string }).value;
     case 'multiselect':
       return <Chips names={(value as Array<{ value: string }>).map((option) => option.value)} />;

@@ -551,6 +551,9 @@ export const de = {
     saved: 'Gespeichert.',
   },
   fields: {
+    cascadeHelp:
+      'Unteroptionen mit Pfeil schreiben, z. B. „Deutschland > Berlin“. Fehlende obere Optionen werden ergänzt.',
+    cascadeChild: '{{name}}: Unteroption',
     addPerson: 'Person zu {{name}} hinzufügen',
     removePerson: '{{name}} entfernen',
     title: 'Benutzerdefinierte Felder',
@@ -594,6 +597,7 @@ export const de = {
       group: 'Gruppe',
       version: 'Version',
       labels: 'Labels',
+      cascade: 'Auswahl (zweistufig)',
     },
     project: {
       button: 'Felder',

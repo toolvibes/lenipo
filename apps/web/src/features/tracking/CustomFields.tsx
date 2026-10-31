@@ -376,6 +376,65 @@ export function FieldEditor({
         </select>
       );
     }
+    case 'cascade': {
+      // Two selects: the first level, then its children (TL-82, E-92).
+      const current = value as Option | undefined;
+      const [parentName] = (current?.value ?? '').split(' › ');
+      const parents = usable.filter((option) => !option.value.includes(' › '));
+      const parent = field.options.find((option) => option.value === parentName);
+      const children = parent
+        ? usable.filter((option) => option.value.startsWith(`${parent.value} › `))
+        : [];
+      return (
+        <div className="flex gap-1">
+          <select
+            aria-label={label}
+            value={parent?.id ?? ''}
+            disabled={disabled}
+            onChange={(event) => {
+              const chosen = field.options.find((option) => option.id === event.target.value);
+              onChange(chosen?.id ?? null, chosen ?? null);
+            }}
+            className={inputClass}
+          >
+            <option value="">{t('issues.none')}</option>
+            {parent && !parents.includes(parent) && (
+              <option value={parent.id}>{parent.value}</option>
+            )}
+            {parents.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.value}
+              </option>
+            ))}
+          </select>
+          {parent && (children.length > 0 || current?.id !== parent.id) && (
+            <select
+              aria-label={t('fields.cascadeChild', { name: label })}
+              value={current?.id !== parent.id ? (current?.id ?? '') : ''}
+              disabled={disabled}
+              onChange={(event) => {
+                const chosen =
+                  field.options.find((option) => option.id === event.target.value) ?? parent;
+                onChange(chosen.id, chosen);
+              }}
+              className={inputClass}
+            >
+              <option value="">{t('issues.none')}</option>
+              {current &&
+                current.id !== parent.id &&
+                !children.some((c) => c.id === current.id) && (
+                  <option value={current.id}>{current.value.split(' › ')[1]}</option>
+                )}
+              {children.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.value.split(' › ')[1]}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      );
+    }
     case 'labels': {
       const labels = (value as string[] | undefined) ?? [];
       return (
@@ -402,7 +461,9 @@ export function shownValue(
 ): CustomFieldValue | undefined {
   if (input === null || input === undefined) return undefined;
   if (shown) return shown;
-  if (field.type === 'select') return field.options.find((option) => option.id === input);
+  if (field.type === 'select' || field.type === 'cascade') {
+    return field.options.find((option) => option.id === input);
+  }
   if (field.type === 'multiselect' && Array.isArray(input)) {
     return field.options.filter((option) => input.includes(option.id));
   }

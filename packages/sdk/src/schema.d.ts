@@ -2678,7 +2678,8 @@ export interface components {
         | 'users'
         | 'group'
         | 'version'
-        | 'labels';
+        | 'labels'
+        | 'cascade';
       options: components['schemas']['CustomFieldOption'][];
       archived: boolean;
     };
@@ -2707,7 +2708,8 @@ export interface components {
         | 'users'
         | 'group'
         | 'version'
-        | 'labels';
+        | 'labels'
+        | 'cascade';
       /** @default [] */
       options?: string[];
     };

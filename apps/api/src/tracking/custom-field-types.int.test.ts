@@ -106,4 +106,44 @@ describe('more custom field types (TL-79)', () => {
     expect(await search('Themen = api')).toEqual(['WEB-1']);
     expect(await search('Themen is EMPTY')).toEqual(['WEB-2']);
   });
+
+  it('offer cascading options in two levels (TL-82)', async () => {
+    const herkunft = (
+      await admin.request<CustomField>('POST', '/admin/custom-fields', {
+        name: 'Herkunft',
+        type: 'cascade',
+        options: ['Deutschland > Berlin', 'Deutschland > Hamburg', 'Österreich'],
+      })
+    ).body;
+    expect(herkunft.options.map((option) => option.value)).toEqual([
+      'Deutschland',
+      'Deutschland › Berlin',
+      'Deutschland › Hamburg',
+      'Österreich',
+    ]);
+    expect(
+      (
+        await admin.request('POST', '/admin/custom-fields', {
+          name: 'Zu tief',
+          type: 'cascade',
+          options: ['a > b > c'],
+        })
+      ).status,
+    ).toBe(400);
+    const ids = [...Object.values(field).map((entry) => entry.id), herkunft.id];
+    await admin.request('PUT', '/projects/WEB/custom-fields', { fieldIds: ids });
+    const berlin = herkunft.options.find((option) => option.value.endsWith('Berlin'))?.id;
+    const created = await admin.request<Issue>('POST', '/issues', {
+      projectKey: 'WEB',
+      issueType: 'task',
+      summary: 'Aus Berlin',
+      customFields: { [herkunft.id]: berlin },
+    });
+    expect(created.body.customFields[herkunft.id]).toEqual({
+      id: berlin,
+      value: 'Deutschland › Berlin',
+    });
+    expect(await search('Herkunft = Deutschland')).toEqual([created.body.key]);
+    expect(await search('Herkunft = Österreich')).toEqual([]);
+  });
 });

@@ -11,7 +11,7 @@ import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 
 const LOZENGE = 'inline-flex rounded-[var(--radius-sm)] px-1.5 text-xs font-semibold uppercase';
-const CHOICES = new Set<CustomFieldType>(['select', 'multiselect']);
+const CHOICES = new Set<CustomFieldType>(['select', 'multiselect', 'cascade']);
 
 interface OptionDraft {
   id?: string;
@@ -154,6 +154,9 @@ function CustomFieldDialog({
             <legend className="tl-label mb-1.5 text-[var(--ink-muted)]">
               {t('fields.options')}
             </legend>
+            {type === 'cascade' && (
+              <p className="m-0 text-xs text-[var(--ink-muted)]">{t('fields.cascadeHelp')}</p>
+            )}
             {options.map((option, index) => (
               <div key={option.id ?? `new:${option.value}`} className="flex items-center gap-2">
                 <input

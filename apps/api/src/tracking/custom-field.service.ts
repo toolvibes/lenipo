@@ -103,10 +103,12 @@ export class CustomFieldService {
 
   async create(principal: Principal, request: CreateCustomFieldRequest): Promise<CustomField> {
     this.checkName(request.name);
-    const choices = request.type === 'select' || request.type === 'multiselect';
-    if (!choices && request.options.length > 0) {
+    if (!CHOICES.has(request.type) && request.options.length > 0) {
       throw new BadRequestException('Only select fields have options');
     }
+    // Cascading fields: each child brings its parent, missing parents are added (TL-82).
+    const options =
+      request.type === 'cascade' ? withParents(request.options.map(cascadePath)) : request.options;
     const id = uuidv7();
     try {
       await this.database.db.transaction(async (tx) => {
@@ -116,9 +118,9 @@ export class CustomFieldService {
           description: request.description,
           type: request.type,
         });
-        if (request.options.length > 0) {
+        if (options.length > 0) {
           await tx.insert(customFieldOptions).values(
-            request.options.map((value, position) => ({
+            options.map((value, position) => ({
               id: uuidv7(),
               fieldId: id,
               value,
@@ -149,8 +151,22 @@ export class CustomFieldService {
   ): Promise<CustomField> {
     const field = await this.field(id);
     if (request.name !== undefined) this.checkName(request.name);
-    if (request.options && field.type !== 'select' && field.type !== 'multiselect') {
+    if (request.options && !CHOICES.has(field.type)) {
       throw new BadRequestException('Only select fields have options');
+    }
+    if (request.options && field.type === 'cascade') {
+      const options = request.options.map((option) => ({
+        ...option,
+        value: cascadePath(option.value),
+      }));
+      const values = new Set(options.map((option) => option.value.toLowerCase()));
+      for (const option of options) {
+        const parent = option.value.split(' › ')[0] ?? '';
+        if (option.value.includes(' › ') && !values.has(parent.toLowerCase())) {
+          throw new BadRequestException(`The option "${parent}" is missing`);
+        }
+      }
+      request.options = options;
     }
     try {
       await this.database.db.transaction(async (tx) => {
@@ -477,6 +493,7 @@ export class CustomFieldService {
     };
     switch (field.type) {
       case 'select':
+      case 'cascade':
         return option(raw);
       case 'multiselect':
         return Array.isArray(raw)
@@ -654,6 +671,7 @@ export class CustomFieldService {
         // An unticked box is "no value", so `= false` and EMPTY agree.
         return input ? true : undefined;
       case 'select':
+      case 'cascade':
         if (typeof input !== 'string' || !usable(input)) this.invalid(field, 'unknown option');
         return input;
       case 'multiselect': {
@@ -714,4 +732,27 @@ export class CustomFieldService {
 /** Whether a project field's context covers the issue type (TL-80, E-91). */
 export function appliesTo(setting: { issueTypeIds: string[] }, issueTypeId: string): boolean {
   return setting.issueTypeIds.length === 0 || setting.issueTypeIds.includes(issueTypeId);
+}
+
+/** Field types with a list of options. */
+const CHOICES = new Set<string>(['select', 'multiselect', 'cascade']);
+
+/** A cascading option as "Parent › Child", whichever arrow was typed; at most two levels. */
+export function cascadePath(value: string): string {
+  const parts = value.split(/\s*(?:›|>)\s*/).filter(Boolean);
+  if (parts.length > 2) throw new BadRequestException('Cascading options have two levels');
+  return parts.join(' › ');
+}
+
+/** Options with every parent listed before its first child. */
+function withParents(values: string[]): string[] {
+  const result: string[] = [];
+  const has = (value: string) =>
+    result.some((entry) => entry.toLowerCase() === value.toLowerCase());
+  for (const value of values) {
+    const parent = value.split(' › ')[0] ?? value;
+    if (!has(parent)) result.push(parent);
+    if (!has(value)) result.push(value);
+  }
+  return result;
 }

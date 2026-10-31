@@ -484,6 +484,7 @@ export class TqlCompiler {
       }
       case 'select':
       case 'multiselect':
+      case 'cascade':
       case 'group':
       case 'version': {
         const options = this.context.customFields.get(id)?.options ?? [];
@@ -491,8 +492,12 @@ export class TqlCompiler {
         for (const item of items(clause.operand)) {
           if (item.kind !== 'value') continue;
           const wanted = item.value.toLowerCase();
+          // A cascading parent also finds its children ("Deutschland" → "Deutschland › Berlin").
           const found = options.filter(
-            (option) => option.id === wanted || option.value.toLowerCase() === wanted,
+            (option) =>
+              option.id === wanted ||
+              option.value.toLowerCase() === wanted ||
+              (info.type === 'cascade' && option.value.toLowerCase().startsWith(`${wanted} › `)),
           );
           if (found.length === 0) this.notFound(clause.field, item, item.value);
           for (const option of found) {
