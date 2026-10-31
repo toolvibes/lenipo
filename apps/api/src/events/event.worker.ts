@@ -10,6 +10,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
 import { wikiSettings } from '../wiki/blog.controller.js';
 import { PageService } from '../wiki/page.service.js';
@@ -29,6 +30,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(WebhookService) private readonly webhooks: WebhookService,
     @Inject(AutomationEngine) private readonly automation: AutomationEngine,
     @Inject(PageService) private readonly pages: PageService,
+    @Inject(FilterSubscriptionService) private readonly subscriptions: FilterSubscriptionService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
 
@@ -39,6 +41,9 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       while ((await this.webhooks.deliverDue()) > 0);
     });
     this.every('email', 15_000, () => this.notifications.sendDueEmails().then(() => {}));
+    // Digests and filter subscriptions go out at their hour; checked every few minutes (E-112).
+    this.every('digests', 5 * 60_000, () => this.notifications.sendDigests().then(() => {}));
+    this.every('subscriptions', 5 * 60_000, () => this.subscriptions.sendDue().then(() => {}));
     this.every('automation', 2_000, async () => {
       while ((await this.automation.runDue()) > 0);
     });

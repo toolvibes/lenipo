@@ -1,6 +1,12 @@
 import { Copy } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { WEBHOOK_EVENT_TYPES, type Webhook, type WebhookEventType } from '@tasklore/shared';
+import {
+  WEBHOOK_EVENT_TYPES,
+  WEBHOOK_FORMATS,
+  type Webhook,
+  type WebhookEventType,
+  type WebhookFormat,
+} from '@tasklore/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -8,6 +14,7 @@ import { projectsQuery, trackingMetaQuery } from '../../lib/tracking';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 
 interface WebhookDialogProps {
@@ -20,7 +27,7 @@ interface WebhookDialogProps {
 
 /** Name, target, events, projects and target statuses of a webhook (E-45, E-86). */
 export function WebhookDialog({ open, onOpenChange, editing, onCreated }: WebhookDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const projects = useQuery({ ...projectsQuery, enabled: open });
   const meta = useQuery({ ...trackingMetaQuery, enabled: open });
@@ -29,6 +36,8 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
   const [events, setEvents] = useState<WebhookEventType[]>([]);
   const [projectKeys, setProjectKeys] = useState<string[]>([]);
   const [statusIds, setStatusIds] = useState<string[]>([]);
+  const [format, setFormat] = useState<WebhookFormat>('standard');
+  const [locale, setLocale] = useState<'de' | 'en'>('de');
 
   useEffect(() => {
     if (!open) return;
@@ -37,11 +46,13 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
     setEvents(editing?.events ?? ['issue.created', 'issue.transitioned', 'comment.created']);
     setProjectKeys(editing?.projectKeys ?? []);
     setStatusIds(editing?.statusIds ?? []);
-  }, [open, editing]);
+    setFormat(editing?.format ?? 'standard');
+    setLocale(editing?.locale ?? (i18n.language.startsWith('en') ? 'en' : 'de'));
+  }, [open, editing, i18n.language]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const body = { name, url, events, projectKeys, statusIds };
+      const body = { name, url, events, projectKeys, statusIds, format, locale };
       if (editing) {
         await unwrap(
           client.PATCH('/api/v1/admin/webhooks/{id}', {
@@ -93,6 +104,30 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
           placeholder="https://chat.example.org/hooks/…"
           onChange={(event) => setUrl(event.target.value)}
         />
+        <div className="grid grid-cols-[2fr_1fr] gap-3">
+          <Select
+            label={t('webhooks.format')}
+            value={format}
+            onChange={(event) => setFormat(event.target.value as WebhookFormat)}
+            options={WEBHOOK_FORMATS.map((value) => ({
+              value,
+              label: t(`webhooks.formats.${value}`),
+            }))}
+          />
+          <Select
+            label={t('webhooks.locale')}
+            value={locale}
+            disabled={format === 'standard'}
+            onChange={(event) => setLocale(event.target.value as 'de' | 'en')}
+            options={[
+              { value: 'de', label: 'Deutsch' },
+              { value: 'en', label: 'English' },
+            ]}
+          />
+        </div>
+        {format !== 'standard' && (
+          <p className="m-0 text-xs text-[var(--ink-muted)]">{t('webhooks.chatHelp')}</p>
+        )}
         <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
           <legend className="tl-label mb-1 text-[var(--ink-muted)]">{t('webhooks.events')}</legend>
           {WEBHOOK_EVENT_TYPES.map((type) => (

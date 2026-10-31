@@ -2542,6 +2542,129 @@
         }
       }
     },
+    "/api/v1/filters/{id}/subscriptions": {
+      "get": {
+        "operationId": "Filters.listSubscriptions",
+        "summary": "List subscriptions of a filter",
+        "description": "The caller’s own subscriptions and those of their groups; the owner of the filter sees all.",
+        "tags": ["Filters"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilterSubscription"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Filters.subscribe",
+        "summary": "Subscribe to a filter",
+        "description": "Whoever can see the filter gets its results by e-mail at the hour in their time zone: daily, on weekdays or once a week. The owner may subscribe a group they belong to; every member then gets only what they may see. At most 50 issues are listed.",
+        "tags": ["Filters"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFilterSubscription"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilterSubscription"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/filter-subscriptions/{id}": {
+      "delete": {
+        "operationId": "Filters.unsubscribe",
+        "summary": "Delete a filter subscription (subscriber or filter owner)",
+        "tags": ["Filters"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/filters": {
       "get": {
         "operationId": "Filters.list",
@@ -16667,6 +16790,136 @@
         },
         "required": ["columns"]
       },
+      "FilterSubscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "filterId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/SubscriptionSchedule"
+          },
+          "weekday": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "onlyWithResults": {
+            "type": "boolean"
+          },
+          "subscriber": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName"],
+            "additionalProperties": false
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastSentAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "filterId",
+          "schedule",
+          "weekday",
+          "hour",
+          "onlyWithResults",
+          "subscriber",
+          "group",
+          "lastSentAt",
+          "canDelete"
+        ],
+        "additionalProperties": false
+      },
+      "SubscriptionSchedule": {
+        "type": "string",
+        "enum": ["daily", "weekdays", "weekly"]
+      },
+      "CreateFilterSubscription": {
+        "type": "object",
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/SubscriptionSchedule"
+          },
+          "weekday": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "hour": {
+            "default": 8,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "onlyWithResults": {
+            "default": true,
+            "type": "boolean"
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": ["schedule"]
+      },
       "SavedFilter": {
         "type": "object",
         "properties": {
@@ -18535,12 +18788,34 @@
               "$ref": "#/components/schemas/NotificationCategory"
             }
           },
+          "emailMode": {
+            "$ref": "#/components/schemas/EmailMode"
+          },
+          "digestHour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "notifyOwnChanges": {
+            "type": "boolean"
+          },
           "emailAvailable": {
             "type": "boolean"
           }
         },
-        "required": ["emailEnabled", "emailCategories", "emailAvailable"],
+        "required": [
+          "emailEnabled",
+          "emailCategories",
+          "emailMode",
+          "digestHour",
+          "notifyOwnChanges",
+          "emailAvailable"
+        ],
         "additionalProperties": false
+      },
+      "EmailMode": {
+        "type": "string",
+        "enum": ["immediate", "daily", "weekly"]
       },
       "UpdateNotificationSettings": {
         "type": "object",
@@ -18553,6 +18828,20 @@
             "items": {
               "$ref": "#/components/schemas/NotificationCategory"
             }
+          },
+          "emailMode": {
+            "default": "immediate",
+            "$ref": "#/components/schemas/EmailMode"
+          },
+          "digestHour": {
+            "default": 8,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "notifyOwnChanges": {
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": ["emailEnabled", "emailCategories"]
@@ -23506,6 +23795,13 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
+          "format": {
+            "$ref": "#/components/schemas/WebhookFormat"
+          },
+          "locale": {
+            "type": "string",
+            "enum": ["de", "en"]
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -23572,6 +23868,8 @@
           "events",
           "projectKeys",
           "statusIds",
+          "format",
+          "locale",
           "enabled",
           "disabledReason",
           "failingSince",
@@ -23593,6 +23891,10 @@
           "worklog.updated",
           "worklog.deleted"
         ]
+      },
+      "WebhookFormat": {
+        "type": "string",
+        "enum": ["standard", "slack", "teams", "mattermost", "rocketchat"]
       },
       "CreateWebhookRequest": {
         "type": "object",
@@ -23632,6 +23934,15 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
+          },
+          "format": {
+            "default": "standard",
+            "$ref": "#/components/schemas/WebhookFormat"
+          },
+          "locale": {
+            "default": "de",
+            "type": "string",
+            "enum": ["de", "en"]
           },
           "enabled": {
             "default": true,
@@ -23673,6 +23984,13 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
+          },
+          "format": {
+            "$ref": "#/components/schemas/WebhookFormat"
+          },
+          "locale": {
+            "type": "string",
+            "enum": ["de", "en"]
           },
           "enabled": {
             "type": "boolean"
@@ -23743,6 +24061,8 @@
           "events",
           "projectKeys",
           "statusIds",
+          "format",
+          "locale",
           "enabled",
           "disabledReason",
           "failingSince",
@@ -23788,6 +24108,13 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
+          },
+          "format": {
+            "$ref": "#/components/schemas/WebhookFormat"
+          },
+          "locale": {
+            "type": "string",
+            "enum": ["de", "en"]
           },
           "enabled": {
             "type": "boolean"

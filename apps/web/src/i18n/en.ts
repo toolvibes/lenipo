@@ -437,6 +437,14 @@ export const en: Messages = {
     noMailServer: 'This server has no mail server configured; no email is sent.',
     emailEnabled: 'Receive email',
     emailFor: 'Email for',
+    emailWhen: 'Send e-mails',
+    modes: {
+      immediate: 'Right away, bundled per issue or page',
+      daily: 'Once a day as a summary',
+      weekly: 'Once a week (Mondays) as a summary',
+    },
+    digestAt: 'at',
+    ownChanges: 'Also notify me about my own changes',
     categories: {
       mention: 'Mentions',
       assigned: 'Assignments to me',
@@ -447,6 +455,17 @@ export const en: Messages = {
     back: 'Back to notifications',
   },
   webhooks: {
+    format: 'Format',
+    formats: {
+      standard: 'JSON, signed (for your own services)',
+      slack: 'Slack',
+      teams: 'Microsoft Teams (Workflows)',
+      mattermost: 'Mattermost',
+      rocketchat: 'Rocket.Chat',
+    },
+    locale: 'Language',
+    chatHelp:
+      'Enter the address of an incoming webhook of the chat channel. Tasklore sends a readable message with a link to the issue; links need PUBLIC_URL on the server.',
     admin: 'Administration',
     title: 'Webhooks',
     intro:
@@ -885,6 +904,35 @@ export const en: Messages = {
     limited_one: 'The first child page is printed.',
     limited_other: 'The first {{count}} child pages are printed.',
     back: 'Back to the page',
+  },
+  subscriptions: {
+    action: 'Subscribe',
+    title: 'Subscriptions: {{name}}',
+    intro:
+      'The filter’s results arrive by e-mail at the chosen hour in your time zone. Everyone sees only what they may see; the e-mail lists at most 50 issues.',
+    schedule: 'When',
+    schedules: { daily: 'Daily', weekdays: 'Weekdays (Mon–Fri)', weekly: 'Weekly' },
+    weeklyOn: 'Weekly on {{day}}',
+    weekday: 'Weekday',
+    weekdays: {
+      mon: 'Monday',
+      tue: 'Tuesday',
+      wed: 'Wednesday',
+      thu: 'Thursday',
+      fri: 'Friday',
+      sat: 'Saturday',
+      sun: 'Sunday',
+    },
+    hour: 'Time',
+    recipients: 'Recipients',
+    onlyMe: 'Only me',
+    forGroup: 'Group {{name}}',
+    onlyWithResults: 'only with results',
+    onlyWithResultsLong: 'Only send when the filter has results',
+    lastSent: 'Last sent {{when}}',
+    add: 'Subscribe',
+    delete: 'Delete subscription',
+    close: 'Close',
   },
   exports: {
     action: 'Export',

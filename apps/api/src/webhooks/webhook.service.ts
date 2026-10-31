@@ -6,6 +6,7 @@ import type {
   Webhook,
   WebhookDelivery,
   WebhookEventType,
+  WebhookFormat,
 } from '@tasklore/shared';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -28,6 +29,7 @@ import {
 } from '../db/schema/index.js';
 import type { IssueEvent } from '../notifications/events.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { chatMessage } from './chat.js';
 import { BlockedAddressError, isPrivateAddress, postJson } from './http.js';
 import { generateSecret, sign } from './signature.js';
 
@@ -151,6 +153,8 @@ export class WebhookService {
         events: row.events as WebhookEventType[],
         projectKeys: row.projectIds.flatMap((id) => keyOf.get(id) ?? []),
         statusIds: row.statusIds,
+        format: row.format as WebhookFormat,
+        locale: row.locale === 'en' ? 'en' : 'de',
         enabled: row.enabled,
         disabledReason: row.disabledReason,
         failingSince: row.failingSince?.toISOString() ?? null,
@@ -193,6 +197,8 @@ export class WebhookService {
       events: [...new Set(request.events)],
       projectIds: await this.projectIds(request.projectKeys),
       statusIds: await this.statusIds(request.statusIds),
+      format: request.format,
+      locale: request.locale,
       enabled: request.enabled,
       createdById: principal.userId,
     });
@@ -222,6 +228,8 @@ export class WebhookService {
         ...(request.statusIds !== undefined
           ? { statusIds: await this.statusIds(request.statusIds) }
           : {}),
+        ...(request.format !== undefined ? { format: request.format } : {}),
+        ...(request.locale !== undefined ? { locale: request.locale } : {}),
         // Switching a webhook on again also clears the reason the system switched it off.
         ...(request.enabled !== undefined
           ? {
@@ -451,7 +459,17 @@ export class WebhookService {
   }
 
   private async send(delivery: DeliveryRow, webhook: WebhookRow): Promise<DeliveryRow> {
-    const body = JSON.stringify(delivery.payload);
+    // Chat formats turn the payload into a message for the platform's incoming webhook (E-112).
+    const body = JSON.stringify(
+      webhook.format === 'standard'
+        ? delivery.payload
+        : chatMessage(
+            webhook.format as Exclude<WebhookFormat, 'standard'>,
+            webhook.locale === 'en' ? 'en' : 'de',
+            delivery.payload,
+            this.config.PUBLIC_URL ?? '',
+          ),
+    );
     const timestamp = Math.floor(Date.now() / 1000);
     const attempts = delivery.attempts + 1;
     let result: { ok: boolean; status: number | null; text: string; durationMs: number | null };

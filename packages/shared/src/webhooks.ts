@@ -17,6 +17,14 @@ export type WebhookEventType = z.infer<typeof WebhookEventType>;
 
 const WebhookUrl = z.url({ protocol: /^https?$/ }).max(2_000);
 
+/**
+ * What a webhook sends (P-NTF-05, E-112): the signed JSON payload, or a readable chat message
+ * for an incoming webhook of Slack, Microsoft Teams (Workflows), Mattermost or Rocket.Chat.
+ */
+export const WEBHOOK_FORMATS = ['standard', 'slack', 'teams', 'mattermost', 'rocketchat'] as const;
+export const WebhookFormat = z.enum(WEBHOOK_FORMATS).meta({ id: 'WebhookFormat' });
+export type WebhookFormat = z.infer<typeof WebhookFormat>;
+
 export const Webhook = z
   .object({
     id: z.uuid(),
@@ -27,6 +35,9 @@ export const Webhook = z
     projectKeys: z.array(z.string()),
     /** Transitions only into these statuses; empty means all (TL-75, E-86). */
     statusIds: z.array(z.uuid()),
+    format: WebhookFormat,
+    /** Language of chat messages. */
+    locale: z.enum(['de', 'en']),
     enabled: z.boolean(),
     disabledReason: z.string().nullable(),
     failingSince: z.iso.datetime().nullable(),
@@ -56,6 +67,8 @@ export const CreateWebhookRequest = z
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100).default([]),
     statusIds: z.array(z.uuid()).max(100).default([]),
+    format: WebhookFormat.default('standard'),
+    locale: z.enum(['de', 'en']).default('de'),
     enabled: z.boolean().default(true),
   })
   .meta({ id: 'CreateWebhookRequest' });
@@ -68,6 +81,8 @@ export const UpdateWebhookRequest = z
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100),
     statusIds: z.array(z.uuid()).max(100),
+    format: WebhookFormat,
+    locale: z.enum(['de', 'en']),
     enabled: z.boolean(),
   })
   .partial()

@@ -222,6 +222,9 @@ describe('notification email', () => {
     expect(defaults.body).toEqual({
       emailEnabled: true,
       emailCategories: ['mention', 'assigned', 'comment', 'status', 'other'],
+      emailMode: 'immediate',
+      digestHour: 8,
+      notifyOwnChanges: false,
       emailAvailable: true,
     });
     const changed = await mira.request<NotificationSettings>('PUT', '/me/notification-settings', {

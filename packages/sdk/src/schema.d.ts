@@ -822,6 +822,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/filters/{id}/subscriptions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List subscriptions of a filter
+     * @description The caller’s own subscriptions and those of their groups; the owner of the filter sees all.
+     */
+    get: operations['Filters.listSubscriptions'];
+    put?: never;
+    /**
+     * Subscribe to a filter
+     * @description Whoever can see the filter gets its results by e-mail at the hour in their time zone: daily, on weekdays or once a week. The owner may subscribe a group they belong to; every member then gets only what they may see. At most 50 issues are listed.
+     */
+    post: operations['Filters.subscribe'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/filter-subscriptions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a filter subscription (subscriber or filter owner) */
+    delete: operations['Filters.unsubscribe'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/filters': {
     parameters: {
       query?: never;
@@ -5312,6 +5353,41 @@ export interface components {
     ArrangeGadgetsRequest: {
       columns: string[][];
     };
+    FilterSubscription: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      filterId: string;
+      schedule: components['schemas']['SubscriptionSchedule'];
+      weekday: number;
+      hour: number;
+      onlyWithResults: boolean;
+      subscriber: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      };
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+      lastSentAt: string | null;
+      canDelete: boolean;
+    };
+    /** @enum {string} */
+    SubscriptionSchedule: 'daily' | 'weekdays' | 'weekly';
+    CreateFilterSubscription: {
+      schedule: components['schemas']['SubscriptionSchedule'];
+      /** @default 1 */
+      weekday?: number;
+      /** @default 8 */
+      hour?: number;
+      /** @default true */
+      onlyWithResults?: boolean;
+      /** Format: uuid */
+      groupId?: string;
+    };
     SavedFilter: {
       /** Format: uuid */
       id: string;
@@ -5765,11 +5841,22 @@ export interface components {
     NotificationSettings: {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
+      emailMode: components['schemas']['EmailMode'];
+      digestHour: number;
+      notifyOwnChanges: boolean;
       emailAvailable: boolean;
     };
+    /** @enum {string} */
+    EmailMode: 'immediate' | 'daily' | 'weekly';
     UpdateNotificationSettings: {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
+      /** @default immediate */
+      emailMode?: components['schemas']['EmailMode'];
+      /** @default 8 */
+      digestHour?: number;
+      /** @default false */
+      notifyOwnChanges?: boolean;
     };
     SetPageStatusRequest: {
       status: components['schemas']['PageStatus'];
@@ -7006,6 +7093,9 @@ export interface components {
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
       statusIds: string[];
+      format: components['schemas']['WebhookFormat'];
+      /** @enum {string} */
+      locale: 'de' | 'en';
       enabled: boolean;
       disabledReason: string | null;
       failingSince: string | null;
@@ -7030,6 +7120,8 @@ export interface components {
       | 'worklog.created'
       | 'worklog.updated'
       | 'worklog.deleted';
+    /** @enum {string} */
+    WebhookFormat: 'standard' | 'slack' | 'teams' | 'mattermost' | 'rocketchat';
     CreateWebhookRequest: {
       name: string;
       /** Format: uri */
@@ -7039,6 +7131,13 @@ export interface components {
       projectKeys?: string[];
       /** @default [] */
       statusIds?: string[];
+      /** @default standard */
+      format?: components['schemas']['WebhookFormat'];
+      /**
+       * @default de
+       * @enum {string}
+       */
+      locale?: 'de' | 'en';
       /** @default true */
       enabled?: boolean;
     };
@@ -7050,6 +7149,9 @@ export interface components {
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
       statusIds: string[];
+      format: components['schemas']['WebhookFormat'];
+      /** @enum {string} */
+      locale: 'de' | 'en';
       enabled: boolean;
       disabledReason: string | null;
       failingSince: string | null;
@@ -7071,6 +7173,9 @@ export interface components {
       events?: components['schemas']['WebhookEventType'][];
       projectKeys?: string[];
       statusIds?: string[];
+      format?: components['schemas']['WebhookFormat'];
+      /** @enum {string} */
+      locale?: 'de' | 'en';
       enabled?: boolean;
     };
     WebhookSecret: {
@@ -9311,6 +9416,101 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Dashboard'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.listSubscriptions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FilterSubscription'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.subscribe': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateFilterSubscription'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FilterSubscription'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Filters.unsubscribe': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

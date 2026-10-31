@@ -93,4 +93,9 @@ export const notificationSettings = pgTable('notification_settings', {
     .array()
     .notNull()
     .default(sql`'{mention,assigned,comment,status,other}'::text[]`),
+  /** immediate, daily or weekly (TL-31, E-112). */
+  emailMode: text().notNull().default('immediate'),
+  digestHour: integer().notNull().default(8),
+  notifyOwnChanges: boolean().notNull().default(false),
+  lastDigestAt: timestamp({ withTimezone: true }),
 });

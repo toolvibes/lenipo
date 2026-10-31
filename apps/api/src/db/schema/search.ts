@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -57,4 +59,27 @@ export const filterShares = pgTable(
       .on(table.filterId, table.type, table.userId, table.groupId, table.projectId)
       .nullsNotDistinct(),
   ],
+);
+
+/** Results of a filter by e-mail on a schedule (T-QRY-07, E-112). */
+export const filterSubscriptions = pgTable(
+  'filter_subscriptions',
+  {
+    id: uuid().primaryKey(),
+    filterId: uuid()
+      .notNull()
+      .references(() => savedFilters.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Every member of the group gets the mail; null: only the subscriber. */
+    groupId: uuid().references(() => groups.id, { onDelete: 'cascade' }),
+    schedule: text().notNull(),
+    weekday: integer().notNull().default(1),
+    hour: integer().notNull().default(8),
+    onlyWithResults: boolean().notNull().default(true),
+    lastSentAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('filter_subscriptions_filter_idx').on(table.filterId)],
 );

@@ -1,4 +1,4 @@
-import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, EnvelopeSimple, Star } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { type Me, type QueryError, type SavedFilter } from '@tasklore/shared';
@@ -18,6 +18,7 @@ import { IssueTable } from '../tracking/IssueTable';
 import { BasicSearch } from './BasicSearch';
 import { BulkChangeDialog } from './BulkChangeDialog';
 import { ColumnPicker } from './ColumnPicker';
+import { FilterSubscriptionsDialog } from './FilterSubscriptions';
 import { IssueExportMenu } from './IssueExport';
 import { SaveFilterDialog } from './SaveFilterDialog';
 import { TqlInput } from './TqlInput';
@@ -127,6 +128,7 @@ export function SearchPage({
       return next;
     });
   const [deleting, setDeleting] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const [mode, setMode] = useMode();
   const catalogue = useFieldCatalogue();
   const columns = useListColumns();
@@ -351,6 +353,12 @@ export function SearchPage({
                 {t('search.save')}
               </Button>
             )}
+            {current && (
+              <Button variant="ghost" onClick={() => setSubscribing(true)}>
+                <EnvelopeSimple size={16} aria-hidden />
+                {t('subscriptions.action')}
+              </Button>
+            )}
             <Button onClick={() => setSaving('new')}>
               {current ? t('search.saveCopy') : t('search.saveAsFilter')}
             </Button>
@@ -521,6 +529,13 @@ export function SearchPage({
         onOpenChange={setBulkOpen}
         onDone={() => setChecked(new Set())}
       />
+      {current && (
+        <FilterSubscriptionsDialog
+          filter={current}
+          open={subscribing}
+          onOpenChange={setSubscribing}
+        />
+      )}
       <SaveFilterDialog
         open={saving !== null}
         onOpenChange={(open) => !open && setSaving(null)}

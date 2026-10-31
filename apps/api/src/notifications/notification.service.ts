@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  type EmailMode,
   NOTIFICATION_CATEGORIES,
   type Notification,
   type NotificationCategory,
@@ -35,8 +36,9 @@ import { signal } from '../realtime/signals.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { PageService } from '../wiki/page.service.js';
 import { pageWatcherIds } from '../wiki/watches.js';
-import { notificationEmail } from './email.js';
+import { type DigestGroup, digestEmail, notificationEmail } from './email.js';
 import type { ChangedItem, IssueEvent, PageEvent } from './events.js';
+import { localTime } from './local-time.js';
 import { Mailer } from './mailer.js';
 
 type EventRow = typeof domainEvents.$inferSelect;
@@ -106,7 +108,7 @@ export class NotificationService {
       const recipients = await this.schemeRecipients(tx, issue, kindsOf(event));
       candidates = [...new Set([...recipients, ...mentions])];
     }
-    candidates = candidates.filter((id) => id !== row.actorId);
+    candidates = await this.withoutOwnChanges(tx, candidates, row.actorId);
     if (candidates.length === 0) return;
 
     const active = await tx
@@ -245,7 +247,7 @@ export class NotificationService {
         );
       candidates.push(...thread.flatMap((entry) => (entry.authorId ? [entry.authorId] : [])));
     }
-    candidates = [...new Set(candidates)].filter((id) => id !== row.actorId);
+    candidates = await this.withoutOwnChanges(tx, [...new Set(candidates)], row.actorId);
     if (candidates.length === 0) return;
     const active = await tx
       .select({ id: users.id })
@@ -276,6 +278,20 @@ export class NotificationService {
   }
 
   /** One notification per recipient, queued for email as each person chose; bells update. */
+  /** The actor hears about their own change only if they asked for it (P-NTF-04, E-112). */
+  private async withoutOwnChanges(
+    tx: Executor,
+    candidates: string[],
+    actorId: string | null,
+  ): Promise<string[]> {
+    if (!actorId || !candidates.includes(actorId)) return candidates;
+    const [choice] = await tx
+      .select({ own: notificationSettings.notifyOwnChanges })
+      .from(notificationSettings)
+      .where(eq(notificationSettings.userId, actorId));
+    return choice?.own ? candidates : candidates.filter((id) => id !== actorId);
+  }
+
   private async deliver(
     tx: Executor,
     row: EventRow,
@@ -324,7 +340,14 @@ export class NotificationService {
         pageId: notifications.pageId,
       })
       .from(notifications)
-      .where(eq(notifications.emailPending, true))
+      .leftJoin(notificationSettings, eq(notificationSettings.userId, notifications.userId))
+      // People with a digest get their e-mails collected (E-112).
+      .where(
+        and(
+          eq(notifications.emailPending, true),
+          sql`coalesce(${notificationSettings.emailMode}, 'immediate') = 'immediate'`,
+        ),
+      )
       .groupBy(notifications.userId, notifications.issueId, notifications.pageId)
       .having(sql`max(${notifications.createdAt}) <= now() - make_interval(secs => ${delay})`)
       .limit(limit);
@@ -408,6 +431,129 @@ export class NotificationService {
           ),
         );
       return true;
+    });
+  }
+
+  /**
+   * One e-mail with everything collected for people with a daily or weekly digest (E-112), at
+   * their hour in their time zone; weekly digests on Mondays. Runs every few minutes.
+   */
+  async sendDigests(now = new Date()): Promise<number> {
+    if (!this.mailer.enabled) return 0;
+    const db = this.database.db;
+    const candidates = await db
+      .select({
+        userId: users.id,
+        email: users.email,
+        locale: users.locale,
+        timeZone: users.timeZone,
+        status: users.status,
+        mode: notificationSettings.emailMode,
+        hour: notificationSettings.digestHour,
+        last: notificationSettings.lastDigestAt,
+      })
+      .from(notificationSettings)
+      .innerJoin(users, eq(users.id, notificationSettings.userId))
+      .where(
+        and(
+          sql`${notificationSettings.emailMode} <> 'immediate'`,
+          sql`exists (select 1 from ${notifications} where ${notifications.userId} = ${users.id} and ${notifications.emailPending})`,
+        ),
+      );
+    let sent = 0;
+    for (const person of candidates) {
+      const local = localTime(now, person.timeZone);
+      if (local.hour !== person.hour) continue;
+      if (person.mode === 'weekly' && local.weekday !== 1) continue;
+      // Once per day at most, however often the job runs in that hour.
+      if (person.last && now.getTime() - person.last.getTime() < 20 * 3600_000) continue;
+      try {
+        await this.sendDigest(person, now);
+        sent += 1;
+      } catch (error) {
+        this.logger.error({ err: error, userId: person.userId }, 'Sending a digest failed');
+      }
+    }
+    return sent;
+  }
+
+  private async sendDigest(
+    person: { userId: string; email: string; locale: string; status: string },
+    now: Date,
+  ): Promise<void> {
+    await this.database.db.transaction(async (tx) => {
+      const pending = await tx
+        .select()
+        .from(notifications)
+        .where(and(eq(notifications.userId, person.userId), eq(notifications.emailPending, true)))
+        .orderBy(asc(notifications.id))
+        .for('update', { skipLocked: true });
+      if (pending.length === 0) return;
+      const issueIds = [
+        ...new Set(pending.flatMap((entry) => (entry.issueId ? [entry.issueId] : []))),
+      ];
+      const pageIds = [
+        ...new Set(pending.flatMap((entry) => (entry.pageId ? [entry.pageId] : []))),
+      ];
+      const issueRows = issueIds.length
+        ? await tx
+            .select({ id: issues.id, key: issues.key, summary: issues.summary })
+            .from(issues)
+            .where(inArray(issues.id, issueIds))
+        : [];
+      const pageRows = pageIds.length
+        ? await tx
+            .select({ id: pages.id, title: pages.title, spaceKey: spaces.key })
+            .from(pages)
+            .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+            .where(inArray(pages.id, pageIds))
+        : [];
+      const actors = await this.refs(
+        tx,
+        pending.map((entry) => entry.actorId),
+      );
+      const groups: DigestGroup[] = [];
+      for (const entry of pending) {
+        const issue = issueRows.find((candidate) => candidate.id === entry.issueId);
+        const page = pageRows.find((candidate) => candidate.id === entry.pageId);
+        const key = issue?.id ?? page?.id;
+        if (!key) continue;
+        let group = groups.find((candidate) => candidate.key === key);
+        if (!group) {
+          group = issue
+            ? { key, issue: { key: issue.key, summary: issue.summary }, entries: [] }
+            : { key, page: page as { id: string; title: string; spaceKey: string }, entries: [] };
+          groups.push(group);
+        }
+        group.entries.push({
+          actor: entry.actorId ? (actors.get(entry.actorId)?.displayName ?? null) : null,
+          category: entry.category,
+          details: entry.details as NotificationDetails,
+        });
+      }
+      if (person.status === 'active' && groups.length > 0) {
+        await this.mailer.send(
+          digestEmail({
+            to: person.email,
+            locale: person.locale,
+            publicUrl: this.config.PUBLIC_URL,
+            groups,
+          }),
+        );
+      }
+      await tx
+        .update(notifications)
+        .set({ emailPending: false, emailedAt: sql`now()` })
+        .where(
+          inArray(
+            notifications.id,
+            pending.map((entry) => entry.id),
+          ),
+        );
+      await tx
+        .update(notificationSettings)
+        .set({ lastDigestAt: now })
+        .where(eq(notificationSettings.userId, person.userId));
     });
   }
 
@@ -502,6 +648,9 @@ export class NotificationService {
       emailCategories: (row?.emailCategories ?? [
         ...NOTIFICATION_CATEGORIES,
       ]) as NotificationCategory[],
+      emailMode: (row?.emailMode ?? 'immediate') as EmailMode,
+      digestHour: row?.digestHour ?? 8,
+      notifyOwnChanges: row?.notifyOwnChanges ?? false,
       emailAvailable: this.mailer.enabled,
     };
   }
@@ -513,6 +662,9 @@ export class NotificationService {
     const values = {
       emailEnabled: request.emailEnabled,
       emailCategories: [...new Set(request.emailCategories)],
+      emailMode: request.emailMode,
+      digestHour: request.digestHour,
+      notifyOwnChanges: request.notifyOwnChanges,
     };
     await this.database.db
       .insert(notificationSettings)

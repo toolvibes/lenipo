@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
+  EMAIL_MODES,
   NOTIFICATION_CATEGORIES,
   type Notification,
   type NotificationCategory,
@@ -74,21 +75,32 @@ export function useDescribe() {
 }
 
 /** E-mail settings; `onDone` adds a back button (notifications page), the profile embeds it without. */
+/** 0–23, for the digest hour. */
+const HOURS = [...Array(24).keys()];
+
 export function Settings({ onDone }: { onDone?: () => void }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const settings = useQuery(notificationSettingsQuery);
   const save = useMutation({
-    mutationFn: (next: Pick<NotificationSettings, 'emailEnabled' | 'emailCategories'>) =>
+    mutationFn: (next: Omit<NotificationSettings, 'emailAvailable'>) =>
       unwrap(client.PUT('/api/v1/me/notification-settings', { body: next })),
     onSuccess: (saved) => queryClient.setQueryData(notificationSettingsQuery.queryKey, saved),
   });
   const data = settings.data;
   if (!data) return <p className="text-[var(--ink-muted)]">{t('common.loading')}</p>;
 
-  const toggle = (category: NotificationCategory, on: boolean) =>
+  const update = (patch: Partial<Omit<NotificationSettings, 'emailAvailable'>>) =>
     save.mutate({
       emailEnabled: data.emailEnabled,
+      emailCategories: data.emailCategories,
+      emailMode: data.emailMode,
+      digestHour: data.digestHour,
+      notifyOwnChanges: data.notifyOwnChanges,
+      ...patch,
+    });
+  const toggle = (category: NotificationCategory, on: boolean) =>
+    update({
       emailCategories: on
         ? [...data.emailCategories, category]
         : data.emailCategories.filter((entry) => entry !== category),
@@ -108,12 +120,7 @@ export function Settings({ onDone }: { onDone?: () => void }) {
           type="checkbox"
           checked={data.emailEnabled}
           disabled={!data.emailAvailable}
-          onChange={(event) =>
-            save.mutate({
-              emailEnabled: event.target.checked,
-              emailCategories: data.emailCategories,
-            })
-          }
+          onChange={(event) => update({ emailEnabled: event.target.checked })}
         />
         {t('notifications.emailEnabled')}
       </label>
@@ -135,6 +142,49 @@ export function Settings({ onDone }: { onDone?: () => void }) {
           </label>
         ))}
       </fieldset>
+      <fieldset
+        disabled={!data.emailAvailable || !data.emailEnabled}
+        className="m-0 flex flex-col gap-1.5 border-0 p-0 pl-6 disabled:opacity-55"
+      >
+        <legend className="tl-label mb-1 text-[var(--ink-muted)]">
+          {t('notifications.emailWhen')}
+        </legend>
+        {EMAIL_MODES.map((mode) => (
+          <label key={mode} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="email-mode"
+              checked={data.emailMode === mode}
+              onChange={() => update({ emailMode: mode })}
+            />
+            {t(`notifications.modes.${mode}`)}
+          </label>
+        ))}
+        {data.emailMode !== 'immediate' && (
+          <label className="flex items-center gap-2 pl-6">
+            {t('notifications.digestAt')}
+            <select
+              value={data.digestHour}
+              onChange={(event) => update({ digestHour: Number(event.target.value) })}
+              className="h-7 rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-1"
+            >
+              {HOURS.map((hour) => (
+                <option key={hour} value={hour}>
+                  {`${String(hour).padStart(2, '0')}:00`}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </fieldset>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={data.notifyOwnChanges}
+          onChange={(event) => update({ notifyOwnChanges: event.target.checked })}
+        />
+        {t('notifications.ownChanges')}
+      </label>
       {onDone && (
         <div>
           <Button onClick={onDone}>{t('notifications.back')}</Button>

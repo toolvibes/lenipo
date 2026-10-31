@@ -71,10 +71,20 @@ export const MarkNotificationsRead = z
   .meta({ id: 'MarkNotificationsRead' });
 export type MarkNotificationsRead = z.infer<typeof MarkNotificationsRead>;
 
+/** When e-mails go out: shortly after a change, or collected once a day or week (TL-31, E-112). */
+export const EMAIL_MODES = ['immediate', 'daily', 'weekly'] as const;
+export const EmailMode = z.enum(EMAIL_MODES).meta({ id: 'EmailMode' });
+export type EmailMode = z.infer<typeof EmailMode>;
+
 export const NotificationSettings = z
   .object({
     emailEnabled: z.boolean(),
     emailCategories: z.array(NotificationCategory),
+    emailMode: EmailMode,
+    /** Hour of the digest in the person's time zone; weekly digests go out on Mondays. */
+    digestHour: z.number().int().min(0).max(23),
+    /** Also notify about changes the person made themselves. */
+    notifyOwnChanges: z.boolean(),
     /** False when the server has no mail server configured. */
     emailAvailable: z.boolean(),
   })
@@ -82,6 +92,12 @@ export const NotificationSettings = z
 export type NotificationSettings = z.infer<typeof NotificationSettings>;
 
 export const UpdateNotificationSettings = z
-  .object({ emailEnabled: z.boolean(), emailCategories: z.array(NotificationCategory) })
+  .object({
+    emailEnabled: z.boolean(),
+    emailCategories: z.array(NotificationCategory),
+    emailMode: EmailMode.default('immediate'),
+    digestHour: z.number().int().min(0).max(23).default(8),
+    notifyOwnChanges: z.boolean().default(false),
+  })
   .meta({ id: 'UpdateNotificationSettings' });
 export type UpdateNotificationSettings = z.infer<typeof UpdateNotificationSettings>;

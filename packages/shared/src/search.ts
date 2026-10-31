@@ -186,3 +186,44 @@ export const EverythingResult = z
   })
   .meta({ id: 'EverythingResult' });
 export type EverythingResult = z.infer<typeof EverythingResult>;
+
+/** How often a filter's results are e-mailed (T-QRY-07, E-112). */
+export const SUBSCRIPTION_SCHEDULES = ['daily', 'weekdays', 'weekly'] as const;
+export const SubscriptionSchedule = z
+  .enum(SUBSCRIPTION_SCHEDULES)
+  .meta({ id: 'SubscriptionSchedule' });
+export type SubscriptionSchedule = z.infer<typeof SubscriptionSchedule>;
+
+/** At most this many issues are listed in a subscription e-mail. */
+export const SUBSCRIPTION_ISSUE_LIMIT = 50;
+
+export const FilterSubscription = z
+  .object({
+    id: z.uuid(),
+    filterId: z.uuid(),
+    schedule: SubscriptionSchedule,
+    /** 1 = Monday … 7 = Sunday; used by weekly schedules. */
+    weekday: z.number().int().min(1).max(7),
+    /** Hour in the subscriber's time zone. */
+    hour: z.number().int().min(0).max(23),
+    onlyWithResults: z.boolean(),
+    subscriber: z.object({ id: z.uuid(), displayName: z.string() }),
+    /** Every member of this group gets the mail with what they may see; null: the subscriber. */
+    group: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+    lastSentAt: z.iso.datetime().nullable(),
+    canDelete: z.boolean(),
+  })
+  .meta({ id: 'FilterSubscription' });
+export type FilterSubscription = z.infer<typeof FilterSubscription>;
+
+export const CreateFilterSubscription = z
+  .object({
+    schedule: SubscriptionSchedule,
+    weekday: z.number().int().min(1).max(7).default(1),
+    hour: z.number().int().min(0).max(23).default(8),
+    onlyWithResults: z.boolean().default(true),
+    /** Only the filter's owner, and only for a group they belong to. */
+    groupId: z.uuid().optional(),
+  })
+  .meta({ id: 'CreateFilterSubscription' });
+export type CreateFilterSubscription = z.infer<typeof CreateFilterSubscription>;

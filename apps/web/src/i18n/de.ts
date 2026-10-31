@@ -449,6 +449,14 @@ export const de = {
       'Auf diesem Server ist kein Mailserver eingerichtet; E-Mails werden nicht verschickt.',
     emailEnabled: 'E-Mails erhalten',
     emailFor: 'E-Mail bei',
+    emailWhen: 'E-Mails senden',
+    modes: {
+      immediate: 'Sofort, gebündelt je Vorgang oder Seite',
+      daily: 'Einmal täglich als Zusammenfassung',
+      weekly: 'Einmal wöchentlich (montags) als Zusammenfassung',
+    },
+    digestAt: 'um',
+    ownChanges: 'Auch über eigene Änderungen benachrichtigen',
     categories: {
       mention: 'Erwähnungen',
       assigned: 'Zuweisungen an mich',
@@ -459,6 +467,17 @@ export const de = {
     back: 'Zurück zu den Benachrichtigungen',
   },
   webhooks: {
+    format: 'Format',
+    formats: {
+      standard: 'JSON, signiert (für eigene Dienste)',
+      slack: 'Slack',
+      teams: 'Microsoft Teams (Workflows)',
+      mattermost: 'Mattermost',
+      rocketchat: 'Rocket.Chat',
+    },
+    locale: 'Sprache',
+    chatHelp:
+      'Tragen Sie die Adresse eines eingehenden Webhooks des Chat-Kanals ein. Tasklore schickt eine lesbare Nachricht mit Link zum Vorgang; für Links braucht der Server PUBLIC_URL.',
     admin: 'Administration',
     title: 'Webhooks',
     intro:
@@ -898,6 +917,35 @@ export const de = {
     limited_one: 'Gedruckt wird die erste Unterseite.',
     limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
     back: 'Zurück zur Seite',
+  },
+  subscriptions: {
+    action: 'Abonnieren',
+    title: 'Abonnements: {{name}}',
+    intro:
+      'Die Treffer des Filters kommen per E-Mail, zur gewählten Uhrzeit in Ihrer Zeitzone. Jede Person sieht nur, was sie sehen darf; höchstens 50 Vorgänge stehen in der E-Mail.',
+    schedule: 'Wann',
+    schedules: { daily: 'Täglich', weekdays: 'Werktags (Mo–Fr)', weekly: 'Wöchentlich' },
+    weeklyOn: 'Wöchentlich am {{day}}',
+    weekday: 'Wochentag',
+    weekdays: {
+      mon: 'Montag',
+      tue: 'Dienstag',
+      wed: 'Mittwoch',
+      thu: 'Donnerstag',
+      fri: 'Freitag',
+      sat: 'Samstag',
+      sun: 'Sonntag',
+    },
+    hour: 'Uhrzeit',
+    recipients: 'Empfänger',
+    onlyMe: 'Nur ich',
+    forGroup: 'Gruppe {{name}}',
+    onlyWithResults: 'nur mit Treffern',
+    onlyWithResultsLong: 'Nur senden, wenn der Filter Treffer hat',
+    lastSent: 'Zuletzt gesendet {{when}}',
+    add: 'Abonnieren',
+    delete: 'Abonnement löschen',
+    close: 'Schließen',
   },
   exports: {
     action: 'Exportieren',

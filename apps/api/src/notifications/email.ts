@@ -196,3 +196,162 @@ ${link ? `<p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="displa
 </body></html>`;
   return { to: options.to, subject, text, html };
 }
+
+const MORE = {
+  de: {
+    digestSubject: (count: number) =>
+      count === 1 ? 'Tasklore: 1 Neuigkeit' : `Tasklore: ${count} Neuigkeiten`,
+    digestTitle: 'Ihre Zusammenfassung',
+    footerDigest:
+      'Sie erhalten diese Zusammenfassung statt einzelner E-Mails. Häufigkeit und Uhrzeit stellen Sie in Tasklore unter der Glocke ein.',
+    filterTotal: (shown: number, total: number) =>
+      shown < total
+        ? `${shown} von ${total} Vorgängen`
+        : total === 1
+          ? '1 Vorgang'
+          : `${total} Vorgänge`,
+    filterEmpty: 'Der Filter hat zurzeit keine Treffer.',
+    filterOpen: 'Filter öffnen',
+    filterFooter:
+      'Sie erhalten diese E-Mail, weil Sie oder eine Ihrer Gruppen den Filter abonniert haben. Abonnements verwalten Sie am Filter in Tasklore.',
+    status: 'Status',
+    assignee: 'Bearbeitung',
+  },
+  en: {
+    digestSubject: (count: number) =>
+      count === 1 ? 'Tasklore: 1 update' : `Tasklore: ${count} updates`,
+    digestTitle: 'Your summary',
+    footerDigest:
+      'You receive this summary instead of single e-mails. Set how often and when in Tasklore under the bell.',
+    filterTotal: (shown: number, total: number) =>
+      shown < total ? `${shown} of ${total} issues` : total === 1 ? '1 issue' : `${total} issues`,
+    filterEmpty: 'The filter has no results at the moment.',
+    filterOpen: 'Open filter',
+    filterFooter:
+      'You receive this e-mail because you or one of your groups subscribed to the filter. Manage subscriptions at the filter in Tasklore.',
+    status: 'Status',
+    assignee: 'Assignee',
+  },
+};
+
+function frame(locale: Locale, title: string, body: string, footer: string): string {
+  return `<!doctype html><html lang="${locale}"><body style="margin:0;padding:24px;background:#f5f5f6;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:22px;color:#18181b">
+<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dcdce0;border-radius:8px;padding:24px">
+<p style="margin:0 0 16px;font-size:13px;color:#55555e">Tasklore</p>
+<h1 style="margin:0 0 20px;font-size:20px;line-height:28px">${escapeHtml(title)}</h1>
+${body}
+</div>
+<p style="max-width:640px;margin:16px auto 0;font-size:12px;color:#55555e">${escapeHtml(footer)}</p>
+</body></html>`;
+}
+
+export type DigestGroup = { key: string; entries: EmailEntry[] } & (
+  | { issue: { key: string; summary: string } }
+  | { page: { id: string; title: string; spaceKey: string } }
+);
+
+/** Everything collected for one person since the last digest, grouped by issue and page (E-112). */
+export function digestEmail(options: {
+  to: string;
+  locale: string;
+  publicUrl?: string;
+  groups: DigestGroup[];
+}): MailMessage {
+  const locale: Locale = options.locale.startsWith('en') ? 'en' : 'de';
+  const more = MORE[locale];
+  const base = options.publicUrl?.replace(/\/+$/, '');
+  const count = options.groups.reduce((sum, group) => sum + group.entries.length, 0);
+  const sections = options.groups.map((group) => {
+    const onPage = 'page' in group;
+    const title = 'page' in group ? group.page.title : `${group.issue.key} ${group.issue.summary}`;
+    const link = !base
+      ? null
+      : 'page' in group
+        ? `${base}/spaces/${encodeURIComponent(group.page.spaceKey)}/pages/${group.page.id}`
+        : `${base}/issues/${encodeURIComponent(group.issue.key)}`;
+    const blocks = group.entries.map((entry) => block(locale, entry, onPage));
+    return {
+      text: [title, ...(link ? [link] : []), '', ...blocks.flatMap((entry) => [...entry.text, ''])],
+      html: `<h2 style="margin:24px 0 8px;font-size:16px;line-height:22px">${link ? `<a href="${escapeHtml(link)}" style="color:#1f5fbf;text-decoration:none">${escapeHtml(title)}</a>` : escapeHtml(title)}</h2>${blocks.map((entry) => entry.html).join('')}`,
+    };
+  });
+  return {
+    to: options.to,
+    subject: more.digestSubject(count),
+    text: [
+      more.digestTitle,
+      '',
+      ...sections.flatMap((section) => section.text),
+      '--',
+      more.footerDigest,
+    ].join('\n'),
+    html: frame(
+      locale,
+      more.digestTitle,
+      sections.map((section) => section.html).join('\n'),
+      more.footerDigest,
+    ),
+  };
+}
+
+export interface FilterEmailIssue {
+  key: string;
+  summary: string;
+  status: string;
+  assignee: string | null;
+}
+
+/** The results of a subscribed filter (T-QRY-07, E-112). */
+export function filterEmail(options: {
+  to: string;
+  locale: string;
+  publicUrl?: string;
+  filter: { id: string; name: string };
+  issues: FilterEmailIssue[];
+  total: number;
+}): MailMessage {
+  const locale: Locale = options.locale.startsWith('en') ? 'en' : 'de';
+  const t = TEXT[locale];
+  const more = MORE[locale];
+  const base = options.publicUrl?.replace(/\/+$/, '');
+  const link = base ? `${base}/issues?filter=${options.filter.id}` : null;
+  const summary =
+    options.total === 0 ? more.filterEmpty : more.filterTotal(options.issues.length, options.total);
+  const cell = 'padding:6px 8px;border-bottom:1px solid #e4e4e7;text-align:left;vertical-align:top';
+  const rows = options.issues
+    .map((issue) => {
+      const key = base
+        ? `<a href="${escapeHtml(`${base}/issues/${encodeURIComponent(issue.key)}`)}" style="color:#1f5fbf;text-decoration:none">${escapeHtml(issue.key)}</a>`
+        : escapeHtml(issue.key);
+      return `<tr><td style="${cell};white-space:nowrap">${key}</td><td style="${cell}">${escapeHtml(issue.summary)}</td><td style="${cell}">${escapeHtml(issue.status)}</td><td style="${cell}">${escapeHtml(issue.assignee ?? t.none)}</td></tr>`;
+    })
+    .join('');
+  const table = options.issues.length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="${cell}"></th><th style="${cell}"></th><th style="${cell}">${more.status}</th><th style="${cell}">${more.assignee}</th></tr></thead><tbody>${rows}</tbody></table>`
+    : '';
+  const button = link
+    ? `<p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#1f5fbf;color:#ffffff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:6px">${escapeHtml(more.filterOpen)}</a></p>`
+    : '';
+  return {
+    to: options.to,
+    subject: `[Tasklore] ${options.filter.name}: ${summary}`,
+    text: [
+      options.filter.name,
+      summary,
+      '',
+      ...options.issues.map(
+        (issue) => `${issue.key}  ${issue.summary}  (${issue.status}, ${issue.assignee ?? t.none})`,
+      ),
+      '',
+      ...(link ? [`${more.filterOpen}: ${link}`, ''] : []),
+      '--',
+      more.filterFooter,
+    ].join('\n'),
+    html: frame(
+      locale,
+      options.filter.name,
+      `<p style="margin:0 0 12px;color:#55555e">${escapeHtml(summary)}</p>${table}${button}`,
+      more.filterFooter,
+    ),
+  };
+}
