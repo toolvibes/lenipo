@@ -9,15 +9,18 @@ export const boardsQuery = (project?: string) =>
   });
 
 /** The board with its cards; `filters` are quick filter ids, "mine" or "recent" (E-53). */
-export const boardDataQuery = (id: string, filters: string[]) =>
+export const boardDataQuery = (id: string, filters: string[], sprint?: string) =>
   queryOptions({
-    queryKey: ['board', id, 'issues', filters],
+    queryKey: ['board', id, 'issues', filters, sprint ?? null],
     queryFn: () =>
       unwrap(
         client.GET('/api/v1/boards/{id}/issues', {
           params: {
             path: { id },
-            query: filters.length > 0 ? { filters: filters.join(',') } : {},
+            query: {
+              ...(filters.length > 0 ? { filters: filters.join(',') } : {}),
+              ...(sprint ? { sprint } : {}),
+            },
           },
         }),
       ),

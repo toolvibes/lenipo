@@ -40,6 +40,7 @@ import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from '../tracking/icons';
 import { Avatar } from '../tracking/UserPicker';
 import { BoardTabs } from './BoardTabs';
+import { CapacitySummary } from './Capacity';
 import { CompleteSprintDialog, SprintDialog, useEstimate } from './SprintDialogs';
 
 const BACKLOG = 'backlog';
@@ -828,8 +829,15 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                           {estimate(section.issues)}
                         </span>
                         {sprint && (
+                          <CapacitySummary
+                            sprint={sprint}
+                            issues={section.issues}
+                            estimation={board.estimation}
+                          />
+                        )}
+                        {sprint && (
                           <span className="ml-auto flex flex-wrap gap-1">
-                            {sprint.state === 'future' && !running && (
+                            {sprint.state === 'future' && (!running || board.parallelSprints) && (
                               <Button
                                 size="sm"
                                 variant="primary"
@@ -965,6 +973,10 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
       {editing && (
         <SprintDialog
           sprint={editing.sprint}
+          issues={
+            sections.find((section) => section.sprint?.id === editing.sprint.id)?.issues ?? []
+          }
+          estimation={board?.estimation ?? 'storyPoints'}
           starting={editing.starting}
           open
           onOpenChange={(open) => !open && setEditing(null)}

@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -42,6 +43,8 @@ export const boards = pgTable(
     hideDoneAfterDays: integer().default(14),
     /** Scrum: what the backlog and the reports add up (T-SPR-08). */
     estimation: estimationField().notNull().default('storyPoints'),
+    /** Several running sprints at once (T-SPR-04, E-113). */
+    parallelSprints: boolean().notNull().default(false),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
@@ -120,6 +123,14 @@ export const sprints = pgTable(
     completedAt: timestamp({ withTimezone: true }),
     /** How the board estimated when the sprint started, for its reports. */
     estimation: estimationField(),
+    /** Planned capacity for the team and per person (T-SPR-05, E-113). */
+    capacity: jsonb()
+      .$type<{
+        total: number | null;
+        people: Array<{ user: { id: string; displayName: string }; value: number }>;
+      }>()
+      .notNull()
+      .default(sql`'{"total":null,"people":[]}'::jsonb`),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('sprints_board_idx').on(table.boardId, table.state)],

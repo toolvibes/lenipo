@@ -8,6 +8,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { useDuration } from '../tracking/TimeTracking';
+import { type CapacityDraft, CapacityFields, capacityDraft, capacityRequest } from './Capacity';
 
 function isoDay(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0');
@@ -34,12 +35,17 @@ export function useEstimate(estimation: EstimationField) {
 /** Name, goal and dates; with `starting`, the sprint starts on save (T-SPR-02). */
 export function SprintDialog({
   sprint,
+  issues,
+  estimation,
   starting,
   open,
   onOpenChange,
   onDone,
 }: {
   sprint: Sprint;
+  /** The sprint's issues, to offer their assignees for capacity planning. */
+  issues: IssueSummary[];
+  estimation: EstimationField;
   starting: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,16 +56,18 @@ export function SprintDialog({
   const [goal, setGoal] = useState(sprint.goal);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [capacity, setCapacity] = useState<CapacityDraft>(() => capacityDraft(sprint, issues));
   useEffect(() => {
     if (!open) return;
     const today = new Date();
     setName(sprint.name);
     setGoal(sprint.goal);
+    setCapacity(capacityDraft(sprint, issues));
     setStart(sprint.startDate ?? (starting ? isoDay(today) : ''));
     setEnd(
       sprint.endDate ?? (starting ? isoDay(new Date(today.getTime() + 13 * 24 * 3600 * 1000)) : ''),
     );
-  }, [open, sprint, starting]);
+  }, [open, sprint, starting, issues]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -67,7 +75,13 @@ export function SprintDialog({
       await unwrap(
         client.PATCH('/api/v1/sprints/{id}', {
           ...path,
-          body: { name, goal, startDate: start || null, endDate: end || null },
+          body: {
+            name,
+            goal,
+            startDate: start || null,
+            endDate: end || null,
+            capacity: capacityRequest(capacity),
+          },
         }),
       );
       if (starting) {
@@ -133,6 +147,7 @@ export function SprintDialog({
             className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-1.5"
           />
         </label>
+        <CapacityFields draft={capacity} onChange={setCapacity} estimation={estimation} />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}

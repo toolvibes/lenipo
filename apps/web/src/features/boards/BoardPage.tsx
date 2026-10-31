@@ -252,7 +252,9 @@ export function BoardPage({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const wide = useWideScreen();
-  const query = boardDataQuery(id, filters);
+  // With parallel sprints, one of them or all (E-113).
+  const [sprintChoice, setSprintChoice] = useState<string | undefined>(undefined);
+  const query = boardDataQuery(id, filters, sprintChoice);
   const data = useQuery(query);
   const [active, setActive] = useState<IssueSummary | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -547,6 +549,24 @@ export function BoardPage({
           </p>
         )}
 
+        {(data.data?.activeSprints.length ?? 0) > 1 && (
+          <div role="toolbar" aria-label={t('sprints.choose')} className="flex flex-wrap gap-1.5">
+            {[
+              { id: undefined, name: t('sprints.allRunning') },
+              ...(data.data?.activeSprints ?? []),
+            ].map((entry) => (
+              <button
+                key={entry.id ?? 'all'}
+                type="button"
+                aria-pressed={sprintChoice === entry.id}
+                onClick={() => setSprintChoice(entry.id)}
+                className="h-7 rounded-full border border-[var(--border-strong)] px-3 text-[12.5px] aria-pressed:border-[var(--accent)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+        )}
         <div
           role="toolbar"
           aria-label={t('boards.quickFilters')}

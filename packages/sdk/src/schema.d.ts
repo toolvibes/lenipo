@@ -4593,6 +4593,7 @@ export interface components {
       hideDoneAfterDays: number | null;
       /** @enum {string} */
       estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      parallelSprints: boolean;
       columns: components['schemas']['BoardColumn'][];
       quickFilters: components['schemas']['QuickFilter'][];
       canConfigure: boolean;
@@ -4619,6 +4620,7 @@ export interface components {
       hideDoneAfterDays?: number | null;
       /** @enum {string} */
       estimation?: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      parallelSprints?: boolean;
       columns?: {
         /** Format: uuid */
         id?: string;
@@ -4639,6 +4641,7 @@ export interface components {
     BoardData: {
       board: components['schemas']['Board'];
       sprint: components['schemas']['Sprint'] | null;
+      activeSprints: components['schemas']['Sprint'][];
       issues: components['schemas']['IssueSummary'][];
       truncated: boolean;
       reachable: {
@@ -4658,6 +4661,14 @@ export interface components {
       endDate: string | null;
       startedAt: string | null;
       completedAt: string | null;
+      capacity: components['schemas']['SprintCapacity'];
+    };
+    SprintCapacity: {
+      total: number | null;
+      people: {
+        user: components['schemas']['UserRef'];
+        value: number;
+      }[];
     };
     IssueSummary: {
       /** Format: uuid */
@@ -4683,6 +4694,7 @@ export interface components {
       dueDate: string | null;
       /** Format: date-time */
       createdAt: string;
+      resolvedAt: string | null;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
       customFields: {
@@ -4809,6 +4821,7 @@ export interface components {
       dueDate: string | null;
       /** Format: date-time */
       createdAt: string;
+      resolvedAt: string | null;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
       customFields: {
@@ -4852,7 +4865,6 @@ export interface components {
       } | null;
       description: components['schemas']['RichTextOutput'] | null;
       children: components['schemas']['IssueSummary'][];
-      resolvedAt: string | null;
       watching: boolean;
       watcherCount: number;
       links: components['schemas']['IssueLink'][];
@@ -6700,6 +6712,7 @@ export interface components {
       dueDate: string | null;
       /** Format: date-time */
       createdAt: string;
+      resolvedAt: string | null;
       components: components['schemas']['ComponentRef'][];
       timeTracking: components['schemas']['TimeTracking'];
       customFields: {
@@ -6941,6 +6954,14 @@ export interface components {
       goal?: string;
       startDate?: string | null;
       endDate?: string | null;
+      capacity?: {
+        total: number | null;
+        people: {
+          /** Format: uuid */
+          userId: string;
+          value: number;
+        }[];
+      };
     };
     StartSprintRequest: {
       /** Format: date */
@@ -8976,6 +8997,7 @@ export interface operations {
     parameters: {
       query?: {
         filters?: string;
+        sprint?: string;
       };
       header?: never;
       path: {

@@ -54,6 +54,7 @@ function presentSprint(row: SprintRow): Sprint {
     endDate: row.endDate,
     startedAt: row.startedAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
+    capacity: row.capacity,
   };
 }
 

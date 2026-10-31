@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Id } from './identity.js';
 import { TqlText } from './search.js';
-import { IssueSummary, ProjectKey, SprintState } from './tracking.js';
+import { IssueSummary, ProjectKey, SprintState, UserRef } from './tracking.js';
 
 export const BoardType = z.enum(['kanban', 'scrum']);
 export type BoardType = z.infer<typeof BoardType>;
@@ -51,6 +51,8 @@ export const Board = BoardSummary.extend({
   swimlanes: SwimlaneMode,
   hideDoneAfterDays: z.number().int().nullable(),
   estimation: EstimationField,
+  /** Several sprints may run at once, e.g. for several teams (T-SPR-04, E-113). */
+  parallelSprints: z.boolean(),
   columns: z.array(BoardColumn),
   quickFilters: z.array(QuickFilter),
   /** The caller administers the location project and may configure the board. */
@@ -78,6 +80,7 @@ export const UpdateBoardRequest = z
     swimlanes: SwimlaneMode,
     hideDoneAfterDays: z.number().int().min(1).max(365).nullable(),
     estimation: EstimationField,
+    parallelSprints: z.boolean(),
     /** The full list in display order; entries without id are new columns. */
     columns: z
       .array(
@@ -112,10 +115,26 @@ export const BUILT_IN_QUICK_FILTERS = ['mine', 'recent'] as const;
 export const BoardIssuesQuery = z.object({
   /** Comma-separated: "mine", "recent" and ids of the board's quick filters; combined with AND. */
   filters: z.string().max(2_000).optional(),
+  /** One running sprint instead of all, on boards with parallel sprints (E-113). */
+  sprint: z.uuid().optional(),
 });
 export type BoardIssuesQuery = z.infer<typeof BoardIssuesQuery>;
 
 // ---------------------------------------------------------------- sprints (E-55)
+
+const CapacityValue = z.number().min(0).max(100_000);
+
+/**
+ * Planned capacity in the board's estimation unit – story points, hours or issues – for the
+ * team and per person (T-SPR-05, E-113).
+ */
+export const SprintCapacity = z
+  .object({
+    total: CapacityValue.nullable(),
+    people: z.array(z.object({ user: UserRef, value: CapacityValue })),
+  })
+  .meta({ id: 'SprintCapacity' });
+export type SprintCapacity = z.infer<typeof SprintCapacity>;
 
 export const Sprint = z
   .object({
@@ -128,6 +147,7 @@ export const Sprint = z
     endDate: z.iso.date().nullable(),
     startedAt: z.iso.datetime().nullable(),
     completedAt: z.iso.datetime().nullable(),
+    capacity: SprintCapacity,
   })
   .meta({ id: 'Sprint' });
 export type Sprint = z.infer<typeof Sprint>;
@@ -151,6 +171,16 @@ export const UpdateSprintRequest = z
     goal: z.string().max(1_000),
     startDate: z.iso.date().nullable(),
     endDate: z.iso.date().nullable(),
+    capacity: z.object({
+      total: CapacityValue.nullable(),
+      people: z
+        .array(z.object({ userId: Id, value: CapacityValue }))
+        .max(100)
+        .refine(
+          (people) => new Set(people.map((entry) => entry.userId)).size === people.length,
+          'Each person only once',
+        ),
+    }),
   })
   .partial()
   .meta({ id: 'UpdateSprintRequest' });
@@ -259,6 +289,8 @@ export const BoardData = z
     board: Board,
     /** Scrum boards show the issues of their active sprint; null if none runs. */
     sprint: Sprint.nullable(),
+    /** Every running sprint; several only with parallel sprints (E-113). */
+    activeSprints: z.array(Sprint),
     /** Cards in rank order; only issues in a status of some column. */
     issues: z.array(IssueSummary),
     /** More issues match than a board shows (500). */

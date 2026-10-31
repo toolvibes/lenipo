@@ -1,4 +1,4 @@
-import { CaretLeft, CaretRight, EnvelopeSimple, Star } from '@phosphor-icons/react';
+import { CalendarBlank, CaretLeft, CaretRight, EnvelopeSimple, Star } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { type Me, type QueryError, type SavedFilter } from '@tasklore/shared';
@@ -10,7 +10,7 @@ import { useListColumns } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
 import { useFieldCatalogue } from '../../lib/tracking';
-import { Button } from '../../ui/Button';
+import { Button, buttonClass } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
@@ -493,6 +493,14 @@ export function SearchPage({
                   </Button>
                 </nav>
               )}
+              <Link
+                to="/calendar"
+                search={{ q: applied ?? '' }}
+                className={buttonClass('ghost', 'sm')}
+              >
+                <CalendarBlank size={16} aria-hidden />
+                {t('calendar.title')}
+              </Link>
               <IssueExportMenu query={applied ?? ''} total={page?.total} />
               <ColumnPicker columns={columns} />
             </div>

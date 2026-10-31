@@ -393,6 +393,13 @@
       "when": 1793444857713,
       "tag": "0055_filter_subscriptions_digest_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1793445497236,
+      "tag": "0056_parallel_sprints_capacity",
+      "breakpoints": true
     }
   ]
 }

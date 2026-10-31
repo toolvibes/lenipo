@@ -251,6 +251,7 @@ export class IssueService {
       startDate: row.startDate,
       dueDate: row.dueDate,
       createdAt: row.createdAt.toISOString(),
+      resolvedAt: row.resolvedAt?.toISOString() ?? null,
       components: components.get(row.id) ?? [],
       timeTracking: {
         originalEstimateSeconds: row.originalEstimateSeconds,

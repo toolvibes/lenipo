@@ -135,6 +135,7 @@ export class BoardService {
       swimlanes: board.swimlanes,
       hideDoneAfterDays: board.hideDoneAfterDays,
       estimation: board.estimation,
+      parallelSprints: board.parallelSprints,
       columns: columns.map((column) => ({
         id: column.id,
         name: column.name,
@@ -209,7 +210,12 @@ export class BoardService {
     return this.scope(principal, [query]);
   }
 
-  async issues(principal: Principal, id: string, filters: string[]): Promise<BoardData> {
+  async issues(
+    principal: Principal,
+    id: string,
+    filters: string[],
+    sprintId?: string,
+  ): Promise<BoardData> {
     const { board, project, canConfigure, favourite } = await this.row(principal, id, 'browse');
     const presented = await this.present(board, project, canConfigure, favourite);
     const custom = new Map(presented.quickFilters.map((filter) => [filter.id, filter.query]));
@@ -220,28 +226,40 @@ export class BoardService {
     });
     const compiled = await this.scope(principal, [board.query, ...extra]);
     const mapped = presented.columns.flatMap((column) => column.statusIds);
-    // A Scrum board shows the issues of its active sprint (E-55).
-    const [active] =
+    // A Scrum board shows the issues of its active sprints (E-55); with parallel sprints all
+    // of them or the chosen one (E-113).
+    const running =
       board.type === 'scrum'
         ? await this.database.db
             .select()
             .from(sprints)
             .where(and(eq(sprints.boardId, board.id), eq(sprints.state, 'active')))
+            .orderBy(asc(sprints.startedAt), asc(sprints.createdAt))
         : [];
-    const sprint = active
-      ? {
-          id: active.id,
-          boardId: active.boardId,
-          name: active.name,
-          goal: active.goal,
-          state: active.state,
-          startDate: active.startDate,
-          endDate: active.endDate,
-          startedAt: active.startedAt?.toISOString() ?? null,
-          completedAt: active.completedAt?.toISOString() ?? null,
-        }
-      : null;
-    const empty = { board: presented, sprint, issues: [], truncated: false, reachable: {} };
+    const presentSprint = (row: (typeof running)[number]) => ({
+      id: row.id,
+      boardId: row.boardId,
+      name: row.name,
+      goal: row.goal,
+      state: row.state,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      startedAt: row.startedAt?.toISOString() ?? null,
+      completedAt: row.completedAt?.toISOString() ?? null,
+      capacity: row.capacity,
+    });
+    const chosen = sprintId ? running.filter((row) => row.id === sprintId) : running;
+    const active = chosen[0];
+    const sprint = active ? presentSprint(active) : null;
+    const activeSprints = running.map(presentSprint);
+    const empty = {
+      board: presented,
+      sprint,
+      activeSprints,
+      issues: [],
+      truncated: false,
+      reachable: {},
+    };
     if (compiled.projectIds.length === 0 || mapped.length === 0) return empty;
     if (board.type === 'scrum' && !active) return empty;
 
@@ -252,7 +270,10 @@ export class BoardService {
       inArray(issues.statusId, mapped),
       active
         ? sql`exists (select 1 from ${sprintIssues} si where si.issue_id = ${issues.id}
-            and si.sprint_id = ${active.id} and si.removed_at is null)`
+            and si.sprint_id in (${sql.join(
+              chosen.map((row) => sql`${row.id}`),
+              sql`, `,
+            )}) and si.removed_at is null)`
         : undefined,
     ];
     if (board.type === 'kanban' && board.hideDoneAfterDays) {
@@ -292,6 +313,7 @@ export class BoardService {
     return {
       board: presented,
       sprint,
+      activeSprints,
       issues: summaries,
       truncated: rows.length > BOARD_LIMIT,
       reachable,
@@ -472,6 +494,9 @@ export class BoardService {
               ? { hideDoneAfterDays: request.hideDoneAfterDays }
               : {}),
             ...(request.estimation !== undefined ? { estimation: request.estimation } : {}),
+            ...(request.parallelSprints !== undefined
+              ? { parallelSprints: request.parallelSprints }
+              : {}),
             updatedAt: sql`now()`,
           })
           .where(eq(boards.id, id));

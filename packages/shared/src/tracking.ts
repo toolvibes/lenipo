@@ -551,6 +551,8 @@ export const IssueSummary = z
     startDate: z.iso.date().nullable(),
     dueDate: z.iso.date().nullable(),
     createdAt: z.iso.datetime(),
+    /** When the issue got a resolution, e.g. for the calendar (T-VIEW-02). */
+    resolvedAt: z.iso.datetime().nullable(),
     components: z.array(ComponentRef),
     timeTracking: TimeTracking,
     /** Values of the custom fields the project uses, by field id (E-50). */

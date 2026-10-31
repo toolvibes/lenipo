@@ -1964,6 +1964,16 @@
               "type": "string",
               "maxLength": 2000
             }
+          },
+          {
+            "name": "sprint",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
           }
         ],
         "responses": {
@@ -14145,6 +14155,9 @@
             "type": "string",
             "enum": ["storyPoints", "originalEstimate", "issueCount"]
           },
+          "parallelSprints": {
+            "type": "boolean"
+          },
           "columns": {
             "type": "array",
             "items": {
@@ -14171,6 +14184,7 @@
           "swimlanes",
           "hideDoneAfterDays",
           "estimation",
+          "parallelSprints",
           "columns",
           "quickFilters",
           "canConfigure"
@@ -14274,6 +14288,9 @@
             "type": "string",
             "enum": ["storyPoints", "originalEstimate", "issueCount"]
           },
+          "parallelSprints": {
+            "type": "boolean"
+          },
           "columns": {
             "minItems": 1,
             "maxItems": 20,
@@ -14373,6 +14390,12 @@
               }
             ]
           },
+          "activeSprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sprint"
+            }
+          },
           "issues": {
             "type": "array",
             "items": {
@@ -14399,7 +14422,7 @@
             }
           }
         },
-        "required": ["board", "sprint", "issues", "truncated", "reachable"],
+        "required": ["board", "sprint", "activeSprints", "issues", "truncated", "reachable"],
         "additionalProperties": false
       },
       "Sprint": {
@@ -14472,6 +14495,9 @@
                 "type": "null"
               }
             ]
+          },
+          "capacity": {
+            "$ref": "#/components/schemas/SprintCapacity"
           }
         },
         "required": [
@@ -14483,8 +14509,46 @@
           "startDate",
           "endDate",
           "startedAt",
-          "completedAt"
+          "completedAt",
+          "capacity"
         ],
+        "additionalProperties": false
+      },
+      "SprintCapacity": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/components/schemas/UserRef"
+                },
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100000
+                }
+              },
+              "required": ["user", "value"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["total", "people"],
         "additionalProperties": false
       },
       "IssueSummary": {
@@ -14598,6 +14662,18 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "components": {
             "type": "array",
@@ -14761,6 +14837,7 @@
           "startDate",
           "dueDate",
           "createdAt",
+          "resolvedAt",
           "components",
           "timeTracking",
           "customFields",
@@ -15122,6 +15199,18 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "components": {
             "type": "array",
             "items": {
@@ -15303,18 +15392,6 @@
               "$ref": "#/components/schemas/IssueSummary"
             }
           },
-          "resolvedAt": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "watching": {
             "type": "boolean"
           },
@@ -15348,6 +15425,7 @@
           "startDate",
           "dueDate",
           "createdAt",
+          "resolvedAt",
           "components",
           "timeTracking",
           "customFields",
@@ -15361,7 +15439,6 @@
           "securityLevel",
           "description",
           "children",
-          "resolvedAt",
           "watching",
           "watcherCount",
           "links"
@@ -22223,6 +22300,18 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "components": {
             "type": "array",
             "items": {
@@ -22388,6 +22477,7 @@
           "startDate",
           "dueDate",
           "createdAt",
+          "resolvedAt",
           "components",
           "timeTracking",
           "customFields",
@@ -23153,6 +23243,44 @@
                 "type": "null"
               }
             ]
+          },
+          "capacity": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "people": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100000
+                    }
+                  },
+                  "required": ["userId", "value"]
+                }
+              }
+            },
+            "required": ["total", "people"]
           }
         }
       },

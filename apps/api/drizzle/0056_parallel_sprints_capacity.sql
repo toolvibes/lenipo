@@ -1,0 +1,2 @@
+ALTER TABLE "boards" ADD COLUMN "parallel_sprints" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "sprints" ADD COLUMN "capacity" jsonb DEFAULT '{"total":null,"people":[]}'::jsonb NOT NULL;

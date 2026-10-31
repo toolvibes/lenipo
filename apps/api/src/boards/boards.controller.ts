@@ -112,7 +112,7 @@ export class BoardsController {
       .split(',')
       .map((filter) => filter.trim())
       .filter(Boolean);
-    return this.boards.issues(principal, id, filters);
+    return this.boards.issues(principal, id, filters, query.sprint);
   }
 
   @Endpoint({

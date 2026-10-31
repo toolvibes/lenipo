@@ -59,6 +59,7 @@ export function BoardSettingsDialog({
   const [swimlanes, setSwimlanes] = useState<SwimlaneMode>(board.swimlanes);
   const [hideDone, setHideDone] = useState('');
   const [estimation, setEstimation] = useState<EstimationField>(board.estimation);
+  const [parallel, setParallel] = useState(board.parallelSprints);
   const [columns, setColumns] = useState<ColumnDraft[]>([]);
   const [filters, setFilters] = useState<FilterDraft[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -70,6 +71,7 @@ export function BoardSettingsDialog({
     setSwimlanes(board.swimlanes);
     setHideDone(board.hideDoneAfterDays?.toString() ?? '');
     setEstimation(board.estimation);
+    setParallel(board.parallelSprints);
     setColumns(
       board.columns.map((column) => ({
         id: column.id,
@@ -96,7 +98,7 @@ export function BoardSettingsDialog({
             swimlanes,
             ...(board.type === 'kanban'
               ? { hideDoneAfterDays: hideDone.trim() ? Number(hideDone) : null }
-              : { estimation }),
+              : { estimation, parallelSprints: parallel }),
             columns: columns.map((column) => ({
               ...(column.id ? { id: column.id } : {}),
               name: column.name,
@@ -192,6 +194,20 @@ export function BoardSettingsDialog({
               <option value="originalEstimate">{t('sprints.estimations.originalEstimate')}</option>
               <option value="issueCount">{t('sprints.estimations.issueCount')}</option>
             </select>
+          </label>
+        )}
+        {board.type === 'scrum' && (
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={parallel}
+              onChange={(event) => setParallel(event.target.checked)}
+              className="mt-1"
+            />
+            <span className="flex flex-col">
+              {t('sprints.parallel')}
+              <span className="text-xs text-[var(--ink-muted)]">{t('sprints.parallelHelp')}</span>
+            </span>
           </label>
         )}
         {board.type === 'kanban' && (

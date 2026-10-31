@@ -21,7 +21,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
-import { boards, issues, sprintIssues, sprints } from '../db/schema/index.js';
+import { boards, issues, sprintIssues, sprints, users } from '../db/schema/index.js';
 import { emitProjectEvent } from '../notifications/events.js';
 import { signal } from '../realtime/signals.js';
 import { SearchService } from '../search/search.service.js';
@@ -49,6 +49,7 @@ function present(row: SprintRow): Sprint {
     endDate: row.endDate,
     startedAt: row.startedAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
+    capacity: row.capacity,
   };
 }
 
@@ -178,9 +179,41 @@ export class SprintService {
   async update(principal: Principal, sprintId: string, request: UpdateSprintRequest) {
     const { sprint } = await this.load(principal, sprintId, true);
     if (sprint.state === 'closed') throw new ConflictException('A closed sprint cannot change');
+    const { capacity, ...fields } = request;
+    // Names are kept with the capacity, so the backlog can show people without issues (E-113).
+    const people = capacity?.people.length
+      ? await this.database.db
+          .select({ id: users.id, displayName: users.displayName })
+          .from(users)
+          .where(
+            inArray(
+              users.id,
+              capacity.people.map((entry) => entry.userId),
+            ),
+          )
+      : [];
+    if (capacity && people.length !== capacity.people.length) {
+      throw new BadRequestException('Unknown person in the capacity');
+    }
     const [row] = await this.database.db
       .update(sprints)
-      .set(request)
+      .set({
+        ...fields,
+        ...(capacity
+          ? {
+              capacity: {
+                total: capacity.total,
+                people: capacity.people.map((entry) => ({
+                  user: people.find((person) => person.id === entry.userId) as {
+                    id: string;
+                    displayName: string;
+                  },
+                  value: entry.value,
+                })),
+              },
+            }
+          : {}),
+      })
       .where(eq(sprints.id, sprintId))
       .returning();
     await signal(this.database.db, { type: 'board', boardId: sprint.boardId });
@@ -279,7 +312,7 @@ export class SprintService {
   ): Promise<Sprint> {
     const { sprint, board } = await this.load(principal, sprintId, true);
     if (sprint.state !== 'future') throw new ConflictException('This sprint is not planned');
-    if (await this.active(board.id)) {
+    if (!board.parallelSprints && (await this.active(board.id))) {
       throw new ConflictException('Another sprint of this board is running');
     }
     const members = await this.database.db

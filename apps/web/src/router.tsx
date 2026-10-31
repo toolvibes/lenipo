@@ -31,6 +31,7 @@ import { RulesList } from './features/automation/RulesList';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
+import { CalendarPage, type CalendarView } from './features/calendar/CalendarPage';
 import { DashboardPage, StartPage } from './features/dashboards/DashboardPage';
 import { DashboardsPage } from './features/dashboards/DashboardsPage';
 import {
@@ -427,6 +428,29 @@ const everythingRoute = createRoute({
   },
 });
 
+/** Issues by a date field on a month or week grid (T-VIEW-02, E-113). */
+const calendarRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/calendar',
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { q?: string; field?: string; date?: string; view?: CalendarView } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+    field: typeof search.field === 'string' ? search.field : undefined,
+    date:
+      typeof search.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
+        ? search.date
+        : undefined,
+    view: search.view === 'week' ? 'week' : undefined,
+  }),
+  component: function Calendar() {
+    const { q, field, date, view } = calendarRoute.useSearch();
+    return (
+      <CalendarPage query={q ?? ''} field={field ?? 'due'} date={date} view={view ?? 'month'} />
+    );
+  },
+});
+
 /** Search results for paper, outside the app shell like the page print view (T-QRY-09). */
 const issuesPrintRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -804,6 +828,7 @@ const routeTree = rootRoute.addChildren([
     projectSettingsRoute,
     everythingRoute,
     searchRoute,
+    calendarRoute,
     issueRoute,
     activityRoute,
     notificationsRoute,
