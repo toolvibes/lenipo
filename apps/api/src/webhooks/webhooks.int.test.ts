@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { CreatedWebhook, Webhook, WebhookDelivery, WebhookSecret } from '@tasklore/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { webhooks } from '../db/schema/index.js';
+import { webhookDeliveries, webhooks } from '../db/schema/index.js';
 import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -189,6 +189,12 @@ describe('webhooks', () => {
     ).body;
     expect(failed).toMatchObject({ status: 'pending', attempts: 1, responseStatus: 500 });
     expect(new Date(failed?.nextAttemptAt ?? 0).getTime()).toBeGreaterThan(Date.now());
+    // The first retry is due after 5 s, which a loaded test run can outlast: push it back so
+    // "not due yet" does not depend on timing.
+    await test.database.db
+      .update(webhookDeliveries)
+      .set({ nextAttemptAt: sql`now() + interval '1 hour'` })
+      .where(eq(webhookDeliveries.id, failed?.id ?? ''));
     // Not due yet, so nothing is sent again.
     const before = receiver.requests.length;
     await deliver();
