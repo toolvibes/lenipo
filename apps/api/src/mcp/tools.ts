@@ -92,8 +92,16 @@ function failure(error: unknown): CallToolResult {
  * The MCP tools of Tasklore v1 (D-MCP, E-52). They call the services behind the REST API with
  * the caller's principal, so rights, history and events are the same.
  */
-export function registerTools(server: McpServer, principal: Principal, services: ToolServices) {
+export type ToolHandler = (args: Record<string, unknown>) => Promise<CallToolResult>;
+
+export function registerTools(
+  server: McpServer,
+  principal: Principal,
+  services: ToolServices,
+): Map<string, ToolHandler> {
   const { issues, search, projects, customFields } = services;
+  // Resources and prompts reuse the tools, so rights and formatting are the same (TL-33).
+  const handlers = new Map<string, ToolHandler>();
 
   const tool = <Shape extends z.ZodRawShape>(
     name: string,
@@ -117,6 +125,13 @@ export function registerTools(server: McpServer, principal: Principal, services:
         }
       }) as never,
     );
+    handlers.set(name, async (args) => {
+      try {
+        return await handler(z.object(config.inputSchema).parse(args) as never);
+      } catch (error) {
+        return failure(error);
+      }
+    });
   };
 
   /** Every change through MCP is also in the audit log (D-MCP-06). */
@@ -796,4 +811,5 @@ export function registerTools(server: McpServer, principal: Principal, services:
   );
 
   registerWikiTools(tool, principal, services);
+  return handlers;
 }

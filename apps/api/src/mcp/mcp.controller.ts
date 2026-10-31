@@ -32,6 +32,7 @@ import { DraftService } from '../wiki/draft.service.js';
 import { PageService } from '../wiki/page.service.js';
 import { PageCommentService } from '../wiki/page-comment.service.js';
 import { SpaceService } from '../wiki/space.service.js';
+import { registerPrompts, registerResources } from './resources.js';
 import { registerTools, type ToolServices } from './tools.js';
 
 /**
@@ -94,7 +95,10 @@ export class McpController {
       throw new UnauthorizedException('MCP clients sign in with a Personal Access Token');
     }
     const server = new McpServer({ name: 'tasklore', version: '1.0.0' });
-    registerTools(server, { ...principal, via: 'mcp' }, this.services);
+    const caller: Principal = { ...principal, via: 'mcp' };
+    const handlers = registerTools(server, caller, this.services);
+    registerResources(server, caller, handlers, this.services.search);
+    registerPrompts(server, handlers);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
