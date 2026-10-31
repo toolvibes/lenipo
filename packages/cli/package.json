@@ -1,0 +1,38 @@
+{
+  "name": "@tasklore/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Command line for Tasklore: issues, boards, wiki pages as Markdown and a local MCP bridge.",
+  "type": "module",
+  "bin": {
+    "tasklore": "./dist/main.js",
+    "tl": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@tasklore/editor": "workspace:*",
+    "@tasklore/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

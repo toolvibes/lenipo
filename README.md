@@ -65,13 +65,23 @@ Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dok
 
 ### KI-Agenten (MCP)
 
-Tasklore hat einen eingebauten MCP-Server unter `/mcp` (E-52). In der Oberfläche unter „Profil → Tokens“ ein Personal Access Token mit `issues:read` und `issues:write` anlegen, dann zum Beispiel in Claude Code:
+Tasklore hat einen eingebauten MCP-Server unter `/mcp` (E-52) mit Werkzeugen, Ressourcen (`tasklore://issue/WEB-1` …) und Prompts (E-114). Clients melden sich per OAuth im Browser an (E-115), zum Beispiel in Claude Code:
 
 ```bash
-claude mcp add --transport http tasklore http://localhost:4000/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http tasklore http://localhost:5173/mcp
 ```
 
-Der Agent arbeitet mit den Rechten der Person, der das Token gehört; seine Änderungen stehen in der Historie als „über MCP“.
+Alternativ mit einem Personal Access Token aus „Profil → Tokens“: `--header "Authorization: Bearer <token>"`. Der Agent arbeitet mit den Rechten der Person; seine Änderungen stehen in der Historie als „über MCP“. Verbundene Anwendungen lassen sich im Profil trennen.
+
+### Kommandozeile (`tl`)
+
+Das Paket `packages/cli` bringt `tl` (auch `tasklore`) mit (E-117): Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown samt Ordner-Abgleich und eine stdio-MCP-Brücke für Clients, die nur Programme starten.
+
+```bash
+pnpm --filter @tasklore/cli build && node packages/cli/dist/main.js login http://localhost:5173
+```
+
+`tl help` zeigt alle Befehle; `tl completion zsh` liefert die Shell-Vervollständigung. In CI ersetzen `TASKLORE_URL` und `TASKLORE_TOKEN` das Profil.
 
 ### Produktion
 

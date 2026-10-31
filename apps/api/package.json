@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@hocuspocus/provider": "4.7.1",
+    "@tasklore/cli": "workspace:*",
     "@types/busboy": "1.5.4",
     "@types/express": "*",
     "@types/node": "24.19.2",

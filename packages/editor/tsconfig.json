@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    // Only the folder sync (CLI, lore) uses Node APIs; the rest runs in browsers too.
+    "types": ["node"]
   },
   "include": ["src"]
 }
