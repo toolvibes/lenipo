@@ -1047,6 +1047,56 @@ export const en: Messages = {
     none: 'No page is restricted.',
     lift: 'Lift',
   },
+  access: {
+    title: 'Check access',
+    intro:
+      'Why may someone do something – or not? The check lists roles, scheme grants, security levels and page restrictions in the order Tasklore checks them.',
+    user: 'Person (e-mail)',
+    target: 'On',
+    targets: { issue: 'Issue', project: 'Project', page: 'Wiki page', space: 'Space' },
+    keys: {
+      issue: 'Issue, e.g. WEB-12',
+      project: 'Project, e.g. WEB',
+      page: 'Page id or link',
+      space: 'Space, e.g. DOCS',
+    },
+    permission: 'Permission',
+    check: 'Check',
+    granted: '{{name}} may do this.',
+    denied: '{{name}} may not do this.',
+    passed: 'passed',
+    failed: 'failed',
+    via: ' through the group {{group}}',
+    group: 'group {{name}}',
+    nobody: 'nobody',
+    space: { view: 'Read', comment: 'Comment', edit: 'Edit', administer: 'Administer' },
+    steps: {
+      inactive: 'The account is deactivated.',
+      'global-admin':
+        'Global administration: every project and space permission. Security levels and page restrictions still apply.',
+      'no-role': 'No role in the project {{project}}.',
+      role: 'Role “{{role}}”{{via}}.',
+      grant: 'The scheme “{{scheme}}” gives “{{permission}}” to: {{grantee}}.',
+      noGrant:
+        'The scheme “{{scheme}}” gives “{{permission}}” only to: {{grantees}} – none of which applies.',
+      'no-browse': 'Without “Browse”, no other project permission counts.',
+      security: {
+        in: 'The security level “{{level}}” includes the person.',
+        out: 'The security level “{{level}}” leaves the person out.',
+      },
+      'no-space-role': 'No role in the space {{space}}.',
+      spaceRole: 'Space role “{{role}}”{{via}}.',
+      spacePermission: '“{{permission}}” in the space {{space}}.',
+      'page-view': {
+        in: 'The view restriction on “{{page}}” includes the person.',
+        out: 'The view restriction on “{{page}}” leaves the person out.',
+      },
+      'page-edit': {
+        in: 'The edit restriction on “{{page}}” includes the person.',
+        out: 'The edit restriction on “{{page}}” leaves the person out.',
+      },
+    },
+  },
   notificationSchemes: {
     title: 'Notification schemes',
     intro:

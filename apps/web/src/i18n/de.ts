@@ -1061,6 +1061,61 @@ export const de = {
     none: 'Keine Seite ist beschränkt.',
     lift: 'Aufheben',
   },
+  access: {
+    title: 'Rechte prüfen',
+    intro:
+      'Warum darf jemand etwas – oder warum nicht? Die Prüfung nennt Rollen, Freigaben des Schemas, Sicherheitsstufen und Seitenbeschränkungen in der Reihenfolge, in der Tasklore sie prüft.',
+    user: 'Person (E-Mail)',
+    target: 'Worauf',
+    targets: { issue: 'Vorgang', project: 'Projekt', page: 'Wiki-Seite', space: 'Bereich' },
+    keys: {
+      issue: 'Vorgang, z. B. WEB-12',
+      project: 'Projekt, z. B. WEB',
+      page: 'Seiten-ID oder Link',
+      space: 'Bereich, z. B. DOCS',
+    },
+    permission: 'Recht',
+    check: 'Prüfen',
+    granted: '{{name}} darf das.',
+    denied: '{{name}} darf das nicht.',
+    passed: 'erfüllt',
+    failed: 'nicht erfüllt',
+    via: ' über die Gruppe {{group}}',
+    group: 'Gruppe {{name}}',
+    nobody: 'niemanden',
+    space: {
+      view: 'Lesen',
+      comment: 'Kommentieren',
+      edit: 'Bearbeiten',
+      administer: 'Administrieren',
+    },
+    steps: {
+      inactive: 'Das Konto ist deaktiviert.',
+      'global-admin':
+        'Globale Administration: alle Projekt- und Bereichsrechte. Sicherheitsstufen und Seitenbeschränkungen gelten trotzdem.',
+      'no-role': 'Keine Rolle im Projekt {{project}}.',
+      role: 'Rolle „{{role}}“{{via}}.',
+      grant: 'Das Schema „{{scheme}}“ gibt „{{permission}}“ an: {{grantee}}.',
+      noGrant:
+        'Das Schema „{{scheme}}“ gibt „{{permission}}“ nur an: {{grantees}} – nichts davon trifft zu.',
+      'no-browse': 'Ohne „Durchsuchen“ zählt kein anderes Recht im Projekt.',
+      security: {
+        in: 'Die Sicherheitsstufe „{{level}}“ schließt die Person ein.',
+        out: 'Die Sicherheitsstufe „{{level}}“ schließt die Person aus.',
+      },
+      'no-space-role': 'Keine Rolle im Bereich {{space}}.',
+      spaceRole: 'Bereichsrolle „{{role}}“{{via}}.',
+      spacePermission: '„{{permission}}“ im Bereich {{space}}.',
+      'page-view': {
+        in: 'Die Ansehen-Beschränkung auf „{{page}}“ schließt die Person ein.',
+        out: 'Die Ansehen-Beschränkung auf „{{page}}“ schließt die Person aus.',
+      },
+      'page-edit': {
+        in: 'Die Bearbeiten-Beschränkung auf „{{page}}“ schließt die Person ein.',
+        out: 'Die Bearbeiten-Beschränkung auf „{{page}}“ schließt die Person aus.',
+      },
+    },
+  },
   notificationSchemes: {
     title: 'Benachrichtigungsschemata',
     intro:

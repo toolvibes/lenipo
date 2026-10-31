@@ -844,6 +844,46 @@
         }
       }
     },
+    "/api/v1/admin/access-check": {
+      "post": {
+        "operationId": "Administration.check",
+        "summary": "Explain whether a person holds a permission on a project, issue, space or page",
+        "description": "The verdict and the facts behind it: roles, scheme grants, issue security, space roles and page restrictions.\n\nRequires the global permission `admin`.",
+        "tags": ["Administration"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessCheckResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/notification-schemes": {
       "get": {
         "operationId": "Administration.listNotificationSchemes",
@@ -9482,6 +9522,100 @@
           }
         ]
       },
+      "AccessCheckRequest": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "projectKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          },
+          "issueKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "permission": {
+            "$ref": "#/components/schemas/ProjectPermission"
+          },
+          "spaceKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          },
+          "pageId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "spacePermission": {
+            "$ref": "#/components/schemas/SpacePermission"
+          }
+        },
+        "required": ["user"]
+      },
+      "SpacePermission": {
+        "type": "string",
+        "enum": ["view", "comment", "edit", "administer"]
+      },
+      "AccessCheckResult": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName"],
+            "additionalProperties": false
+          },
+          "granted": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessCheckStep"
+            }
+          }
+        },
+        "required": ["user", "granted", "steps"],
+        "additionalProperties": false
+      },
+      "AccessCheckStep": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "passed": {
+            "type": ["boolean", "null"]
+          },
+          "params": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["code", "passed", "params"],
+        "additionalProperties": false
+      },
       "NotificationSchemeSummary": {
         "$ref": "#/components/schemas/PermissionSchemeSummary"
       },
@@ -15987,10 +16121,6 @@
           "permissions"
         ],
         "additionalProperties": false
-      },
-      "SpacePermission": {
-        "type": "string",
-        "enum": ["view", "comment", "edit", "administer"]
       },
       "UpdateSpaceRequest": {
         "type": "object",

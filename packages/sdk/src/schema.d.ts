@@ -292,6 +292,28 @@ export interface paths {
     patch: operations['Administration.updateSecurityScheme'];
     trace?: never;
   };
+  '/api/v1/admin/access-check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Explain whether a person holds a permission on a project, issue, space or page
+     * @description The verdict and the facts behind it: roles, scheme grants, issue security, space roles and page restrictions.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Administration.check'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/notification-schemes': {
     parameters: {
       query?: never;
@@ -3035,6 +3057,34 @@ export interface components {
           /** @enum {string} */
           grantee: 'assignee' | 'reporter';
         };
+    AccessCheckRequest: {
+      user: string;
+      projectKey?: string;
+      issueKey?: string;
+      permission?: components['schemas']['ProjectPermission'];
+      spaceKey?: string;
+      /** Format: uuid */
+      pageId?: string;
+      spacePermission?: components['schemas']['SpacePermission'];
+    };
+    /** @enum {string} */
+    SpacePermission: 'view' | 'comment' | 'edit' | 'administer';
+    AccessCheckResult: {
+      user: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      };
+      granted: boolean;
+      steps: components['schemas']['AccessCheckStep'][];
+    };
+    AccessCheckStep: {
+      code: string;
+      passed: boolean | null;
+      params: {
+        [key: string]: string;
+      };
+    };
     NotificationSchemeSummary: components['schemas']['PermissionSchemeSummary'];
     NotificationScheme: {
       /** Format: uuid */
@@ -4632,8 +4682,6 @@ export interface components {
       } | null;
       permissions: components['schemas']['SpacePermission'][];
     };
-    /** @enum {string} */
-    SpacePermission: 'view' | 'comment' | 'edit' | 'administer';
     UpdateSpaceRequest: {
       name?: string;
       description?: string;
@@ -5688,6 +5736,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SecurityScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Administration.check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AccessCheckRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccessCheckResult'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

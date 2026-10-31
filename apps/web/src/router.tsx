@@ -9,6 +9,7 @@ import {
 import { safeRedirectPath } from '@tasklore/shared';
 import { ISSUE_KEY } from '@tasklore/tql';
 import { useTranslation } from 'react-i18next';
+import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import {
@@ -560,6 +561,12 @@ const securitySchemeRoute = createRoute({
   },
 });
 
+const accessCheckRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/access-check',
+  component: AccessCheckPage,
+});
+
 const customFieldsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/custom-fields',
@@ -624,6 +631,7 @@ const routeTree = rootRoute.addChildren([
       notificationSchemeRoute,
       securitySchemesRoute,
       securitySchemeRoute,
+      accessCheckRoute,
       customFieldsRoute,
       templatesRoute,
       templateRoute,

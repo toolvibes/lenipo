@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
+import { AccessCheckController } from './access-check.controller.js';
+import { AccessCheckService } from './access-check.service.js';
 import { DraftService } from './draft.service.js';
 import { IssuePagesController } from './issue-pages.controller.js';
 import { LabelsController } from './labels.controller.js';
@@ -20,6 +22,7 @@ import { TemplatesController } from './templates.controller.js';
 @Module({
   imports: [IdentityModule, TrackingModule],
   controllers: [
+    AccessCheckController,
     TemplatesController,
     IssuePagesController,
     RestrictedPagesController,
@@ -31,6 +34,7 @@ import { TemplatesController } from './templates.controller.js';
     LabelsController,
   ],
   providers: [
+    AccessCheckService,
     SpaceAccessService,
     SpaceService,
     TemplateService,
