@@ -2,6 +2,15 @@ import { CaretDown, CaretRight, FileText, ListNumbers, TreeStructure } from '@ph
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { STATUS_COLORS } from '@tasklore/editor/schema';
+import {
+  REPORT_KINDS,
+  type ReportConfig,
+  type ReportKind,
+  SERIES_FIELDS,
+  type SeriesField,
+  STATISTIC_FIELDS,
+  type StatisticField,
+} from '@tasklore/shared';
 import type { Editor } from '@tiptap/core';
 import {
   NodeViewContent,
@@ -11,6 +20,8 @@ import {
 } from '@tiptap/react';
 import { createContext, type FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ReportView } from '../features/reports/analysis';
+import { ReportSettings, reportOf, reportReady } from '../features/reports/ReportSettings';
 import { IssueTypeIcon, StatusLozenge } from '../features/tracking/icons';
 import { client, unwrap } from '../lib/api';
 import { issueQuery } from '../lib/tracking';
@@ -526,10 +537,86 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
+// ---------------------------------------------------------------- report (TL-21, E-102)
+
+/** The report a macro's attributes describe; unknown settings fall back to defaults. */
+function reportFromAttrs(attrs: Record<string, unknown>): ReportConfig {
+  const base = reportOf(
+    (REPORT_KINDS as readonly unknown[]).includes(attrs.kind) ? (attrs.kind as ReportKind) : 'cfd',
+    {
+      query: String(attrs.query ?? ''),
+      boardId: String(attrs.boardId ?? ''),
+      days: Number(attrs.days) || 30,
+    },
+  );
+  const field = String(attrs.field ?? '');
+  if (base.kind === 'field-series' && (SERIES_FIELDS as readonly string[]).includes(field)) {
+    return { ...base, field: field as SeriesField };
+  }
+  if (base.kind === 'pie' && (STATISTIC_FIELDS as readonly string[]).includes(field)) {
+    return { ...base, field: field as StatisticField };
+  }
+  return base;
+}
+
+function ReportMacroView({ node, updateAttributes, editor }: NodeViewProps) {
+  const { t } = useTranslation();
+  const config = reportFromAttrs(node.attrs);
+  const [draft, setDraft] = useState(config);
+  const [editing, setEditing] = useState(false);
+  return (
+    <NodeViewWrapper className="tl-macro tl-report" contentEditable={false}>
+      {editor.isEditable && (
+        <div className="tl-macro-settings flex-col items-stretch">
+          {editing ? (
+            <form
+              className="flex flex-col gap-2"
+              onSubmit={(event: FormEvent) => {
+                event.preventDefault();
+                event.stopPropagation();
+                updateAttributes({
+                  kind: draft.kind,
+                  query: 'query' in draft ? draft.query : '',
+                  field: 'field' in draft ? draft.field : '',
+                  days: 'days' in draft ? draft.days : 30,
+                  boardId: 'boardId' in draft ? draft.boardId : '',
+                });
+                setEditing(false);
+              }}
+            >
+              <ReportSettings config={draft} onChange={setDraft} />
+              <button type="submit" className={`${field} self-start font-semibold`}>
+                {t('macros.apply')}
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className={`${field} self-start`}
+              onClick={() => {
+                setDraft(config);
+                setEditing(true);
+              }}
+            >
+              {t('analysis.macroSettings', { kind: t(`analysis.kinds.${config.kind}`) })}
+            </button>
+          )}
+        </div>
+      )}
+      {reportReady(config) ? (
+        <ReportView config={config} />
+      ) : (
+        <p className="tl-macro-hint">{t('analysis.chooseBoard')}</p>
+      )}
+    </NodeViewWrapper>
+  );
+}
+
 /** The browser views of all macros, for editors and readers alike. */
 export const macroViews = {
   issue: ReactNodeViewRenderer(IssueView, { as: 'span' }),
   issueList: ReactNodeViewRenderer(IssueListView),
+  report: ReactNodeViewRenderer(ReportMacroView),
   tableOfContents: ReactNodeViewRenderer(TocView),
   childPages: ReactNodeViewRenderer(ChildPagesView),
   status: ReactNodeViewRenderer(StatusView, { as: 'span' }),

@@ -7281,6 +7281,201 @@
         }
       }
     },
+    "/api/v1/reports/field-series": {
+      "post": {
+        "operationId": "Reports.fieldSeries",
+        "summary": "Issues per value of a field at the end of each day (cumulative flow)",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldSeriesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldSeries"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/control-chart": {
+      "post": {
+        "operationId": "Reports.controlChart",
+        "summary": "Lead and cycle time of issues resolved in a period",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlChart"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/average-age": {
+      "post": {
+        "operationId": "Reports.averageAge",
+        "summary": "Open issues and their average age per day",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AverageAge"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/scope-progress": {
+      "post": {
+        "operationId": "Reports.scopeProgress",
+        "summary": "Release burndown or epic report: scope and done work per closed sprint",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScopeProgressRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeProgress"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/time-tracking": {
+      "post": {
+        "operationId": "Reports.timeReport",
+        "summary": "Estimates, time spent and time logged per issue and person",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/search": {
       "post": {
         "operationId": "Search.run",
@@ -13044,6 +13239,20 @@
             },
             "required": ["type", "markdown"],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "report"
+              },
+              "report": {
+                "$ref": "#/components/schemas/ReportConfig"
+              }
+            },
+            "required": ["type", "report"],
+            "additionalProperties": false
           }
         ]
       },
@@ -13061,6 +13270,197 @@
           "component",
           "label"
         ]
+      },
+      "ReportConfig": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "cfd"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "field-series"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/SeriesField"
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "field", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "control-chart"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "average-age"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "created-vs-resolved"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "pie"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["kind", "query", "field"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "scope-progress"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["kind", "query", "boardId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "burnup"
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["kind", "boardId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "time-tracking"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "days"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SeriesField": {
+        "type": "string",
+        "enum": ["status", "statusCategory", "priority", "assignee", "issueType"]
       },
       "UpdateDashboardRequest": {
         "type": "object",
@@ -13297,6 +13697,197 @@
               }
             },
             "required": ["type", "markdown"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "report"
+              },
+              "report": {
+                "$ref": "#/components/schemas/ReportConfigInput"
+              }
+            },
+            "required": ["type", "report"]
+          }
+        ]
+      },
+      "ReportConfigInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "cfd"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "field-series"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/SeriesField"
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query", "field"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "control-chart"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "average-age"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "created-vs-resolved"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "pie"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["kind", "query", "field"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "scope-progress"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["kind", "query", "boardId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "burnup"
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["kind", "boardId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "time-tracking"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["kind", "query"]
           }
         ]
       },
@@ -17572,6 +18163,411 @@
           }
         },
         "required": ["points"],
+        "additionalProperties": false
+      },
+      "FieldSeriesRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "field": {
+            "default": "status",
+            "$ref": "#/components/schemas/SeriesField"
+          },
+          "days": {
+            "default": 30,
+            "type": "integer",
+            "minimum": 7,
+            "maximum": 365
+          }
+        },
+        "required": ["query"]
+      },
+      "FieldSeries": {
+        "type": "object",
+        "properties": {
+          "dates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatisticValue"
+            }
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": ["dates", "values", "counts", "truncated"],
+        "additionalProperties": false
+      },
+      "PeriodRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "days": {
+            "default": 30,
+            "type": "integer",
+            "minimum": 7,
+            "maximum": 365
+          }
+        },
+        "required": ["query"]
+      },
+      "ControlChart": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "resolvedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "leadDays": {
+                  "type": "number"
+                },
+                "cycleDays": {
+                  "type": ["number", "null"]
+                }
+              },
+              "required": ["key", "summary", "resolvedAt", "leadDays", "cycleDays"],
+              "additionalProperties": false
+            }
+          },
+          "lead": {
+            "type": "object",
+            "properties": {
+              "average": {
+                "type": ["number", "null"]
+              },
+              "median": {
+                "type": ["number", "null"]
+              },
+              "p85": {
+                "type": ["number", "null"]
+              }
+            },
+            "required": ["average", "median", "p85"],
+            "additionalProperties": false
+          },
+          "cycle": {
+            "type": "object",
+            "properties": {
+              "average": {
+                "type": ["number", "null"]
+              },
+              "median": {
+                "type": ["number", "null"]
+              },
+              "p85": {
+                "type": ["number", "null"]
+              }
+            },
+            "required": ["average", "median", "p85"],
+            "additionalProperties": false
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": ["points", "lead", "cycle", "truncated"],
+        "additionalProperties": false
+      },
+      "AverageAge": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "open": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "averageDays": {
+                  "type": "number"
+                }
+              },
+              "required": ["date", "open", "averageDays"],
+              "additionalProperties": false
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": ["points", "truncated"],
+        "additionalProperties": false
+      },
+      "ScopeProgressRequest": {
+        "type": "object",
+        "properties": {
+          "boardId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          }
+        },
+        "required": ["boardId", "query"]
+      },
+      "ScopeProgress": {
+        "type": "object",
+        "properties": {
+          "estimation": {
+            "type": "string",
+            "enum": ["storyPoints", "originalEstimate", "issueCount"]
+          },
+          "sprints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "completedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "scope": {
+                  "type": "number"
+                },
+                "added": {
+                  "type": "number"
+                },
+                "done": {
+                  "type": "number"
+                },
+                "remaining": {
+                  "type": "number"
+                }
+              },
+              "required": ["name", "completedAt", "scope", "added", "done", "remaining"],
+              "additionalProperties": false
+            }
+          },
+          "scope": {
+            "type": "number"
+          },
+          "done": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "velocity": {
+            "type": "number"
+          },
+          "forecastSprints": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "estimation",
+          "sprints",
+          "scope",
+          "done",
+          "remaining",
+          "velocity",
+          "forecastSprints"
+        ],
+        "additionalProperties": false
+      },
+      "TimeReportRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "from": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": ["query", "from", "to"]
+      },
+      "TimeReport": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "originalEstimateSeconds": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "timeSpentSeconds": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "remainingEstimateSeconds": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "loggedSeconds": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "key",
+                "summary",
+                "originalEstimateSeconds",
+                "timeSpentSeconds",
+                "remainingEstimateSeconds",
+                "loggedSeconds"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UserRef"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "loggedSeconds": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": ["user", "loggedSeconds"],
+              "additionalProperties": false
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "originalEstimateSeconds": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "timeSpentSeconds": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "remainingEstimateSeconds": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "loggedSeconds": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "originalEstimateSeconds",
+              "timeSpentSeconds",
+              "remainingEstimateSeconds",
+              "loggedSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": ["issues", "people", "totals", "truncated"],
         "additionalProperties": false
       },
       "SearchRequest": {

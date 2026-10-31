@@ -18,6 +18,7 @@ import { formatDate } from '../../lib/format';
 import { activityQuery } from '../../lib/personal';
 import { pageQuery } from '../../lib/wiki';
 import { ActivityFeed } from '../personal/ActivityFeed';
+import { ReportView } from '../reports/analysis';
 import { BurndownChart } from '../reports/charts';
 import { IssueTable, ShowAll } from '../shell/HomePage';
 import { RichTextView } from '../tracking/RichTextEditor';
@@ -115,7 +116,7 @@ function AsTable({ children }: { children: ReactNode }) {
 }
 
 /** A donut of shares: at most seven named slices, the rest as "other". */
-function Pie({ config }: { config: Of<'pie'> }) {
+export function Pie({ config }: { config: Of<'pie'> }) {
   const { t } = useTranslation();
   const label = useValueLabel();
   const stats = useQuery(statisticsQuery({ query: config.query, x: config.field }));
@@ -267,7 +268,7 @@ function TwoDimensional({ config }: { config: Of<'two-dimensional'> }) {
 }
 
 /** Two lines on one count axis: created and resolved per day. */
-function CreatedVsResolved({ config }: { config: Of<'created-vs-resolved'> }) {
+export function CreatedVsResolved({ config }: { config: Of<'created-vs-resolved'> }) {
   const { t } = useTranslation();
   const series = useQuery(createdResolvedQuery(config.query, config.days));
   const [hover, setHover] = useState<number | null>(null);
@@ -623,5 +624,7 @@ export function GadgetBody({ config }: { config: GadgetConfig }) {
       return <WikiPage config={config} />;
     case 'text':
       return <Text config={config} />;
+    case 'report':
+      return <ReportView config={config.report} />;
   }
 }

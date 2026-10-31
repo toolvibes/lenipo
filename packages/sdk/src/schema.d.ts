@@ -2333,6 +2333,91 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/reports/field-series': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Issues per value of a field at the end of each day (cumulative flow) */
+    post: operations['Reports.fieldSeries'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reports/control-chart': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Lead and cycle time of issues resolved in a period */
+    post: operations['Reports.controlChart'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reports/average-age': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Open issues and their average age per day */
+    post: operations['Reports.averageAge'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reports/scope-progress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Release burndown or epic report: scope and done work per closed sprint */
+    post: operations['Reports.scopeProgress'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reports/time-tracking': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Estimates, time spent and time logged per issue and person */
+    post: operations['Reports.timeReport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -4070,6 +4155,11 @@ export interface components {
           /** @constant */
           type: 'text';
           markdown: string;
+        }
+      | {
+          /** @constant */
+          type: 'report';
+          report: components['schemas']['ReportConfig'];
         };
     /** @enum {string} */
     StatisticField:
@@ -4083,6 +4173,71 @@ export interface components {
       | 'resolution'
       | 'component'
       | 'label';
+    ReportConfig:
+      | {
+          /** @constant */
+          kind: 'cfd';
+          query: string;
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'field-series';
+          query: string;
+          field: components['schemas']['SeriesField'];
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'control-chart';
+          query: string;
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'average-age';
+          query: string;
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'created-vs-resolved';
+          query: string;
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'pie';
+          query: string;
+          field: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          kind: 'scope-progress';
+          query: string;
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'burnup';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'time-tracking';
+          query: string;
+          /** @default 30 */
+          days: number;
+        };
+    /** @enum {string} */
+    SeriesField: 'status' | 'statusCategory' | 'priority' | 'assignee' | 'issueType';
     UpdateDashboardRequest: {
       name?: string;
       description?: string;
@@ -4162,6 +4317,74 @@ export interface components {
           /** @constant */
           type: 'text';
           markdown: string;
+        }
+      | {
+          /** @constant */
+          type: 'report';
+          report: components['schemas']['ReportConfigInput'];
+        };
+    ReportConfigInput:
+      | {
+          /** @constant */
+          kind: 'cfd';
+          query: string;
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          kind: 'field-series';
+          query: string;
+          field: components['schemas']['SeriesField'];
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          kind: 'control-chart';
+          query: string;
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          kind: 'average-age';
+          query: string;
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          kind: 'created-vs-resolved';
+          query: string;
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          kind: 'pie';
+          query: string;
+          field: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          kind: 'scope-progress';
+          query: string;
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'burnup';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'time-tracking';
+          query: string;
+          /** @default 30 */
+          days?: number;
         };
     UpdateGadgetRequest: {
       title?: string;
@@ -5214,6 +5437,105 @@ export interface components {
         created: number;
         resolved: number;
       }[];
+    };
+    FieldSeriesRequest: {
+      query: string;
+      /** @default status */
+      field?: components['schemas']['SeriesField'];
+      /** @default 30 */
+      days?: number;
+    };
+    FieldSeries: {
+      dates: string[];
+      values: components['schemas']['StatisticValue'][];
+      counts: number[][];
+      truncated: boolean;
+    };
+    PeriodRequest: {
+      query: string;
+      /** @default 30 */
+      days?: number;
+    };
+    ControlChart: {
+      points: {
+        key: string;
+        summary: string;
+        /** Format: date-time */
+        resolvedAt: string;
+        leadDays: number;
+        cycleDays: number | null;
+      }[];
+      lead: {
+        average: number | null;
+        median: number | null;
+        p85: number | null;
+      };
+      cycle: {
+        average: number | null;
+        median: number | null;
+        p85: number | null;
+      };
+      truncated: boolean;
+    };
+    AverageAge: {
+      points: {
+        /** Format: date */
+        date: string;
+        open: number;
+        averageDays: number;
+      }[];
+      truncated: boolean;
+    };
+    ScopeProgressRequest: {
+      /** Format: uuid */
+      boardId: string;
+      query: string;
+    };
+    ScopeProgress: {
+      /** @enum {string} */
+      estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
+      sprints: {
+        name: string;
+        /** Format: date-time */
+        completedAt: string;
+        scope: number;
+        added: number;
+        done: number;
+        remaining: number;
+      }[];
+      scope: number;
+      done: number;
+      remaining: number;
+      velocity: number;
+      forecastSprints: number | null;
+    };
+    TimeReportRequest: {
+      query: string;
+      /** Format: date */
+      from: string;
+      /** Format: date */
+      to: string;
+    };
+    TimeReport: {
+      issues: {
+        key: string;
+        summary: string;
+        originalEstimateSeconds: number | null;
+        timeSpentSeconds: number;
+        remainingEstimateSeconds: number | null;
+        loggedSeconds: number;
+      }[];
+      people: {
+        user: components['schemas']['UserRef'] | null;
+        loggedSeconds: number;
+      }[];
+      totals: {
+        originalEstimateSeconds: number;
+        timeSpentSeconds: number;
+        remainingEstimateSeconds: number;
+        loggedSeconds: number;
+      };
+      truncated: boolean;
     };
     SearchRequest: {
       /** @default  */
@@ -11340,6 +11662,171 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CreatedResolved'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.fieldSeries': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FieldSeriesRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FieldSeries'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.controlChart': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PeriodRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ControlChart'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.averageAge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PeriodRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AverageAge'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.scopeProgress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ScopeProgressRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ScopeProgress'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.timeReport': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TimeReportRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TimeReport'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

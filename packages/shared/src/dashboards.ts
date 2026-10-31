@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ReportConfig, StatisticField } from './reports.js';
 import { FilterShare, FilterShareInput, TqlText } from './search.js';
 
 const Id = z.uuid();
@@ -14,22 +15,6 @@ export type DashboardLayout = z.infer<typeof DashboardLayout>;
 export function columnCount(layout: DashboardLayout): number {
   return layout === 'one' ? 1 : layout === 'three' ? 3 : 2;
 }
-
-/** Fields that statistics gadgets count by. */
-export const STATISTIC_FIELDS = [
-  'status',
-  'statusCategory',
-  'priority',
-  'assignee',
-  'reporter',
-  'issueType',
-  'project',
-  'resolution',
-  'component',
-  'label',
-] as const;
-export const StatisticField = z.enum(STATISTIC_FIELDS).meta({ id: 'StatisticField' });
-export type StatisticField = z.infer<typeof StatisticField>;
 
 const Limit = z.number().int().min(1).max(50);
 
@@ -59,6 +44,8 @@ export const GadgetConfig = z
     z.object({ type: z.literal('calendar'), query: TqlText }),
     z.object({ type: z.literal('wiki-page'), pageId: Id }),
     z.object({ type: z.literal('text'), markdown: z.string().max(20_000) }),
+    /** Any report of the reports page (TL-21, E-102). */
+    z.object({ type: z.literal('report'), report: ReportConfig }),
   ])
   .meta({ id: 'GadgetConfig' });
 export type GadgetConfig = z.infer<typeof GadgetConfig>;
@@ -74,6 +61,7 @@ export const GADGET_TYPES = [
   'calendar',
   'wiki-page',
   'text',
+  'report',
 ] as const satisfies readonly GadgetType[];
 
 export const Gadget = z
@@ -159,40 +147,3 @@ export const ArrangeGadgetsRequest = z
   .object({ columns: z.array(z.array(Id).max(50)).min(1).max(3) })
   .meta({ id: 'ArrangeGadgetsRequest' });
 export type ArrangeGadgetsRequest = z.infer<typeof ArrangeGadgetsRequest>;
-
-export const StatisticsRequest = z
-  .object({ query: TqlText, x: StatisticField, y: StatisticField.optional() })
-  .meta({ id: 'StatisticsRequest' });
-export type StatisticsRequest = z.infer<typeof StatisticsRequest>;
-
-/** One value of a counted field; key null means "none" (unassigned, no component …). */
-export const StatisticValue = z
-  .object({ key: z.string().nullable(), label: z.string(), color: z.string().nullable() })
-  .meta({ id: 'StatisticValue' });
-export type StatisticValue = z.infer<typeof StatisticValue>;
-
-export const Statistics = z
-  .object({
-    /** Matching issues; with label or component one issue may count in several rows. */
-    total: z.number().int(),
-    x: z.array(StatisticValue),
-    y: z.array(StatisticValue).nullable(),
-    /** counts[xIndex][yIndex], or counts[xIndex][0] without y. */
-    counts: z.array(z.array(z.number().int())),
-  })
-  .meta({ id: 'Statistics' });
-export type Statistics = z.infer<typeof Statistics>;
-
-export const CreatedResolvedRequest = z
-  .object({ query: TqlText, days: z.number().int().min(7).max(365).default(30) })
-  .meta({ id: 'CreatedResolvedRequest' });
-export type CreatedResolvedRequest = z.infer<typeof CreatedResolvedRequest>;
-
-export const CreatedResolved = z
-  .object({
-    points: z.array(
-      z.object({ date: z.iso.date(), created: z.number().int(), resolved: z.number().int() }),
-    ),
-  })
-  .meta({ id: 'CreatedResolved' });
-export type CreatedResolved = z.infer<typeof CreatedResolved>;

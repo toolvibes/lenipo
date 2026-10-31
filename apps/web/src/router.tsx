@@ -6,7 +6,7 @@ import {
   Outlet,
   redirect,
 } from '@tanstack/react-router';
-import { safeRedirectPath } from '@tasklore/shared';
+import { REPORT_KINDS, type ReportKind, safeRedirectPath } from '@tasklore/shared';
 import { ISSUE_KEY } from '@tasklore/tql';
 import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
@@ -36,7 +36,8 @@ import {
 } from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { ProfilePage } from './features/personal/ProfilePage';
-import { type ReportKind, ReportsPage } from './features/reports/ReportsPage';
+import { ProjectReportsPage } from './features/reports/ProjectReportsPage';
+import { type ReportKind as BoardReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
@@ -343,6 +344,21 @@ const timelineRoute = createRoute({
   },
 });
 
+const projectReportsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/reports',
+  validateSearch: (search: Record<string, unknown>): { kind?: ReportKind } => ({
+    kind: (REPORT_KINDS as readonly unknown[]).includes(search.kind)
+      ? (search.kind as ReportKind)
+      : undefined,
+  }),
+  component: function ProjectReports() {
+    const { key } = projectReportsRoute.useParams();
+    const { kind } = projectReportsRoute.useSearch();
+    return <ProjectReportsPage key={key} projectKey={key.toUpperCase()} kind={kind ?? 'cfd'} />;
+  },
+});
+
 const projectSettingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/projects/$key/settings',
@@ -464,7 +480,9 @@ const backlogRoute = createRoute({
 const reportsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/boards/$id/reports',
-  validateSearch: (search: Record<string, unknown>): { report?: ReportKind; sprint?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { report?: BoardReportKind; sprint?: string } => ({
     report:
       search.report === 'velocity' || search.report === 'sprint' || search.report === 'burndown'
         ? search.report
@@ -664,6 +682,7 @@ const routeTree = rootRoute.addChildren([
     projectsRoute,
     projectRoute,
     timelineRoute,
+    projectReportsRoute,
     projectSettingsRoute,
     everythingRoute,
     searchRoute,

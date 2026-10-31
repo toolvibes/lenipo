@@ -13,6 +13,8 @@ import {
 import {
   AddGadgetRequest,
   ArrangeGadgetsRequest,
+  AverageAge,
+  ControlChart,
   CopyDashboardRequest,
   CreateDashboardRequest,
   CreatedResolved,
@@ -20,8 +22,15 @@ import {
   Dashboard,
   DashboardListQuery,
   DashboardSummary,
+  FieldSeries,
+  FieldSeriesRequest,
+  PeriodRequest,
+  ScopeProgress,
+  ScopeProgressRequest,
   Statistics,
   StatisticsRequest,
+  TimeReport,
+  TimeReportRequest,
   UpdateDashboardRequest,
   UpdateGadgetRequest,
 } from '@tasklore/shared';
@@ -29,6 +38,7 @@ import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { AnalysisService } from './analysis.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { StatisticsService } from './statistics.service.js';
 
@@ -40,6 +50,7 @@ export class DashboardsController {
   constructor(
     @Inject(DashboardService) private readonly dashboards: DashboardService,
     @Inject(StatisticsService) private readonly statistics: StatisticsService,
+    @Inject(AnalysisService) private readonly analysis: AnalysisService,
   ) {}
 
   @Endpoint({
@@ -203,5 +214,75 @@ export class DashboardsController {
     @ValidBody(CreatedResolvedRequest) body: CreatedResolvedRequest,
   ): Promise<CreatedResolved> {
     return this.statistics.createdResolved(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Issues per value of a field at the end of each day (cumulative flow)',
+    response: FieldSeries,
+  })
+  @Post('reports/field-series')
+  @HttpCode(200)
+  fieldSeries(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(FieldSeriesRequest) body: FieldSeriesRequest,
+  ): Promise<FieldSeries> {
+    return this.analysis.fieldSeries(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Lead and cycle time of issues resolved in a period',
+    response: ControlChart,
+  })
+  @Post('reports/control-chart')
+  @HttpCode(200)
+  controlChart(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(PeriodRequest) body: PeriodRequest,
+  ): Promise<ControlChart> {
+    return this.analysis.controlChart(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Open issues and their average age per day',
+    response: AverageAge,
+  })
+  @Post('reports/average-age')
+  @HttpCode(200)
+  averageAge(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(PeriodRequest) body: PeriodRequest,
+  ): Promise<AverageAge> {
+    return this.analysis.averageAge(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Release burndown or epic report: scope and done work per closed sprint',
+    response: ScopeProgress,
+  })
+  @Post('reports/scope-progress')
+  @HttpCode(200)
+  scopeProgress(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(ScopeProgressRequest) body: ScopeProgressRequest,
+  ): Promise<ScopeProgress> {
+    return this.analysis.scopeProgress(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Estimates, time spent and time logged per issue and person',
+    response: TimeReport,
+  })
+  @Post('reports/time-tracking')
+  @HttpCode(200)
+  timeReport(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(TimeReportRequest) body: TimeReportRequest,
+  ): Promise<TimeReport> {
+    return this.analysis.timeReport(principal, body);
   }
 }

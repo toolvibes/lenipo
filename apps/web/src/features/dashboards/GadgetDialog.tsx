@@ -19,6 +19,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
+import { ReportSettings, reportOf, reportReady } from '../reports/ReportSettings';
 
 /** The starting settings of a new gadget of each type. */
 function initial(type: GadgetType): GadgetConfig {
@@ -43,6 +44,8 @@ function initial(type: GadgetType): GadgetConfig {
       return { type, pageId: '' };
     case 'text':
       return { type, markdown: '' };
+    case 'report':
+      return { type, report: reportOf('cfd') };
   }
 }
 
@@ -50,6 +53,7 @@ function complete(config: GadgetConfig): boolean {
   if (config.type === 'sprint-burndown') return !!config.boardId;
   if (config.type === 'wiki-page') return !!config.pageId;
   if (config.type === 'text') return config.markdown.trim() !== '';
+  if (config.type === 'report') return reportReady(config.report);
   return true;
 }
 
@@ -267,6 +271,13 @@ function ConfigFields({
     case 'wiki-page':
       return (
         <PagePicker value={config.pageId} onChange={(pageId) => onChange({ ...config, pageId })} />
+      );
+    case 'report':
+      return (
+        <ReportSettings
+          config={config.report}
+          onChange={(report) => onChange({ ...config, report })}
+        />
       );
     case 'text':
       return (

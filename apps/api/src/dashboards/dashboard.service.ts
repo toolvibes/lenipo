@@ -389,6 +389,10 @@ export class DashboardService {
     if ('query' in config) await this.search.compile(principal, config.query);
     if (config.type === 'wiki-page') await this.pages.authorize(principal, config.pageId, 'view');
     if (config.type === 'sprint-burndown') await this.boards.get(principal, config.boardId);
+    if (config.type === 'report') {
+      if ('query' in config.report) await this.search.compile(principal, config.report.query);
+      if ('boardId' in config.report) await this.boards.get(principal, config.report.boardId);
+    }
   }
 
   async addGadget(principal: Principal, id: string, request: AddGadgetRequest): Promise<Dashboard> {

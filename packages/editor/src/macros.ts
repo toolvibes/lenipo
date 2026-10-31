@@ -15,7 +15,14 @@ export const ISSUE_LIST_DISPLAYS = ['table', 'count'] as const;
 /** Browser-only views of the macros; the schema stays the same without them. */
 export type MacroViews = Partial<
   Record<
-    'codeBlock' | 'expand' | 'status' | 'issue' | 'issueList' | 'tableOfContents' | 'childPages',
+    | 'codeBlock'
+    | 'expand'
+    | 'status'
+    | 'issue'
+    | 'issueList'
+    | 'report'
+    | 'tableOfContents'
+    | 'childPages',
     NodeViewRenderer
   >
 >;
@@ -184,6 +191,45 @@ export const IssueList = Node.create({
   },
 });
 
+/** Report kinds the report macro shows (TL-21, E-102); the web app knows their settings. */
+export const REPORT_MACRO_KINDS = [
+  'cfd',
+  'burnup',
+  'control-chart',
+  'scope-progress',
+  'created-vs-resolved',
+  'average-age',
+  'field-series',
+  'pie',
+  'time-tracking',
+] as const;
+
+/** A report of the reports page, run as the reader (T-RPT-10). */
+export const ReportMacro = Node.create({
+  name: 'report',
+  group: 'block',
+  atom: true,
+  addAttributes() {
+    return {
+      kind: { default: 'cfd' },
+      query: { default: '' },
+      field: { default: '' },
+      days: { default: 30 },
+      boardId: { default: '' },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'div[data-report]' }];
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      'div',
+      mergeAttributes(HTMLAttributes, { class: 'tl-report', 'data-report': node.attrs.kind }),
+      node.attrs.query,
+    ];
+  },
+});
+
 /** The headings of the page as links (W-MAC-01). */
 export const TableOfContents = Node.create({
   name: 'tableOfContents',
@@ -232,6 +278,7 @@ export function macroExtensions(views: MacroViews = {}, children: Partial<ChildP
     withView(Status, views.status),
     withView(IssueMacro, views.issue),
     withView(IssueList, views.issueList),
+    withView(ReportMacro, views.report),
     withView(TableOfContents, views.tableOfContents),
     withView(ChildPages, views.childPages).configure(children),
   ];

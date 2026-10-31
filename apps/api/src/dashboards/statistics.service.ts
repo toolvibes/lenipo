@@ -62,7 +62,8 @@ export class StatisticsService {
     @Inject(MetaService) private readonly meta: MetaService,
   ) {}
 
-  private async scope(principal: Principal, query: string) {
+  /** The visible, not deleted issues of a query, and the caller's time zone; null without projects. */
+  async scope(principal: Principal, query: string) {
     const compiled = await this.search.compile(principal, query);
     if (compiled.projectIds.length === 0) return null;
     return {

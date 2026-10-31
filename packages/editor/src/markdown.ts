@@ -227,7 +227,7 @@ function expandRule(state: StateBlock, startLine: number, endLine: number, silen
   return true;
 }
 
-const LEAF = /^::(toc|children|issues)(?:\{(.*)\})?[ \t]*$/;
+const LEAF = /^::(toc|children|issues|report)(?:\{(.*)\})?[ \t]*$/;
 
 /** `::toc`, `::children` and `::issues{query="…"}` on a line of their own. */
 function leafDirectiveRule(
@@ -249,14 +249,25 @@ function leafDirectiveRule(
       ? { type: 'tableOfContents', attrs: { maxLevel: intAttr(attrs.maxLevel, 3) } }
       : match[1] === 'children'
         ? { type: 'childPages', attrs: { depth: intAttr(attrs.depth, 1) } }
-        : {
-            type: 'issueList',
-            attrs: {
-              query: typeof attrs.query === 'string' ? attrs.query : '',
-              display: attrs.display === 'count' ? 'count' : 'table',
-              limit: intAttr(attrs.limit, 20),
-            },
-          };
+        : match[1] === 'report'
+          ? {
+              type: 'report',
+              attrs: {
+                kind: typeof attrs.kind === 'string' ? attrs.kind : 'cfd',
+                query: typeof attrs.query === 'string' ? attrs.query : '',
+                field: typeof attrs.field === 'string' ? attrs.field : '',
+                days: intAttr(attrs.days, 30),
+                boardId: typeof attrs.board === 'string' ? attrs.board : '',
+              },
+            }
+          : {
+              type: 'issueList',
+              attrs: {
+                query: typeof attrs.query === 'string' ? attrs.query : '',
+                display: attrs.display === 'count' ? 'count' : 'table',
+                limit: intAttr(attrs.limit, 20),
+              },
+            };
   state.line = startLine + 1;
   return true;
 }
@@ -348,6 +359,7 @@ const parser = new MarkdownParser(richTextSchema, markdownIt, {
   macro_toc: { node: 'tableOfContents', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_children: { node: 'childPages', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_issues: { node: 'issueList', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_report: { node: 'report', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_status: { node: 'status', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_issue: { node: 'issue', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   task_list: { block: 'taskList' },
@@ -454,6 +466,15 @@ const serializer = new MarkdownSerializer(
       if (node.attrs.display === 'count') attrs.push('display=count');
       if (node.attrs.limit !== 20) attrs.push(`limit=${node.attrs.limit}`);
       state.write(`::issues{${attrs.join(' ')}}`);
+      state.closeBlock(node);
+    },
+    report: (state, node) => {
+      const attrs = [`kind=${node.attrs.kind}`];
+      if (node.attrs.query) attrs.push(`query=${quoteAttr(String(node.attrs.query))}`);
+      if (node.attrs.field) attrs.push(`field=${node.attrs.field}`);
+      if (node.attrs.days !== 30) attrs.push(`days=${node.attrs.days}`);
+      if (node.attrs.boardId) attrs.push(`board=${node.attrs.boardId}`);
+      state.write(`::report{${attrs.join(' ')}}`);
       state.closeBlock(node);
     },
     status: (state, node) => {

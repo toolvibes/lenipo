@@ -1,5 +1,6 @@
 import {
   CaretCircleDown,
+  ChartLine,
   CheckCircle,
   CheckSquare,
   CodeBlock,
@@ -192,6 +193,18 @@ export function slashItems(t: TFunction, onImage?: () => void): SlashItem[] {
           .chain()
           .focus()
           .insertMacro('issueList', { query: '', display: 'table', limit: 20 })
+          .run(),
+    },
+    {
+      id: 'report',
+      label: t('editor.report'),
+      keywords: 'bericht report diagramm chart cfd burnup control zeiterfassung',
+      icon: ChartLine,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertMacro('report', { kind: 'cfd', query: '', field: '', days: 30, boardId: '' })
           .run(),
     },
   );

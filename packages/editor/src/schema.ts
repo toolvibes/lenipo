@@ -11,6 +11,7 @@ import {
   type MacroViews,
   macroExtensions,
   PANEL_KINDS,
+  REPORT_MACRO_KINDS,
   STATUS_COLORS,
 } from './macros.js';
 
@@ -118,6 +119,16 @@ function validAttrs(node: PMNode): boolean {
         text(node.attrs.query, 2000) &&
         (ISSUE_LIST_DISPLAYS as readonly unknown[]).includes(node.attrs.display) &&
         level(node.attrs.limit, 100)
+      );
+    case 'report':
+      return (
+        (REPORT_MACRO_KINDS as readonly unknown[]).includes(node.attrs.kind) &&
+        text(node.attrs.query, 2000) &&
+        text(node.attrs.field, 40) &&
+        Number.isInteger(node.attrs.days) &&
+        node.attrs.days >= 7 &&
+        node.attrs.days <= 365 &&
+        text(node.attrs.boardId, 40)
       );
     case 'tableOfContents':
       return level(node.attrs.maxLevel, 6);

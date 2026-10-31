@@ -22,6 +22,8 @@ const MACROS = [
   '',
   '::issues{query="project = WEB AND status != Erledigt" display=count limit=5}',
   '',
+  '::report{kind=control-chart query="project = WEB" days=90}',
+  '',
   '::children',
 ].join('\n');
 
@@ -36,9 +38,10 @@ describe('macros in Markdown (E-66)', () => {
       'expand',
       'paragraph',
       'issueList',
+      'report',
       'childPages',
     ]);
-    const [toc, panel, expand, paragraph, list] = doc.content as Json[];
+    const [toc, panel, expand, paragraph, list, report] = doc.content as Json[];
     expect(toc?.attrs).toEqual({ maxLevel: 2 });
     expect(panel?.attrs).toEqual({ kind: 'warning' });
     expect(panel?.content?.map((node) => node.type)).toEqual(['paragraph', 'bulletList']);
@@ -55,6 +58,13 @@ describe('macros in Markdown (E-66)', () => {
       query: 'project = WEB AND status != Erledigt',
       display: 'count',
       limit: 5,
+    });
+    expect(report?.attrs).toEqual({
+      kind: 'control-chart',
+      query: 'project = WEB',
+      field: '',
+      days: 90,
+      boardId: '',
     });
     expect(isValidDoc(doc)).toBe(true);
   });
