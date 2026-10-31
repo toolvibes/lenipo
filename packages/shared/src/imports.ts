@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Id } from './identity.js';
 
 /** Imports from Jira and Confluence Server/DC (TL-35, E-118). */
-export const IMPORT_SOURCES = ['jira', 'confluence'] as const;
+export const IMPORT_SOURCES = ['jira', 'confluence', 'archive'] as const;
 export const ImportSource = z.enum(IMPORT_SOURCES).meta({ id: 'ImportSource' });
 export type ImportSource = z.infer<typeof ImportSource>;
 
@@ -69,3 +69,16 @@ export const ConfluenceImportQuery = z.object({
   dryRun: z.enum(['true', 'false']).default('true'),
 });
 export type ConfluenceImportQuery = z.infer<typeof ConfluenceImportQuery>;
+
+/** A project or space archive of another Tasklore instance (TL-39, E-120). */
+export const ArchiveImportQuery = z.object({
+  /** Key of the new project or space; the archive's key if empty. */
+  targetKey: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z][A-Z0-9]{1,9}$/)
+    .optional(),
+  dryRun: z.enum(['true', 'false']).default('true'),
+});
+export type ArchiveImportQuery = z.infer<typeof ArchiveImportQuery>;

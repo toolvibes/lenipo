@@ -194,9 +194,33 @@ describe('tl, the command line (TL-37)', () => {
     expect(await bridged).toBe(0);
   });
 
+  it('makes backups and archives with an admin token (TL-39)', async () => {
+    const adminToken = (
+      await admin.request<CreatedToken>('POST', '/me/tokens', {
+        name: 'Admin',
+        scopes: ['admin'],
+        expiresInDays: 1,
+      })
+    ).body.secret;
+    const env = { TASKLORE_URL: origin, TASKLORE_TOKEN: adminToken };
+    const created = await tl(['admin', 'backup', 'create', '--output', 'json'], env);
+    expect(created.code).toBe(0);
+    const [backup] = JSON.parse(created.out) as Array<{ id: string; state: string }>;
+    expect(backup?.state).toBe('done');
+    const file = join(dir, 'backup.zip');
+    expect((await tl(['admin', 'backup', 'download', backup?.id ?? '', file], env)).code).toBe(0);
+    expect((await readFile(file)).subarray(0, 2).toString()).toBe('PK');
+    const archive = join(dir, 'web.zip');
+    expect((await tl(['admin', 'archive', 'project', 'web', archive], env)).code).toBe(0);
+    expect((await readFile(archive)).subarray(0, 2).toString()).toBe('PK');
+    // Without the admin scope the server refuses.
+    expect((await tl(['admin', 'backup', 'list'])).code).not.toBe(0);
+  });
+
   it('prints completion scripts and explains missing commands', async () => {
     expect((await tl(['completion', 'bash'])).out).toContain('complete -F _tl tl tasklore');
-    expect((await tl(['admin', 'backup'])).err).toContain('TL-39');
+    expect((await tl(['admin', 'restore'])).err).toContain('/setup');
+    expect((await tl(['admin', 'backup'])).code).toBe(2);
     expect((await tl(['admin', 'import', 'jira'])).code).toBe(2);
     expect((await tl(['unbekannt'])).code).toBe(2);
   });

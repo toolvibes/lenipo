@@ -92,6 +92,8 @@ POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d -
 
 Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Anhänge landen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, mit `--profile s3` startet zusätzlich RustFS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
 
+Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Daten und Anhängen im Dateispeicher ab (die letzten drei bleiben), von Hand oder per Cronjob mit `tl admin backup create` und `tl admin backup download <id>`. Wiederhergestellt wird in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das Backup hochladen.
+
 ### Aufbau
 
 ```

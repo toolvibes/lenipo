@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { basename } from 'node:path';
 import { parseArgs } from 'node:util';
 import { markdownToDoc } from '@tasklore/editor';
 import {
@@ -55,6 +56,10 @@ Weiteres
   tl admin users              Personen der Instanz (Administration)
   tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]
   tl admin import confluence <export.zip> [--space KEY] [--run]
+  tl admin import archive <archiv.zip> [--key KEY] [--run]
+  tl admin archive project|space <KEY> [datei]   Projekt oder Bereich als Archiv
+  tl admin backup create|list                    Backup anlegen (wartet) oder auflisten
+  tl admin backup download <id> [datei]
   tl completion bash|zsh|fish
 
 Optionen überall: --profile <name>, --output table|json|md
@@ -653,11 +658,15 @@ async function page(args: string[], io: Io) {
 
 async function admin(args: string[], io: Io) {
   const [sub, ...rest] = args;
-  if (sub === 'backup' || sub === 'restore' || sub === 'reindex') {
-    // The server features follow in TL-39.
-    throw new CliError(`tl admin ${sub} gibt es noch nicht; es kommt mit TL-39.`, 2);
+  if (sub === 'restore') {
+    throw new CliError(
+      'Ein Backup wird auf der Einrichtungsseite einer neuen Instanz wiederhergestellt (/setup).',
+      2,
+    );
   }
   if (sub === 'import') return adminImport(rest, io);
+  if (sub === 'backup') return adminBackup(rest, io);
+  if (sub === 'archive') return adminArchive(rest, io);
   if (sub !== 'users') throw new CliError('tl admin users', 2);
   const { values } = parseArgs({ args: rest, options: COMMON });
   const format = formatOf(values.output);
@@ -690,6 +699,7 @@ async function adminImport(args: string[], io: Io) {
       token: { type: 'string' },
       projects: { type: 'string' },
       space: { type: 'string' },
+      key: { type: 'string' },
       run: { type: 'boolean' },
     },
   });
@@ -723,8 +733,6 @@ async function adminImport(args: string[], io: Io) {
     const file = positionals[0];
     if (!file)
       throw new CliError('tl admin import confluence <export.zip> [--space KEY] [--run]', 2);
-    const { readFile } = await import('node:fs/promises');
-    const { basename } = await import('node:path');
     const form = new FormData();
     form.append(
       'file',
@@ -743,8 +751,26 @@ async function adminImport(args: string[], io: Io) {
     if (!response.ok) throw new CliError(`Upload abgelehnt (${response.status})`);
     job = (await response.json()) as typeof job;
     if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
+  } else if (source === 'archive') {
+    const file = positionals[0];
+    if (!file) throw new CliError('tl admin import archive <archiv.zip> [--key KEY] [--run]', 2);
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([await readFile(file)], { type: 'application/zip' }),
+      basename(file),
+    );
+    const query = new URLSearchParams({ dryRun: values.run ? 'false' : 'true' });
+    if (values.key) query.set('targetKey', values.key.toUpperCase());
+    const response = await session.authorizedFetch(
+      `${session.url}/api/v1/admin/imports/archive?${query}`,
+      { method: 'POST', body: form },
+    );
+    if (!response.ok) throw new CliError(`Upload abgelehnt (${response.status})`);
+    job = (await response.json()) as typeof job;
+    if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
   } else {
-    throw new CliError('tl admin import jira|confluence|status', 2);
+    throw new CliError('tl admin import jira|confluence|archive|status', 2);
   }
   let shown = '';
   while (job.state === 'pending' || job.state === 'running') {
@@ -776,4 +802,101 @@ async function adminImport(args: string[], io: Io) {
     io.out(lines.join('\n'));
   }
   if (job.state === 'failed') throw new CliError('Import fehlgeschlagen', 1);
+}
+
+/** Saves a download from the API to a file; the server's file name when none is given. */
+async function saveDownload(
+  session: Awaited<ReturnType<typeof openSession>>,
+  path: string,
+  target: string | undefined,
+  io: Io,
+) {
+  const response = await session.authorizedFetch(`${session.url}${path}`);
+  if (!response.ok) throw new CliError(`Download abgelehnt (${response.status})`);
+  const named = /filename="([^"]+)"/.exec(response.headers.get('content-disposition') ?? '')?.[1];
+  const file = target ?? named ?? 'download.zip';
+  const body = Buffer.from(await response.arrayBuffer());
+  await writeFile(file, body);
+  io.out(`${file} (${Math.round(body.length / 1024)} KB)`);
+}
+
+/** `tl admin backup create|list|download` (TL-39, E-120). */
+async function adminBackup(args: string[], io: Io) {
+  const [action, ...rest] = args;
+  const { values, positionals } = parseArgs({
+    args: rest,
+    allowPositionals: true,
+    options: COMMON,
+  });
+  const format = formatOf(values.output);
+  const session = await openSession(io, values.profile);
+  const { client } = session;
+  type Backup = {
+    id: string;
+    state: string;
+    trigger: string;
+    createdAt: string;
+    sizeBytes: number | null;
+    error: string | null;
+  };
+  const show = (list: Backup[]) =>
+    io.out(
+      render(
+        format,
+        ['ID', 'ZUSTAND', 'ART', 'ANGELEGT', 'GRÖSSE'],
+        list.map((backup) => [
+          backup.id,
+          backup.error ? `${backup.state}: ${backup.error}` : backup.state,
+          backup.trigger,
+          backup.createdAt,
+          backup.sizeBytes === null ? '' : `${Math.round(backup.sizeBytes / 1024)} KB`,
+        ]),
+        list,
+        io.columns,
+      ),
+    );
+  if (action === 'list') {
+    show((await unwrap(client.GET('/api/v1/admin/backups'))) as Backup[]);
+    return;
+  }
+  if (action === 'create') {
+    let backup = (await unwrap(client.POST('/api/v1/admin/backups'))) as Backup;
+    io.err('Backup läuft …');
+    while (backup.state === 'running') {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      backup = (await unwrap(
+        client.GET('/api/v1/admin/backups/{id}', { params: { path: { id: backup.id } } }),
+      )) as Backup;
+    }
+    show([backup]);
+    if (backup.state !== 'done') throw new CliError('Backup fehlgeschlagen', 1);
+    return;
+  }
+  if (action === 'download') {
+    const id = positionals[0];
+    if (!id) throw new CliError('tl admin backup download <id> [datei]', 2);
+    await saveDownload(session, `/api/v1/admin/backups/${id}/download`, positionals[1], io);
+    return;
+  }
+  throw new CliError('tl admin backup create|list|download', 2);
+}
+
+/** `tl admin archive project|space <KEY> [datei]` (TL-39, E-120). */
+async function adminArchive(args: string[], io: Io) {
+  const [kind, ...rest] = args;
+  const { values, positionals } = parseArgs({
+    args: rest,
+    allowPositionals: true,
+    options: COMMON,
+  });
+  const key = positionals[0];
+  if ((kind !== 'project' && kind !== 'space') || !key)
+    throw new CliError('tl admin archive project|space <KEY> [datei]', 2);
+  const session = await openSession(io, values.profile);
+  await saveDownload(
+    session,
+    `/api/v1/admin/archives/${kind === 'project' ? 'projects' : 'spaces'}/${encodeURIComponent(key.toUpperCase())}`,
+    positionals[1],
+    io,
+  );
 }

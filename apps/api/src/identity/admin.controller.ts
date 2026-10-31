@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   AddGroupMemberRequest,
+  AnonymizeUserRequest,
   CreateGroupRequest,
   CreateUserRequest,
   GroupSummary,
@@ -33,6 +34,7 @@ import { SecuritySettingsService } from './security-settings.service.js';
 import { SessionService } from './session.service.js';
 import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
+import { UserLifecycleService } from './user-lifecycle.service.js';
 
 @RequireGlobal('admin')
 @Controller('admin')
@@ -45,6 +47,7 @@ export class AdminController {
     @Inject(SecuritySettingsService) private readonly security: SecuritySettingsService,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
+    @Inject(UserLifecycleService) private readonly lifecycle: UserLifecycleService,
   ) {}
 
   @Endpoint({
@@ -106,6 +109,68 @@ export class AdminController {
       via: principal.via,
       targetType: 'user',
       targetId: id,
+    });
+  }
+
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Deactivate a user',
+    description: 'Ends their sessions, tokens and app connections; everything they did stays.',
+  })
+  @Post('users/:id/deactivate')
+  @HttpCode(204)
+  async deactivateUser(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.lifecycle.deactivate(id, principal.userId);
+    await this.audit.record({
+      action: 'user.deactivated',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+    });
+  }
+
+  @Endpoint({ tag: 'Admin', summary: 'Reactivate a deactivated user' })
+  @Post('users/:id/reactivate')
+  @HttpCode(204)
+  async reactivateUser(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.lifecycle.reactivate(id, principal.userId);
+    await this.audit.record({
+      action: 'user.reactivated',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+    });
+  }
+
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Anonymise a user (GDPR)',
+    description:
+      'Irreversible: name and e-mail become "Ehemalige Person n" everywhere, sign-in data and personal settings are deleted, contributions stay.',
+  })
+  @Post('users/:id/anonymize')
+  @HttpCode(204)
+  async anonymizeUser(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(AnonymizeUserRequest) body: AnonymizeUserRequest,
+  ): Promise<void> {
+    const label = await this.lifecycle.anonymize(id, principal.userId, body.confirmation);
+    await this.audit.record({
+      action: 'user.anonymized',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+      details: { name: label },
     });
   }
 

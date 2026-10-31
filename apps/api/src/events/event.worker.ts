@@ -12,6 +12,8 @@ import type { DatabaseHandle } from '../db/client.js';
 import { DirectoryService } from '../identity/directory.service.js';
 import { OAuthService } from '../identity/oauth.service.js';
 import { ImportService } from '../imports/import.service.js';
+import { BackupService } from '../maintenance/backup.service.js';
+import { RetentionService } from '../maintenance/retention.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
@@ -37,6 +39,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(OAuthService) private readonly oauth: OAuthService,
     @Inject(DirectoryService) private readonly directories: DirectoryService,
     @Inject(ImportService) private readonly imports: ImportService,
+    @Inject(RetentionService) private readonly retention: RetentionService,
+    @Inject(BackupService) private readonly backups: BackupService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
 
@@ -61,6 +65,10 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       const { outdatedAfterDays } = await wikiSettings(this.database);
       if (outdatedAfterDays) await this.pages.markOutdated(outdatedAfterDays);
     });
+    // Trash, old versions and audit entries past their retention (TL-39).
+    this.every('retention', 60 * 60_000, () => this.retention.run().then(() => {}));
+    // The daily backup at its hour; a long one keeps the loop busy.
+    this.every('backups', 5 * 60_000, () => this.backups.runScheduled());
     this.every('cleanup', 60 * 60_000, async () => {
       await this.webhooks.cleanUp();
       await this.automation.cleanUp();

@@ -4,6 +4,8 @@ import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatRelative } from '../../lib/format';
+import { projectsQuery } from '../../lib/tracking';
+import { spacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
@@ -113,6 +115,91 @@ function ConfluenceForm() {
   );
 }
 
+/** Project and space archives between Tasklore instances (TL-39, E-120). */
+function ArchiveForms() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const projects = useQuery(projectsQuery);
+  const spaces = useQuery(spacesQuery);
+  const [file, setFile] = useState<File | null>(null);
+  const [targetKey, setTargetKey] = useState('');
+  const upload = useMutation({
+    mutationFn: async () => {
+      if (!file) return;
+      const form = new FormData();
+      form.append('file', file);
+      const query = new URLSearchParams({ dryRun: 'true' });
+      if (targetKey.trim()) query.set('targetKey', targetKey.trim().toUpperCase());
+      const response = await fetch(`/api/v1/admin/imports/archive?${query}`, {
+        method: 'POST',
+        body: form,
+      });
+      if (!response.ok) {
+        const problem = (await response.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(problem.detail ?? response.statusText);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'imports'] }),
+  });
+  const link = 'text-[var(--accent)]';
+  return (
+    <section className="flex flex-col gap-3 border-t border-[var(--border)] pt-4">
+      <h2 className="m-0 text-base font-semibold">{t('imports.archiveTitle')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('imports.archiveIntro')}</p>
+      <div className="flex flex-col gap-1 text-[13px]">
+        <span className="tl-label text-[var(--ink-muted)]">{t('imports.archiveExport')}</span>
+        {(
+          [
+            ['projects', t('imports.archiveProjects'), projects.data ?? []],
+            ['spaces', t('imports.archiveSpaces'), spaces.data ?? []],
+          ] as const
+        ).map(([kind, label, list]) => (
+          <span key={kind} className="flex flex-wrap gap-x-3 gap-y-1">
+            <span className="text-[var(--ink-muted)]">{label}:</span>
+            {list.map((entry) => (
+              <a
+                key={entry.key}
+                className={link}
+                href={`/api/v1/admin/archives/${kind}/${entry.key}`}
+                download
+              >
+                {entry.key}
+              </a>
+            ))}
+          </span>
+        ))}
+      </div>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          upload.mutate();
+        }}
+      >
+        <input
+          type="file"
+          accept=".zip,application/zip"
+          aria-label={t('imports.archiveFile')}
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        />
+        <TextField
+          label={t('imports.targetKey')}
+          help={t('imports.targetKeyHelp')}
+          value={targetKey}
+          maxLength={10}
+          onChange={(event) => setTargetKey(event.target.value)}
+        />
+        {upload.error && <FormError message={upload.error.message} />}
+        <div>
+          <Button type="submit" variant="primary" disabled={!file || upload.isPending}>
+            {t('imports.dryRun')}
+          </Button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
 /** Imports from Jira and Confluence Server/DC (TL-35, E-118). */
 export function ImportPage() {
   const { t } = useTranslation();
@@ -203,6 +290,7 @@ export function ImportPage() {
         </div>
       </form>
       <ConfluenceForm />
+      <ArchiveForms />
       <section className="flex flex-col gap-2">
         <h2 className="m-0 text-base font-semibold">{t('imports.jobs')}</h2>
         {jobs.data?.length === 0 && (
@@ -232,7 +320,7 @@ export function ImportPage() {
               </span>
             </span>
             <JobReport job={job} />
-            {job.source === 'confluence' && job.dryRun && job.state === 'done' && (
+            {job.source !== 'jira' && job.dryRun && job.state === 'done' && (
               <div>
                 <Button size="sm" onClick={() => runFor.mutate(job.id)} disabled={runFor.isPending}>
                   {t('imports.runChecked')}

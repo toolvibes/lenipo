@@ -26,6 +26,7 @@ import { SetupService } from './setup.service.js';
 import { TokenService } from './token.service.js';
 import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
+import { UserLifecycleService } from './user-lifecycle.service.js';
 import { GroupsController, UsersController } from './users.controller.js';
 
 @Module({
@@ -58,6 +59,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     SetupService,
     TokenService,
     UserService,
+    UserLifecycleService,
     AuthGuard,
     GlobalPermissionGuard,
     // Order matters: authentication runs before the permission check.

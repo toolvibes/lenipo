@@ -156,6 +156,12 @@ export const CreateUserRequest = z
   .meta({ id: 'CreateUserRequest' });
 export type CreateUserRequest = z.infer<typeof CreateUserRequest>;
 
+/** Anonymising an account is confirmed by typing the person's current name (TL-39). */
+export const AnonymizeUserRequest = z
+  .object({ confirmation: z.string().max(200) })
+  .meta({ id: 'AnonymizeUserRequest' });
+export type AnonymizeUserRequest = z.infer<typeof AnonymizeUserRequest>;
+
 export const GroupName = z
   .string()
   .trim()

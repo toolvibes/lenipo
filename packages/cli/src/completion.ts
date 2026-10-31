@@ -9,7 +9,7 @@ export const COMMANDS: Record<string, string[]> = {
   sprint: ['list'],
   page: ['get', 'push', 'pull', 'push-dir'],
   mcp: [],
-  admin: ['users', 'import', 'backup', 'restore', 'reindex'],
+  admin: ['users', 'import', 'backup', 'archive', 'restore'],
   completion: ['bash', 'zsh', 'fish'],
   help: [],
 };

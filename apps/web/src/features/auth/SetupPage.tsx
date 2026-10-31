@@ -109,6 +109,79 @@ export function SetupPage() {
           {setup.isPending ? t('setup.submitting') : t('setup.submit')}
         </Button>
       </form>
+      <RestoreBackup code={form.token} />
     </AuthLayout>
+  );
+}
+
+/** Restoring a backup instead of starting empty (TL-39, E-120). */
+function RestoreBackup({ code }: { code: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [file, setFile] = useState<File | null>(null);
+  const restore = useMutation({
+    mutationFn: async () => {
+      if (!file) throw new Error(t('setup.restoreFile'));
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/api/v1/setup/restore', {
+        method: 'POST',
+        headers: { 'x-setup-code': code.trim() },
+        body: form,
+      });
+      const body = (await response.json().catch(() => ({}))) as {
+        detail?: string;
+        rows?: number;
+        files?: number;
+      };
+      if (!response.ok)
+        throw new Error(
+          response.status === 403 ? t('setup.invalidCode') : (body.detail ?? response.statusText),
+        );
+      return { rows: body.rows ?? 0, files: body.files ?? 0 };
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(setupStatusQuery.queryKey, { required: false });
+    },
+  });
+  return (
+    <section className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-5">
+      <h2 className="m-0 text-base font-semibold">{t('setup.restoreTitle')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('setup.restoreIntro')}</p>
+      {restore.error && <FormError message={restore.error.message} />}
+      {restore.data ? (
+        <>
+          <p className="m-0 text-[13px]" role="status">
+            {t('setup.restored', restore.data)}
+          </p>
+          <Button variant="primary" onClick={() => navigate({ to: '/login' })}>
+            {t('auth.signIn')}
+          </Button>
+        </>
+      ) : (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            restore.mutate();
+          }}
+        >
+          <label className="flex flex-col gap-1.5 text-[13px]">
+            <span className="tl-label text-[var(--ink-muted)]">{t('setup.restoreFile')}</span>
+            <input
+              type="file"
+              accept=".zip,application/zip"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          <div>
+            <Button type="submit" disabled={!file || !code.trim() || restore.isPending}>
+              {restore.isPending ? t('setup.restoring') : t('setup.restore')}
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }

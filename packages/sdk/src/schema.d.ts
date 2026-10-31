@@ -90,6 +90,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/users/{id}/deactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Deactivate a user
+     * @description Ends their sessions, tokens and app connections; everything they did stays.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Admin.deactivateUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/users/{id}/reactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reactivate a deactivated user
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Admin.reactivateUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/users/{id}/anonymize': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Anonymise a user (GDPR)
+     * @description Irreversible: name and e-mail become "Ehemalige Person n" everywhere, sign-in data and personal settings are deleted, contributions stay.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Admin.anonymizeUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/users': {
     parameters: {
       query?: never;
@@ -1217,6 +1281,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/imports/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import a project or space archive of another Tasklore
+     * @description The ZIP from "Export as archive" (field "file"). Everything gets new ids; people are matched by e-mail or created deactivated, issue types, statuses, priorities and link types by key or name. `targetKey` renames the project or space; dryRun (the default) only reports.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Import.archive'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/imports/{id}/run': {
     parameters: {
       query?: never;
@@ -1227,8 +1313,8 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Import what a Confluence dry run checked
-     * @description Starts the real import with the export uploaded for the dry run.
+     * Import what a dry run checked
+     * @description Starts the real import with the file uploaded for the dry run (Confluence or archive).
      *
      *     Requires the global permission `admin`.
      */
@@ -1251,6 +1337,50 @@ export interface paths {
      * @description Requires the global permission `admin`.
      */
     get: operations['Import.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/archives/projects/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export a project as archive
+     * @description Issues with comments, work logs, links, attachments, components and versions.
+     *
+     *     Requires the global permission `admin`.
+     */
+    get: operations['Import.project'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/archives/spaces/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export a space as archive
+     * @description Pages and blog posts with all versions, comments and attachments.
+     *
+     *     Requires the global permission `admin`.
+     */
+    get: operations['Import.space'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1817,6 +1947,146 @@ export interface paths {
      * @description New keys, the old ones keep working. Type and status are kept where the target allows, else mapped (same category, else initial); components and versions by name; security level kept or the target default. Needs edit-issues in the source and create-issues in the target.
      */
     post: operations['Issues.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/retention': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Retention settings
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.retentionSettings'];
+    /**
+     * Change the retention settings
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Maintenance.setRetention'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/retention/run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Clean up now
+     * @description Runs the hourly clean-up at once and reports what it deleted.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Maintenance.runRetention'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/backup-settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Backup schedule
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.backupSettings'];
+    /**
+     * Change the backup schedule
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Maintenance.setBackupSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/backups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List backups
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.listBackups'];
+    put?: never;
+    /**
+     * Start a backup
+     * @description Returns at once with state "running"; the list shows when it is done.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Maintenance.startBackup'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/backups/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Show one backup
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.getBackup'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a backup
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Maintenance.deleteBackup'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/backups/{id}/download': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download a backup as ZIP
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.downloadBackup'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -3446,6 +3716,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/setup/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore a backup into this fresh instance
+     * @description Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field "file") must come from the same Tasklore version. Afterwards people sign in with their accounts from the backup.
+     */
+    post: operations['Setup.restore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/spaces/{key}/blog': {
     parameters: {
       query?: never;
@@ -4425,6 +4715,9 @@ export interface components {
       sessionIdleHours: number;
       sessionMaxDays: number;
       twoFactorGroupIds: string[];
+    };
+    AnonymizeUserRequest: {
+      confirmation: string;
     };
     UserSummary: {
       /** Format: uuid */
@@ -6297,7 +6590,7 @@ export interface components {
       finishedAt: string | null;
     };
     /** @enum {string} */
-    ImportSource: 'jira' | 'confluence';
+    ImportSource: 'jira' | 'confluence' | 'archive';
     ImportReport: {
       counts: {
         [key: string]: number;
@@ -6635,6 +6928,60 @@ export interface components {
       issueType?: string;
       /** Format: uuid */
       statusId?: string;
+    };
+    RetentionSettings: {
+      /** @default 30 */
+      trashDays: number;
+      /** @default 0 */
+      versionDays: number;
+      /** @default 365 */
+      auditDays: number;
+    };
+    RetentionSettingsInput: {
+      /** @default 30 */
+      trashDays?: number;
+      /** @default 0 */
+      versionDays?: number;
+      /** @default 365 */
+      auditDays?: number;
+    };
+    RetentionResult: {
+      issues: number;
+      pages: number;
+      comments: number;
+      versions: number;
+      auditEntries: number;
+      files: number;
+    };
+    BackupSettings: {
+      /** @default true */
+      enabled: boolean;
+      /** @default 2 */
+      hour: number;
+      /** @default 3 */
+      keep: number;
+    };
+    BackupSettingsInput: {
+      /** @default true */
+      enabled?: boolean;
+      /** @default 2 */
+      hour?: number;
+      /** @default 3 */
+      keep?: number;
+    };
+    Backup: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      trigger: 'manual' | 'scheduled';
+      /** @enum {string} */
+      state: 'running' | 'done' | 'failed';
+      createdAt: string;
+      finishedAt: string | null;
+      sizeBytes: number | null;
+      rows: number | null;
+      files: number | null;
+      error: string | null;
     };
     TwoFactorSetup: {
       secret: string;
@@ -7830,6 +8177,11 @@ export interface components {
         password: string;
       };
     };
+    RestoreResult: {
+      tables: number;
+      rows: number;
+      files: number;
+    };
     Blog: {
       posts: components['schemas']['BlogPost'][];
       months: {
@@ -8529,6 +8881,97 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.deactivateUser': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.reactivateUser': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.anonymizeUser': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AnonymizeUserRequest'];
+      };
+    };
     responses: {
       /** @description Success, no content */
       204: {
@@ -11311,6 +11754,45 @@ export interface operations {
       };
     };
   };
+  'Import.archive': {
+    parameters: {
+      query?: {
+        targetKey?: string;
+        dryRun?: 'true' | 'false';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Import.run': {
     parameters: {
       query?: never;
@@ -11360,6 +11842,68 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ImportJob'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.project': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.space': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -12624,6 +13168,308 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.retentionSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RetentionSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.setRetention': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RetentionSettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RetentionSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.runRetention': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RetentionResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.backupSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BackupSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.setBackupSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BackupSettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BackupSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.listBackups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Backup'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.startBackup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Backup'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.getBackup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Backup'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.deleteBackup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.downloadBackup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -16189,6 +17035,42 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Setup.restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestoreResult'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

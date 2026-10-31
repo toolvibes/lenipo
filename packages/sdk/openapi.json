@@ -183,6 +183,115 @@
         }
       }
     },
+    "/api/v1/admin/users/{id}/deactivate": {
+      "post": {
+        "operationId": "Admin.deactivateUser",
+        "summary": "Deactivate a user",
+        "description": "Ends their sessions, tokens and app connections; everything they did stays.\n\nRequires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/reactivate": {
+      "post": {
+        "operationId": "Admin.reactivateUser",
+        "summary": "Reactivate a deactivated user",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/anonymize": {
+      "post": {
+        "operationId": "Admin.anonymizeUser",
+        "summary": "Anonymise a user (GDPR)",
+        "description": "Irreversible: name and e-mail become \"Ehemalige Person n\" everywhere, sign-in data and personal settings are deleted, contributions stay.\n\nRequires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnonymizeUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "Admin.listUsers",
@@ -3632,11 +3741,79 @@
         }
       }
     },
+    "/api/v1/admin/imports/archive": {
+      "post": {
+        "operationId": "Import.archive",
+        "summary": "Import a project or space archive of another Tasklore",
+        "description": "The ZIP from \"Export as archive\" (field \"file\"). Everything gets new ids; people are matched by e-mail or created deactivated, issue types, statuses, priorities and link types by key or name. `targetKey` renames the project or space; dryRun (the default) only reports.\n\nRequires the global permission `admin`.",
+        "tags": ["Import"],
+        "parameters": [
+          {
+            "name": "targetKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9]{1,9}$"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "true",
+              "type": "string",
+              "enum": ["true", "false"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/imports/{id}/run": {
       "post": {
         "operationId": "Import.run",
-        "summary": "Import what a Confluence dry run checked",
-        "description": "Starts the real import with the export uploaded for the dry run.\n\nRequires the global permission `admin`.",
+        "summary": "Import what a dry run checked",
+        "description": "Starts the real import with the file uploaded for the dry run (Confluence or archive).\n\nRequires the global permission `admin`.",
         "tags": ["Import"],
         "parameters": [
           {
@@ -3695,6 +3872,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ImportJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/archives/projects/{key}": {
+      "get": {
+        "operationId": "Import.project",
+        "summary": "Export a project as archive",
+        "description": "Issues with comments, work logs, links, attachments, components and versions.\n\nRequires the global permission `admin`.",
+        "tags": ["Import"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/archives/spaces/{key}": {
+      "get": {
+        "operationId": "Import.space",
+        "summary": "Export a space as archive",
+        "description": "Pages and blog posts with all versions, comments and attachments.\n\nRequires the global permission `admin`.",
+        "tags": ["Import"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -5379,6 +5638,345 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/retention": {
+      "get": {
+        "operationId": "Maintenance.retentionSettings",
+        "summary": "Retention settings",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Maintenance.setRetention",
+        "summary": "Change the retention settings",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/retention/run": {
+      "post": {
+        "operationId": "Maintenance.runRetention",
+        "summary": "Clean up now",
+        "description": "Runs the hourly clean-up at once and reports what it deleted.\n\nRequires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backup-settings": {
+      "get": {
+        "operationId": "Maintenance.backupSettings",
+        "summary": "Backup schedule",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Maintenance.setBackupSettings",
+        "summary": "Change the backup schedule",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups": {
+      "get": {
+        "operationId": "Maintenance.listBackups",
+        "summary": "List backups",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Backup"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Maintenance.startBackup",
+        "summary": "Start a backup",
+        "description": "Returns at once with state \"running\"; the list shows when it is done.\n\nRequires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Backup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups/{id}": {
+      "get": {
+        "operationId": "Maintenance.getBackup",
+        "summary": "Show one backup",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Backup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Maintenance.deleteBackup",
+        "summary": "Delete a backup",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/backups/{id}/download": {
+      "get": {
+        "operationId": "Maintenance.downloadBackup",
+        "summary": "Download a backup as ZIP",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -10123,6 +10721,54 @@
         }
       }
     },
+    "/api/v1/setup/restore": {
+      "post": {
+        "operationId": "Setup.restore",
+        "summary": "Restore a backup into this fresh instance",
+        "description": "Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field \"file\") must come from the same Tasklore version. Afterwards people sign in with their accounts from the backup.",
+        "tags": ["Setup"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/spaces/{key}/blog": {
       "get": {
         "operationId": "Spaces.blog",
@@ -13136,6 +13782,16 @@
           }
         },
         "required": ["sessionIdleHours", "sessionMaxDays", "twoFactorGroupIds"]
+      },
+      "AnonymizeUserRequest": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": ["confirmation"]
       },
       "UserSummary": {
         "type": "object",
@@ -19364,7 +20020,7 @@
       },
       "ImportSource": {
         "type": "string",
-        "enum": ["jira", "confluence"]
+        "enum": ["jira", "confluence", "archive"]
       },
       "ImportReport": {
         "type": "object",
@@ -20827,6 +21483,210 @@
           }
         },
         "required": ["projectKey"]
+      },
+      "RetentionSettings": {
+        "type": "object",
+        "properties": {
+          "trashDays": {
+            "default": 30,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          },
+          "versionDays": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          },
+          "auditDays": {
+            "default": 365,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          }
+        },
+        "required": ["trashDays", "versionDays", "auditDays"],
+        "additionalProperties": false
+      },
+      "RetentionSettingsInput": {
+        "type": "object",
+        "properties": {
+          "trashDays": {
+            "default": 30,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          },
+          "versionDays": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          },
+          "auditDays": {
+            "default": 365,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
+          }
+        }
+      },
+      "RetentionResult": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "comments": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "versions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "auditEntries": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "files": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["issues", "pages", "comments", "versions", "auditEntries", "files"],
+        "additionalProperties": false
+      },
+      "BackupSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "hour": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "keep": {
+            "default": 3,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["enabled", "hour", "keep"],
+        "additionalProperties": false
+      },
+      "BackupSettingsInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "hour": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "keep": {
+            "default": 3,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "Backup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": ["manual", "scheduled"]
+          },
+          "state": {
+            "type": "string",
+            "enum": ["running", "done", "failed"]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "type": ["string", "null"]
+          },
+          "sizeBytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "state",
+          "createdAt",
+          "finishedAt",
+          "sizeBytes",
+          "rows",
+          "files",
+          "error"
+        ],
+        "additionalProperties": false
       },
       "TwoFactorSetup": {
         "type": "object",
@@ -25500,6 +26360,28 @@
           }
         },
         "required": ["token", "instanceName", "admin"]
+      },
+      "RestoreResult": {
+        "type": "object",
+        "properties": {
+          "tables": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "rows": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "files": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["tables", "rows", "files"],
+        "additionalProperties": false
       },
       "Blog": {
         "type": "object",

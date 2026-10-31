@@ -14,11 +14,13 @@ import type { Logger } from '../core/logger.js';
 import { DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { importJobs, users } from '../db/schema/index.js';
+import { extractZip } from '../storage/extract-zip.js';
 import type { FileStore } from '../storage/file-store.js';
 import type { SpooledUpload } from '../storage/upload.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { SpaceService } from '../wiki/space.service.js';
+import { ArchiveImporter } from './archive.importer.js';
 import { ConfluenceImporter } from './confluence.importer.js';
 import { JiraImporter, JiraSource } from './jira.importer.js';
 
@@ -126,18 +128,83 @@ export class ImportService {
     return this.get(id);
   }
 
+  /** A project or space archive of another Tasklore instance (TL-39, E-120). */
+  async archive(
+    principal: Principal,
+    upload: SpooledUpload,
+    options: { targetKey?: string; dryRun: boolean },
+  ): Promise<ImportJob> {
+    if (!upload.fileName.toLowerCase().endsWith('.zip')) {
+      throw new BadRequestException('Erwartet wird ein Tasklore-Archiv als ZIP');
+    }
+    const id = uuidv7();
+    const storageKey = `imports/${id}`;
+    await this.store.put(storageKey, upload.path, 'application/zip');
+    await this.database.db.insert(importJobs).values({
+      id,
+      source: 'archive',
+      dryRun: options.dryRun,
+      label: `Tasklore-Archiv ${upload.fileName}${options.targetKey ? ` → ${options.targetKey}` : ''}`,
+      params: { storageKey, fileName: upload.fileName, targetKey: options.targetKey ?? null },
+      createdById: principal.userId,
+    });
+    await this.audit.record({
+      action: options.dryRun ? 'import.dry_run' : 'import.started',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'import',
+      targetId: id,
+      details: { source: 'archive', file: upload.fileName },
+    });
+    return this.get(id);
+  }
+
+  private async archiveRun(job: JobRow, progress: (text: string) => Promise<void>) {
+    const params = job.params as { storageKey: string; targetKey: string | null };
+    const folder = await mkdtemp(join(tmpdir(), 'tl-archive-'));
+    try {
+      const zip = join(folder, 'archive.zip');
+      await pipeline(await this.store.get(params.storageKey), createWriteStream(zip));
+      const content = join(folder, 'content');
+      await extractZip(
+        zip,
+        content,
+        (name) => name === 'archive.json' || /^files\/[0-9a-f-]{36}$/.test(name),
+      );
+      const importer = new ArchiveImporter(content, {
+        database: this.database,
+        store: this.store,
+        projects: this.projects,
+        spaces: this.spaces,
+        meta: this.meta,
+        principal: { userId: job.createdById as string, via: 'session', sessionId: 'import' },
+        dryRun: job.dryRun,
+        progress,
+      });
+      const report = await importer.run(params.targetKey ?? undefined);
+      if (!job.dryRun) await this.store.delete(params.storageKey).catch(() => undefined);
+      return report;
+    } finally {
+      await rm(folder, { recursive: true, force: true });
+    }
+  }
+
   /** Imports for real what a Confluence dry run checked, without uploading the export again. */
   async runAfterDryRun(principal: Principal, id: string): Promise<ImportJob> {
     const [row] = await this.database.db.select().from(importJobs).where(eq(importJobs.id, id));
-    if (row?.source !== 'confluence' || !row.dryRun || row.state !== 'done') {
+    if (
+      (row?.source !== 'confluence' && row?.source !== 'archive') ||
+      !row.dryRun ||
+      row.state !== 'done'
+    ) {
       throw new BadRequestException(
-        'Nur ein fertiger Confluence-Probelauf lässt sich so übernehmen',
+        'Nur ein fertiger Probelauf (Confluence oder Archiv) lässt sich so übernehmen',
       );
     }
     const next = uuidv7();
     await this.database.db.insert(importJobs).values({
       id: next,
-      source: 'confluence',
+      source: row.source,
       dryRun: false,
       label: row.label,
       params: row.params,
@@ -197,8 +264,11 @@ export class ImportService {
     const params = job.params as { url: string; token: string; projectKeys: string[] };
     try {
       if (!job.createdById) throw new Error('Wer den Import gestartet hat, gibt es nicht mehr');
-      if (job.source === 'confluence') {
-        const report = await this.confluenceRun(job, progress);
+      if (job.source === 'confluence' || job.source === 'archive') {
+        const report =
+          job.source === 'archive'
+            ? await this.archiveRun(job, progress)
+            : await this.confluenceRun(job, progress);
         await this.database.db
           .update(importJobs)
           .set({

@@ -49,6 +49,14 @@ export const de = {
     submitting: 'Wird eingerichtet …',
     invalidCode:
       'Der Einrichtungscode ist falsch oder abgelaufen. Den aktuellen Code zeigt das Server-Log nach einem Neustart.',
+    restoreTitle: 'Oder: Backup wiederherstellen',
+    restoreIntro:
+      'Spielt ein Tasklore-Backup in diese neue Instanz ein, statt neu anzufangen. Es braucht den Einrichtungscode oben und muss von derselben Tasklore-Version stammen. Danach meldest du dich mit deinem Konto aus dem Backup an.',
+    restoreFile: 'Backup-Datei (ZIP)',
+    restore: 'Wiederherstellen',
+    restoring: 'Wird wiederhergestellt …',
+    restored:
+      'Wiederhergestellt: {{rows}} Datensätze und {{files}} Dateien. Du kannst dich jetzt anmelden.',
   },
   sidebar: {
     search: 'Suchen …',
@@ -1031,6 +1039,15 @@ export const de = {
     confluenceFile: 'Export-Datei (ZIP)',
     spaceKey: 'Schlüssel des neuen Bereichs',
     spaceKeyHelp: 'Leer lassen für den Schlüssel aus dem Export.',
+    archiveTitle: 'Tasklore-Archiv',
+    archiveIntro:
+      'Ein Projekt oder einen Bereich aus einer anderen Tasklore-Instanz übernehmen: dort als Archiv herunterladen, hier hochladen. Alles bekommt neue IDs; Personen werden per E-Mail zugeordnet oder deaktiviert angelegt.',
+    archiveExport: 'Als Archiv herunterladen',
+    archiveProjects: 'Projekte',
+    archiveSpaces: 'Bereiche',
+    archiveFile: 'Archiv (ZIP)',
+    targetKey: 'Neuer Schlüssel',
+    targetKeyHelp: 'Leer lassen für den Schlüssel aus dem Archiv.',
     runChecked: 'Übernehmen',
     states: { pending: 'wartet', running: 'läuft', done: 'fertig', failed: 'fehlgeschlagen' },
   },
@@ -1988,8 +2005,53 @@ export const de = {
     reset: '2FA zurücksetzen',
     resetConfirm:
       'Zwei-Faktor-Anmeldung von {{name}} zurücksetzen? Alle Sitzungen enden ebenfalls.',
-    sessionsEnded: 'Alle Sitzungen wurden beendet.',
-    twoFactorReset: 'Die Zwei-Faktor-Anmeldung wurde zurückgesetzt.',
+    deactivated: 'deaktiviert',
+    deactivate: 'Deaktivieren',
+    deactivateConfirm:
+      '{{name}} deaktivieren? Sitzungen, Tokens und App-Verbindungen enden; alle Beiträge bleiben.',
+    reactivate: 'Reaktivieren',
+    anonymize: 'Anonymisieren',
+    anonymizeTitle: '{{name}} anonymisieren',
+    anonymizeIntro:
+      'Nicht umkehrbar: Name und E-Mail werden überall zu „Ehemalige Person n“, Anmeldedaten und persönliche Einstellungen werden gelöscht. Vorgänge, Kommentare und Seiten bleiben erhalten.',
+    anonymizeType: 'Zur Bestätigung „{{name}}“ eingeben',
+    done: {
+      sessions: 'Alle Sitzungen wurden beendet.',
+      '2fa': 'Die Zwei-Faktor-Anmeldung wurde zurückgesetzt.',
+      deactivate: 'Die Person wurde deaktiviert.',
+      reactivate: 'Die Person kann sich wieder anmelden.',
+      anonymize: 'Die Person wurde anonymisiert.',
+    },
+  },
+  maintenance: {
+    title: 'Wartung',
+    backups: 'Backups',
+    backupsIntro:
+      'Ein Backup enthält alle Daten und Dateien als ZIP. Wiederherstellen lässt es sich in eine neue Instanz derselben Version, auf deren Einrichtungsseite.',
+    daily: 'Täglich sichern',
+    hour: 'Um (Stunde, Serverzeit)',
+    keep: 'Aufheben (Anzahl)',
+    backupNow: 'Jetzt sichern',
+    trigger: { manual: 'Von Hand', scheduled: 'Geplant' },
+    contents: '{{size}}, {{rows}} Datensätze, {{files}} Dateien',
+    running: 'läuft …',
+    failed: 'fehlgeschlagen',
+    download: 'Herunterladen',
+    delete: 'Löschen',
+    deleteConfirm: 'Dieses Backup löschen?',
+    none: 'Noch keine Backups.',
+    retention: 'Aufbewahrung',
+    retentionIntro:
+      'Was älter ist, löscht Tasklore stündlich endgültig. 0 heißt: für immer behalten.',
+    trashDays: 'Papierkorb (Tage)',
+    trashDaysHelp: 'Gelöschte Vorgänge, Seiten und Kommentare',
+    versionDays: 'Seitenversionen (Tage)',
+    versionDaysHelp: 'Ältere Versionen: nur die letzte je Tag bleibt',
+    auditDays: 'Audit-Log (Tage)',
+    auditDaysHelp: 'Einträge im Audit-Log',
+    runNow: 'Jetzt aufräumen',
+    result:
+      'Gelöscht: {{issues}} Vorgänge, {{pages}} Seiten, {{comments}} Kommentare, {{versions}} Versionen, {{auditEntries}} Audit-Einträge, {{files}} Dateien',
   },
   access: {
     title: 'Rechte prüfen',

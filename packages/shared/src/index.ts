@@ -12,6 +12,7 @@ export * from './home.js';
 export * from './identity.js';
 export * from './imports.js';
 export * from './invitations.js';
+export * from './maintenance.js';
 export * from './notifications.js';
 export * from './onboarding.js';
 export * from './problem.js';

@@ -16,6 +16,7 @@ import { DirectoriesPage } from './features/admin/DirectoriesPage';
 import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
 import { GitConnectionsPage } from './features/admin/GitConnectionsPage';
 import { ImportPage } from './features/admin/ImportPage';
+import { MaintenancePage } from './features/admin/MaintenancePage';
 import {
   NotificationSchemeEditor,
   NotificationSchemesPage,
@@ -779,6 +780,12 @@ const directoriesRoute = createRoute({
   component: DirectoriesPage,
 });
 
+const maintenanceRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/maintenance',
+  component: MaintenancePage,
+});
+
 const importRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/import',
@@ -924,6 +931,7 @@ const routeTree = rootRoute.addChildren([
       embedHostsRoute,
       gitConnectionsRoute,
       importRoute,
+      maintenanceRoute,
       directoriesRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { securitySettingsQuery } from '../../lib/admin';
 import { client, unwrap } from '../../lib/api';
 import { Button } from '../../ui/Button';
+import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { InvitationsPanel } from '../auth/InvitePage';
@@ -49,9 +50,21 @@ export function SignInSettingsPage() {
       ),
     onSuccess: (saved) => queryClient.setQueryData(securitySettingsQuery.queryKey, saved),
   });
+  const [anonymizing, setAnonymizing] = useState<{ id: string; name: string } | null>(null);
   const userAction = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: 'sessions' | '2fa' }) => {
-      if (action === 'sessions') {
+    mutationFn: async ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: 'sessions' | '2fa' | 'deactivate' | 'reactivate';
+    }) => {
+      if (action === 'deactivate' || action === 'reactivate') {
+        await unwrap(
+          client.POST(`/api/v1/admin/users/{id}/${action}`, { params: { path: { id } } }),
+        );
+        await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      } else if (action === 'sessions') {
         await unwrap(
           client.DELETE('/api/v1/admin/users/{id}/sessions', { params: { path: { id } } }),
         );
@@ -60,8 +73,7 @@ export function SignInSettingsPage() {
       }
       return action;
     },
-    onSuccess: (action) =>
-      setDone(action === 'sessions' ? t('signIn.sessionsEnded') : t('signIn.twoFactorReset')),
+    onSuccess: (action) => setDone(t(`signIn.done.${action}`)),
   });
 
   function submit(event: FormEvent) {
@@ -180,7 +192,14 @@ export function SignInSettingsPage() {
               className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] py-2 text-[13px]"
             >
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-semibold">{user.displayName}</span>
+                <span className="font-semibold">
+                  {user.displayName}
+                  {user.status === 'deactivated' && (
+                    <span className="ml-2 text-xs font-normal text-[var(--ink-muted)]">
+                      {t('signIn.deactivated')}
+                    </span>
+                  )}
+                </span>
                 <span className="text-xs text-[var(--ink-muted)]">{user.email}</span>
               </span>
               <Button
@@ -208,11 +227,121 @@ export function SignInSettingsPage() {
               >
                 {t('signIn.reset')}
               </Button>
+              {user.status === 'active' ? (
+                <Button
+                  size="sm"
+                  disabled={userAction.isPending}
+                  onClick={() => {
+                    if (window.confirm(t('signIn.deactivateConfirm', { name: user.displayName }))) {
+                      setDone(null);
+                      userAction.mutate({ id: user.id, action: 'deactivate' });
+                    }
+                  }}
+                >
+                  {t('signIn.deactivate')}
+                </Button>
+              ) : (
+                !user.email.endsWith('@anonymized.invalid') && (
+                  <Button
+                    size="sm"
+                    disabled={userAction.isPending}
+                    onClick={() => {
+                      setDone(null);
+                      userAction.mutate({ id: user.id, action: 'reactivate' });
+                    }}
+                  >
+                    {t('signIn.reactivate')}
+                  </Button>
+                )
+              )}
+              {!user.email.endsWith('@anonymized.invalid') && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => {
+                    setDone(null);
+                    setAnonymizing({ id: user.id, name: user.displayName });
+                  }}
+                >
+                  {t('signIn.anonymize')}
+                </Button>
+              )}
             </li>
           ))}
         </ul>
       </section>
+      {anonymizing && (
+        <AnonymizeDialog
+          person={anonymizing}
+          onClose={(done) => {
+            setAnonymizing(null);
+            if (done) setDone(t('signIn.done.anonymize'));
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+/** GDPR erasure: irreversible, so the name has to be typed (TL-39, E-120). */
+function AnonymizeDialog({
+  person,
+  onClose,
+}: {
+  person: { id: string; name: string };
+  onClose: (done: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [typed, setTyped] = useState('');
+  const anonymize = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/admin/users/{id}/anonymize', {
+          params: { path: { id: person.id } },
+          body: { confirmation: typed },
+        }),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      onClose(true);
+    },
+  });
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => !open && onClose(false)}
+      title={t('signIn.anonymizeTitle', { name: person.name })}
+    >
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          anonymize.mutate();
+        }}
+      >
+        <p className="m-0 text-[13px]">{t('signIn.anonymizeIntro')}</p>
+        {anonymize.error && <FormError message={anonymize.error.message} />}
+        <TextField
+          label={t('signIn.anonymizeType', { name: person.name })}
+          value={typed}
+          autoComplete="off"
+          onChange={(event) => setTyped(event.target.value)}
+        />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => onClose(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={typed.trim() !== person.name || anonymize.isPending}
+          >
+            {t('signIn.anonymize')}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

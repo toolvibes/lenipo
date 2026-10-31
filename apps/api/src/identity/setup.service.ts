@@ -70,6 +70,28 @@ export class SetupService {
     return code;
   }
 
+  /** Refuses unless setup is still required and the code is the current one. */
+  async checkCode(token: string, db: Executor = this.database.db): Promise<void> {
+    if (!(await this.isRequired(db))) {
+      throw new ConflictException('Setup has already been completed');
+    }
+    const [stored] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, SETUP_KEY));
+    const value = stored?.value as StoredSetupCode | undefined;
+    const valid =
+      value !== undefined &&
+      new Date(value.expiresAt).getTime() > Date.now() &&
+      constantTimeEquals(value.codeHash, sha256(normalizeCode(token)));
+    if (!valid) {
+      throw new ForbiddenException({
+        message: 'Invalid or expired setup code',
+        type: 'urn:tasklore:problem:setup-code',
+      });
+    }
+  }
+
   /** Creates the first administrator. Returns the new user's id. */
   async complete(request: SetupRequest, ip: string | null): Promise<string> {
     const passwordHash = await this.passwords.hash(request.admin.password);
@@ -78,21 +100,7 @@ export class SetupService {
       if (!(await this.isRequired(tx))) {
         throw new ConflictException('Setup has already been completed');
       }
-      const [stored] = await tx
-        .select()
-        .from(systemSettings)
-        .where(eq(systemSettings.key, SETUP_KEY));
-      const value = stored?.value as StoredSetupCode | undefined;
-      const valid =
-        value !== undefined &&
-        new Date(value.expiresAt).getTime() > Date.now() &&
-        constantTimeEquals(value.codeHash, sha256(normalizeCode(request.token)));
-      if (!valid) {
-        throw new ForbiddenException({
-          message: 'Invalid or expired setup code',
-          type: 'urn:tasklore:problem:setup-code',
-        });
-      }
+      await this.checkCode(request.token, tx);
 
       await this.groupService.ensureBuiltIns(tx);
       const id = uuidv7();
