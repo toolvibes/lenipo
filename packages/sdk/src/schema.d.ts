@@ -503,6 +503,80 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/automation/rules': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the rules of a project, or the global rules */
+    get: operations['Automation.list'];
+    put?: never;
+    /** Create a rule */
+    post: operations['Automation.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/automation/rules/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a rule */
+    get: operations['Automation.get'];
+    /** Replace a rule */
+    put: operations['Automation.update'];
+    post?: never;
+    /** Delete a rule */
+    delete: operations['Automation.delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/automation/rules/{id}/runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The audit log of a rule: its last 100 runs */
+    get: operations['Automation.runs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/automation/hooks/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start a rule with an incoming webhook trigger
+     * @description Called by other systems with the secret from the rule (`?token=`). Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.
+     */
+    post: operations['Automation.hook'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/boards': {
     parameters: {
       query?: never;
@@ -3649,6 +3723,375 @@ export interface components {
         enabled: boolean;
         displayName: string | null;
       };
+    };
+    AutomationRule: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      enabled: boolean;
+      project: {
+        key: string;
+        name: string;
+      } | null;
+      trigger: components['schemas']['AutomationTrigger'];
+      components: unknown[];
+      allowSelfTrigger: boolean;
+      owner: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      } | null;
+      disabledReason: string | null;
+      webhookUrl: string | null;
+      lastRun: {
+        /** Format: date-time */
+        at: string;
+        /** @enum {string} */
+        status: 'success' | 'no-match' | 'error' | 'loop' | 'throttled';
+      } | null;
+      canEdit: boolean;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    AutomationTrigger:
+      | {
+          /** @constant */
+          type: 'issue-created';
+        }
+      | {
+          /** @constant */
+          type: 'issue-updated';
+        }
+      | {
+          /** @constant */
+          type: 'issue-transitioned';
+          /** @default  */
+          from: string;
+          /** @default  */
+          to: string;
+        }
+      | {
+          /** @constant */
+          type: 'field-changed';
+          fields: string[];
+        }
+      | {
+          /** @constant */
+          type: 'comment-added';
+        }
+      | {
+          /** @constant */
+          type: 'sprint-started';
+        }
+      | {
+          /** @constant */
+          type: 'sprint-completed';
+        }
+      | {
+          /** @constant */
+          type: 'version-released';
+        }
+      | {
+          /** @constant */
+          type: 'schedule';
+          cron: string;
+          /** @default  */
+          query: string;
+        }
+      | {
+          /** @constant */
+          type: 'incoming-webhook';
+        };
+    AutomationRuleInput: {
+      name: string;
+      /** @default  */
+      description?: string;
+      /** @default true */
+      enabled?: boolean;
+      /** @default null */
+      projectKey?: string | null;
+      trigger: components['schemas']['AutomationTriggerInput'];
+      components: components['schemas']['__schema0'][];
+      /** @default false */
+      allowSelfTrigger?: boolean;
+    };
+    AutomationTriggerInput:
+      | {
+          /** @constant */
+          type: 'issue-created';
+        }
+      | {
+          /** @constant */
+          type: 'issue-updated';
+        }
+      | {
+          /** @constant */
+          type: 'issue-transitioned';
+          /** @default  */
+          from?: string;
+          /** @default  */
+          to?: string;
+        }
+      | {
+          /** @constant */
+          type: 'field-changed';
+          fields: string[];
+        }
+      | {
+          /** @constant */
+          type: 'comment-added';
+        }
+      | {
+          /** @constant */
+          type: 'sprint-started';
+        }
+      | {
+          /** @constant */
+          type: 'sprint-completed';
+        }
+      | {
+          /** @constant */
+          type: 'version-released';
+        }
+      | {
+          /** @constant */
+          type: 'schedule';
+          cron: string;
+          /** @default  */
+          query?: string;
+        }
+      | {
+          /** @constant */
+          type: 'incoming-webhook';
+        };
+    __schema0:
+      | (
+          | {
+              /** @constant */
+              type: 'tql';
+              query: string;
+              /**
+               * @default matches
+               * @enum {string}
+               */
+              mode?: 'matches' | 'some' | 'none';
+            }
+          | {
+              /** @constant */
+              type: 'compare';
+              left: string;
+              /** @enum {string} */
+              operator:
+                | 'equals'
+                | 'not-equals'
+                | 'contains'
+                | 'not-contains'
+                | 'empty'
+                | 'not-empty'
+                | 'greater'
+                | 'less';
+              /** @default  */
+              right?: string;
+            }
+          | {
+              /** @constant */
+              type: 'user';
+              /** @enum {string} */
+              who: 'initiator' | 'assignee' | 'reporter';
+              /** @enum {string} */
+              check: 'is' | 'is-not' | 'in-group' | 'not-in-group' | 'empty' | 'not-empty';
+              /** @default  */
+              value?: string;
+            }
+        )
+      | (
+          | {
+              /** @constant */
+              type: 'set-field';
+              /** @enum {string} */
+              field:
+                | 'summary'
+                | 'description'
+                | 'priority'
+                | 'dueDate'
+                | 'startDate'
+                | 'storyPoints'
+                | 'labels-add'
+                | 'labels-remove';
+              value: string;
+            }
+          | {
+              /** @constant */
+              type: 'transition';
+              to: string;
+            }
+          | {
+              /** @constant */
+              type: 'assign';
+              /** @enum {string} */
+              to: 'initiator' | 'reporter' | 'unassigned' | 'user';
+              /** @default  */
+              userId?: string;
+            }
+          | {
+              /** @constant */
+              type: 'comment';
+              body: string;
+            }
+          | {
+              /** @constant */
+              type: 'create-issue';
+              /** @default  */
+              projectKey?: string;
+              issueType: string;
+              summary: string;
+              /** @default  */
+              description?: string;
+              /** @default false */
+              subtask?: boolean;
+            }
+          | {
+              /** @constant */
+              type: 'clone-issue';
+              /** @default  */
+              summary?: string;
+              /** @default false */
+              includeSubtasks?: boolean;
+            }
+          | {
+              /** @constant */
+              type: 'link';
+              linkType: string;
+              /**
+               * @default outward
+               * @enum {string}
+               */
+              direction?: 'outward' | 'inward';
+              target: string;
+            }
+          | {
+              /** @constant */
+              type: 'email';
+              /** @default [] */
+              to?: ('assignee' | 'reporter' | 'watchers' | 'initiator')[];
+              /** @default  */
+              addresses?: string;
+              subject: string;
+              body: string;
+            }
+          | {
+              /** @constant */
+              type: 'webhook';
+              /** Format: uri */
+              url: string;
+              /** @default  */
+              body?: string;
+            }
+          | {
+              /** @constant */
+              type: 'create-page';
+              spaceKey: string;
+              /** @default  */
+              parentId?: string;
+              title: string;
+              /** @default  */
+              content?: string;
+            }
+        )
+      | {
+          /** @constant */
+          type: 'if';
+          /**
+           * @default all
+           * @enum {string}
+           */
+          match?: 'all' | 'any';
+          conditions: (
+            | {
+                /** @constant */
+                type: 'tql';
+                query: string;
+                /**
+                 * @default matches
+                 * @enum {string}
+                 */
+                mode?: 'matches' | 'some' | 'none';
+              }
+            | {
+                /** @constant */
+                type: 'compare';
+                left: string;
+                /** @enum {string} */
+                operator:
+                  | 'equals'
+                  | 'not-equals'
+                  | 'contains'
+                  | 'not-contains'
+                  | 'empty'
+                  | 'not-empty'
+                  | 'greater'
+                  | 'less';
+                /** @default  */
+                right?: string;
+              }
+            | {
+                /** @constant */
+                type: 'user';
+                /** @enum {string} */
+                who: 'initiator' | 'assignee' | 'reporter';
+                /** @enum {string} */
+                check: 'is' | 'is-not' | 'in-group' | 'not-in-group' | 'empty' | 'not-empty';
+                /** @default  */
+                value?: string;
+              }
+          )[];
+          then: components['schemas']['__schema0'][];
+          /** @default [] */
+          else?: components['schemas']['__schema0'][];
+        }
+      | {
+          /** @constant */
+          type: 'branch';
+          /** @enum {string} */
+          over: 'subtasks' | 'parent' | 'linked' | 'query';
+          /** @default  */
+          query?: string;
+          components: components['schemas']['__schema0'][];
+        };
+    AutomationRuleInputInput: {
+      name: string;
+      /** @default  */
+      description?: string;
+      /** @default true */
+      enabled?: boolean;
+      /** @default null */
+      projectKey?: string | null;
+      trigger: components['schemas']['AutomationTriggerInput'];
+      components: components['schemas']['__schema0'][];
+      /** @default false */
+      allowSelfTrigger?: boolean;
+    };
+    AutomationRun: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      startedAt: string;
+      durationMs: number;
+      /** @enum {string} */
+      status: 'success' | 'no-match' | 'error' | 'loop' | 'throttled';
+      trigger: string;
+      issueKey: string | null;
+      log: {
+        /** @enum {string} */
+        level: 'info' | 'error';
+        message: string;
+      }[];
+    };
+    IncomingWebhookRequest: {
+      issues?: string[];
+    } & {
+      [key: string]: unknown;
     };
     BoardSummary: {
       /** Format: uuid */
@@ -7208,6 +7651,233 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AuthProviders'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.list': {
+    parameters: {
+      query?: {
+        project?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRule'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AutomationRuleInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRule'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRule'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AutomationRuleInputInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRule'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRun'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.hook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IncomingWebhookRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            queued: number;
+          };
         };
       };
       /** @description Error (RFC 9457 problem details) */

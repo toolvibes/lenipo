@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { GlobalPermission } from '@tasklore/shared';
+import { AUTOMATION_ACTOR_ID, type GlobalPermission } from '@tasklore/shared';
 import { eq } from 'drizzle-orm';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
@@ -27,6 +27,8 @@ export class AccessService {
 
   /** System administrators hold every global permission implicitly. */
   async hasGlobal(userId: string, permission: GlobalPermission): Promise<boolean> {
+    // The automation actor may do anything; each rule limits it to its projects (E-103).
+    if (userId === AUTOMATION_ACTOR_ID) return true;
     const granted = await this.globalPermissions(userId);
     return granted.includes(permission) || granted.includes('system-admin');
   }

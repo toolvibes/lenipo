@@ -1340,6 +1340,304 @@
         }
       }
     },
+    "/api/v1/automation/rules": {
+      "get": {
+        "operationId": "Automation.list",
+        "summary": "List the rules of a project, or the global rules",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutomationRule"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Automation.create",
+        "summary": "Create a rule",
+        "tags": ["Automation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomationRuleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/automation/rules/{id}": {
+      "get": {
+        "operationId": "Automation.get",
+        "summary": "Get a rule",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Automation.update",
+        "summary": "Replace a rule",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomationRuleInputInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Automation.delete",
+        "summary": "Delete a rule",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/automation/rules/{id}/runs": {
+      "get": {
+        "operationId": "Automation.runs",
+        "summary": "The audit log of a rule: its last 100 runs",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutomationRun"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/automation/hooks/{id}": {
+      "post": {
+        "operationId": "Automation.hook",
+        "summary": "Start a rule with an incoming webhook trigger",
+        "description": "Called by other systems with the secret from the rule (`?token=`). Optionally `{\"issues\": [\"KEY-1\"]}` runs it for those issues; the whole body is available as {{webhookData}}.",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncomingWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "queued": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["queued"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards": {
       "get": {
         "operationId": "Boards.list",
@@ -11277,6 +11575,1020 @@
         },
         "required": ["password", "oidc"],
         "additionalProperties": false
+      },
+      "AutomationRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTrigger"
+          },
+          "components": {
+            "type": "array",
+            "items": {}
+          },
+          "allowSelfTrigger": {
+            "type": "boolean"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "displayName"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disabledReason": {
+            "type": ["string", "null"]
+          },
+          "webhookUrl": {
+            "type": ["string", "null"]
+          },
+          "lastRun": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["success", "no-match", "error", "loop", "throttled"]
+                  }
+                },
+                "required": ["at", "status"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "enabled",
+          "project",
+          "trigger",
+          "components",
+          "allowSelfTrigger",
+          "owner",
+          "disabledReason",
+          "webhookUrl",
+          "lastRun",
+          "canEdit",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AutomationTrigger": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-created"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-updated"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-transitioned"
+              },
+              "from": {
+                "default": "",
+                "type": "string",
+                "maxLength": 200
+              },
+              "to": {
+                "default": "",
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": ["type", "from", "to"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "field-changed"
+              },
+              "fields": {
+                "minItems": 1,
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                }
+              }
+            },
+            "required": ["type", "fields"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "comment-added"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-started"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-completed"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "version-released"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "schedule"
+              },
+              "cron": {
+                "type": "string",
+                "minLength": 9,
+                "maxLength": 100
+              },
+              "query": {
+                "default": "",
+                "type": "string",
+                "maxLength": 10000
+              }
+            },
+            "required": ["type", "cron", "query"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "incoming-webhook"
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "AutomationRuleInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "projectKey": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTriggerInput"
+          },
+          "components": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/__schema0"
+            }
+          },
+          "allowSelfTrigger": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "trigger", "components"]
+      },
+      "AutomationTriggerInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-created"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-updated"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "issue-transitioned"
+              },
+              "from": {
+                "default": "",
+                "type": "string",
+                "maxLength": 200
+              },
+              "to": {
+                "default": "",
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "field-changed"
+              },
+              "fields": {
+                "minItems": 1,
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                }
+              }
+            },
+            "required": ["type", "fields"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "comment-added"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-started"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-completed"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "version-released"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "schedule"
+              },
+              "cron": {
+                "type": "string",
+                "minLength": 9,
+                "maxLength": 100
+              },
+              "query": {
+                "default": "",
+                "type": "string",
+                "maxLength": 10000
+              }
+            },
+            "required": ["type", "cron"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "incoming-webhook"
+              }
+            },
+            "required": ["type"]
+          }
+        ]
+      },
+      "__schema0": {
+        "anyOf": [
+          {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tql"
+                  },
+                  "query": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "mode": {
+                    "default": "matches",
+                    "type": "string",
+                    "enum": ["matches", "some", "none"]
+                  }
+                },
+                "required": ["type", "query"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "compare"
+                  },
+                  "left": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "operator": {
+                    "type": "string",
+                    "enum": [
+                      "equals",
+                      "not-equals",
+                      "contains",
+                      "not-contains",
+                      "empty",
+                      "not-empty",
+                      "greater",
+                      "less"
+                    ]
+                  },
+                  "right": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "left", "operator"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "user"
+                  },
+                  "who": {
+                    "type": "string",
+                    "enum": ["initiator", "assignee", "reporter"]
+                  },
+                  "check": {
+                    "type": "string",
+                    "enum": ["is", "is-not", "in-group", "not-in-group", "empty", "not-empty"]
+                  },
+                  "value": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": ["type", "who", "check"]
+              }
+            ]
+          },
+          {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "set-field"
+                  },
+                  "field": {
+                    "type": "string",
+                    "enum": [
+                      "summary",
+                      "description",
+                      "priority",
+                      "dueDate",
+                      "startDate",
+                      "storyPoints",
+                      "labels-add",
+                      "labels-remove"
+                    ]
+                  },
+                  "value": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "field", "value"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "transition"
+                  },
+                  "to": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": ["type", "to"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "assign"
+                  },
+                  "to": {
+                    "type": "string",
+                    "enum": ["initiator", "reporter", "unassigned", "user"]
+                  },
+                  "userId": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                },
+                "required": ["type", "to"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "comment"
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "body"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "create-issue"
+                  },
+                  "projectKey": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "issueType": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "description": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "subtask": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["type", "issueType", "summary"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "clone-issue"
+                  },
+                  "summary": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "includeSubtasks": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["type"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "link"
+                  },
+                  "linkType": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "direction": {
+                    "default": "outward",
+                    "type": "string",
+                    "enum": ["outward", "inward"]
+                  },
+                  "target": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "linkType", "target"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "email"
+                  },
+                  "to": {
+                    "default": [],
+                    "maxItems": 4,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["assignee", "reporter", "watchers", "initiator"]
+                    }
+                  },
+                  "addresses": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "subject": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "subject", "body"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "webhook"
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "format": "uri"
+                  },
+                  "body": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "url"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "create-page"
+                  },
+                  "spaceKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20
+                  },
+                  "parentId": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "content": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "spaceKey", "title"]
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "if"
+              },
+              "match": {
+                "default": "all",
+                "type": "string",
+                "enum": ["all", "any"]
+              },
+              "conditions": {
+                "minItems": 1,
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "tql"
+                        },
+                        "query": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "mode": {
+                          "default": "matches",
+                          "type": "string",
+                          "enum": ["matches", "some", "none"]
+                        }
+                      },
+                      "required": ["type", "query"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "compare"
+                        },
+                        "left": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "operator": {
+                          "type": "string",
+                          "enum": [
+                            "equals",
+                            "not-equals",
+                            "contains",
+                            "not-contains",
+                            "empty",
+                            "not-empty",
+                            "greater",
+                            "less"
+                          ]
+                        },
+                        "right": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 10000
+                        }
+                      },
+                      "required": ["type", "left", "operator"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "who": {
+                          "type": "string",
+                          "enum": ["initiator", "assignee", "reporter"]
+                        },
+                        "check": {
+                          "type": "string",
+                          "enum": ["is", "is-not", "in-group", "not-in-group", "empty", "not-empty"]
+                        },
+                        "value": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": ["type", "who", "check"]
+                    }
+                  ]
+                }
+              },
+              "then": {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/__schema0"
+                }
+              },
+              "else": {
+                "default": [],
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/__schema0"
+                }
+              }
+            },
+            "required": ["type", "conditions", "then"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "branch"
+              },
+              "over": {
+                "type": "string",
+                "enum": ["subtasks", "parent", "linked", "query"]
+              },
+              "query": {
+                "default": "",
+                "type": "string",
+                "maxLength": 10000
+              },
+              "components": {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/__schema0"
+                }
+              }
+            },
+            "required": ["type", "over", "components"]
+          }
+        ]
+      },
+      "AutomationRuleInputInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "projectKey": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/AutomationTriggerInput"
+          },
+          "components": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/__schema0"
+            }
+          },
+          "allowSelfTrigger": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "trigger", "components"]
+      },
+      "AutomationRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "enum": ["success", "no-match", "error", "loop", "throttled"]
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "issueKey": {
+            "type": ["string", "null"]
+          },
+          "log": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "level": {
+                  "type": "string",
+                  "enum": ["info", "error"]
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": ["level", "message"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "startedAt", "durationMs", "status", "trigger", "issueKey", "log"],
+        "additionalProperties": false
+      },
+      "IncomingWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            }
+          }
+        },
+        "additionalProperties": {}
       },
       "BoardSummary": {
         "type": "object",

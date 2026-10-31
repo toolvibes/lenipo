@@ -1,6 +1,13 @@
+import { automationContext } from '../automation/context.js';
 import type { Executor } from '../db/client.js';
 import { domainEvents } from '../db/schema/index.js';
 import { signalIssue } from '../realtime/signals.js';
+
+/** The rule and chain depth of the actions running now, if any (E-103). */
+function automationColumns() {
+  const context = automationContext.getStore();
+  return context ? { automationRuleId: context.ruleId, automationDepth: context.depth } : {};
+}
 
 /** A changed field with machine values (for rules) and display values (for people). */
 export interface ChangedItem {
@@ -38,7 +45,7 @@ export async function emitIssueEvent(
   event: IssueEvent,
 ): Promise<void> {
   const { type, ...payload } = event;
-  await tx.insert(domainEvents).values({ type, issueId, actorId, payload });
+  await tx.insert(domainEvents).values({ type, issueId, actorId, payload, ...automationColumns() });
   // Open boards and issue pages hear about it once this commits (E-58).
   await signalIssue(tx, issueId);
 }
@@ -74,5 +81,24 @@ export async function emitPageEvent(
   event: PageEvent,
 ): Promise<void> {
   const { type, ...payload } = event;
-  await tx.insert(domainEvents).values({ type, pageId, actorId, payload });
+  await tx.insert(domainEvents).values({ type, pageId, actorId, payload, ...automationColumns() });
+}
+
+/** Sprint and release events for automation rules (TL-22); other consumers skip them. */
+export type ProjectEvent =
+  | {
+      type: 'sprint.started' | 'sprint.completed';
+      projectId: string;
+      sprintId: string;
+      name: string;
+    }
+  | { type: 'version.released'; projectId: string; versionId: string; name: string };
+
+export async function emitProjectEvent(
+  tx: Executor,
+  actorId: string | null,
+  event: ProjectEvent,
+): Promise<void> {
+  const { type, ...payload } = event;
+  await tx.insert(domainEvents).values({ type, actorId, payload, ...automationColumns() });
 }

@@ -1,6 +1,7 @@
 export const PRODUCT_NAME = 'Tasklore';
 
 export * from './access-check.js';
+export * from './automation.js';
 export * from './boards.js';
 export * from './dashboards.js';
 export * from './fields.js';

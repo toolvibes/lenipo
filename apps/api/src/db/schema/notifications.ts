@@ -31,6 +31,9 @@ export const domainEvents = pgTable(
     pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
     actorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     payload: jsonb().notNull().default({}),
+    /** Set when an automation rule caused the event, with the chain depth (TL-22, E-103). */
+    automationRuleId: uuid(),
+    automationDepth: integer().notNull().default(0),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     processedAt: timestamp({ withTimezone: true }),
     attempts: integer().notNull().default(0),

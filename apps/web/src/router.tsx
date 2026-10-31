@@ -25,6 +25,8 @@ import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { TwoFactorPage } from './features/auth/TwoFactorPage';
 import { WelcomePage } from './features/auth/WelcomePage';
+import { RuleEditorPage } from './features/automation/RuleEditorPage';
+import { RulesList } from './features/automation/RulesList';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
@@ -636,6 +638,42 @@ const customFieldsRoute = createRoute({
   component: CustomFieldsPage,
 });
 
+const automationAdminRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/automation',
+  component: function GlobalRules() {
+    return (
+      <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
+        <RulesList />
+      </main>
+    );
+  },
+});
+
+const newRuleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/automation/new',
+  validateSearch: (search: Record<string, unknown>): { project?: string; template?: string } => ({
+    project: typeof search.project === 'string' ? search.project : undefined,
+    template: typeof search.template === 'string' ? search.template : undefined,
+  }),
+  component: function NewRule() {
+    const { project, template } = newRuleRoute.useSearch();
+    return (
+      <RuleEditorPage key={`${project}:${template}`} projectKey={project} template={template} />
+    );
+  },
+});
+
+const ruleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/automation/rules/$id',
+  component: function Rule() {
+    const { id } = ruleRoute.useParams();
+    return <RuleEditorPage key={id} id={id} />;
+  },
+});
+
 const signInSettingsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/sign-in',
@@ -683,6 +721,8 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     timelineRoute,
     projectReportsRoute,
+    newRuleRoute,
+    ruleRoute,
     projectSettingsRoute,
     everythingRoute,
     searchRoute,
@@ -699,6 +739,7 @@ const routeTree = rootRoute.addChildren([
       webhookRoute,
       signInSettingsRoute,
       timeTrackingRoute,
+      automationAdminRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,
       notificationSchemesRoute,

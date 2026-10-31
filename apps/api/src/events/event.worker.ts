@@ -4,6 +4,7 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
+import { AutomationEngine } from '../automation/automation.engine.js';
 import { type AppConfig, runsRole } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, LOGGER } from '../core/tokens.js';
@@ -23,6 +24,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(EventProcessor) private readonly events: EventProcessor,
     @Inject(NotificationService) private readonly notifications: NotificationService,
     @Inject(WebhookService) private readonly webhooks: WebhookService,
+    @Inject(AutomationEngine) private readonly automation: AutomationEngine,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -32,7 +34,14 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       while ((await this.webhooks.deliverDue()) > 0);
     });
     this.every('email', 15_000, () => this.notifications.sendDueEmails().then(() => {}));
-    this.every('cleanup', 60 * 60_000, () => this.webhooks.cleanUp());
+    this.every('automation', 2_000, async () => {
+      while ((await this.automation.runDue()) > 0);
+    });
+    this.every('schedules', 30_000, () => this.automation.tickSchedules());
+    this.every('cleanup', 60 * 60_000, async () => {
+      await this.webhooks.cleanUp();
+      await this.automation.cleanUp();
+    });
     this.logger.info('Event worker running');
   }
 

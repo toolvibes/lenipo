@@ -24,6 +24,7 @@ import {
   permissionSchemesQuery,
 } from '../admin/PermissionSchemes';
 import { securitySchemesQuery } from '../admin/SecuritySchemes';
+import { RulesList } from '../automation/RulesList';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
@@ -299,7 +300,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
   const [dialog, setDialog] = useState<'fields' | 'components' | 'versions' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [view, setView] = useState<
-    'workflow' | 'members' | 'permissions' | 'notifications' | 'security'
+    'workflow' | 'members' | 'permissions' | 'notifications' | 'security' | 'automation'
   >('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
@@ -365,6 +366,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('security.level')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'automation' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('automation')}
+              >
+                {t('automation.title')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -387,6 +396,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'permissions' && administer && <Permissions projectKey={projectKey} />}
           {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
           {view === 'security' && administer && <Security projectKey={projectKey} />}
+          {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

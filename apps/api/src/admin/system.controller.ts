@@ -1,6 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { SystemInfo } from '@tasklore/shared';
-import { count } from 'drizzle-orm';
+import { AUTOMATION_ACTOR_ID, SystemInfo } from '@tasklore/shared';
+import { count, ne } from 'drizzle-orm';
 import { RequireGlobal } from '../access/require-global.js';
 import { type AppConfig, oidcEnabled } from '../core/config.js';
 import { Endpoint } from '../core/http/endpoint.js';
@@ -29,7 +29,11 @@ export class SystemController {
     const [postgres] = await this.database.sql<{ server_version: string }[]>`show server_version`;
     const [migrations] = await this.database.sql<{ applied: number }[]>`
       select count(*)::int as applied from drizzle.__drizzle_migrations`;
-    const [userCount] = await this.database.db.select({ total: count() }).from(users);
+    // The automation actor is not a person (E-103).
+    const [userCount] = await this.database.db
+      .select({ total: count() })
+      .from(users)
+      .where(ne(users.id, AUTOMATION_ACTOR_ID));
     return {
       version: API_VERSION,
       mode: this.config.MODE,

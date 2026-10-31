@@ -1,3 +1,4 @@
+import { AUTOMATION_ACTOR_ID } from '@tasklore/shared';
 import { type SQL, sql } from 'drizzle-orm';
 import {
   groupMembers,
@@ -12,6 +13,8 @@ import {
  * assignee. Browse rights on the project are checked separately; nobody bypasses a level.
  */
 export function securityVisible(userId: string): SQL {
+  // Rules act on every issue of their projects (TL-22, E-103).
+  if (userId === AUTOMATION_ACTOR_ID) return sql`true`;
   const groupsOfUser = sql`(select ${groupMembers.groupId} from ${groupMembers} where ${groupMembers.userId} = ${userId})`;
   return sql`(${issues.securityLevelId} is null or exists (
     select 1 from ${securityLevelGrants}

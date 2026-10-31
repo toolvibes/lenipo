@@ -90,7 +90,7 @@ export class McpController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    if (principal.via === 'session') {
+    if (principal.via === 'session' || principal.via === 'automation') {
       throw new UnauthorizedException('MCP clients sign in with a Personal Access Token');
     }
     const server = new McpServer({ name: 'tasklore', version: '1.0.0' });

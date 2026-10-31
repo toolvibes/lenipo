@@ -18,6 +18,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import { issues, issueVersions, projectVersions } from '../db/schema/index.js';
+import { emitProjectEvent } from '../notifications/events.js';
 import { recordChanges } from './history.js';
 import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
@@ -253,6 +254,12 @@ export class VersionService {
         .update(projectVersions)
         .set({ released: true, releaseDate: request.releaseDate ?? version.releaseDate ?? today })
         .where(eq(projectVersions.id, id));
+      await emitProjectEvent(tx, principal.userId, {
+        type: 'version.released',
+        projectId: project.id,
+        versionId: id,
+        name: version.name,
+      });
     });
     const [row] = await this.database.db
       .select()

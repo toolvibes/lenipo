@@ -22,6 +22,7 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import { boards, issues, sprintIssues, sprints } from '../db/schema/index.js';
+import { emitProjectEvent } from '../notifications/events.js';
 import { signal } from '../realtime/signals.js';
 import { SearchService } from '../search/search.service.js';
 import { recordChanges } from '../tracking/history.js';
@@ -74,6 +75,27 @@ export class SprintService {
   // ---------------------------------------------------------------- loading
 
   /** A sprint and its board, with the right to plan in the board's project. */
+  /** Tells automation rules of the board's project (TL-22, E-103). */
+  private async emitSprint(
+    tx: Executor,
+    principal: Principal,
+    boardId: string,
+    type: 'sprint.started' | 'sprint.completed',
+    sprint: SprintRow,
+  ): Promise<void> {
+    const [board] = await tx
+      .select({ projectId: boards.projectId })
+      .from(boards)
+      .where(eq(boards.id, boardId));
+    if (!board) return;
+    await emitProjectEvent(tx, principal.userId, {
+      type,
+      projectId: board.projectId,
+      sprintId: sprint.id,
+      name: sprint.name,
+    });
+  }
+
   private async load(principal: Principal, sprintId: string, plan: boolean) {
     const [row] = await this.database.db.select().from(sprints).where(eq(sprints.id, sprintId));
     if (!row) throw new NotFoundException('Sprint not found');
@@ -272,6 +294,7 @@ export class SprintService {
           .set({ estimateAtStart: estimateOf(member.issue, board.estimation) })
           .where(eq(sprintIssues.id, member.row.id));
       }
+      await this.emitSprint(tx, principal, board.id, 'sprint.started', sprint);
       return tx
         .update(sprints)
         .set({
@@ -364,6 +387,7 @@ export class SprintService {
           );
         }
       }
+      await this.emitSprint(tx, principal, board.id, 'sprint.completed', sprint);
       return tx
         .update(sprints)
         .set({ state: 'closed', completedAt: sql`now()` })

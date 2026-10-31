@@ -6,7 +6,9 @@ import type { TokenScope } from '@tasklore/shared';
  */
 export type Principal =
   | { userId: string; via: 'session'; sessionId: string; stage?: string }
-  | { userId: string; via: 'token' | 'mcp'; tokenId: string; scopes: readonly TokenScope[] };
+  | { userId: string; via: 'token' | 'mcp'; tokenId: string; scopes: readonly TokenScope[] }
+  /** Automation rules act as their built-in actor (TL-22, E-103). */
+  | { userId: string; via: 'automation'; ruleId: string };
 
 declare global {
   namespace Express {

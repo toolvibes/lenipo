@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq, isNull, sql } from 'drizzle-orm';
+import { AutomationEngine } from '../automation/automation.engine.js';
 import type { Logger } from '../core/logger.js';
 import { DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -20,6 +21,7 @@ export class EventProcessor {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(NotificationService) private readonly notifications: NotificationService,
     @Inject(WebhookService) private readonly webhooks: WebhookService,
+    @Inject(AutomationEngine) private readonly automation: AutomationEngine,
   ) {}
 
   /** Handles a batch of pending events; returns how many were taken. */
@@ -37,6 +39,7 @@ export class EventProcessor {
           await tx.transaction(async (savepoint) => {
             await this.notifications.handle(savepoint, row);
             await this.webhooks.enqueue(savepoint, row);
+            await this.automation.enqueue(savepoint, row);
           });
           await tx
             .update(domainEvents)

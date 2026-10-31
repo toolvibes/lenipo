@@ -1,3 +1,4 @@
+export * from './automation.js';
 export * from './boards.js';
 export * from './collab.js';
 export * from './dashboards.js';

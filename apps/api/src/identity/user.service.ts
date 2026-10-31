@@ -1,6 +1,12 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Me, UpdateMeRequest, UserLookup, UserSummary } from '@tasklore/shared';
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
+import {
+  AUTOMATION_ACTOR_ID,
+  type Me,
+  type UpdateMeRequest,
+  type UserLookup,
+  type UserSummary,
+} from '@tasklore/shared';
+import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';
@@ -112,6 +118,8 @@ export class UserService {
       .from(users)
       .leftJoin(groupMembers, eq(groupMembers.userId, users.id))
       .leftJoin(groups, eq(groups.id, groupMembers.groupId))
+      // The automation actor is not a person to manage (E-103).
+      .where(ne(users.id, AUTOMATION_ACTOR_ID))
       .groupBy(users.id)
       .orderBy(users.displayName);
     return rows;
