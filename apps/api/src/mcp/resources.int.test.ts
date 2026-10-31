@@ -62,8 +62,10 @@ afterAll(async () => {
   await test?.close();
 });
 
-const textOf = (result: { contents: Array<{ text?: unknown }> }) =>
-  String(result.contents[0]?.text ?? '');
+const textOf = (result: Awaited<ReturnType<Client['readResource']>>) => {
+  const first = result.contents[0];
+  return first && 'text' in first ? String(first.text) : '';
+};
 
 describe('MCP resources and prompts (D-MCP-08/09)', () => {
   it('offers resource templates and lists the caller’s open issues', async () => {
