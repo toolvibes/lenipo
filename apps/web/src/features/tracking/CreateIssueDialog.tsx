@@ -233,11 +233,11 @@ export function CreateIssueDialog({
               value={shown[field.id]}
               projectKey={project.key}
               disabled={create.isPending}
-              onChange={(value, person) => {
+              onChange={(value, display) => {
                 setCustom((current) => ({ ...current, [field.id]: value }));
                 setShown((current) => ({
                   ...current,
-                  [field.id]: shownValue(field, value, person),
+                  [field.id]: shownValue(field, value, display),
                 }));
               }}
             />

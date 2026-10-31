@@ -36,7 +36,13 @@ function facts(entries: Array<[string, string | number | null | undefined]>): st
 }
 
 function customValue(value: CustomFieldValue): string {
-  if (Array.isArray(value)) return value.map((option) => option.value).join(', ');
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) =>
+        typeof entry === 'string' ? entry : 'value' in entry ? entry.value : entry.displayName,
+      )
+      .join(', ');
+  }
   if (value && typeof value === 'object') {
     return 'value' in value ? value.value : value.displayName;
   }

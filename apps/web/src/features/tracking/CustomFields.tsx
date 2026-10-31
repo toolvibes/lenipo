@@ -11,7 +11,8 @@ import type {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { meQuery } from '../../lib/queries';
-import { trackingMetaQuery } from '../../lib/tracking';
+import { trackingMetaQuery, versionsQuery } from '../../lib/tracking';
+import { groupsQuery } from '../../lib/wiki';
 import { CheckRow, Popover } from '../../ui/Popover';
 import { InlineInput, inputClass } from './fields';
 import { Avatar, UserPicker } from './UserPicker';
@@ -69,14 +70,19 @@ export function FieldEditor({
   value: CustomFieldValue | undefined;
   projectKey: string;
   disabled: boolean;
-  /** The value as written; for people also who it is, to show without a round trip. */
-  onChange: (value: CustomFieldInput, person?: UserRef | null) => void;
+  /** The value as written, and how it shows, so a form not yet sent needs no round trip. */
+  onChange: (value: CustomFieldInput, shown?: CustomFieldValue | null) => void;
   label?: string;
 }) {
   const { t } = useTranslation();
   const me = useQuery(meQuery).data;
   const [picking, setPicking] = useState(false);
   const usable = field.options.filter((option) => !option.archived);
+  const groups = useQuery({ ...groupsQuery, enabled: field.type === 'group' && !disabled });
+  const versions = useQuery({
+    ...versionsQuery(projectKey),
+    enabled: field.type === 'version' && !disabled,
+  });
 
   switch (field.type) {
     case 'text':
@@ -274,6 +280,112 @@ export function FieldEditor({
         </>
       );
     }
+    case 'users': {
+      const people = (value as UserRef[] | undefined) ?? [];
+      const write = (next: UserRef[]) =>
+        onChange(next.length > 0 ? next.map((person) => person.id) : null, next);
+      return (
+        <div className="flex min-h-[var(--control-sm)] flex-wrap items-center gap-1 px-1.5">
+          {people.map((person) => (
+            <span
+              key={person.id}
+              className="flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-2)] py-0.5 pr-1 pl-0.5 text-xs"
+            >
+              <Avatar user={person} size={16} />
+              {person.displayName}
+              {!disabled && (
+                <button
+                  type="button"
+                  aria-label={t('fields.removePerson', { name: person.displayName })}
+                  onClick={() => write(people.filter((entry) => entry.id !== person.id))}
+                  className="cursor-pointer border-0 bg-transparent p-0 text-[var(--ink-muted)]"
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+          {!disabled && (
+            <button
+              type="button"
+              aria-label={t('fields.addPerson', { name: label })}
+              onClick={() => setPicking(true)}
+              className="cursor-pointer rounded-[var(--radius-sm)] border-0 bg-transparent px-1 text-xs text-[var(--ink-muted)] hover:bg-[var(--surface-2)]"
+            >
+              + {people.length === 0 ? t('issues.none') : ''}
+            </button>
+          )}
+          {picking && me && (
+            <UserPicker
+              open
+              onOpenChange={setPicking}
+              me={{ id: me.id, displayName: me.displayName }}
+              projectKey={projectKey}
+              onPick={(user) => {
+                if (user && !people.some((entry) => entry.id === user.id)) {
+                  write([...people, { id: user.id, displayName: user.displayName }]);
+                }
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+    case 'group':
+    case 'version': {
+      const current = value as { id: string; displayName?: string; value?: string } | undefined;
+      const choices =
+        field.type === 'group'
+          ? (groups.data ?? []).map((group) => ({ id: group.id, name: group.name }))
+          : (versions.data ?? [])
+              .filter((version) => !version.archived || version.id === current?.id)
+              .map((version) => ({ id: version.id, name: version.name }));
+      const name = current?.displayName ?? current?.value;
+      return (
+        <select
+          aria-label={label}
+          value={current?.id ?? ''}
+          disabled={disabled}
+          onChange={(event) => {
+            const chosen = choices.find((choice) => choice.id === event.target.value);
+            onChange(
+              chosen?.id ?? null,
+              !chosen
+                ? null
+                : field.type === 'group'
+                  ? { id: chosen.id, displayName: chosen.name }
+                  : { id: chosen.id, value: chosen.name },
+            );
+          }}
+          className={inputClass}
+        >
+          <option value="">{t('issues.none')}</option>
+          {current && name && !choices.some((choice) => choice.id === current.id) && (
+            <option value={current.id}>{name}</option>
+          )}
+          {choices.map((choice) => (
+            <option key={choice.id} value={choice.id}>
+              {choice.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    case 'labels': {
+      const labels = (value as string[] | undefined) ?? [];
+      return (
+        <InlineInput
+          aria-label={label}
+          value={labels.join(' ')}
+          disabled={disabled}
+          placeholder={t('issues.none')}
+          onSave={(next) => {
+            const list = [...new Set(next.split(/\s+/).filter(Boolean))];
+            onChange(list.length > 0 ? list : null, list.length > 0 ? list : null);
+          }}
+        />
+      );
+    }
   }
 }
 
@@ -281,14 +393,15 @@ export function FieldEditor({
 export function shownValue(
   field: CustomField,
   input: CustomFieldInput | undefined,
-  person?: UserRef | null,
+  shown?: CustomFieldValue | null,
 ): CustomFieldValue | undefined {
   if (input === null || input === undefined) return undefined;
+  if (shown) return shown;
   if (field.type === 'select') return field.options.find((option) => option.id === input);
   if (field.type === 'multiselect' && Array.isArray(input)) {
     return field.options.filter((option) => input.includes(option.id));
   }
-  if (field.type === 'user') return person ?? undefined;
+  if (field.type === 'user' || field.type === 'users') return undefined;
   return input as CustomFieldValue;
 }
 

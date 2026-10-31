@@ -13,6 +13,11 @@ export const CustomFieldType = z.enum([
   'user',
   'checkbox',
   'url',
+  // TL-79, E-90: several people, a group, a version of the project, free labels.
+  'users',
+  'group',
+  'version',
+  'labels',
 ]);
 export type CustomFieldType = z.infer<typeof CustomFieldType>;
 
@@ -94,7 +99,8 @@ export type ProjectCustomFieldsRequest = z.infer<typeof ProjectCustomFieldsReque
 
 /**
  * A value as written: text and URLs as strings, numbers, dates as `YYYY-MM-DD`, date and time
- * as ISO timestamp, selects as option ids, people as user ids, checkboxes as booleans.
+ * as ISO timestamp, selects as option ids, people as user ids (a list for several), a group
+ * or version by id, labels as a list of words, checkboxes as booleans.
  * null clears the field.
  */
 export const CustomFieldInput = z.union([
@@ -102,6 +108,7 @@ export const CustomFieldInput = z.union([
   z.number(),
   z.boolean(),
   z.array(Id).max(100),
+  z.array(z.string().trim().min(1).max(64)).max(30),
   z.null(),
 ]);
 export type CustomFieldInput = z.infer<typeof CustomFieldInput>;
@@ -121,5 +128,7 @@ export const CustomFieldValue = z.union([
   z.object({ id: Id, value: z.string() }),
   z.array(z.object({ id: Id, value: z.string() })),
   z.object({ id: Id, displayName: z.string() }),
+  z.array(z.object({ id: Id, displayName: z.string() })),
+  z.array(z.string()),
 ]);
 export type CustomFieldValue = z.infer<typeof CustomFieldValue>;

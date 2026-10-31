@@ -538,6 +538,8 @@ export const en: Messages = {
     saved: 'Saved.',
   },
   fields: {
+    addPerson: 'Add a person to {{name}}',
+    removePerson: 'Remove {{name}}',
     title: 'Custom fields',
     intro:
       'Fields apply to the whole instance. Each project switches on the fields it needs. In TQL they are called by this name or cf[number].',
@@ -574,6 +576,10 @@ export const en: Messages = {
       user: 'Person',
       checkbox: 'Checkbox',
       url: 'Link (URL)',
+      users: 'People (several)',
+      group: 'Group',
+      version: 'Version',
+      labels: 'Labels',
     },
     project: {
       button: 'Fields',

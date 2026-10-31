@@ -464,6 +464,16 @@ export class TqlCompiler {
         return this.date(clause, sql`${this.customText(id)}::timestamptz`);
       case 'user':
         return this.user(clause, sql`${this.customText(id)}::uuid`);
+      case 'users':
+        return this.users(clause, id);
+      case 'labels': {
+        const matches = items(clause.operand).flatMap((item) =>
+          item.kind === 'value' ? [this.contains(id, [item.value])] : [],
+        );
+        if (matches.length === 0) return sql`false`;
+        const match = or(...matches) as SQL;
+        return positive(clause.operator) ? match : (and(this.hasValue(id), not(match)) as SQL);
+      }
       case 'checkbox': {
         const item = items(clause.operand)[0];
         if (item?.kind !== 'value') return sql`false`;
@@ -473,7 +483,9 @@ export class TqlCompiler {
         return wanted === (clause.operator === '=') ? ticked : not(ticked);
       }
       case 'select':
-      case 'multiselect': {
+      case 'multiselect':
+      case 'group':
+      case 'version': {
         const options = this.context.customFields.get(id)?.options ?? [];
         const matches: SQL[] = [];
         for (const item of items(clause.operand)) {
@@ -607,6 +619,37 @@ export class TqlCompiler {
     }
     const match = matchUser(column);
     return positive(clause.operator) ? match : (and(isNotNull(column), not(match)) as SQL);
+  }
+
+  /** Fields of several people (E-90): any of the named people, or members of a group. */
+  private users(clause: Clause, id: string): SQL {
+    const ids: string[] = [];
+    const groupIds: string[] = [];
+    for (const item of items(clause.operand)) {
+      if (item.kind === 'function') {
+        if (item.fn.name === 'currentUser') ids.push(this.context.userId);
+        else if (item.fn.name === 'membersOf') {
+          const group = this.groupsByValue.get((item.args[0] ?? '').toLowerCase());
+          if (group) groupIds.push(group);
+        }
+        continue;
+      }
+      const found = this.usersByValue.get(item.value.toLowerCase());
+      if (found) ids.push(found);
+      else this.notFound(clause.field, item, item.value);
+    }
+    const stored = sql`(${issues.customFields} -> ${id})`;
+    const match =
+      or(
+        ...ids.map((userId) => this.contains(id, [userId])),
+        groupIds.length > 0
+          ? sql`${stored} ?| array(${this.db
+              .select({ userId: sql`${groupMembers.userId}::text` })
+              .from(groupMembers)
+              .where(inArray(groupMembers.groupId, groupIds))})`
+          : undefined,
+      ) ?? sql`false`;
+    return positive(clause.operator) ? match : (and(this.hasValue(id), not(match)) as SQL);
   }
 
   // ---------------------------------------------------------------- full text

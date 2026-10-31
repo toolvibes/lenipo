@@ -25,6 +25,7 @@ import type { DatabaseHandle } from '../db/client.js';
 import { escapeLike } from '../db/like.js';
 import {
   boards,
+  groups,
   issues,
   projectComponents,
   projects,
@@ -113,6 +114,17 @@ export class SearchService {
             .from(projectComponents)
             .where(inArray(projectComponents.projectId, projectIds))
         : [];
+    // Group and version fields match by name like options (E-90); versions of visible projects only.
+    const groupOptions = fields.some((field) => field.type === 'group')
+      ? await this.database.db.select({ id: groups.id, value: groups.name }).from(groups)
+      : [];
+    const versionOptions =
+      fields.some((field) => field.type === 'version') && projectIds.length > 0
+        ? await this.database.db
+            .select({ id: projectVersions.id, value: projectVersions.name })
+            .from(projectVersions)
+            .where(inArray(projectVersions.projectId, projectIds))
+        : [];
     const compiler = new TqlCompiler(this.database.db, {
       userId: principal.userId,
       timeZone,
@@ -120,7 +132,16 @@ export class SearchService {
       projects: visibleProjects,
       components,
       workingTime: await this.workingTime.get(),
-      customFields: new Map(fields.map((field) => [field.id, field])),
+      customFields: new Map(
+        fields.map((field) => [
+          field.id,
+          field.type === 'group'
+            ? { options: groupOptions }
+            : field.type === 'version'
+              ? { options: versionOptions }
+              : field,
+        ]),
+      ),
     });
     const compiled = await compiler.compile(parsed.query);
     if (compiler.errors.length > 0) {

@@ -551,6 +551,8 @@ export const de = {
     saved: 'Gespeichert.',
   },
   fields: {
+    addPerson: 'Person zu {{name}} hinzufügen',
+    removePerson: '{{name}} entfernen',
     title: 'Benutzerdefinierte Felder',
     intro:
       'Felder gelten für die ganze Instanz. Jedes Projekt schaltet die Felder ein, die es braucht. In TQL heißen sie wie hier oder cf[Nummer].',
@@ -588,6 +590,10 @@ export const de = {
       user: 'Person',
       checkbox: 'Checkbox',
       url: 'Link (URL)',
+      users: 'Personen (mehrere)',
+      group: 'Gruppe',
+      version: 'Version',
+      labels: 'Labels',
     },
     project: {
       button: 'Felder',

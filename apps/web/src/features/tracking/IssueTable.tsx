@@ -133,6 +133,14 @@ function CustomValue({
       return <Chips names={(value as Array<{ value: string }>).map((option) => option.value)} />;
     case 'user':
       return <Person user={value as UserRef} none="" />;
+    case 'users':
+      return <Chips names={(value as UserRef[]).map((person) => person.displayName)} />;
+    case 'group':
+      return (value as UserRef).displayName;
+    case 'version':
+      return (value as { value: string }).value;
+    case 'labels':
+      return <Chips names={value as string[]} />;
     case 'checkbox':
       return value === true ? t('common.yes') : null;
     case 'date':

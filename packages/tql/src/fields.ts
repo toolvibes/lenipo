@@ -60,7 +60,11 @@ export type CustomFieldKind =
   | 'multiselect'
   | 'user'
   | 'checkbox'
-  | 'url';
+  | 'url'
+  | 'users'
+  | 'group'
+  | 'version'
+  | 'labels';
 
 /** What the query language needs to know about a custom field. */
 export interface CustomFieldInfo {
@@ -248,6 +252,11 @@ const CUSTOM_TYPES: Record<
   multiselect: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
   user: { type: 'user', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
   checkbox: { type: 'boolean', operators: ['=', '!='], orderable: true },
+  users: { type: 'user', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  // Groups and versions are matched like options; the server lists them as such (E-90).
+  group: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  version: { type: 'option', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
+  labels: { type: 'label', operators: [...EQUALITY, ...EMPTINESS], orderable: false },
 };
 
 export const CUSTOM_FIELD_ID = /^cf\[(\d+)\]$/i;

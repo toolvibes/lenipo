@@ -2674,7 +2674,11 @@ export interface components {
         | 'multiselect'
         | 'user'
         | 'checkbox'
-        | 'url';
+        | 'url'
+        | 'users'
+        | 'group'
+        | 'version'
+        | 'labels';
       options: components['schemas']['CustomFieldOption'][];
       archived: boolean;
     };
@@ -2699,7 +2703,11 @@ export interface components {
         | 'multiselect'
         | 'user'
         | 'checkbox'
-        | 'url';
+        | 'url'
+        | 'users'
+        | 'group'
+        | 'version'
+        | 'labels';
       /** @default [] */
       options?: string[];
     };
@@ -3044,7 +3052,13 @@ export interface components {
               /** Format: uuid */
               id: string;
               displayName: string;
-            };
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            }[]
+          | string[];
       };
       parent: components['schemas']['IssueRef'] | null;
       sprint: components['schemas']['SprintRef'] | null;
@@ -3164,7 +3178,13 @@ export interface components {
               /** Format: uuid */
               id: string;
               displayName: string;
-            };
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            }[]
+          | string[];
       };
       parent: components['schemas']['IssueRef'] | null;
       sprint: components['schemas']['SprintRef'] | null;
@@ -3361,7 +3381,7 @@ export interface components {
       affectsVersions?: string[];
       /** @default {} */
       customFields?: {
-        [key: string]: string | number | boolean | string[] | null;
+        [key: string]: string | number | boolean | string[] | string[] | null;
       };
     };
     RichTextInput:
@@ -3386,7 +3406,7 @@ export interface components {
       originalEstimate?: string | null;
       remainingEstimate?: string | null;
       customFields?: {
-        [key: string]: string | number | boolean | string[] | null;
+        [key: string]: string | number | boolean | string[] | string[] | null;
       };
     };
     Transition: {
@@ -4218,7 +4238,13 @@ export interface components {
               /** Format: uuid */
               id: string;
               displayName: string;
-            };
+            }
+          | {
+              /** Format: uuid */
+              id: string;
+              displayName: string;
+            }[]
+          | string[];
       };
       parent: components['schemas']['IssueRef'] | null;
       sprint: components['schemas']['SprintRef'] | null;

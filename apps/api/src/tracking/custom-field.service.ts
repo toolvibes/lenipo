@@ -24,7 +24,9 @@ import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/cli
 import {
   customFieldOptions,
   customFields,
+  groups,
   projectCustomFields,
+  projectVersions,
   users,
 } from '../db/schema/index.js';
 import type { Change } from './history.js';
@@ -321,20 +323,57 @@ export class CustomFieldService {
   // ---------------------------------------------------------------- values
 
   /** Display names of the people in stored values, read in one query. */
+  /** Names of the people, groups and versions in stored values, one query per kind. */
   private async people(fields: CustomField[], stored: StoredValues[]) {
-    const userFields = fields.filter((field) => field.type === 'user').map((field) => field.id);
-    const ids = new Set<string>();
-    for (const values of stored) {
-      for (const id of userFields) {
-        if (typeof values[id] === 'string') ids.add(values[id] as string);
+    const wanted = {
+      user: new Set<string>(),
+      group: new Set<string>(),
+      version: new Set<string>(),
+    };
+    for (const field of fields) {
+      const kind =
+        field.type === 'user' || field.type === 'users'
+          ? 'user'
+          : field.type === 'group' || field.type === 'version'
+            ? field.type
+            : null;
+      if (!kind) continue;
+      for (const values of stored) {
+        const value = values[field.id];
+        for (const id of Array.isArray(value) ? value : [value]) {
+          if (typeof id === 'string') wanted[kind].add(id);
+        }
       }
     }
-    if (ids.size === 0) return new Map<string, string>();
-    const rows = await this.database.db
-      .select({ id: users.id, displayName: users.displayName })
-      .from(users)
-      .where(inArray(users.id, [...ids]));
-    return new Map(rows.map((row) => [row.id, row.displayName]));
+    const names = new Map<string, string>();
+    const load = async (rows: Promise<Array<{ id: string; name: string }>>) => {
+      for (const row of await rows) names.set(row.id, row.name);
+    };
+    if (wanted.user.size > 0) {
+      await load(
+        this.database.db
+          .select({ id: users.id, name: users.displayName })
+          .from(users)
+          .where(inArray(users.id, [...wanted.user])),
+      );
+    }
+    if (wanted.group.size > 0) {
+      await load(
+        this.database.db
+          .select({ id: groups.id, name: groups.name })
+          .from(groups)
+          .where(inArray(groups.id, [...wanted.group])),
+      );
+    }
+    if (wanted.version.size > 0) {
+      await load(
+        this.database.db
+          .select({ id: projectVersions.id, name: projectVersions.name })
+          .from(projectVersions)
+          .where(inArray(projectVersions.id, [...wanted.version])),
+      );
+    }
+    return names;
   }
 
   /**
@@ -391,9 +430,21 @@ export class CustomFieldService {
               return found ? [found] : [];
             })
           : undefined;
-      case 'user': {
+      case 'user':
+      case 'group': {
         const name = people.get(raw as string);
         return name ? { id: raw as string, displayName: name } : undefined;
+      }
+      case 'users':
+        return Array.isArray(raw)
+          ? raw.flatMap((id) => {
+              const name = people.get(id);
+              return name ? [{ id: id as string, displayName: name }] : [];
+            })
+          : undefined;
+      case 'version': {
+        const name = people.get(raw as string);
+        return name ? { id: raw as string, value: name } : undefined;
       }
       default:
         return raw as CustomFieldValue;
@@ -404,7 +455,15 @@ export class CustomFieldService {
   private display(field: CustomField, raw: unknown, people: Map<string, string>): string | null {
     const shown = this.show(field, raw, people);
     if (shown === undefined) return null;
-    if (Array.isArray(shown)) return shown.map((option) => option.value).join(', ') || null;
+    if (Array.isArray(shown)) {
+      return (
+        shown
+          .map((entry) =>
+            typeof entry === 'string' ? entry : 'value' in entry ? entry.value : entry.displayName,
+          )
+          .join(', ') || null
+      );
+    }
     if (typeof shown === 'object') return 'value' in shown ? shown.value : shown.displayName;
     return String(shown);
   }
@@ -447,6 +506,18 @@ export class CustomFieldService {
       });
     }
     return { next, changes };
+  }
+
+  /** A person a value may name: active and able to see the project. */
+  private async checkPerson(field: CustomField, userId: string, projectId: string) {
+    const [person] = await this.database.db
+      .select({ status: users.status })
+      .from(users)
+      .where(eq(users.id, userId));
+    const visible =
+      person?.status === 'active' &&
+      (await this.projectAccess.permissions(userId, projectId)).has('browse');
+    if (!visible) this.invalid(field, 'this person cannot see the project');
   }
 
   private invalid(field: CustomField, reason: string): never {
@@ -528,17 +599,45 @@ export class CustomFieldService {
       }
       case 'user': {
         if (typeof input !== 'string') this.invalid(field, 'expected a person');
-        if (input !== current) {
-          const [person] = await this.database.db
-            .select({ status: users.status })
-            .from(users)
-            .where(eq(users.id, input));
-          const visible =
-            person?.status === 'active' &&
-            (await this.projectAccess.permissions(input, projectId)).has('browse');
-          if (!visible) this.invalid(field, 'this person cannot see the project');
-        }
+        if (input !== current) await this.checkPerson(field, input, projectId);
         return input;
+      }
+      case 'users': {
+        if (!Array.isArray(input)) this.invalid(field, 'expected a list of people');
+        const ids = [...new Set(input as string[])].sort();
+        const before = Array.isArray(current) ? current : [];
+        for (const id of ids) {
+          if (!before.includes(id)) await this.checkPerson(field, id, projectId);
+        }
+        return ids.length > 0 ? ids : undefined;
+      }
+      case 'group': {
+        if (typeof input !== 'string') this.invalid(field, 'expected a group');
+        const [group] = await this.database.db
+          .select({ id: groups.id })
+          .from(groups)
+          .where(eq(groups.id, input));
+        if (!group) this.invalid(field, 'unknown group');
+        return input;
+      }
+      case 'version': {
+        if (typeof input !== 'string') this.invalid(field, 'expected a version');
+        const [version] = await this.database.db
+          .select({ id: projectVersions.id })
+          .from(projectVersions)
+          .where(and(eq(projectVersions.id, input), eq(projectVersions.projectId, projectId)));
+        if (!version) this.invalid(field, 'not a version of this project');
+        return input;
+      }
+      case 'labels': {
+        if (!Array.isArray(input)) this.invalid(field, 'expected a list of labels');
+        const labels = [...new Set((input as string[]).map((label) => String(label).trim()))]
+          .filter(Boolean)
+          .sort();
+        if (labels.some((label) => !/^\S{1,64}$/.test(label))) {
+          this.invalid(field, 'labels are single words of at most 64 characters');
+        }
+        return labels.length > 0 ? labels : undefined;
       }
     }
   }
