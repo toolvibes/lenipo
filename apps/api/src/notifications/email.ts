@@ -355,3 +355,44 @@ export function filterEmail(options: {
     ),
   };
 }
+
+/** An invitation or a self-registration link (P-USR-15, TL-67, E-119). */
+export function invitationEmail(options: {
+  to: string;
+  instanceName: string;
+  inviter: string | null;
+  project: string | null;
+  link: string;
+  days: number;
+  /** The person already had an account and was added to the project directly. */
+  joined: boolean;
+}): MailMessage {
+  const intro = options.joined
+    ? `${options.inviter ?? 'Jemand'} hat Sie zum Projekt „${options.project}“ in ${options.instanceName} hinzugefügt.`
+    : options.inviter
+      ? `${options.inviter} lädt Sie zu ${options.instanceName}${options.project ? ` in das Projekt „${options.project}“` : ''} ein.`
+      : `Bitte bestätigen Sie Ihre Registrierung bei ${options.instanceName}.`;
+  const action = options.joined
+    ? 'Projekt öffnen'
+    : options.inviter
+      ? 'Einladung annehmen'
+      : 'Registrierung abschließen';
+  const note = options.joined
+    ? ''
+    : `Der Link gilt ${options.days} Tage und nur einmal. Wenn Sie damit nichts anfangen können, ignorieren Sie diese E-Mail.`;
+  return {
+    to: options.to,
+    subject: options.joined
+      ? `[${options.instanceName}] Neu im Projekt ${options.project}`
+      : options.inviter
+        ? `Einladung zu ${options.instanceName}`
+        : `Registrierung bei ${options.instanceName}`,
+    text: [intro, '', `${action}: ${options.link}`, '', note].join('\n').trim(),
+    html: frame(
+      'de',
+      options.instanceName,
+      `<p>${escapeHtml(intro)}</p><p style="margin:24px 0"><a href="${escapeHtml(options.link)}" style="display:inline-block;background:#1f5fbf;color:#ffffff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:6px">${escapeHtml(action)}</a></p>`,
+      note,
+    ),
+  };
+}

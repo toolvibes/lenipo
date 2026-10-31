@@ -24,6 +24,7 @@ import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/Secu
 import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
+import { InvitePage, RegisterPage } from './features/auth/InvitePage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { type AuthorizeParams, OAuthConsentPage } from './features/auth/OAuthConsentPage';
 import { SetupPage } from './features/auth/SetupPage';
@@ -85,6 +86,25 @@ const setupRoute = createRoute({
     if (!status.required) throw redirect({ to: '/login' });
   },
   component: SetupPage,
+});
+
+/** Accepting an invitation or finishing a registration (P-USR-15, TL-67, E-119). */
+const inviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invite',
+  validateSearch: (search: Record<string, unknown>): { token: string } => ({
+    token: typeof search.token === 'string' ? search.token : '',
+  }),
+  component: function Invite() {
+    const { token } = inviteRoute.useSearch();
+    return <InvitePage token={token} />;
+  },
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
 });
 
 const loginRoute = createRoute({
@@ -843,6 +863,8 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   welcomeRoute,
   printRoute,
+  inviteRoute,
+  registerRoute,
   oauthAuthorizeRoute,
   issuesPrintRoute,
   appRoute.addChildren([

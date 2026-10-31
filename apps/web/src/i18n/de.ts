@@ -923,6 +923,48 @@ export const de = {
     limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
     back: 'Zurück zur Seite',
   },
+  invite: {
+    title: 'Willkommen bei {{instance}}',
+    registerTitle: 'Registrierung bei {{instance}}',
+    intoProject: '{{name}} lädt Sie in das Projekt „{{project}}“ ein.',
+    by: '{{name}} lädt Sie ein.',
+    email: 'E-Mail-Adresse',
+    name: 'Ihr Name',
+    password: 'Passwort',
+    passwordHelp: 'Mindestens 12 Zeichen.',
+    accept: 'Konto anlegen',
+    invalidTitle: 'Link nicht gültig',
+    invalid: 'Dieser Link ist nicht gültig.',
+    toLogin: 'Zur Anmeldung',
+    registerHeading: 'Registrieren',
+    registerIntro:
+      'Mit einer E-Mail-Adresse einer freigegebenen Domain. Sie bekommen einen Link, mit dem Sie Ihr Konto anlegen.',
+    checkMail:
+      'Wenn {{email}} registriert werden darf, ist ein Link unterwegs. Bitte im Postfach nachsehen.',
+    sendLink: 'Link schicken',
+    noAccount: 'Noch kein Konto?',
+    registerLink: 'Registrieren',
+    panelTitle: 'Per E-Mail einladen',
+    role: 'Rolle',
+    roles: {
+      administrators: 'Projektadministration',
+      developers: 'Mitarbeit',
+      users: 'Lesen und Kommentieren',
+    },
+    send: 'Einladen',
+    revoke: 'Zurückziehen',
+    states: {
+      accepted: 'angenommen',
+      revoked: 'zurückgezogen',
+      expired: 'abgelaufen',
+      open: 'offen, läuft ab {{when}}',
+    },
+    registrationTitle: 'Selbstregistrierung',
+    registrationEnabled:
+      'Personen mit E-Mail-Adressen der folgenden Domains dürfen sich selbst registrieren',
+    domains: 'Domains',
+    domainsHelp: 'Durch Komma getrennt, z. B. firma.de, tochter.de',
+  },
   imports: {
     title: 'Import',
     intro:

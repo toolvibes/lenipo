@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -16,6 +16,10 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const providers = useQuery(authProvidersQuery);
+  const registration = useQuery({
+    queryKey: ['registration'],
+    queryFn: () => unwrap(client.GET('/api/v1/auth/registration')),
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -70,6 +74,11 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
           {login.isPending ? t('auth.signingIn') : t('auth.signIn')}
         </Button>
       </form>
+      {registration.data?.enabled && (
+        <p className="m-0 text-[13px] text-[var(--ink-muted)]">
+          {t('invite.noAccount')} <Link to="/register">{t('invite.registerLink')}</Link>
+        </p>
+      )}
       {providers.data?.oidc.enabled && (
         <>
           <div className="flex items-center gap-3 text-xs text-[var(--ink-muted)]">

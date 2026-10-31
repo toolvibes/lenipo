@@ -56,6 +56,14 @@ import { GroupsController, UsersController } from './users.controller.js';
     { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useExisting: GlobalPermissionGuard },
   ],
-  exports: [AccessService, AuditService, SessionService, SetupService, UserService, OAuthService],
+  exports: [
+    AccessService,
+    AuditService,
+    SessionService,
+    SetupService,
+    UserService,
+    OAuthService,
+    PasswordService,
+  ],
 })
 export class IdentityModule {}

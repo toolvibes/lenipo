@@ -14,6 +14,7 @@ import { ExportsModule } from './exports/exports.module.js';
 import { GitModule } from './git/git.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { ImportsModule } from './imports/imports.module.js';
+import { InvitationsModule } from './invitations/invitations.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OnboardingModule } from './onboarding/onboarding.module.js';
@@ -48,6 +49,7 @@ export class AppModule {
         ExportsModule,
         GitModule,
         ImportsModule,
+        InvitationsModule,
         EventsModule,
         PersonalModule,
         BoardsModule,

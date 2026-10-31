@@ -6,6 +6,7 @@ import { client, unwrap } from '../../lib/api';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { InvitationsPanel } from '../auth/InvitePage';
 
 /**
  * Sign-in rules (TL-18, E-100): how long sessions last, which groups must use two-factor
@@ -158,6 +159,10 @@ export function SignInSettingsPage() {
 
       <OAuthAdmin />
 
+      <RegistrationAdmin />
+
+      <InvitationsPanel />
+
       <section className="flex max-w-[720px] flex-col gap-3">
         <h2 className="m-0 text-base font-semibold">{t('signIn.people')}</h2>
         <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('signIn.peopleIntro')}</p>
@@ -269,6 +274,66 @@ function OAuthAdmin() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Self-registration, off by default, for listed e-mail domains (P-USR-15, E-119). */
+function RegistrationAdmin() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const settings = useQuery({
+    queryKey: ['registration'],
+    queryFn: () => unwrap(client.GET('/api/v1/auth/registration')),
+  });
+  const [domains, setDomains] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: (next: { enabled: boolean; domains: string[] }) =>
+      unwrap(client.PUT('/api/v1/admin/registration-settings', { body: next })),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['registration'], saved);
+      setDomains(null);
+    },
+  });
+  if (!settings.data) return null;
+  const current = settings.data;
+  const parsed = (domains ?? current.domains.join(', '))
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  return (
+    <section className="flex max-w-[720px] flex-col gap-3">
+      <h2 className="m-0 text-base font-semibold">{t('invite.registrationTitle')}</h2>
+      {save.error && <FormError message={save.error.message} />}
+      <label className="flex items-center gap-2 text-[13px]">
+        <input
+          type="checkbox"
+          checked={current.enabled}
+          onChange={(event) =>
+            save.mutate({ enabled: event.target.checked, domains: current.domains })
+          }
+        />
+        {t('invite.registrationEnabled')}
+      </label>
+      <form
+        className="flex items-end gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          save.mutate({ enabled: current.enabled, domains: parsed });
+        }}
+      >
+        <div className="flex-1">
+          <TextField
+            label={t('invite.domains')}
+            help={t('invite.domainsHelp')}
+            value={domains ?? current.domains.join(', ')}
+            onChange={(event) => setDomains(event.target.value)}
+          />
+        </div>
+        <Button type="submit" disabled={domains === null || save.isPending}>
+          {t('common.save')}
+        </Button>
+      </form>
     </section>
   );
 }

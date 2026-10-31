@@ -60,6 +60,7 @@ import { WorklogService } from './worklog.service.js';
     AttachmentService,
   ],
   exports: [
+    ProjectMemberService,
     ComponentService,
     CustomFieldService,
     IssueService,

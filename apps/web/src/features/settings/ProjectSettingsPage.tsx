@@ -24,6 +24,7 @@ import {
   permissionSchemesQuery,
 } from '../admin/PermissionSchemes';
 import { securitySchemesQuery } from '../admin/SecuritySchemes';
+import { InvitationsPanel } from '../auth/InvitePage';
 import { RulesList } from '../automation/RulesList';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
@@ -407,7 +408,12 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               {notice}
             </p>
           )}
-          {view === 'members' && administer && <Members projectKey={projectKey} />}
+          {view === 'members' && administer && (
+            <div className="flex flex-col gap-8">
+              <Members projectKey={projectKey} />
+              <InvitationsPanel projectKey={projectKey} />
+            </div>
+          )}
           {view === 'permissions' && administer && <Permissions projectKey={projectKey} />}
           {view === 'notifications' && administer && <Notifications projectKey={projectKey} />}
           {view === 'security' && administer && <Security projectKey={projectKey} />}
