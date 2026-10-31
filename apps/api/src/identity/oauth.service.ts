@@ -346,11 +346,9 @@ export class OAuthService {
         throw new OAuthError('invalid_grant', 'The refresh token belongs to another client');
       }
       await this.authenticateClient(grant.clientId, credentials);
-      // A narrower scope may be asked for, never a wider one.
-      const scopes = body.scope
-        ? parseScopes(String(body.scope)).filter((entry) => grant.scopes.includes(entry))
-        : grant.scopes;
-      return this.issue(grant.id, scopes);
+      // Tokens carry the grant's scopes; a narrower request is not honoured, and the answer says
+      // so truthfully instead of reporting scopes the token would not keep to (TL-44).
+      return this.issue(grant.id, grant.scopes);
     }
     throw new OAuthError('unsupported_grant_type', 'Use authorization_code or refresh_token');
   }

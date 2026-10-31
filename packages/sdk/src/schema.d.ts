@@ -6914,6 +6914,7 @@ export interface components {
         endsAt: string | null;
         version: string;
       } | null;
+      helpUrl: string | null;
     };
     FeatureFlags: {
       /** @default true */
@@ -8479,6 +8480,7 @@ export interface components {
     SearchResult: {
       issues: components['schemas']['IssueSummary'][];
       total: number;
+      totalCapped: boolean;
       limit: number;
       offset: number;
     };

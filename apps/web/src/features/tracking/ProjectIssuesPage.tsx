@@ -4,6 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatTotal } from '../../lib/format';
 import { useListColumns, useRecordView } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { useCurrentProject } from '../../lib/shortcuts';
@@ -167,7 +168,10 @@ export function ProjectIssuesPage({
           <span className="ml-auto flex items-center gap-2">
             {issues.data && (
               <span className="text-xs text-[var(--ink-muted)]">
-                {t('issues.count', { shown: issues.data.issues.length, total: issues.data.total })}
+                {t('issues.count', {
+                  shown: issues.data.issues.length,
+                  total: formatTotal(issues.data),
+                })}
               </span>
             )}
             <ColumnPicker columns={columns} />

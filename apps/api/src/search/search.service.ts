@@ -5,6 +5,7 @@ import type {
   ValueSuggestion,
   ValueSuggestionQuery,
 } from '@tasklore/shared';
+import { SEARCH_TOTAL_CAP } from '@tasklore/shared';
 import { parse, STATUS_CATEGORY_NAMES } from '@tasklore/tql';
 import {
   and,
@@ -160,7 +161,13 @@ export class SearchService {
   async search(principal: Principal, request: SearchRequest): Promise<SearchResult> {
     requireIssueScope(principal);
     const compiled = await this.compile(principal, request.query);
-    const empty = { issues: [], total: 0, limit: request.limit, offset: request.offset };
+    const empty = {
+      issues: [],
+      total: 0,
+      totalCapped: false,
+      limit: request.limit,
+      offset: request.offset,
+    };
     if (compiled.projectIds.length === 0) return empty;
     const where = and(
       inArray(issues.projectId, compiled.projectIds),
@@ -175,11 +182,21 @@ export class SearchService {
         .orderBy(...compiled.orderBy)
         .limit(request.limit)
         .offset(request.offset),
-      this.database.db.select({ total: count() }).from(issues).where(where),
+      // Counted up to one past the cap: enough to say "more than", without counting a million.
+      this.database.db.select({ total: count() }).from(
+        this.database.db
+          .select({ one: sql`1` })
+          .from(issues)
+          .where(where)
+          .limit(SEARCH_TOTAL_CAP + 1)
+          .as('matches'),
+      ),
     ]);
+    const counted = total?.total ?? 0;
     return {
       issues: await this.issueService.summarize(principal.userId, rows),
-      total: total?.total ?? 0,
+      total: Math.min(counted, SEARCH_TOTAL_CAP),
+      totalCapped: counted > SEARCH_TOTAL_CAP,
       limit: request.limit,
       offset: request.offset,
     };

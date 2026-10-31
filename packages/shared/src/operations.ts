@@ -57,6 +57,8 @@ export const InstanceNotice = z
     maintenance: MaintenanceMode,
     /** The banner while it is due, with a version to remember dismissals by. */
     announcement: Announcement.extend({ version: z.string() }).nullable(),
+    /** An external help page set by the operators; null: the built-in handbook. */
+    helpUrl: z.string().nullable(),
   })
   .meta({ id: 'InstanceNotice' });
 export type InstanceNotice = z.infer<typeof InstanceNotice>;

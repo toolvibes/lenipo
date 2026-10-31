@@ -52,6 +52,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec biome ci .
       - run: pnpm licenses:check
+      - name: No high or critical advisories in production dependencies
+        run: pnpm audit --prod --audit-level high
       - run: pnpm migrations:check
       - run: pnpm typecheck
       - run: pnpm test
@@ -60,6 +62,8 @@ jobs:
         run: pnpm api:generate && git diff --exit-code packages/sdk
       - name: Migrations apply to an empty database
         run: pnpm db:migrate
+      - name: Load test, small (quality goals, TL-44)
+        run: pnpm --filter @tasklore/loadtest loadtest:smoke
       - name: Accessibility of the built app (axe-core, WCAG 2.1 AA)
         run: |
           pnpm --filter @tasklore/web exec playwright install --with-deps chromium

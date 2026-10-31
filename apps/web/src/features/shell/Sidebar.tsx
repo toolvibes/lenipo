@@ -5,7 +5,7 @@ import type { Favourite, Me } from '@tasklore/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { boardsQuery } from '../../lib/boards';
-import { useModules } from '../../lib/instance';
+import { noticeQuery, useModules } from '../../lib/instance';
 import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
 import { useCurrentProjectKey } from '../../lib/shortcuts';
@@ -234,6 +234,7 @@ export function Sidebar({
     .slice(0, 8);
   const isAdmin = me.globalPermissions.includes('admin');
   const modules = useModules();
+  const helpUrl = useQuery(noticeQuery).data?.helpUrl ?? null;
 
   return (
     <nav
@@ -336,6 +337,15 @@ export function Sidebar({
         {modules['time-tracking'] && (
           <NavRow to="/timesheet" search={{}} active={path === '/timesheet'}>
             {t('timesheet.title')}
+          </NavRow>
+        )}
+        {helpUrl ? (
+          <a href={helpUrl} target="_blank" rel="noreferrer" className={ROW}>
+            {t('sidebar.help')}
+          </a>
+        ) : (
+          <NavRow to="/help" active={path === '/help'}>
+            {t('sidebar.help')}
           </NavRow>
         )}
         {isAdmin && (

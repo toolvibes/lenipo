@@ -1,11 +1,18 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { SAML } from '@node-saml/node-saml';
 import type { SamlProvider, SaveSamlProviderRequest } from '@tasklore/shared';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, lt, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { groupMembers, groups, samlProviders, users } from '../db/schema/index.js';
+import {
+  groupMembers,
+  groups,
+  samlAssertions,
+  samlProviders,
+  userIdentities,
+  users,
+} from '../db/schema/index.js';
 import { GroupService, USERS_GROUP } from './group.service.js';
 
 type Row = typeof samlProviders.$inferSelect;
@@ -202,18 +209,54 @@ export class SamlService {
       throw new BadRequestException('The identity provider sent no e-mail address');
     const name = value(row.nameAttribute)[0] ?? email;
     const db = this.database.db;
-    const [existing] = await db.select().from(users).where(eq(users.email, email));
-    let userId = existing?.id;
-    if (existing && existing.status !== 'active')
-      throw new BadRequestException('This account is deactivated');
+
+    // Each assertion signs in once (TL-44, E-125); node-saml checks signature and time window.
+    const xml = (profile as { getAssertionXml?: () => string }).getAssertionXml?.() ?? '';
+    const assertionId = /<(?:\w+:)?Assertion\b[^>]*\sID="([^"]+)"/.exec(xml)?.[1];
+    if (!assertionId) throw new BadRequestException('The response has no assertion ID');
+    await db.delete(samlAssertions).where(lt(samlAssertions.expiresAt, sql`now()`));
+    const [fresh] = await db
+      .insert(samlAssertions)
+      .values({ id: `${row.id}:${assertionId}`, expiresAt: new Date(Date.now() + 86_400_000) })
+      .onConflictDoNothing()
+      .returning({ id: samlAssertions.id });
+    if (!fresh) throw new BadRequestException('This sign-in response was already used');
+
+    // People are bound to the provider and their NameID. The e-mail links an existing account
+    // only if it has no password or second factor of its own, so an IdP where people choose
+    // their address cannot take over a local or admin account (TL-44, E-125).
+    const issuer = `saml:${row.id}`;
+    const [linked] = await db
+      .select({ userId: userIdentities.userId })
+      .from(userIdentities)
+      .where(and(eq(userIdentities.issuer, issuer), eq(userIdentities.subject, profile.nameID)));
+    let userId = linked?.userId;
     if (!userId) {
-      if (!row.createUsers) throw new BadRequestException('No account with this e-mail address');
-      userId = uuidv7();
-      await db.insert(users).values({ id: userId, email, displayName: name, passwordHash: null });
-      const [everyone] = await this.groupService.idsByName([USERS_GROUP], db);
-      if (everyone)
-        await db.insert(groupMembers).values({ groupId: everyone, userId }).onConflictDoNothing();
+      const [existing] = await db.select().from(users).where(eq(users.email, email));
+      if (existing && (existing.passwordHash || existing.totpEnabledAt)) {
+        throw new BadRequestException(
+          'This account signs in with its password; it cannot be taken over by single sign-on',
+        );
+      }
+      userId = existing?.id;
+      if (!userId) {
+        if (!row.createUsers) throw new BadRequestException('No account with this e-mail address');
+        userId = uuidv7();
+        await db.insert(users).values({ id: userId, email, displayName: name, passwordHash: null });
+        const [everyone] = await this.groupService.idsByName([USERS_GROUP], db);
+        if (everyone)
+          await db.insert(groupMembers).values({ groupId: everyone, userId }).onConflictDoNothing();
+      }
+      await db
+        .insert(userIdentities)
+        .values({ issuer, subject: profile.nameID, userId, email })
+        .onConflictDoNothing();
     }
+    const [account] = await db
+      .select({ status: users.status })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (account?.status !== 'active') throw new BadRequestException('This account is deactivated');
     // Groups named by the IdP join the person to existing Tasklore groups of that name.
     for (const groupName of value(row.groupsAttribute)) {
       const [group] = await db

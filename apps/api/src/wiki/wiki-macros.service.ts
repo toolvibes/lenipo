@@ -223,7 +223,7 @@ export class WikiMacrosService {
   }
 
   async setEmbedHosts(principal: Principal, value: EmbedHosts): Promise<EmbedHosts> {
-    if (!(await this.access.hasGlobal(principal.userId, 'admin'))) {
+    if (!(await this.access.isAdmin(principal))) {
       throw new ForbiddenException('Requires administration');
     }
     const hosts = [

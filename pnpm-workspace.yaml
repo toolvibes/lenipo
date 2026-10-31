@@ -14,3 +14,5 @@ allowBuilds:
 # One Node typings version across the workspace (matches the Node 24 LTS runtime).
 overrides:
   "@types/node": 24.19.2
+  # Patched for GHSA advisories in the copy chevrotain (via mermaid) pulls in (TL-44).
+  lodash-es: 4.18.1

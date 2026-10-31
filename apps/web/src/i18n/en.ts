@@ -58,6 +58,7 @@ export const en: Messages = {
     restored: 'Restored {{rows}} records and {{files}} files. You can sign in now.',
   },
   sidebar: {
+    help: 'Help',
     search: 'Search …',
     overview: 'Overview',
     myIssues: 'My tasks',

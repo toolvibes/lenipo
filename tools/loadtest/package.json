@@ -1,0 +1,18 @@
+{
+  "name": "@tasklore/loadtest",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Measures Tasklore against its quality goals (docs/06, section 6.10; TL-44, E-125).",
+  "type": "module",
+  "scripts": {
+    "loadtest": "node run.mjs",
+    "loadtest:smoke": "node run.mjs --smoke"
+  },
+  "devDependencies": {
+    "@hocuspocus/provider": "4.7.1",
+    "autocannon": "8.0.0",
+    "postgres": "3.4.9",
+    "ws": "8.22.0",
+    "yjs": "13.6.33"
+  }
+}

@@ -109,7 +109,14 @@ export class LinkService {
     const [other] = await this.database.db
       .select({ id: issues.id, key: issues.key, projectId: issues.projectId })
       .from(issues)
-      .where(and(eq(issues.key, request.issueKey.toUpperCase()), isNull(issues.deletedAt)));
+      .where(
+        and(
+          eq(issues.key, request.issueKey.toUpperCase()),
+          isNull(issues.deletedAt),
+          // A secured issue the user cannot see stays "not found" (TL-44, E-125).
+          securityVisible(principal.userId),
+        ),
+      );
     if (
       !other ||
       !(await this.projectAccess.permissions(principal.userId, other.projectId)).has('browse')

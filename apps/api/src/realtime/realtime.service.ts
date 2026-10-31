@@ -57,15 +57,23 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
       path: REALTIME_PATH,
       serveClient: false,
       // A cookie-authenticated socket must not be opened by another site.
+      // An unparseable origin ("null") is refused, never thrown: it would end the process.
       allowRequest: (request, done) => {
         const origin = request.headers.origin;
-        done(null, !origin || new URL(origin).host === request.headers.host);
+        let allowed = !origin;
+        try {
+          allowed ||= new URL(origin as string).host === request.headers.host;
+        } catch {
+          allowed = false;
+        }
+        done(null, allowed);
       },
     });
     io.use(async (socket, next) => {
       const secret = readCookie(socket.handshake.headers.cookie, SESSION_COOKIE);
       const session = secret ? await this.sessions.authenticate(secret) : null;
-      if (!session) return next(new Error('Authentication required'));
+      // A sign-in still waiting for its second factor gets no signals (TL-44).
+      if (session?.stage !== 'full') return next(new Error('Authentication required'));
       socket.data = {
         principal: { userId: session.userId, via: 'session', sessionId: session.sessionId },
         rooms: new Set<string>(),

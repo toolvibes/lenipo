@@ -6,6 +6,7 @@ import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@tas
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { formatTotal } from '../../lib/format';
 import { useListColumns } from '../../lib/personal';
 import { useRealtimeRooms } from '../../lib/realtime';
 import { filterQuery, filtersQuery, SEARCH_PAGE_SIZE, searchQuery } from '../../lib/search';
@@ -467,7 +468,7 @@ export function SearchPage({
                   : t('search.range', {
                       from: page.offset + 1,
                       to: page.offset + page.issues.length,
-                      total: page.total,
+                      total: formatTotal(page),
                     }))}
             </span>
             <div className="flex flex-wrap items-center gap-2">

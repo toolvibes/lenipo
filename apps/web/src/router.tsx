@@ -57,6 +57,7 @@ import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { MaintenanceScreen } from './features/shell/Announcement';
 import { AppShell } from './features/shell/AppShell';
+import { HelpPage } from './features/shell/HelpPage';
 import { TimesheetPage } from './features/time/TimesheetPage';
 import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
@@ -267,6 +268,12 @@ const appRoute = createRoute({
   component: function App() {
     return <AppShell me={appRoute.useRouteContext().me} />;
   },
+});
+
+const helpRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/help',
+  component: HelpPage,
 });
 
 const homeRoute = createRoute({
@@ -915,6 +922,7 @@ const routeTree = rootRoute.addChildren([
   issuesPrintRoute,
   appRoute.addChildren([
     homeRoute,
+    helpRoute,
     dashboardsRoute,
     dashboardRoute,
     spacesRoute,

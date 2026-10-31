@@ -20839,9 +20839,12 @@
                 "type": "null"
               }
             ]
+          },
+          "helpUrl": {
+            "type": ["string", "null"]
           }
         },
-        "required": ["modules", "maintenance", "announcement"],
+        "required": ["modules", "maintenance", "announcement", "helpUrl"],
         "additionalProperties": false
       },
       "FeatureFlags": {
@@ -27043,6 +27046,9 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "totalCapped": {
+            "type": "boolean"
+          },
           "limit": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -27054,7 +27060,7 @@
             "maximum": 9007199254740991
           }
         },
-        "required": ["issues", "total", "limit", "offset"],
+        "required": ["issues", "total", "totalCapped", "limit", "offset"],
         "additionalProperties": false
       },
       "EverythingResult": {

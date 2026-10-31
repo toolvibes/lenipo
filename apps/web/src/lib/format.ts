@@ -41,3 +41,9 @@ export function formatBytes(bytes: number): string {
   const digits = unit === 0 || value >= 10 ? 0 : 1;
   return `${new Intl.NumberFormat(i18n.language, { maximumFractionDigits: digits }).format(value)} ${units[unit]}`;
 }
+
+/** A search total; above the counting cap it reads "10.000+" (TL-44, E-125). */
+export function formatTotal(result: { total: number; totalCapped?: boolean }): string {
+  const number = result.total.toLocaleString(document.documentElement.lang || 'de');
+  return result.totalCapped ? `${number}+` : number;
+}

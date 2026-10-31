@@ -99,7 +99,7 @@ export class InvitationService {
 
   /** Admins invite anybody; project admins only into their project (with a role). */
   async invite(principal: Principal, request: CreateInvitationRequest): Promise<Invitation> {
-    const isAdmin = await this.access.hasGlobal(principal.userId, 'admin');
+    const isAdmin = await this.access.isAdmin(principal);
     let project: { id: string; key: string; name: string } | null = null;
     if (request.projectKey) {
       const found = await this.projects.findBrowsable(principal, request.projectKey);
@@ -169,8 +169,7 @@ export class InvitationService {
     if (projectKey) {
       const project = await this.projects.findBrowsable(principal, projectKey);
       const allowed =
-        (await this.access.hasGlobal(principal.userId, 'admin')) ||
-        (await this.administers(principal, project.id));
+        (await this.access.isAdmin(principal)) || (await this.administers(principal, project.id));
       if (!allowed) throw new ForbiddenException();
       const rows = await db
         .select()
@@ -179,7 +178,7 @@ export class InvitationService {
         .orderBy(desc(invitations.createdAt));
       return this.present(rows);
     }
-    if (!(await this.access.hasGlobal(principal.userId, 'admin'))) throw new ForbiddenException();
+    if (!(await this.access.isAdmin(principal))) throw new ForbiddenException();
     const rows = await db
       .select()
       .from(invitations)
@@ -192,7 +191,7 @@ export class InvitationService {
   async revoke(principal: Principal, id: string): Promise<void> {
     const [row] = await this.database.db.select().from(invitations).where(eq(invitations.id, id));
     if (!row) throw new NotFoundException('Invitation not found');
-    const isAdmin = await this.access.hasGlobal(principal.userId, 'admin');
+    const isAdmin = await this.access.isAdmin(principal);
     const projectAdmin = row.projectId ? await this.administers(principal, row.projectId) : false;
     if (!isAdmin && !projectAdmin) throw new NotFoundException('Invitation not found');
     await this.database.db

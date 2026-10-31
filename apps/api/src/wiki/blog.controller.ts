@@ -157,7 +157,7 @@ export class BlogController {
   @Endpoint({ tag: 'Admin', summary: 'Wiki settings', response: WikiSettings })
   @Get('admin/wiki-settings')
   async settings(@CurrentPrincipal() principal: Principal): Promise<WikiSettings> {
-    if (!(await this.access.hasGlobal(principal.userId, 'admin'))) throw new ForbiddenException();
+    if (!(await this.access.isAdmin(principal))) throw new ForbiddenException();
     return wikiSettings(this.database);
   }
 
@@ -167,7 +167,7 @@ export class BlogController {
     @CurrentPrincipal() principal: Principal,
     @ValidBody(WikiSettings) body: WikiSettings,
   ): Promise<WikiSettings> {
-    if (!(await this.access.hasGlobal(principal.userId, 'admin'))) throw new ForbiddenException();
+    if (!(await this.access.isAdmin(principal))) throw new ForbiddenException();
     await this.database.db
       .insert(systemSettings)
       .values({ key: WIKI, value: body })

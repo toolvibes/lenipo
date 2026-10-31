@@ -457,6 +457,14 @@ export const issues = pgTable(
     index('issues_search_idx').using('gin', table.searchVector),
     index('issues_created_idx').on(table.createdAt),
     index('issues_updated_idx').on(table.updatedAt),
+    // Searches stay inside projects and sort by date: newest first without sorting everything,
+    // counting from the index alone (TL-44, E-125).
+    index('issues_project_created_id_idx')
+      .on(table.projectId, table.createdAt, table.id)
+      .where(sql`${table.deletedAt} is null`),
+    index('issues_project_updated_id_idx')
+      .on(table.projectId, table.updatedAt, table.id)
+      .where(sql`${table.deletedAt} is null`),
   ],
 );
 

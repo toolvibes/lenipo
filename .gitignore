@@ -14,3 +14,5 @@ data/
 # Playwright (TL-43)
 test-results/
 playwright-report/
+tools/loadtest/report.md
+tools/loadtest/keep.json

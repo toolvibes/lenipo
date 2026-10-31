@@ -134,7 +134,12 @@ export class OperationsService implements OnApplicationShutdown {
       announcement.text.trim() !== '' &&
       (!announcement.startsAt || new Date(announcement.startsAt) <= now) &&
       (!announcement.endsAt || new Date(announcement.endsAt) > now);
-    return { modules, maintenance, announcement: due ? announcement : null };
+    return {
+      modules,
+      maintenance,
+      announcement: due ? announcement : null,
+      helpUrl: this.config.HELP_URL ?? null,
+    };
   }
 
   /**

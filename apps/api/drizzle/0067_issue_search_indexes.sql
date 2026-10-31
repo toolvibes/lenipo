@@ -1,0 +1,2 @@
+CREATE INDEX "issues_project_created_idx" ON "issues" USING btree ("project_id","created_at") WHERE "issues"."deleted_at" is null;--> statement-breakpoint
+CREATE INDEX "issues_project_updated_idx" ON "issues" USING btree ("project_id","updated_at") WHERE "issues"."deleted_at" is null;

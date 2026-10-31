@@ -38,6 +38,7 @@ const PAGES = [
   '/profile',
   '/admin/sign-in',
   '/admin/operations',
+  '/help',
 ];
 
 test.describe('signed in', () => {

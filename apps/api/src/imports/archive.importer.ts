@@ -174,6 +174,11 @@ export class ArchiveImporter {
 
   /** Files of the archive into the file store; returns the stored size. */
   private async file(oldId: string, storageKey: string, contentType: string): Promise<boolean> {
+    // The id comes from the uploaded archive: only a UUID may become part of a path (TL-44).
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(oldId)) {
+      this.note('skipped', 'Anhänge mit ungültiger ID ausgelassen');
+      return false;
+    }
     const path = join(this.folder, 'files', oldId);
     try {
       await this.context.store.put(storageKey, path, contentType);

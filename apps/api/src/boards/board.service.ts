@@ -152,7 +152,11 @@ export class BoardService {
   }
 
   async list(principal: Principal, projectKey?: string): Promise<BoardSummary[]> {
-    const visible = await this.projects.list(principal);
+    // Visibility only: the project list would also count every issue (TL-44, E-125).
+    const visible = await this.database.db
+      .select({ id: projects.id, key: projects.key })
+      .from(projects)
+      .where(await this.projectAccess.browsableCondition(principal.userId));
     const keys = projectKey
       ? visible.filter((project) => project.key === projectKey.toUpperCase())
       : visible;

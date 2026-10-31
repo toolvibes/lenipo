@@ -27,6 +27,10 @@ Die Dokumentation lebt im eigenen Wiki (Lore-Bereich `TL`); `docs/` ist ein Schn
 | 6 | [Architektur & Technik](docs/06-architektur.md) | Stack, Module, Datenmodell, Echtzeit, Suche, Sicherheit, Deployment |
 | 7 | [Roadmap](docs/07-roadmap.md) | Phasen, Meilensteine, MVP, Definition of Done, Risiken |
 | 8 | [Entscheidungen](docs/08-entscheidungen.md) | Offene und getroffene Architekturentscheidungen |
+| 9 | [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
+| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Lore, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
+| 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
+| 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
 
 ## Priorisierung
 

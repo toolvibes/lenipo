@@ -14,10 +14,15 @@ export const SearchRequest = z
   .meta({ id: 'SearchRequest' });
 export type SearchRequest = z.infer<typeof SearchRequest>;
 
+/** Searches count matches exactly up to here; counting a million would take seconds. */
+export const SEARCH_TOTAL_CAP = 10_000;
+
 export const SearchResult = z
   .object({
     issues: z.array(IssueSummary),
+    /** Exact up to SEARCH_TOTAL_CAP; above it the cap, with `totalCapped` (TL-44, E-125). */
     total: z.number().int(),
+    totalCapped: z.boolean(),
     limit: z.number().int(),
     offset: z.number().int(),
   })

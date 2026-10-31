@@ -59,6 +59,7 @@ export const de = {
       'Wiederhergestellt: {{rows}} Datensätze und {{files}} Dateien. Du kannst dich jetzt anmelden.',
   },
   sidebar: {
+    help: 'Hilfe',
     search: 'Suchen …',
     overview: 'Übersicht',
     myIssues: 'Meine Aufgaben',

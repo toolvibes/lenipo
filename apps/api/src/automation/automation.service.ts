@@ -59,7 +59,7 @@ export class AutomationService {
   /** The project of a rule's scope, after checking the caller may manage its rules. */
   private async scope(principal: Principal, projectKey: string | null) {
     if (!projectKey) {
-      if (!(await this.access.hasGlobal(principal.userId, 'admin'))) {
+      if (!(await this.access.isAdmin(principal))) {
         throw new ForbiddenException('Global rules need system administration');
       }
       return null;

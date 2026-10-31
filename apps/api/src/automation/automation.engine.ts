@@ -20,6 +20,7 @@ import {
   type RichText,
   type UpdateIssueRequest,
 } from '@tasklore/shared';
+import { parse as parseTql } from '@tasklore/tql';
 import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { AppConfig } from '../core/config.js';
@@ -124,6 +125,11 @@ function triggerMatches(trigger: AutomationTrigger, row: EventRow): boolean {
 function narrow(query: string, scope: string | null): string {
   const order = /\border\s+by\b[\s\S]*$/i.exec(query);
   const where = (order ? query.slice(0, order.index) : query).trim();
+  // Only a complete query of its own may go into the parentheses: an unmatched ")" would let
+  // "x) OR (project = OTHER" escape the rule's project (TL-44, E-125).
+  if (where && parseTql(where).errors.length > 0) {
+    throw new RuleFailure('Die TQL-Abfrage der Regel ist ungültig.');
+  }
   const parts = [scope, where ? `(${where})` : null].filter(Boolean);
   return `${parts.join(' AND ')}${order ? ` ${order[0]}` : ''}`.trim();
 }
@@ -460,6 +466,9 @@ export class AutomationEngine implements OnApplicationBootstrap {
         .from(issues)
         .where(eq(issues.id, item.issueId));
       if (!row || row.deletedAt) return;
+      // A project rule acts only on issues of its project, whatever queued them (TL-44).
+      const scope = await this.scopeKey(rule);
+      if (scope && !row.key.startsWith(`${scope}-`)) return;
       issue = await this.issues.get(principal, row.key);
     }
     const state: RunState = {

@@ -13,6 +13,8 @@ const configSchema = z.object({
   RATE_LIMITS: z.stringbool().default(true),
   /** Prometheus metrics on this port at /metrics (TL-42); off when unset, never public. */
   METRICS_PORT: z.coerce.number().int().positive().optional(),
+  /** Where "Help" leads; without it the user handbook built into the web app (TL-44). */
+  HELP_URL: z.url({ protocol: /^https?$/ }).optional(),
   /** How long a stopping process waits for running requests and jobs (TL-42). */
   SHUTDOWN_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(25),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */

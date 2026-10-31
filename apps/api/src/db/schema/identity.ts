@@ -224,3 +224,10 @@ export const samlProviders = pgTable('saml_providers', {
   createUsers: boolean().notNull().default(true),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+/** SAML assertions already used, so a captured response cannot sign in twice (TL-44, E-125). */
+export const samlAssertions = pgTable('saml_assertions', {
+  /** Provider id and assertion ID. */
+  id: text().primaryKey(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+});

@@ -177,21 +177,22 @@ export class IssueService {
 
   /** Loads an issue by key and checks the permission; unknown and invisible issues are both 404. */
   private async load(principal: Principal, key: string, permission: ProjectPermission) {
-    // A key from before a move still finds the issue (TL-86, E-99).
-    const alias = this.database.db
-      .select({ issueId: issueKeyAliases.issueId })
-      .from(issueKeyAliases)
-      .where(eq(issueKeyAliases.key, key.toUpperCase()));
-    const [row] = await this.database.db
-      .select({ issue: issues, project: projects })
-      .from(issues)
-      .innerJoin(projects, eq(projects.id, issues.projectId))
-      .where(
-        and(
-          or(eq(issues.key, key.toUpperCase()), inArray(issues.id, alias)),
-          isNull(issues.deletedAt),
-        ),
-      );
+    // The key first; a key from before a move still finds the issue (TL-86, E-99). Two indexed
+    // lookups: "key = … OR id IN (aliases)" made PostgreSQL scan every issue (TL-44, E-125).
+    const find = (condition: SQL) =>
+      this.database.db
+        .select({ issue: issues, project: projects })
+        .from(issues)
+        .innerJoin(projects, eq(projects.id, issues.projectId))
+        .where(and(condition, isNull(issues.deletedAt)));
+    let [row] = await find(eq(issues.key, key.toUpperCase()));
+    if (!row) {
+      const [alias] = await this.database.db
+        .select({ issueId: issueKeyAliases.issueId })
+        .from(issueKeyAliases)
+        .where(eq(issueKeyAliases.key, key.toUpperCase()));
+      if (alias) [row] = await find(eq(issues.id, alias.issueId));
+    }
     if (!row || row.project.archivedAt) throw new NotFoundException('Issue not found');
     try {
       const permissions = await this.projectAccess.requireForIssue(

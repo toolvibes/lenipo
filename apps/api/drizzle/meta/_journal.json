@@ -463,6 +463,27 @@
       "when": 1793469355726,
       "tag": "0065_api_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1793476276718,
+      "tag": "0066_saml_assertions",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793478918687,
+      "tag": "0067_issue_search_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1793479433475,
+      "tag": "0068_issue_order_indexes",
+      "breakpoints": true
     }
   ]
 }

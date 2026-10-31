@@ -41,7 +41,21 @@ export class AppModule {
       module: AppModule,
       imports: [
         CoreModule.forRoot(config, database, logger),
-        LoggerModule.forRoot({ pinoHttp: { logger } }),
+        LoggerModule.forRoot({
+          pinoHttp: {
+            logger,
+            // Request logs carry no headers (cookies, tokens) and no query strings, where
+            // feed, invitation and hook secrets travel (TL-44, E-125).
+            serializers: {
+              req: (request: { id?: unknown; method?: string; url?: string }) => ({
+                id: request.id,
+                method: request.method,
+                url: request.url?.split('?')[0],
+              }),
+              res: (response: { statusCode?: number }) => ({ statusCode: response.statusCode }),
+            },
+          },
+        }),
         HealthModule,
         StorageModule,
         IdentityModule,

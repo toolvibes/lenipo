@@ -87,7 +87,13 @@ function describe(payload: Payload, locale: Locale, publicUrl: string): Message 
     const text = t.test(data.webhook?.name ?? '');
     return { title: () => text, lines: [], url: null, fallback: text };
   }
-  const actor = data.actor?.displayName ?? t.someone;
+  // Names are chosen by people: no markup or mentions of their own (TL-44, E-125).
+  const name = data.actor?.displayName ?? t.someone;
+  const actor =
+    name
+      .replace(/[<>&[\]()*_`|@!#]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || t.someone;
   const sentence = t.verbs[payload.type] ?? (t.verbs['issue.updated'] as Sentence);
   // The subject: an issue, or a page, sprint or version (TL-41).
   const issue = data.issue

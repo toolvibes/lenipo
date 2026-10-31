@@ -4,8 +4,13 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { auditLog } from '../db/schema/index.js';
 
-/** Failed password checks that count against the limits, wherever the password was typed. */
-export const FAILED_PASSWORD_ACTIONS = ['auth.login_failed', 'auth.password_change_failed'];
+/** Failed password and code checks that count against the limits, wherever they were typed. */
+export const FAILED_PASSWORD_ACTIONS = [
+  'auth.login_failed',
+  'auth.password_change_failed',
+  // Wrong second-factor codes count too, or the six digits could be guessed (TL-44, E-125).
+  'auth.2fa_failed',
+];
 
 const WINDOW_MINUTES = 15;
 const PER_ACCOUNT = 10;

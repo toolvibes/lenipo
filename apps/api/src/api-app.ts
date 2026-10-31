@@ -4,7 +4,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger as NestPinoLogger } from 'nestjs-pino';
 import { type AppDependencies, AppModule } from './app.module.js';
 import { httpMetrics } from './core/metrics.js';
-import { serveWebApp } from './core/web-app.js';
+import { securityHeaders, serveWebApp } from './core/web-app.js';
 import { serveApiDocs } from './openapi/docs.js';
 import { RealtimeService } from './realtime/realtime.service.js';
 
@@ -17,6 +17,7 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   });
   app.useLogger(app.get(NestPinoLogger));
   app.use(httpMetrics);
+  app.use(securityHeaders);
   // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115).
   app.setGlobalPrefix('api/v1', {
     exclude: [
