@@ -63,13 +63,19 @@ export function CreatePageDialog({
   const [title, setTitle] = useState('');
   const [titleTouched, setTitleTouched] = useState(false);
   const [template, setTemplate] = useState<PageTemplateSummary | null>(null);
+  const [inputs, setInputs] = useState<Record<string, string>>({});
   const templates = useQuery({ ...spaceTemplatesQuery(spaceKey), enabled: open });
   const create = useMutation({
     mutationFn: () =>
       unwrap(
         client.POST('/api/v1/spaces/{key}/pages', {
           params: { path: { key: spaceKey } },
-          body: { title: title.trim(), parentId, template: template?.ref },
+          body: {
+            title: title.trim(),
+            parentId,
+            template: template?.ref,
+            ...(template && template.inputs.length > 0 ? { variables: inputs } : {}),
+          },
         }),
       ),
     onSuccess: async (page) => {
@@ -109,11 +115,24 @@ export function CreatePageDialog({
             value={template?.ref ?? ''}
             onChange={(next) => {
               setTemplate(next);
+              setInputs({});
               // The template's title suggestion, unless a title was typed already.
               if (!titleTouched) setTitle(next ? fillTitle(next.title) : '');
             }}
           />
         )}
+        {template?.inputs.map((name) => (
+          <TextField
+            key={name}
+            label={name}
+            value={inputs[name] ?? ''}
+            onChange={(event) => {
+              const next = { ...inputs, [name]: event.target.value };
+              setInputs(next);
+              if (!titleTouched) setTitle(fillTitle(template.title, next));
+            }}
+          />
+        ))}
         <TextField
           label={t('wiki.pageTitle')}
           value={title}

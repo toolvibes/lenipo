@@ -11,12 +11,14 @@ import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { RichTextEditor } from '../tracking/RichTextEditor';
 
-/** The suggested title with today's date in place of `{date}`. */
-export function fillTitle(title: string): string {
+/** The suggested title: today's date for `{date}` / `{{date}}`, inputs as typed (TL-27). */
+export function fillTitle(title: string, inputs: Record<string, string> = {}): string {
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, '0');
   const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  return title.replaceAll('{date}', today);
+  return title
+    .replace(/\{\{\s*date\s*\}\}|\{date\}/g, today)
+    .replace(/\{\{\s*input:([^}]+)\}\}/g, (_, name: string) => inputs[name.trim()] || name.trim());
 }
 
 /** Where a template is edited: in its space, or in the administration for global ones. */

@@ -6552,6 +6552,9 @@ export interface components {
       title: string;
       parentId?: string | null;
       template?: string;
+      variables?: {
+        [key: string]: string;
+      };
     };
     TrashedPage: {
       /** Format: uuid */
@@ -6610,6 +6613,7 @@ export interface components {
       title: string;
       spaceKey: string | null;
       updatedAt: string | null;
+      inputs: string[];
     };
     SavePageTemplateRequest: {
       name: string;
@@ -6629,6 +6633,7 @@ export interface components {
       title: string;
       spaceKey: string | null;
       updatedAt: string | null;
+      inputs: string[];
       content: components['schemas']['RichText'];
       canEdit: boolean;
     };

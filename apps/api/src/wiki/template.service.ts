@@ -22,6 +22,7 @@ import type { DatabaseHandle } from '../db/client.js';
 import { pageTemplates, spaces, users } from '../db/schema/index.js';
 import { BLUEPRINT_KEYS, blueprint, isBlueprintKey } from './blueprints.js';
 import { SpaceService } from './space.service.js';
+import { inputsOf } from './template-variables.js';
 
 const BLUEPRINT = 'blueprint:';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -68,6 +69,7 @@ export class TemplateService {
       title: row.title,
       spaceKey,
       updatedAt: row.updatedAt.toISOString(),
+      inputs: inputsOf(row.title, row.content),
     };
   }
 
@@ -83,6 +85,7 @@ export class TemplateService {
         title: entry.title,
         spaceKey: null,
         updatedAt: null,
+        inputs: inputsOf(entry.title, entry.content()),
       };
     });
   }
@@ -137,7 +140,7 @@ export class TemplateService {
     principal: Principal,
     spaceId: string,
     ref: string,
-  ): Promise<{ title: string; content: RichText }> {
+  ): Promise<{ title: string; content: RichText; blueprint: string | null; index: string | null }> {
     const template = await this.get(principal, ref);
     if (template.kind === 'space') {
       const [row] = await this.database.db
@@ -147,7 +150,16 @@ export class TemplateService {
       if (row?.spaceId !== spaceId)
         throw new BadRequestException('The template belongs to another space');
     }
-    return { title: template.title, content: template.content };
+    const key = ref.startsWith(BLUEPRINT) ? ref.slice(BLUEPRINT.length) : null;
+    return {
+      title: template.title,
+      content: template.content,
+      blueprint: key,
+      index:
+        key && isBlueprintKey(key)
+          ? blueprint(key, await this.locale(principal.userId)).index
+          : null,
+    };
   }
 
   async create(

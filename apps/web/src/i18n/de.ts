@@ -1999,6 +1999,8 @@ export const de = {
     remove: '„{{name}}“ aus den Favoriten entfernen',
   },
   editor: {
+    placeholderMacro: 'Platzhalter',
+    placeholderPrompt: 'Hinweistext für den Platzhalter',
     columns: 'Spalten',
     section: 'Abschnitt mit Hintergrund',
     excerpt: 'Auszug',

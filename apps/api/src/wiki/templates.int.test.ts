@@ -82,6 +82,10 @@ describe('page templates', () => {
       'blueprint:decision',
       'blueprint:requirements',
       'blueprint:retro',
+      'blueprint:project-plan',
+      'blueprint:how-to',
+      'blueprint:post-mortem',
+      'blueprint:release-notes',
     ]);
     expect(list[0]).toMatchObject({
       kind: 'blueprint',

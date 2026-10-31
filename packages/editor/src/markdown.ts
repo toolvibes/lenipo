@@ -328,6 +328,7 @@ function leafDirectiveRule(
 
 const STATUS = /^:status\[((?:[^\]\\\n]|\\.)*)\](?:\{([^}\n]*)\})?/;
 const ISSUE = /^:issue\[([A-Z][A-Z0-9]{1,9}-[1-9][0-9]*)\]/;
+const PLACEHOLDER = /^:placeholder\[((?:[^\]\\\n]|\\.)*)\]/;
 
 /** `:status[Done]{color=green}` and `:issue[WEB-1]` in running text. */
 function inlineMacroRule(state: StateInline, silent: boolean): boolean {
@@ -335,6 +336,18 @@ function inlineMacroRule(state: StateInline, silent: boolean): boolean {
   const before = state.pos > 0 ? state.src[state.pos - 1] : '';
   if (before && /[\p{L}\p{N}_]/u.test(before)) return false;
   const rest = state.src.slice(state.pos);
+  const placeholder = PLACEHOLDER.exec(rest);
+  if (placeholder) {
+    if (!silent) {
+      const token = state.push('macro_placeholder', '', 0);
+      token.meta = {
+        type: 'placeholder',
+        attrs: { text: (placeholder[1] as string).replace(/\\(.)/g, '$1') },
+      };
+    }
+    state.pos += placeholder[0].length;
+    return true;
+  }
   const status = STATUS.exec(rest);
   const issue = status ? null : ISSUE.exec(rest);
   const match = status ?? issue;
@@ -430,6 +443,11 @@ const parser = new MarkdownParser(richTextSchema, markdownIt, {
   macro_children: { node: 'childPages', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_issues: { node: 'issueList', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_report: { node: 'report', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
+  macro_placeholder: {
+    node: 'placeholder',
+    getAttrs: (token) => token.meta.attrs,
+    noCloseToken: true,
+  },
   macro_status: { node: 'status', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   macro_issue: { node: 'issue', getAttrs: (token) => token.meta.attrs, noCloseToken: true },
   task_list: { block: 'taskList' },
@@ -595,6 +613,10 @@ const serializer = new MarkdownSerializer(
       if (node.attrs.boardId) attrs.push(`board=${node.attrs.boardId}`);
       state.write(`::report{${attrs.join(' ')}}`);
       state.closeBlock(node);
+    },
+    placeholder: (state, node) => {
+      const text = String(node.attrs.text ?? '').replace(/[\\\]]/g, (char) => `\\${char}`);
+      state.write(`:placeholder[${text}]`);
     },
     status: (state, node) => {
       const text = String(node.attrs.text ?? '').replace(/[\\\]]/g, (char) => `\\${char}`);

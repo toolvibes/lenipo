@@ -1967,6 +1967,8 @@ export const en: Messages = {
     remove: 'Remove “{{name}}” from favourites',
   },
   editor: {
+    placeholderMacro: 'Placeholder',
+    placeholderPrompt: 'Instruction text of the placeholder',
     columns: 'Columns',
     section: 'Section with background',
     excerpt: 'Excerpt',

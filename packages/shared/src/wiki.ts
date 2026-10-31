@@ -180,6 +180,8 @@ export const CreatePageRequest = z
     parentId: Id.nullable().optional(),
     /** A template id or `blueprint:<key>`; its content becomes the new draft (E-72). */
     template: z.string().max(64).optional(),
+    /** Values of the template's input variables (TL-27). */
+    variables: z.record(z.string().max(60), z.string().max(500)).optional(),
   })
   .meta({ id: 'CreatePageRequest' });
 export type CreatePageRequest = z.infer<typeof CreatePageRequest>;
@@ -364,6 +366,8 @@ export const PageTemplateSummary = z
     title: z.string(),
     spaceKey: z.string().nullable(),
     updatedAt: z.iso.datetime().nullable(),
+    /** Input variables ({{input:Name}}) asked for when creating a page (TL-27, E-108). */
+    inputs: z.array(z.string()),
   })
   .meta({ id: 'PageTemplateSummary' });
 export type PageTemplateSummary = z.infer<typeof PageTemplateSummary>;

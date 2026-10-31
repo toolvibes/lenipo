@@ -32,6 +32,7 @@ import {
   TextHOne,
   TextHThree,
   TextHTwo,
+  TextT,
   Ticket,
   TreeStructure,
   Warning,
@@ -207,6 +208,17 @@ export function slashItems(t: TFunction, onImage?: () => void): SlashItem[] {
           .focus()
           .insertMacro('issueList', { query: '', display: 'table', limit: 20 })
           .run(),
+    },
+    {
+      id: 'placeholder',
+      label: t('editor.placeholderMacro'),
+      keywords: 'platzhalter anweisung hinweis vorlage placeholder instruction',
+      icon: TextT,
+      run: (editor) => {
+        const text = window.prompt(t('editor.placeholderPrompt'), '');
+        if (!text) return false;
+        return editor.chain().focus().insertContent({ type: 'placeholder', attrs: { text } }).run();
+      },
     },
     {
       id: 'columns',

@@ -6,7 +6,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { diffDocs, imageAttachmentIds, isValidDoc, richTextSchema } from '@tasklore/editor';
+import {
+  diffDocs,
+  imageAttachmentIds,
+  isValidDoc,
+  richTextSchema,
+  withoutPlaceholders,
+} from '@tasklore/editor';
 import type {
   ContentFormat,
   CreatePageRequest,
@@ -59,6 +65,7 @@ import { pageVisible, passesEditList, seesPage } from './page-restrictions.js';
 import { type SpaceRow, SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
 import { TemplateService } from './template.service.js';
+import { fillDocument, fillText, type VariableValues } from './template-variables.js';
 import { autoWatch, setWatch, watchState } from './watches.js';
 
 type PageRow = typeof pages.$inferSelect;
@@ -271,13 +278,45 @@ export class PageService {
     initial?: RichText,
   ): Promise<Page> {
     const { space } = await this.spaces.find(principal, spaceKey, 'edit');
-    const parentId = await this.checkParent(space.id, request.parentId);
+    let parentId = await this.checkParent(space.id, request.parentId);
     // A template's content becomes the new draft right away (E-72).
-    const template = request.template
+    const resolved = request.template
       ? await this.templates.resolve(principal, space.id, request.template)
-      : initial
-        ? { content: initial }
-        : null;
+      : null;
+    let title = request.title;
+    let template: { content: RichText } | null = initial ? { content: initial } : null;
+    let labels: string[] = [];
+    if (resolved) {
+      // Variables are filled in once, when the page is created (TL-27, E-108).
+      const [user] = await this.database.db
+        .select({ displayName: users.displayName, timeZone: users.timeZone })
+        .from(users)
+        .where(eq(users.id, principal.userId));
+      const values: VariableValues = {
+        date: new Intl.DateTimeFormat('en-CA', {
+          timeZone: user?.timeZone ?? 'Europe/Berlin',
+        }).format(new Date()),
+        author: user?.displayName ?? '',
+        space: space.name,
+        title: '',
+        inputs: request.variables ?? {},
+      };
+      title = fillText(request.title, values).trim() || request.title;
+      values.title = title;
+      template = { content: fillDocument(resolved.content, values) };
+      if (resolved.blueprint) {
+        labels = [resolved.blueprint];
+        // Pages of a blueprint gather under its index page unless placed elsewhere.
+        if (!request.parentId && resolved.index) {
+          parentId = await this.blueprintIndex(
+            principal,
+            space,
+            resolved.blueprint,
+            resolved.index,
+          );
+        }
+      }
+    }
     const id = uuidv7();
     await this.database.db.transaction(async (tx) => {
       if (template) {
@@ -291,7 +330,8 @@ export class PageService {
         spaceId: space.id,
         parentId,
         rank: await this.lastRank(tx, space.id, parentId),
-        title: request.title,
+        title,
+        labels,
         createdById: principal.userId,
       });
       if (!space.homePageId) {
@@ -301,6 +341,50 @@ export class PageService {
       await signal(tx, { type: 'space', spaceKey: space.key });
     });
     return this.get(principal, id);
+  }
+
+  /**
+   * The index page of a blueprint in a space, created with the first page of that blueprint:
+   * a report (or list) by the blueprint's label, so it stays current by itself (W-TPL-04).
+   */
+  private async blueprintIndex(
+    principal: Principal,
+    space: SpaceRow,
+    key: string,
+    indexTitle: string,
+  ): Promise<string> {
+    const marker = `index-${key}`;
+    const [existing] = await this.database.db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(
+        and(
+          eq(pages.spaceId, space.id),
+          isNull(pages.deletedAt),
+          sql`${pages.labels} @> array[${marker}]::text[]`,
+        ),
+      )
+      .limit(1);
+    if (existing) return existing.id;
+    const index = await this.create(principal, space.key, { title: indexTitle });
+    const report = ['decision', 'project-plan', 'post-mortem', 'release-notes'].includes(key);
+    await this.publish(principal, index.id, {
+      title: indexTitle,
+      comment: '',
+      content: {
+        type: 'doc',
+        content: [
+          report
+            ? { type: 'propertiesReport', attrs: { label: key, space: space.key } }
+            : { type: 'contentByLabel', attrs: { labels: key, space: space.key, limit: 50 } },
+        ],
+      } as RichText,
+    });
+    await this.database.db
+      .update(pages)
+      .set({ labels: [marker] })
+      .where(eq(pages.id, index.id));
+    return index.id;
   }
 
   // ---------------------------------------------------------------- reading
@@ -748,10 +832,12 @@ export class PageService {
    */
   async publish(principal: Principal, id: string, request: PublishPageRequest): Promise<Page> {
     const { page, space } = await this.authorize(principal, id, 'edit');
-    if (!isValidDoc(request.content)) {
+    // Template instructions never reach the published page (TL-27, E-108).
+    const content = withoutPlaceholders(request.content);
+    if (!isValidDoc(content)) {
       throw new BadRequestException('The content is not a valid document');
     }
-    const images = imageAttachmentIds(request.content);
+    const images = imageAttachmentIds(content);
     if (images.length > 0) {
       const own = await this.database.db
         .select({ id: pageAttachments.id })
@@ -763,7 +849,7 @@ export class PageService {
     }
     await this.storeVersion(principal, page.id, space.key, {
       title: request.title,
-      content: request.content,
+      content: content,
       comment: request.comment,
       restoredFrom: null,
     });

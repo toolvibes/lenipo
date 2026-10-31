@@ -137,6 +137,8 @@ function validAttrs(node: PMNode): boolean {
       return (SECTION_TONES as readonly unknown[]).includes(node.attrs.tone);
     case 'excerpt':
       return text(node.attrs.name, 100);
+    case 'placeholder':
+      return text(node.attrs.text, 500);
     case 'chart':
       return (
         (CHART_TYPES as readonly unknown[]).includes(node.attrs.type) && text(node.attrs.title, 200)

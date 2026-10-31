@@ -63,6 +63,47 @@ function leaf(name: LeafMacroName, view?: NodeViewRenderer) {
   });
 }
 
+/**
+ * Instruction text of a template (W-TPL-02, TL-27): shown greyed, replaced when one types over
+ * it, and dropped from the page when it is published.
+ */
+export const Placeholder = Node.create({
+  name: 'placeholder',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return { text: { default: '' } };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-placeholder]', getAttrs: (el) => ({ text: el.textContent ?? '' }) }];
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      'span',
+      mergeAttributes(HTMLAttributes, { class: 'tl-placeholder', 'data-placeholder': '' }),
+      node.attrs.text,
+    ];
+  },
+});
+
+/** Removes placeholders from a document, e.g. before publishing. */
+export function withoutPlaceholders<T>(doc: T): T {
+  const strip = (node: unknown): unknown => {
+    if (!node || typeof node !== 'object') return node;
+    const value = node as { content?: unknown[] };
+    if (!Array.isArray(value.content)) return node;
+    return {
+      ...value,
+      content: value.content
+        .filter((child) => (child as { type?: string })?.type !== 'placeholder')
+        .map(strip),
+    };
+  };
+  return strip(doc) as T;
+}
+
 /** Two or three columns side by side; widths by layout. */
 export const Columns = Node.create({
   name: 'columns',
@@ -188,6 +229,7 @@ export const ChartMacro = Node.create({
 
 export function layoutExtensions(views: LayoutViews = {}) {
   return [
+    Placeholder,
     Columns,
     Column,
     Section,
