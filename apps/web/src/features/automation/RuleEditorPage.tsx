@@ -287,9 +287,7 @@ function Editor({
           trigger={draft.trigger}
           onChange={(trigger) => setDraft({ ...draft, trigger })}
         />
-        {rule?.webhookUrl && (
-          <TextField label={t('automation.webhookUrl')} value={rule.webhookUrl} readOnly />
-        )}
+        {rule?.webhookUrl && <HookAddress rule={rule} />}
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="tl-heading-md m-0">{t('automation.thenStep')}</h2>
@@ -408,5 +406,47 @@ export function RuleEditorPage({
         )}
       </main>
     </>
+  );
+}
+
+/** The address of an incoming webhook, its secret as a header, and a new secret (TL-41). */
+function HookAddress({ rule }: { rule: AutomationRule }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const rotate = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/automation/rules/{id}/webhook-token', {
+          params: { path: { id: rule.id } },
+        }),
+      ),
+    onSuccess: (updated) =>
+      queryClient.setQueryData(['automation', 'rule', rule.id], updated as AutomationRule),
+  });
+  const address = new URL(rule.webhookUrl ?? '', window.location.origin);
+  const secret = address.searchParams.get('token') ?? '';
+  address.searchParams.delete('token');
+  return (
+    <div className="flex flex-col gap-2">
+      {rotate.error && <FormError message={rotate.error.message} />}
+      <TextField label={t('automation.webhookUrl')} value={address.toString()} readOnly />
+      <TextField
+        label={t('automation.webhookSecret')}
+        help={t('automation.webhookSecretHelp')}
+        value={secret}
+        readOnly
+      />
+      <div>
+        <Button
+          size="sm"
+          onClick={() => {
+            if (window.confirm(t('automation.webhookRotateConfirm'))) rotate.mutate();
+          }}
+          disabled={rotate.isPending}
+        >
+          {t('automation.webhookRotate')}
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -50,8 +50,18 @@ export class AuthGuard implements CanActivate {
           `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/mcp"${error ? `, error="${error}"` : ''}`,
         );
     };
+    // On public routes, credentials that are not Tasklore tokens belong to the route itself:
+    // Basic for OAuth clients (RFC 6749), a hook secret as Bearer (TL-41). They sign no one in.
+    const authorization = request.get('authorization') ?? '';
+    const foreignOnPublic =
+      authorization !== '' &&
+      !/^bearer\s+tl_/i.test(authorization) &&
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
     try {
-      request.principal = await this.resolve(request);
+      request.principal = foreignOnPublic ? undefined : await this.resolve(request);
     } catch (error) {
       if (error instanceof UnauthorizedException) challenge('invalid_token');
       throw error;

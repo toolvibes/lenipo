@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -55,3 +56,21 @@ export const backups = pgTable('backups', {
   files: integer(),
   error: text(),
 });
+
+/** Answers to writes sent with an Idempotency-Key, kept for 24 hours (TL-41, E-122). */
+export const idempotencyKeys = pgTable(
+  'idempotency_keys',
+  {
+    /** Who sent it: the user, and the token where one was used. */
+    caller: text().notNull(),
+    key: text().notNull(),
+    /** Method, path and body, hashed; a reuse with anything else is refused. */
+    fingerprint: text().notNull(),
+    /** running or done */
+    state: text().notNull().default('running'),
+    status: integer(),
+    body: jsonb(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.caller, table.key] })],
+);

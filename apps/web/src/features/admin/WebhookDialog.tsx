@@ -11,6 +11,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { projectsQuery, trackingMetaQuery } from '../../lib/tracking';
+import { spacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
@@ -36,6 +37,9 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
   const [events, setEvents] = useState<WebhookEventType[]>([]);
   const [projectKeys, setProjectKeys] = useState<string[]>([]);
   const [statusIds, setStatusIds] = useState<string[]>([]);
+  const [tql, setTql] = useState('');
+  const [spaceKeys, setSpaceKeys] = useState<string[]>([]);
+  const spaces = useQuery({ ...spacesQuery, enabled: open });
   const [format, setFormat] = useState<WebhookFormat>('standard');
   const [locale, setLocale] = useState<'de' | 'en'>('de');
 
@@ -46,13 +50,25 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
     setEvents(editing?.events ?? ['issue.created', 'issue.transitioned', 'comment.created']);
     setProjectKeys(editing?.projectKeys ?? []);
     setStatusIds(editing?.statusIds ?? []);
+    setTql(editing?.tql ?? '');
+    setSpaceKeys(editing?.spaceKeys ?? []);
     setFormat(editing?.format ?? 'standard');
     setLocale(editing?.locale ?? (i18n.language.startsWith('en') ? 'en' : 'de'));
   }, [open, editing, i18n.language]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const body = { name, url, events, projectKeys, statusIds, format, locale };
+      const body = {
+        name,
+        url,
+        events,
+        projectKeys,
+        statusIds,
+        tql: tql.trim() || null,
+        spaceKeys,
+        format,
+        locale,
+      };
       if (editing) {
         await unwrap(
           client.PATCH('/api/v1/admin/webhooks/{id}', {
@@ -162,6 +178,36 @@ export function WebhookDialog({ open, onOpenChange, editing, onCreated }: Webhoo
             ))}
           </div>
         </fieldset>
+        <TextField
+          label={t('webhooks.tql')}
+          help={t('webhooks.tqlHelp')}
+          value={tql}
+          placeholder="type = Bug AND priority = Hoch"
+          className="font-[family-name:var(--font-mono)]"
+          onChange={(event) => setTql(event.target.value)}
+        />
+        {events.some((type) => type.startsWith('page.')) && (
+          <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+            <legend className="tl-label mb-1 text-[var(--ink-muted)]">
+              {t('webhooks.spaces')}
+            </legend>
+            <p className="m-0 text-xs text-[var(--ink-muted)]">{t('webhooks.spacesHelp')}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {spaces.data?.map((space) => (
+                <label key={space.key} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={spaceKeys.includes(space.key)}
+                    onChange={(event) =>
+                      setSpaceKeys(toggle(spaceKeys, space.key, event.target.checked))
+                    }
+                  />
+                  {space.name} <span className="tl-key text-xs">{space.key}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         {events.includes('issue.transitioned') && (
           <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
             <legend className="tl-label mb-1 text-[var(--ink-muted)]">

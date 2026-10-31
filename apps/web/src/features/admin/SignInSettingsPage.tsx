@@ -383,6 +383,7 @@ function OAuthAdmin() {
           {t('oauth.registration')}
         </label>
       )}
+      <OAuthApps />
       <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t('oauth.allGrants')}</h3>
       {grants.data?.length === 0 && (
         <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('oauth.noneConnected')}</p>
@@ -404,6 +405,143 @@ function OAuthAdmin() {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Apps an administrator registers for third parties (D-API-04, TL-41, E-122). */
+function OAuthApps() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const apps = useQuery({
+    queryKey: ['admin', 'oauth-apps'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/oauth-apps')),
+  });
+  const [name, setName] = useState('');
+  const [redirects, setRedirects] = useState('');
+  const [confidential, setConfidential] = useState(true);
+  const [secret, setSecret] = useState<{ name: string; id: string; secret: string } | null>(null);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'oauth-apps'] });
+  const create = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/admin/oauth-apps', {
+          body: {
+            name: name.trim(),
+            description: '',
+            redirectUris: redirects.split(/\s+/).filter(Boolean),
+            confidential,
+          },
+        }),
+      ),
+    onSuccess: (created) => {
+      setName('');
+      setRedirects('');
+      if (created.clientSecret)
+        setSecret({ name: created.app.name, id: created.app.id, secret: created.clientSecret });
+      void refresh();
+    },
+  });
+  const rotate = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.POST('/api/v1/admin/oauth-apps/{id}/secret', { params: { path: { id } } })),
+    onSuccess: (rotated) =>
+      setSecret({
+        name: rotated.app.name,
+        id: rotated.app.id,
+        secret: rotated.clientSecret ?? '',
+      }),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/admin/oauth-apps/{id}', { params: { path: { id } } })),
+    onSettled: refresh,
+  });
+  const error = create.error ?? rotate.error ?? remove.error;
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t('oauth.apps')}</h3>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('oauth.appsIntro')}</p>
+      {error && <FormError message={error.message} />}
+      {secret && (
+        <div className="flex flex-col gap-1 rounded-[var(--radius-md)] border border-[var(--border)] p-3 text-[13px]">
+          <strong>{t('oauth.secretOnce', { name: secret.name })}</strong>
+          <span>
+            client_id: <code>{secret.id}</code>
+          </span>
+          <span>
+            client_secret: <code className="break-all">{secret.secret}</code>
+          </span>
+        </div>
+      )}
+      <ul className="m-0 flex list-none flex-col p-0">
+        {(apps.data ?? []).map((app) => (
+          <li
+            key={app.id}
+            className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] py-2 text-[13px]"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <strong>{app.name}</strong>
+              <span className="text-xs text-[var(--ink-muted)]">
+                {app.confidential ? t('oauth.confidential') : t('oauth.public')} ·{' '}
+                {t('oauth.connections', { count: app.connections })} · <code>{app.id}</code>
+              </span>
+              <span className="text-xs break-all text-[var(--ink-muted)]">
+                {app.redirectUris.join(' ')}
+              </span>
+            </span>
+            {app.confidential && (
+              <Button size="sm" variant="ghost" onClick={() => rotate.mutate(app.id)}>
+                {t('oauth.newSecret')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (window.confirm(t('oauth.deleteApp', { name: app.name }))) remove.mutate(app.id);
+              }}
+            >
+              {t('oauth.remove')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <TextField
+          label={t('oauth.appName')}
+          value={name}
+          required
+          onChange={(event) => setName(event.target.value)}
+        />
+        <TextField
+          label={t('oauth.redirects')}
+          help={t('oauth.redirectsHelp')}
+          value={redirects}
+          required
+          placeholder="https://app.example.org/callback"
+          onChange={(event) => setRedirects(event.target.value)}
+        />
+        <label className="flex items-center gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            checked={confidential}
+            onChange={(event) => setConfidential(event.target.checked)}
+          />
+          {t('oauth.withSecret')}
+        </label>
+        <div>
+          <Button type="submit" disabled={create.isPending}>
+            {t('oauth.register')}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }
 

@@ -9,6 +9,11 @@ export const oauthClients = pgTable('oauth_clients', {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   /** Unused registrations are removed after a while. */
   lastUsedAt: timestamp({ withTimezone: true }),
+  /** Set for apps an administrator registered (TL-41, E-122); they are never cleaned up. */
+  registeredById: uuid().references(() => users.id, { onDelete: 'set null' }),
+  description: text().notNull().default(''),
+  /** SHA-256 of the client secret of a confidential app; null for public clients (PKCE). */
+  secretHash: text(),
 });
 
 /** What a person allowed a client: scopes until revoked. */

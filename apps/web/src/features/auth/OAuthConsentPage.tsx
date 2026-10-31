@@ -99,6 +99,12 @@ export function OAuthConsentPage({ params }: { params: AuthorizeParams }) {
     >
       <div className="flex flex-col gap-4">
         {decide.error && <FormError message={decide.error.message} />}
+        {info.data.registered && (
+          <p className="m-0 text-[13px]">
+            <strong>{t('oauth.registeredApp')}</strong>
+            {info.data.description ? ` ${info.data.description}` : ''}
+          </p>
+        )}
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
           <legend className="tl-label mb-1 text-[var(--ink-muted)]">{t('oauth.scopes')}</legend>
           {(Object.keys(SCOPE_KEYS) as Array<keyof typeof SCOPE_KEYS>).map((scope) => (

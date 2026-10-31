@@ -1,7 +1,10 @@
 import { Controller, Delete, HttpCode, Inject, Param, Post } from '@nestjs/common';
 import {
+  BulkCreateRequest,
+  BulkItemsResult,
   BulkRequest,
   BulkResult,
+  BulkUpdateRequest,
   CloneIssueRequest,
   Issue,
   MoveIssueRequest,
@@ -34,6 +37,38 @@ export class BulkController {
     @ValidBody(BulkRequest) body: BulkRequest,
   ): Promise<BulkResult> {
     return this.bulk.run(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Create up to 100 issues',
+    description:
+      'Each issue goes through the same checks as POST /issues. The result has one line per issue in the order sent. With "atomic": true they are created in one transaction: all or none.',
+    response: BulkItemsResult,
+  })
+  @Post('bulk-create')
+  @HttpCode(200)
+  bulkCreate(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(BulkCreateRequest) body: BulkCreateRequest,
+  ): Promise<BulkItemsResult> {
+    return this.bulk.create(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Change up to 100 issues, each in its own way',
+    description:
+      'Each change goes through the same checks as PATCH /issues/{key}. With "atomic": true all or none are made.',
+    response: BulkItemsResult,
+  })
+  @Post('bulk-update')
+  @HttpCode(200)
+  bulkUpdate(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(BulkUpdateRequest) body: BulkUpdateRequest,
+  ): Promise<BulkItemsResult> {
+    return this.bulk.update(principal, body);
   }
 
   @Endpoint({

@@ -11,6 +11,12 @@ export const WEBHOOK_EVENT_TYPES = [
   'worklog.created',
   'worklog.updated',
   'worklog.deleted',
+  // Pages, sprints and versions (D-HOOK-01/-02, TL-41, E-122).
+  'page.published',
+  'page.commented',
+  'sprint.started',
+  'sprint.completed',
+  'version.released',
 ] as const;
 export const WebhookEventType = z.enum(WEBHOOK_EVENT_TYPES).meta({ id: 'WebhookEventType' });
 export type WebhookEventType = z.infer<typeof WebhookEventType>;
@@ -35,6 +41,10 @@ export const Webhook = z
     projectKeys: z.array(z.string()),
     /** Transitions only into these statuses; empty means all (TL-75, E-86). */
     statusIds: z.array(z.uuid()),
+    /** Issue events only for issues matching this TQL, with the creator's rights (TL-41). */
+    tql: z.string().nullable(),
+    /** Page events only from these spaces; empty means all. */
+    spaceKeys: z.array(z.string()),
     format: WebhookFormat,
     /** Language of chat messages. */
     locale: z.enum(['de', 'en']),
@@ -67,6 +77,8 @@ export const CreateWebhookRequest = z
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100).default([]),
     statusIds: z.array(z.uuid()).max(100).default([]),
+    tql: z.string().trim().max(2_000).nullable().default(null),
+    spaceKeys: z.array(z.string().min(1)).max(100).default([]),
     format: WebhookFormat.default('standard'),
     locale: z.enum(['de', 'en']).default('de'),
     enabled: z.boolean().default(true),
@@ -81,6 +93,8 @@ export const UpdateWebhookRequest = z
     events: z.array(WebhookEventType).min(1),
     projectKeys: z.array(z.string().min(1)).max(100),
     statusIds: z.array(z.uuid()).max(100),
+    tql: z.string().trim().max(2_000).nullable(),
+    spaceKeys: z.array(z.string().min(1)).max(100),
     format: WebhookFormat,
     locale: z.enum(['de', 'en']),
     enabled: z.boolean(),

@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AccessService } from '../access/access.service.js';
 import { GlobalPermissionGuard } from '../access/require-global.js';
 import { SystemController } from '../admin/system.controller.js';
 import { AuditService } from '../audit/audit.service.js';
+import { IdempotencyInterceptor } from '../operations/idempotency.interceptor.js';
 import { InstanceController, OperationsController } from '../operations/operations.controller.js';
 import { OperationsGuard } from '../operations/operations.guard.js';
 import { OperationsService } from '../operations/operations.service.js';
@@ -72,6 +73,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     // Order matters: authentication runs before the permission check.
     { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useExisting: OperationsGuard },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_GUARD, useExisting: GlobalPermissionGuard },
   ],
   exports: [

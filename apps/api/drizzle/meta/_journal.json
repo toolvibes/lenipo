@@ -456,6 +456,13 @@
       "when": 1793467860908,
       "tag": "0064_token_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1793469355726,
+      "tag": "0065_api_extensions",
+      "breakpoints": true
     }
   ]
 }

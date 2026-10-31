@@ -21,13 +21,17 @@ import {
   issueComments,
   issues,
   issueWorklogs,
+  pages,
   projects,
+  spaces,
+  sprints,
   statuses,
   users,
   webhookDeliveries,
   webhooks,
 } from '../db/schema/index.js';
 import type { IssueEvent } from '../notifications/events.js';
+import { SearchService } from '../search/search.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { chatMessage } from './chat.js';
 import { BlockedAddressError, isPrivateAddress, postJson } from './http.js';
@@ -77,6 +81,7 @@ export class WebhookService {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(SearchService) private readonly search: SearchService,
   ) {}
 
   // ---------------------------------------------------------------- management
@@ -104,6 +109,45 @@ export class WebhookService {
     return rows.map((row) => row.id);
   }
 
+  private async spaceIds(keys: string[]): Promise<string[]> {
+    if (keys.length === 0) return [];
+    const wanted = [...new Set(keys.map((key) => key.toUpperCase()))];
+    const rows = await this.database.db
+      .select({ id: spaces.id, key: spaces.key })
+      .from(spaces)
+      .where(inArray(spaces.key, wanted));
+    const missing = wanted.filter((key) => !rows.some((row) => row.key === key));
+    if (missing.length > 0) throw new BadRequestException(`Unknown space ${missing.join(', ')}`);
+    return rows.map((row) => row.id);
+  }
+
+  /** A filter must be valid TQL for the person saving it; sorting makes no sense here. */
+  private async checkTql(principal: Principal, tql: string | null | undefined) {
+    if (!tql) return null;
+    if (/\border\s+by\b/i.test(tql)) throw new BadRequestException('The filter cannot sort');
+    await this.search.search(
+      { userId: principal.userId, via: 'session', sessionId: 'webhook' },
+      { query: `(${tql})`, limit: 1, offset: 0 },
+    );
+    return tql;
+  }
+
+  /** Whether an issue matches a webhook's TQL, seen with its creator's rights. */
+  private async matches(webhook: WebhookRow, issueKey: string): Promise<boolean> {
+    if (!webhook.tql) return true;
+    if (!webhook.createdById) return false;
+    try {
+      const found = await this.search.search(
+        { userId: webhook.createdById, via: 'session', sessionId: 'webhook' },
+        { query: `key = ${issueKey} AND (${webhook.tql})`, limit: 1, offset: 0 },
+      );
+      return found.total > 0;
+    } catch (error) {
+      this.logger.warn({ err: error, webhook: webhook.id }, 'Webhook filter failed');
+      return false;
+    }
+  }
+
   /** Early feedback for literal private addresses; names are checked again on every delivery. */
   private checkTarget(url: string): void {
     const host = new URL(url).hostname.replace(/^\[|\]$/g, '');
@@ -129,6 +173,15 @@ export class WebhookService {
             .where(inArray(projects.id, projectIdList))
         : [];
     const keyOf = new Map(projectRows.map((row) => [row.id, row.key]));
+    const spaceIdList = [...new Set(rows.flatMap((row) => row.spaceIds))];
+    const spaceRows =
+      spaceIdList.length > 0
+        ? await db
+            .select({ id: spaces.id, key: spaces.key })
+            .from(spaces)
+            .where(inArray(spaces.id, spaceIdList))
+        : [];
+    const spaceKeyOf = new Map(spaceRows.map((row) => [row.id, row.key]));
     const latest = await db
       .selectDistinctOn([webhookDeliveries.webhookId], {
         webhookId: webhookDeliveries.webhookId,
@@ -153,6 +206,8 @@ export class WebhookService {
         events: row.events as WebhookEventType[],
         projectKeys: row.projectIds.flatMap((id) => keyOf.get(id) ?? []),
         statusIds: row.statusIds,
+        tql: row.tql,
+        spaceKeys: row.spaceIds.flatMap((id) => spaceKeyOf.get(id) ?? []),
         format: row.format as WebhookFormat,
         locale: row.locale === 'en' ? 'en' : 'de',
         enabled: row.enabled,
@@ -197,6 +252,8 @@ export class WebhookService {
       events: [...new Set(request.events)],
       projectIds: await this.projectIds(request.projectKeys),
       statusIds: await this.statusIds(request.statusIds),
+      tql: await this.checkTql(principal, request.tql),
+      spaceIds: await this.spaceIds(request.spaceKeys),
       format: request.format,
       locale: request.locale,
       enabled: request.enabled,
@@ -227,6 +284,10 @@ export class WebhookService {
           : {}),
         ...(request.statusIds !== undefined
           ? { statusIds: await this.statusIds(request.statusIds) }
+          : {}),
+        ...(request.tql !== undefined ? { tql: await this.checkTql(principal, request.tql) } : {}),
+        ...(request.spaceKeys !== undefined
+          ? { spaceIds: await this.spaceIds(request.spaceKeys) }
           : {}),
         ...(request.format !== undefined ? { format: request.format } : {}),
         ...(request.locale !== undefined ? { locale: request.locale } : {}),
@@ -343,7 +404,11 @@ export class WebhookService {
 
   /** Creates the deliveries for an outbox event, inside the event's processing transaction. */
   async enqueue(tx: Executor, row: EventRow): Promise<void> {
-    if (!row.issueId || row.type.startsWith('git.')) return;
+    if (row.type.startsWith('git.')) return;
+    if (!row.issueId) {
+      await this.enqueueOther(tx, row);
+      return;
+    }
     const event = { type: row.type, ...(row.payload as object) } as IssueEvent;
     const type = webhookEventType(event);
     const [issue] = await tx
@@ -360,6 +425,12 @@ export class WebhookService {
           webhook.statusIds.includes(statusAfter(event) ?? '')),
     );
     if (targets.length === 0) return;
+    const snapshot = await this.issues.snapshot(issue.id);
+    const matching: typeof targets = [];
+    for (const webhook of targets) {
+      if (await this.matches(webhook, snapshot.key)) matching.push(webhook);
+    }
+    if (matching.length === 0) return;
 
     const [actor] = row.actorId
       ? await tx
@@ -370,7 +441,7 @@ export class WebhookService {
     const data: Record<string, unknown> = {
       eventId: row.id,
       actor: actor ?? null,
-      issue: await this.issues.snapshot(issue.id),
+      issue: snapshot,
     };
     if (event.type === 'issue.updated') {
       data.changes = event.items.map((item) => ({
@@ -411,12 +482,93 @@ export class WebhookService {
     }
     const payload = { type, timestamp: row.createdAt.toISOString(), data };
     await tx.insert(webhookDeliveries).values(
-      targets.map((webhook) => ({
+      matching.map((webhook) => ({
         id: uuidv7(),
         webhookId: webhook.id,
         eventId: row.id,
         type,
         payload,
+      })),
+    );
+  }
+
+  /** Page, sprint and version events (TL-41, E-122), filtered by space or project. */
+  private async enqueueOther(tx: Executor, row: EventRow): Promise<void> {
+    const payload = (row.payload ?? {}) as Record<string, unknown>;
+    let type: WebhookEventType;
+    let data: Record<string, unknown>;
+    let fits: (webhook: WebhookRow) => boolean;
+    if ((row.type === 'page.published' || row.type === 'page.commented') && row.pageId) {
+      if (row.type === 'page.commented' && payload.edited) return;
+      const [page] = await tx
+        .select({ id: pages.id, title: pages.title, spaceId: pages.spaceId, key: spaces.key })
+        .from(pages)
+        .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+        .where(eq(pages.id, row.pageId));
+      if (!page) return;
+      type = row.type;
+      data = {
+        page: { id: page.id, title: page.title, spaceKey: page.key },
+        ...(row.type === 'page.published'
+          ? { version: payload.version, comment: payload.comment }
+          : { comment: { id: payload.commentId, text: payload.excerpt } }),
+      };
+      fits = (webhook) => webhook.spaceIds.length === 0 || webhook.spaceIds.includes(page.spaceId);
+    } else if (
+      row.type === 'sprint.started' ||
+      row.type === 'sprint.completed' ||
+      row.type === 'version.released'
+    ) {
+      const projectId = String(payload.projectId ?? '');
+      const [project] = await tx
+        .select({ key: projects.key })
+        .from(projects)
+        .where(eq(projects.id, projectId));
+      if (!project) return;
+      type = row.type;
+      if (row.type === 'version.released') {
+        data = { version: { id: payload.versionId, name: payload.name, projectKey: project.key } };
+      } else {
+        const [sprint] = await tx
+          .select({ goal: sprints.goal, startDate: sprints.startDate, endDate: sprints.endDate })
+          .from(sprints)
+          .where(eq(sprints.id, String(payload.sprintId ?? '')));
+        data = {
+          sprint: {
+            id: payload.sprintId,
+            name: payload.name,
+            boardId: payload.boardId,
+            projectKey: project.key,
+            ...(sprint ?? {}),
+          },
+        };
+      }
+      fits = (webhook) => webhook.projectIds.length === 0 || webhook.projectIds.includes(projectId);
+    } else {
+      return;
+    }
+    const targets = (await tx.select().from(webhooks).where(eq(webhooks.enabled, true))).filter(
+      (webhook) => webhook.events.includes(type) && fits(webhook),
+    );
+    if (targets.length === 0) return;
+    const [actor] = row.actorId
+      ? await tx
+          .select({ id: users.id, displayName: users.displayName })
+          .from(users)
+          .where(eq(users.id, row.actorId))
+      : [];
+    const body = {
+      type,
+      timestamp: row.createdAt.toISOString(),
+      data: { eventId: row.id, actor: actor ?? null, ...data },
+    };
+    await tx.insert(webhookDeliveries).values(
+      targets.map((webhook) => ({
+        id: uuidv7(),
+        webhookId: webhook.id,
+        eventId: row.id,
+        type,
+        payload: body,
       })),
     );
   }

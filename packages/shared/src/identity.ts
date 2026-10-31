@@ -290,6 +290,9 @@ export const OAuthClientInfo = z
     redirectHost: z.string(),
     /** Scopes the client asked for; all if it named none. */
     requestedScopes: z.array(TokenScope),
+    /** Registered by an administrator (TL-41), not by the client itself. */
+    registered: z.boolean(),
+    description: z.string(),
   })
   .meta({ id: 'OAuthClientInfo' });
 export type OAuthClientInfo = z.infer<typeof OAuthClientInfo>;
@@ -334,6 +337,38 @@ export const OAuthGrant = z
   })
   .meta({ id: 'OAuthGrant' });
 export type OAuthGrant = z.infer<typeof OAuthGrant>;
+
+/** An app an administrator registered for a third party (D-API-04, TL-41, E-122). */
+export const OAuthApp = z
+  .object({
+    id: Id,
+    name: z.string(),
+    description: z.string(),
+    redirectUris: z.array(z.string()),
+    /** With a client secret; otherwise a public client that only uses PKCE. */
+    confidential: z.boolean(),
+    connections: z.number().int(),
+    createdAt: z.iso.datetime(),
+    lastUsedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'OAuthApp' });
+export type OAuthApp = z.infer<typeof OAuthApp>;
+
+export const SaveOAuthAppRequest = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    description: z.string().trim().max(500).default(''),
+    redirectUris: z.array(z.string().max(2_000)).min(1).max(10),
+    confidential: z.boolean().default(true),
+  })
+  .meta({ id: 'SaveOAuthAppRequest' });
+export type SaveOAuthAppRequest = z.infer<typeof SaveOAuthAppRequest>;
+
+/** The client secret appears only here, once. */
+export const OAuthAppCreated = z
+  .object({ app: OAuthApp, clientSecret: z.string().nullable() })
+  .meta({ id: 'OAuthAppCreated' });
+export type OAuthAppCreated = z.infer<typeof OAuthAppCreated>;
 
 export const OAuthSettings = z
   .object({ registrationOpen: z.boolean() })

@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Inject,
   Param,
@@ -99,9 +100,24 @@ export class AutomationController {
 
   @Endpoint({
     tag: 'Automation',
+    summary: 'Issue a new secret for the incoming webhook of a rule',
+    description: 'The old secret stops working at once.',
+    response: AutomationRule,
+  })
+  @Post('rules/:id/webhook-token')
+  @HttpCode(200)
+  rotateToken(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', RuleId) id: string,
+  ): Promise<AutomationRule> {
+    return this.rules.rotateWebhookToken(principal, id);
+  }
+
+  @Endpoint({
+    tag: 'Automation',
     summary: 'Start a rule with an incoming webhook trigger',
     description:
-      'Called by other systems with the secret from the rule (`?token=`). Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.',
+      'Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.',
     response: z.object({ queued: z.number().int() }),
   })
   @Public()
@@ -110,8 +126,12 @@ export class AutomationController {
   async hook(
     @Param('id', RuleId) id: string,
     @Query('token') token: string | undefined,
+    @Headers('authorization') authorization: string | undefined,
+    @Headers('x-tasklore-token') header: string | undefined,
     @ValidBody(IncomingWebhookRequest) body: IncomingWebhookRequest,
   ): Promise<{ queued: number }> {
-    return { queued: await this.engine.incoming(id, token ?? '', body) };
+    // A header keeps the secret out of access logs (TL-41); ?token= stays for older senders.
+    const bearer = /^Bearer\s+(.+)$/i.exec(authorization ?? '')?.[1];
+    return { queued: await this.engine.incoming(id, header ?? bearer ?? token ?? '', body) };
   }
 }

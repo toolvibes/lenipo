@@ -244,6 +244,17 @@ export class AutomationService {
     return this.get(principal, id);
   }
 
+  /** A new secret for an incoming webhook (TL-41); the old one stops working at once. */
+  async rotateWebhookToken(principal: Principal, id: string): Promise<AutomationRule> {
+    const row = await this.load(principal, id);
+    if (!row.webhookToken) throw new BadRequestException('This rule has no incoming webhook');
+    await this.database.db
+      .update(automationRules)
+      .set({ webhookToken: randomBytes(24).toString('base64url'), updatedAt: new Date() })
+      .where(eq(automationRules.id, id));
+    return this.get(principal, id);
+  }
+
   async delete(principal: Principal, id: string): Promise<void> {
     await this.load(principal, id);
     await this.database.db.delete(automationRules).where(eq(automationRules.id, id));

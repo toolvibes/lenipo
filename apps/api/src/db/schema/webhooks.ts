@@ -26,6 +26,10 @@ export const webhooks = pgTable('webhooks', {
   projectIds: uuid().array().notNull(),
   /** Transitions only into these statuses; empty means all (TL-75, E-86). */
   statusIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
+  /** Issue events only for issues matching this TQL, with the creator's rights (TL-41, E-122). */
+  tql: text(),
+  /** Page events only from these spaces; empty means all. */
+  spaceIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
   /** standard, or a chat message format (TL-31, E-112). */
   format: text().notNull().default('standard'),
   locale: text().notNull().default('de'),

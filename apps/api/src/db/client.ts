@@ -1,11 +1,26 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema/index.js';
 
 export function createDatabase(url: string) {
   const sql = postgres(url, { max: 10, onnotice: () => {} });
-  const db = drizzle(sql, { schema, casing: 'snake_case' });
-  return { sql, db };
+  const root = drizzle(sql, { schema, casing: 'snake_case' });
+  const scope = new AsyncLocalStorage<typeof root>();
+  return {
+    sql,
+    /** The database, or inside {@link atomic} its transaction; services need not pass it on. */
+    get db(): typeof root {
+      return scope.getStore() ?? root;
+    },
+    /**
+     * Runs `work` with every `db` use in one transaction, e.g. an all-or-nothing bulk change
+     * (TL-41, E-122); transactions inside become savepoints.
+     */
+    atomic<T>(work: () => Promise<T>): Promise<T> {
+      return root.transaction((tx) => scope.run(tx as unknown as typeof root, work));
+    },
+  };
 }
 
 export type DatabaseHandle = ReturnType<typeof createDatabase>;

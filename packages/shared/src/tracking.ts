@@ -1038,6 +1038,45 @@ export const BulkResult = z
   .meta({ id: 'BulkResult' });
 export type BulkResult = z.infer<typeof BulkResult>;
 
+/**
+ * Up to 100 issues in one call (D-API-10, TL-41, E-122). Each goes through the same checks as
+ * a single one; with `atomic` all or none are created.
+ */
+export const BulkCreateRequest = z
+  .object({
+    issues: z.array(CreateIssueRequest).min(1).max(100),
+    atomic: z.boolean().default(false),
+  })
+  .meta({ id: 'BulkCreateRequest' });
+export type BulkCreateRequest = z.infer<typeof BulkCreateRequest>;
+
+/** Different changes to up to 100 issues; with `atomic` all or none are made. */
+export const BulkUpdateRequest = z
+  .object({
+    updates: z
+      .array(z.object({ key: z.string().min(1).max(30), fields: UpdateIssueRequest }))
+      .min(1)
+      .max(100),
+    atomic: z.boolean().default(false),
+  })
+  .meta({ id: 'BulkUpdateRequest' });
+export type BulkUpdateRequest = z.infer<typeof BulkUpdateRequest>;
+
+/** One line per item, in the order sent; `key` is the created or changed issue. */
+export const BulkItemsResult = z
+  .object({
+    results: z.array(
+      z.object({
+        index: z.number().int(),
+        ok: z.boolean(),
+        key: z.string().nullable(),
+        error: z.string().nullable(),
+      }),
+    ),
+  })
+  .meta({ id: 'BulkItemsResult' });
+export type BulkItemsResult = z.infer<typeof BulkItemsResult>;
+
 /** A copy of an issue (T-ISS-10): fields, security level and a "clones" link to the original. */
 export const CloneIssueRequest = z
   .object({

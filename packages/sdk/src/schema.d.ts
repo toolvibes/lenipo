@@ -656,6 +656,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/automation/rules/{id}/webhook-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issue a new secret for the incoming webhook of a rule
+     * @description The old secret stops working at once.
+     */
+    post: operations['Automation.rotateToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/automation/hooks/{id}': {
     parameters: {
       query?: never;
@@ -667,7 +687,7 @@ export interface paths {
     put?: never;
     /**
      * Start a rule with an incoming webhook trigger
-     * @description Called by other systems with the secret from the rule (`?token=`). Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.
+     * @description Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.
      */
     post: operations['Automation.hook'];
     delete?: never;
@@ -1930,6 +1950,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/bulk-create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create up to 100 issues
+     * @description Each issue goes through the same checks as POST /issues. The result has one line per issue in the order sent. With "atomic": true they are created in one transaction: all or none.
+     */
+    post: operations['Issues.bulkCreate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/bulk-update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Change up to 100 issues, each in its own way
+     * @description Each change goes through the same checks as PATCH /issues/{key}. With "atomic": true all or none are made.
+     */
+    post: operations['Issues.bulkUpdate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/issues/{key}/clone': {
     parameters: {
       query?: never;
@@ -2522,6 +2582,78 @@ export interface paths {
      * @description Requires the global permission `admin`.
      */
     delete: operations['OAuth.endAny'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-apps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Apps registered by administrators
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['OAuth.apps'];
+    put?: never;
+    /**
+     * Register an app for a third party
+     * @description Confidential apps get a client secret, shown only in this answer; public apps use PKCE alone. Both use the authorization code flow with PKCE.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['OAuth.createApp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-apps/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Change a registered app
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['OAuth.updateApp'];
+    post?: never;
+    /**
+     * Delete a registered app and its connections
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['OAuth.deleteApp'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-apps/{id}/secret': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issue a new client secret
+     * @description The old secret stops working at once.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['OAuth.rotateSecret'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -7113,6 +7245,27 @@ export interface components {
         error: string | null;
       }[];
     };
+    BulkCreateRequest: {
+      issues: components['schemas']['CreateIssueRequest'][];
+      /** @default false */
+      atomic?: boolean;
+    };
+    BulkItemsResult: {
+      results: {
+        index: number;
+        ok: boolean;
+        key: string | null;
+        error: string | null;
+      }[];
+    };
+    BulkUpdateRequest: {
+      updates: {
+        key: string;
+        fields: components['schemas']['UpdateIssueRequest'];
+      }[];
+      /** @default false */
+      atomic?: boolean;
+    };
     CloneIssueRequest: {
       summary?: string;
       /** @default false */
@@ -7349,6 +7502,8 @@ export interface components {
       name: string;
       redirectHost: string;
       requestedScopes: components['schemas']['TokenScope'][];
+      registered: boolean;
+      description: string;
     };
     OAuthConsentRequest: {
       /** Format: uuid */
@@ -7382,6 +7537,30 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
       lastUsedAt: string | null;
+    };
+    OAuthApp: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      redirectUris: string[];
+      confidential: boolean;
+      connections: number;
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+    };
+    SaveOAuthAppRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      redirectUris: string[];
+      /** @default true */
+      confidential?: boolean;
+    };
+    OAuthAppCreated: {
+      app: components['schemas']['OAuthApp'];
+      clientSecret: string | null;
     };
     OAuthSettings: {
       registrationOpen: boolean;
@@ -8754,6 +8933,8 @@ export interface components {
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
       statusIds: string[];
+      tql: string | null;
+      spaceKeys: string[];
       format: components['schemas']['WebhookFormat'];
       /** @enum {string} */
       locale: 'de' | 'en';
@@ -8780,7 +8961,12 @@ export interface components {
       | 'comment.deleted'
       | 'worklog.created'
       | 'worklog.updated'
-      | 'worklog.deleted';
+      | 'worklog.deleted'
+      | 'page.published'
+      | 'page.commented'
+      | 'sprint.started'
+      | 'sprint.completed'
+      | 'version.released';
     /** @enum {string} */
     WebhookFormat: 'standard' | 'slack' | 'teams' | 'mattermost' | 'rocketchat';
     CreateWebhookRequest: {
@@ -8792,6 +8978,10 @@ export interface components {
       projectKeys?: string[];
       /** @default [] */
       statusIds?: string[];
+      /** @default null */
+      tql?: string | null;
+      /** @default [] */
+      spaceKeys?: string[];
       /** @default standard */
       format?: components['schemas']['WebhookFormat'];
       /**
@@ -8810,6 +9000,8 @@ export interface components {
       events: components['schemas']['WebhookEventType'][];
       projectKeys: string[];
       statusIds: string[];
+      tql: string | null;
+      spaceKeys: string[];
       format: components['schemas']['WebhookFormat'];
       /** @enum {string} */
       locale: 'de' | 'en';
@@ -8834,6 +9026,8 @@ export interface components {
       events?: components['schemas']['WebhookEventType'][];
       projectKeys?: string[];
       statusIds?: string[];
+      tql?: string | null;
+      spaceKeys?: string[];
       format?: components['schemas']['WebhookFormat'];
       /** @enum {string} */
       locale?: 'de' | 'en';
@@ -10515,6 +10709,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AutomationRun'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Automation.rotateToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AutomationRule'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -13420,6 +13645,72 @@ export interface operations {
       };
     };
   };
+  'Issues.bulkCreate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkItemsResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.bulkUpdate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkUpdateRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkItemsResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Issues.clone': {
     parameters: {
       query?: never;
@@ -14635,6 +14926,163 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.apps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthApp'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.createApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveOAuthAppRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthAppCreated'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.updateApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveOAuthAppRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthApp'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.deleteApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.rotateSecret': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthAppCreated'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

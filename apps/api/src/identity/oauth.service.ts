@@ -1,14 +1,17 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  type OAuthApp,
+  type OAuthAppCreated,
   type OAuthClientInfo,
   type OAuthConsentRequest,
   type OAuthGrant,
   type OAuthSettings,
+  type SaveOAuthAppRequest,
   TOKEN_SCOPES,
   type TokenScope,
 } from '@tasklore/shared';
-import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -19,11 +22,12 @@ import {
   systemSettings,
   users,
 } from '../db/schema/index.js';
-import { randomSecret, sha256 } from './secrets.js';
+import { constantTimeEquals, randomSecret, sha256 } from './secrets.js';
 
 export const ACCESS_PREFIX = 'tl_oat_';
 const REFRESH_PREFIX = 'tl_ort_';
 const CODE_PREFIX = 'tl_oac_';
+const CLIENT_SECRET_PREFIX = 'tl_ocs_';
 const ACCESS_SECONDS = 3600;
 const REFRESH_DAYS = 30;
 const CODE_SECONDS = 600;
@@ -175,6 +179,8 @@ export class OAuthService {
       name: client.name,
       redirectHost: new URL(redirectUri).host,
       requestedScopes: parseScopes(scope),
+      registered: client.registeredById !== null,
+      description: client.description,
     };
   }
 
@@ -278,8 +284,37 @@ export class OAuthService {
     return row;
   }
 
-  async token(body: Record<string, unknown>): Promise<TokenResponse> {
+  /**
+   * Confidential apps prove who they are with their secret (client_secret_basic or _post);
+   * public clients rely on PKCE alone.
+   */
+  private async authenticateClient(
+    clientId: string,
+    credentials: { id?: string; secret?: string },
+  ): Promise<void> {
+    const client = await this.client(clientId);
+    if (!client?.secretHash) return;
+    if (
+      (credentials.id !== undefined && credentials.id !== clientId) ||
+      !credentials.secret ||
+      !constantTimeEquals(sha256(credentials.secret), client.secretHash)
+    ) {
+      throw new OAuthError('invalid_client', 'Client authentication failed', 401);
+    }
+  }
+
+  async token(
+    body: Record<string, unknown>,
+    basic: { id?: string; secret?: string } = {},
+  ): Promise<TokenResponse> {
+    const credentials = {
+      id: basic.id ?? (typeof body.client_id === 'string' ? body.client_id : undefined),
+      secret:
+        basic.secret ?? (typeof body.client_secret === 'string' ? body.client_secret : undefined),
+    };
     const grantType = String(body.grant_type ?? '');
+    // Checked before the code is used up, so a wrong secret does not burn it.
+    if (credentials.id) await this.authenticateClient(credentials.id, credentials);
     if (grantType === 'authorization_code') {
       const code = String(body.code ?? '');
       const verifier = String(body.code_verifier ?? '');
@@ -287,9 +322,10 @@ export class OAuthService {
         throw new OAuthError('invalid_request', 'code and code_verifier are required');
       }
       const { token, grant } = await this.redeem(code, 'code');
-      if (body.client_id !== undefined && body.client_id !== grant.clientId) {
+      if (credentials.id !== undefined && credentials.id !== grant.clientId) {
         throw new OAuthError('invalid_grant', 'The code belongs to another client');
       }
+      await this.authenticateClient(grant.clientId, credentials);
       if (body.redirect_uri !== undefined && body.redirect_uri !== token.redirectUri) {
         throw new OAuthError('invalid_grant', 'redirect_uri does not match the authorization');
       }
@@ -306,9 +342,10 @@ export class OAuthService {
     }
     if (grantType === 'refresh_token') {
       const { grant } = await this.redeem(String(body.refresh_token ?? ''), 'refresh');
-      if (body.client_id !== undefined && body.client_id !== grant.clientId) {
+      if (credentials.id !== undefined && credentials.id !== grant.clientId) {
         throw new OAuthError('invalid_grant', 'The refresh token belongs to another client');
       }
+      await this.authenticateClient(grant.clientId, credentials);
       // A narrower scope may be asked for, never a wider one.
       const scopes = body.scope
         ? parseScopes(String(body.scope)).filter((entry) => grant.scopes.includes(entry))
@@ -430,6 +467,7 @@ export class OAuthService {
             sql`now() - interval '30 days'`,
           ),
           sql`not exists (select 1 from ${oauthGrants} where ${oauthGrants.clientId} = ${oauthClients.id} and ${oauthGrants.revokedAt} is null)`,
+          isNull(oauthClients.registeredById),
         ),
       );
     if (stale.length) {
@@ -440,5 +478,106 @@ export class OAuthService {
         ),
       );
     }
+  }
+
+  // ---------------------------------------------------------------- apps registered by admins
+
+  private presentApp(row: typeof oauthClients.$inferSelect, connections: number): OAuthApp {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      redirectUris: row.redirectUris,
+      confidential: row.secretHash !== null,
+      connections,
+      createdAt: row.createdAt.toISOString(),
+      lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
+    };
+  }
+
+  async apps(): Promise<OAuthApp[]> {
+    const rows = await this.database.db
+      .select({
+        client: oauthClients,
+        // Spelled out: inside a subquery the column names would be ambiguous.
+        connections: sql<number>`(select count(*)::int from oauth_grants g where g.client_id = oauth_clients.id and g.revoked_at is null)`,
+      })
+      .from(oauthClients)
+      .where(isNotNull(oauthClients.registeredById))
+      .orderBy(oauthClients.name);
+    return rows.map((row) => this.presentApp(row.client, row.connections));
+  }
+
+  private checkRedirects(uris: string[]) {
+    if (!uris.every((uri) => allowedRedirect(uri))) {
+      throw new BadRequestException(
+        'Redirect URIs must be https or point to this machine (127.0.0.1, localhost)',
+      );
+    }
+  }
+
+  async createApp(userId: string, request: SaveOAuthAppRequest): Promise<OAuthAppCreated> {
+    this.checkRedirects(request.redirectUris);
+    const secret = request.confidential ? `${CLIENT_SECRET_PREFIX}${randomSecret()}` : null;
+    const [row] = await this.database.db
+      .insert(oauthClients)
+      .values({
+        id: uuidv7(),
+        name: request.name,
+        description: request.description,
+        redirectUris: request.redirectUris,
+        registeredById: userId,
+        secretHash: secret ? sha256(secret) : null,
+      })
+      .returning();
+    return {
+      app: this.presentApp(row as typeof oauthClients.$inferSelect, 0),
+      clientSecret: secret,
+    };
+  }
+
+  private async app(id: string) {
+    const [row] = await this.database.db
+      .select()
+      .from(oauthClients)
+      .where(and(eq(oauthClients.id, id), isNotNull(oauthClients.registeredById)));
+    if (!row) throw new NotFoundException('App not found');
+    return row;
+  }
+
+  /** Name, description and redirects; whether it is confidential stays as registered. */
+  async updateApp(id: string, request: SaveOAuthAppRequest): Promise<OAuthApp> {
+    await this.app(id);
+    this.checkRedirects(request.redirectUris);
+    await this.database.db
+      .update(oauthClients)
+      .set({
+        name: request.name,
+        description: request.description,
+        redirectUris: request.redirectUris,
+      })
+      .where(eq(oauthClients.id, id));
+    return (await this.apps()).find((app) => app.id === id) as OAuthApp;
+  }
+
+  /** A new secret; the old one stops working at once. */
+  async rotateSecret(id: string): Promise<OAuthAppCreated> {
+    const row = await this.app(id);
+    if (!row.secretHash) throw new BadRequestException('A public app has no secret');
+    const secret = `${CLIENT_SECRET_PREFIX}${randomSecret()}`;
+    await this.database.db
+      .update(oauthClients)
+      .set({ secretHash: sha256(secret) })
+      .where(eq(oauthClients.id, id));
+    return {
+      app: (await this.apps()).find((app) => app.id === id) as OAuthApp,
+      clientSecret: secret,
+    };
+  }
+
+  /** Removes the app and every connection people made with it. */
+  async deleteApp(id: string): Promise<void> {
+    await this.app(id);
+    await this.database.db.delete(oauthClients).where(eq(oauthClients.id, id));
   }
 }

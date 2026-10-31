@@ -17,6 +17,11 @@ const TEXT = {
       'worklog.created': (a, i) => `${a} hat Zeit auf ${i} erfasst`,
       'worklog.updated': (a, i) => `${a} hat eine Zeiterfassung zu ${i} geändert`,
       'worklog.deleted': (a, i) => `${a} hat eine Zeiterfassung zu ${i} gelöscht`,
+      'page.published': (a, i) => `${a} hat ${i} veröffentlicht`,
+      'page.commented': (a, i) => `${a} hat ${i} kommentiert`,
+      'sprint.started': (a, i) => `${a} hat ${i} gestartet`,
+      'sprint.completed': (a, i) => `${a} hat ${i} abgeschlossen`,
+      'version.released': (a, i) => `${a} hat ${i} veröffentlicht`,
     } as Record<string, Sentence>,
     test: (name: string) => `Testnachricht von Tasklore für den Webhook „${name}“.`,
     open: 'In Tasklore öffnen',
@@ -34,6 +39,11 @@ const TEXT = {
       'worklog.created': (a, i) => `${a} logged time on ${i}`,
       'worklog.updated': (a, i) => `${a} changed logged time on ${i}`,
       'worklog.deleted': (a, i) => `${a} deleted logged time on ${i}`,
+      'page.published': (a, i) => `${a} published ${i}`,
+      'page.commented': (a, i) => `${a} commented on ${i}`,
+      'sprint.started': (a, i) => `${a} started ${i}`,
+      'sprint.completed': (a, i) => `${a} completed ${i}`,
+      'version.released': (a, i) => `${a} released ${i}`,
     } as Record<string, Sentence>,
     test: (name: string) => `Test message from Tasklore for the webhook “${name}”.`,
     open: 'Open in Tasklore',
@@ -50,6 +60,9 @@ interface Payload {
     comment?: { text?: string };
     worklog?: { timeSpentSeconds?: number };
     webhook?: { name: string };
+    page?: { id: string; title: string; spaceKey: string };
+    sprint?: { name: string; boardId: string };
+    version?: { name: string; projectKey: string };
   };
 }
 
@@ -76,8 +89,26 @@ function describe(payload: Payload, locale: Locale, publicUrl: string): Message 
   }
   const actor = data.actor?.displayName ?? t.someone;
   const sentence = t.verbs[payload.type] ?? (t.verbs['issue.updated'] as Sentence);
-  const issue = data.issue ? `${data.issue.key} ${data.issue.summary}` : '';
-  const url = data.issue && publicUrl ? `${publicUrl}/issues/${data.issue.key}` : null;
+  // The subject: an issue, or a page, sprint or version (TL-41).
+  const issue = data.issue
+    ? `${data.issue.key} ${data.issue.summary}`
+    : data.page
+      ? data.page.title
+      : data.sprint
+        ? data.sprint.name
+        : data.version
+          ? `${data.version.projectKey} ${data.version.name}`
+          : '';
+  const path = data.issue
+    ? `/issues/${data.issue.key}`
+    : data.page
+      ? `/spaces/${data.page.spaceKey}/pages/${data.page.id}`
+      : data.sprint
+        ? `/boards/${data.sprint.boardId}`
+        : data.version
+          ? `/projects/${data.version.projectKey}/releases`
+          : null;
+  const url = path && publicUrl ? `${publicUrl}${path}` : null;
   const lines: string[] = [];
   if (payload.type === 'issue.transitioned' && data.issue?.status)
     lines.push(`→ ${data.issue.status.name}`);
@@ -86,7 +117,10 @@ function describe(payload: Payload, locale: Locale, publicUrl: string): Message 
       lines.push(`${change.field}: ${change.from ?? t.none} → ${change.to ?? t.none}`);
     }
   }
-  if (payload.type.startsWith('comment.') && data.comment?.text) {
+  if (
+    (payload.type.startsWith('comment.') || payload.type === 'page.commented') &&
+    data.comment?.text
+  ) {
     const text = data.comment.text.replace(/\s+/g, ' ').trim();
     lines.push(text.length > 300 ? `${text.slice(0, 299)}…` : text);
   }

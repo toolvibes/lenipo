@@ -1792,11 +1792,51 @@
         }
       }
     },
+    "/api/v1/automation/rules/{id}/webhook-token": {
+      "post": {
+        "operationId": "Automation.rotateToken",
+        "summary": "Issue a new secret for the incoming webhook of a rule",
+        "description": "The old secret stops working at once.",
+        "tags": ["Automation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/automation/hooks/{id}": {
       "post": {
         "operationId": "Automation.hook",
         "summary": "Start a rule with an incoming webhook trigger",
-        "description": "Called by other systems with the secret from the rule (`?token=`). Optionally `{\"issues\": [\"KEY-1\"]}` runs it for those issues; the whole body is available as {{webhookData}}.",
+        "description": "Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{\"issues\": [\"KEY-1\"]}` runs it for those issues; the whole body is available as {{webhookData}}.",
         "tags": ["Automation"],
         "parameters": [
           {
@@ -5585,6 +5625,86 @@
         }
       }
     },
+    "/api/v1/issues/bulk-create": {
+      "post": {
+        "operationId": "Issues.bulkCreate",
+        "summary": "Create up to 100 issues",
+        "description": "Each issue goes through the same checks as POST /issues. The result has one line per issue in the order sent. With \"atomic\": true they are created in one transaction: all or none.",
+        "tags": ["Issues"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkItemsResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/bulk-update": {
+      "post": {
+        "operationId": "Issues.bulkUpdate",
+        "summary": "Change up to 100 issues, each in its own way",
+        "description": "Each change goes through the same checks as PATCH /issues/{key}. With \"atomic\": true all or none are made.",
+        "tags": ["Issues"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkItemsResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/issues/{key}/clone": {
       "post": {
         "operationId": "Issues.clone",
@@ -6990,6 +7110,198 @@
         "responses": {
           "204": {
             "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-apps": {
+      "get": {
+        "operationId": "OAuth.apps",
+        "summary": "Apps registered by administrators",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthApp"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "OAuth.createApp",
+        "summary": "Register an app for a third party",
+        "description": "Confidential apps get a client secret, shown only in this answer; public apps use PKCE alone. Both use the authorization code flow with PKCE.\n\nRequires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveOAuthAppRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAppCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-apps/{id}": {
+      "put": {
+        "operationId": "OAuth.updateApp",
+        "summary": "Change a registered app",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveOAuthAppRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthApp"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "OAuth.deleteApp",
+        "summary": "Delete a registered app and its connections",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-apps/{id}/secret": {
+      "post": {
+        "operationId": "OAuth.rotateSecret",
+        "summary": "Issue a new client secret",
+        "description": "The old secret stops working at once.\n\nRequires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthAppCreated"
+                }
+              }
+            }
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -21945,6 +22257,84 @@
         "required": ["results"],
         "additionalProperties": false
       },
+      "BulkCreateRequest": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateIssueRequest"
+            }
+          },
+          "atomic": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": ["issues"]
+      },
+      "BulkItemsResult": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "key": {
+                  "type": ["string", "null"]
+                },
+                "error": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["index", "ok", "key", "error"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["results"],
+        "additionalProperties": false
+      },
+      "BulkUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "updates": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "fields": {
+                  "$ref": "#/components/schemas/UpdateIssueRequest"
+                }
+              },
+              "required": ["key", "fields"]
+            }
+          },
+          "atomic": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": ["updates"]
+      },
       "CloneIssueRequest": {
         "type": "object",
         "properties": {
@@ -22832,9 +23222,15 @@
             "items": {
               "$ref": "#/components/schemas/TokenScope"
             }
+          },
+          "registered": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
           }
         },
-        "required": ["id", "name", "redirectHost", "requestedScopes"],
+        "required": ["id", "name", "redirectHost", "requestedScopes", "registered", "description"],
         "additionalProperties": false
       },
       "OAuthConsentRequest": {
@@ -22958,6 +23354,106 @@
           }
         },
         "required": ["id", "client", "user", "scopes", "createdAt", "lastUsedAt"],
+        "additionalProperties": false
+      },
+      "OAuthApp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidential": {
+            "type": "boolean"
+          },
+          "connections": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "redirectUris",
+          "confidential",
+          "connections",
+          "createdAt",
+          "lastUsedAt"
+        ],
+        "additionalProperties": false
+      },
+      "SaveOAuthAppRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "redirectUris": {
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          "confidential": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "redirectUris"]
+      },
+      "OAuthAppCreated": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "$ref": "#/components/schemas/OAuthApp"
+          },
+          "clientSecret": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["app", "clientSecret"],
         "additionalProperties": false
       },
       "OAuthSettings": {
@@ -28402,6 +28898,15 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
+          "tql": {
+            "type": ["string", "null"]
+          },
+          "spaceKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "format": {
             "$ref": "#/components/schemas/WebhookFormat"
           },
@@ -28475,6 +28980,8 @@
           "events",
           "projectKeys",
           "statusIds",
+          "tql",
+          "spaceKeys",
           "format",
           "locale",
           "enabled",
@@ -28496,7 +29003,12 @@
           "comment.deleted",
           "worklog.created",
           "worklog.updated",
-          "worklog.deleted"
+          "worklog.deleted",
+          "page.published",
+          "page.commented",
+          "sprint.started",
+          "sprint.completed",
+          "version.released"
         ]
       },
       "WebhookFormat": {
@@ -28540,6 +29052,27 @@
               "type": "string",
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "tql": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spaceKeys": {
+            "default": [],
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
             }
           },
           "format": {
@@ -28590,6 +29123,15 @@
               "type": "string",
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "tql": {
+            "type": ["string", "null"]
+          },
+          "spaceKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           },
           "format": {
@@ -28668,6 +29210,8 @@
           "events",
           "projectKeys",
           "statusIds",
+          "tql",
+          "spaceKeys",
           "format",
           "locale",
           "enabled",
@@ -28714,6 +29258,25 @@
               "type": "string",
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "tql": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spaceKeys": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
             }
           },
           "format": {
