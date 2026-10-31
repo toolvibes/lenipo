@@ -12434,14 +12434,14 @@
                   ]
                 }
               },
-              "then": {
+              "onTrue": {
                 "maxItems": 50,
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/__schema0"
                 }
               },
-              "else": {
+              "onFalse": {
                 "default": [],
                 "maxItems": 50,
                 "type": "array",
@@ -12450,7 +12450,7 @@
                 }
               }
             },
-            "required": ["type", "conditions", "then"]
+            "required": ["type", "conditions", "onTrue"]
           },
           {
             "type": "object",
@@ -18667,9 +18667,24 @@
             "items": {
               "$ref": "#/components/schemas/TimelineMilestone"
             }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineDependency"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineConflict"
+            }
+          },
+          "canEditVersions": {
+            "type": "boolean"
           }
         },
-        "required": ["epics", "milestones"],
+        "required": ["epics", "milestones", "dependencies", "conflicts", "canEditVersions"],
         "additionalProperties": false
       },
       "TimelineEpic": {
@@ -18773,10 +18788,85 @@
           },
           "released": {
             "type": "boolean"
+          },
+          "issueKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
-        "required": ["id", "name", "date", "released"],
+        "required": ["id", "name", "date", "released", "issueKeys"],
         "additionalProperties": false
+      },
+      "TimelineDependency": {
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "conflict": {
+            "type": "boolean"
+          }
+        },
+        "required": ["linkId", "from", "to", "conflict"],
+        "additionalProperties": false
+      },
+      "TimelineConflict": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "dependency"
+              },
+              "issueKey": {
+                "type": "string"
+              },
+              "blockerKey": {
+                "type": "string"
+              },
+              "days": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["kind", "issueKey", "blockerKey", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "milestone"
+              },
+              "issueKey": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "days": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["kind", "issueKey", "version", "days"],
+            "additionalProperties": false
+          }
+        ]
       },
       "Component": {
         "type": "object",

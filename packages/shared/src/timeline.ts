@@ -42,14 +42,55 @@ export const TimelineMilestone = z
     name: z.string(),
     date: z.iso.date(),
     released: z.boolean(),
+    /** Timeline issues with this fix version (TL-23). */
+    issueKeys: z.array(z.string()),
   })
   .meta({ id: 'TimelineMilestone' });
 export type TimelineMilestone = z.infer<typeof TimelineMilestone>;
+
+/** "A blocks B" between two issues of the timeline (T-RDM-02, E-104). */
+export const TimelineDependency = z
+  .object({
+    linkId: Id,
+    /** The blocking issue. */
+    from: z.string(),
+    /** The waiting issue. */
+    to: z.string(),
+    /** The waiting issue starts before the blocking one ends. */
+    conflict: z.boolean(),
+  })
+  .meta({ id: 'TimelineDependency' });
+export type TimelineDependency = z.infer<typeof TimelineDependency>;
+
+/** Something in the plan that cannot work out as drawn. */
+export const TimelineConflict = z
+  .discriminatedUnion('kind', [
+    z.object({
+      kind: z.literal('dependency'),
+      issueKey: z.string(),
+      blockerKey: z.string(),
+      /** Days the issue starts before its blocker ends. */
+      days: z.number().int(),
+    }),
+    z.object({
+      kind: z.literal('milestone'),
+      issueKey: z.string(),
+      version: z.string(),
+      /** Days the issue ends after the release date. */
+      days: z.number().int(),
+    }),
+  ])
+  .meta({ id: 'TimelineConflict' });
+export type TimelineConflict = z.infer<typeof TimelineConflict>;
 
 export const Timeline = z
   .object({
     epics: z.array(TimelineEpic),
     milestones: z.array(TimelineMilestone),
+    dependencies: z.array(TimelineDependency),
+    conflicts: z.array(TimelineConflict),
+    /** May change versions, e.g. drag a milestone. */
+    canEditVersions: z.boolean(),
   })
   .meta({ id: 'Timeline' });
 export type Timeline = z.infer<typeof Timeline>;

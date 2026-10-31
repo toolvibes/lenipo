@@ -4046,9 +4046,9 @@ export interface components {
                 value?: string;
               }
           )[];
-          then: components['schemas']['__schema0'][];
+          onTrue: components['schemas']['__schema0'][];
           /** @default [] */
-          else?: components['schemas']['__schema0'][];
+          onFalse?: components['schemas']['__schema0'][];
         }
       | {
           /** @constant */
@@ -5696,6 +5696,9 @@ export interface components {
     Timeline: {
       epics: components['schemas']['TimelineEpic'][];
       milestones: components['schemas']['TimelineMilestone'][];
+      dependencies: components['schemas']['TimelineDependency'][];
+      conflicts: components['schemas']['TimelineConflict'][];
+      canEditVersions: boolean;
     };
     TimelineEpic: {
       issue: components['schemas']['IssueSummary'];
@@ -5726,7 +5729,30 @@ export interface components {
       /** Format: date */
       date: string;
       released: boolean;
+      issueKeys: string[];
     };
+    TimelineDependency: {
+      /** Format: uuid */
+      linkId: string;
+      from: string;
+      to: string;
+      conflict: boolean;
+    };
+    TimelineConflict:
+      | {
+          /** @constant */
+          kind: 'dependency';
+          issueKey: string;
+          blockerKey: string;
+          days: number;
+        }
+      | {
+          /** @constant */
+          kind: 'milestone';
+          issueKey: string;
+          version: string;
+          days: number;
+        };
     Component: {
       /** Format: uuid */
       id: string;

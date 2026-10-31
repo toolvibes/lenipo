@@ -1,14 +1,31 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IssueSummary, Timeline, TimelineRow, TimelineSpan } from '@tasklore/shared';
+import type {
+  IssueSummary,
+  Timeline,
+  TimelineConflict,
+  TimelineDependency,
+  TimelineEpic,
+  TimelineRow,
+  TimelineSpan,
+} from '@tasklore/shared';
 import { and, asc, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { issues, projectVersions, sprintIssues, sprints } from '../db/schema/index.js';
+import {
+  issueLinks,
+  issueLinkTypes,
+  issues,
+  issueVersions,
+  projectVersions,
+  sprintIssues,
+  sprints,
+} from '../db/schema/index.js';
 import { IssueService } from './issue.service.js';
 import { securityVisible } from './issue-security.js';
 import { MetaService } from './meta.service.js';
 import { ProjectService } from './project.service.js';
+import { ProjectAccessService } from './project-access.service.js';
 
 type Range = { start: string; end: string };
 
@@ -39,6 +56,7 @@ export class TimelineService {
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(MetaService) private readonly meta: MetaService,
+    @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
   ) {}
 
   async get(principal: Principal, projectKey: string): Promise<Timeline> {
@@ -112,37 +130,131 @@ export class TimelineService {
       };
     };
 
-    return {
-      epics: epicRows.flatMap((epicRow) => {
-        const issue = byId.get(epicRow.id);
-        if (!issue) return [];
-        const children = childRows
-          .filter((row) => row.parentId === epicRow.id)
-          .map((row) => childRow(row.id))
-          .filter((row): row is TimelineRow => row !== null);
-        const derived = cover(children.flatMap((child) => (child.span ? [child.span] : [])));
-        const points = children.reduce((sum, child) => sum + (child.issue.storyPoints ?? 0), 0);
-        const done = children.filter((child) => child.issue.status.category === 'done');
-        return [
-          {
-            issue,
-            span: ownSpan(issue) ?? (derived ? { ...derived, derived: true } : null),
-            progress:
-              points > 0
-                ? {
-                    done: done.reduce((sum, child) => sum + (child.issue.storyPoints ?? 0), 0),
-                    total: points,
-                    unit: 'points' as const,
-                  }
-                : { done: done.length, total: children.length, unit: 'issues' as const },
-            children,
-          },
-        ];
-      }),
-      milestones: milestones.flatMap((milestone) =>
+    const epics: TimelineEpic[] = epicRows.flatMap((epicRow) => {
+      const issue = byId.get(epicRow.id);
+      if (!issue) return [];
+      const children = childRows
+        .filter((row) => row.parentId === epicRow.id)
+        .map((row) => childRow(row.id))
+        .filter((row): row is TimelineRow => row !== null);
+      const derived = cover(children.flatMap((child) => (child.span ? [child.span] : [])));
+      const points = children.reduce((sum, child) => sum + (child.issue.storyPoints ?? 0), 0);
+      const done = children.filter((child) => child.issue.status.category === 'done');
+      return [
+        {
+          issue,
+          span: ownSpan(issue) ?? (derived ? { ...derived, derived: true } : null),
+          progress:
+            points > 0
+              ? {
+                  done: done.reduce((sum, child) => sum + (child.issue.storyPoints ?? 0), 0),
+                  total: points,
+                  unit: 'points' as const,
+                }
+              : { done: done.length, total: children.length, unit: 'issues' as const },
+          children,
+        },
+      ];
+    });
+    const plan = await this.plan(
+      epics.flatMap((epic) => [epic, ...epic.children]),
+      milestones.flatMap((milestone) =>
         milestone.date ? [{ ...milestone, date: milestone.date }] : [],
       ),
-    };
+    );
+    const permissions = await this.projectAccess.permissions(principal.userId, project.id);
+    return { epics, ...plan, canEditVersions: permissions.has('administer') };
+  }
+
+  /**
+   * Dependencies ("blocks" links between rows) and conflicts (T-RDM-02, E-104): a waiting
+   * issue that starts before its blocker ends, an issue that ends after its fix version's
+   * release date.
+   */
+  private async plan(
+    rows: TimelineRow[],
+    versions: { id: string; name: string; date: string; released: boolean }[],
+  ): Promise<Pick<Timeline, 'milestones' | 'dependencies' | 'conflicts'>> {
+    const byId = new Map(rows.map((row) => [row.issue.id, row]));
+    const ids = [...byId.keys()];
+    const days = (from: string, to: string) =>
+      Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+    const [links, fixes] =
+      ids.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.database.db
+              .select({
+                id: issueLinks.id,
+                sourceId: issueLinks.sourceId,
+                targetId: issueLinks.targetId,
+              })
+              .from(issueLinks)
+              .innerJoin(issueLinkTypes, eq(issueLinkTypes.id, issueLinks.typeId))
+              .where(
+                and(
+                  eq(issueLinkTypes.key, 'blocks'),
+                  inArray(issueLinks.sourceId, ids),
+                  inArray(issueLinks.targetId, ids),
+                ),
+              ),
+            versions.length === 0
+              ? []
+              : this.database.db
+                  .select({ issueId: issueVersions.issueId, versionId: issueVersions.versionId })
+                  .from(issueVersions)
+                  .where(
+                    and(
+                      eq(issueVersions.kind, 'fix'),
+                      inArray(issueVersions.issueId, ids),
+                      inArray(
+                        issueVersions.versionId,
+                        versions.map((version) => version.id),
+                      ),
+                    ),
+                  ),
+          ]);
+    const conflicts: TimelineConflict[] = [];
+    const dependencies: TimelineDependency[] = links.flatMap((link) => {
+      const from = byId.get(link.sourceId);
+      const to = byId.get(link.targetId);
+      if (!from || !to) return [];
+      // Overlapping on the same day counts: the waiting work cannot start before the end.
+      const overlap =
+        from.span && to.span && from.issue.status.category !== 'done'
+          ? days(to.span.start, from.span.end) + 1
+          : 0;
+      if (overlap > 0) {
+        conflicts.push({
+          kind: 'dependency',
+          issueKey: to.issue.key,
+          blockerKey: from.issue.key,
+          days: overlap,
+        });
+      }
+      return [{ linkId: link.id, from: from.issue.key, to: to.issue.key, conflict: overlap > 0 }];
+    });
+    const milestones = versions.map((version) => {
+      const members = fixes
+        .filter((fix) => fix.versionId === version.id)
+        .flatMap((fix) => {
+          const row = byId.get(fix.issueId);
+          return row ? [row] : [];
+        });
+      for (const row of members) {
+        const late = row.span ? days(version.date, row.span.end) : 0;
+        if (late > 0 && row.issue.status.category !== 'done') {
+          conflicts.push({
+            kind: 'milestone',
+            issueKey: row.issue.key,
+            version: version.name,
+            days: late,
+          });
+        }
+      }
+      return { ...version, issueKeys: members.map((row) => row.issue.key) };
+    });
+    return { milestones, dependencies, conflicts };
   }
 
   /**

@@ -137,7 +137,7 @@ describe('timeline', () => {
       ['Ohne Termin', null],
     ]);
     expect(timeline.milestones).toEqual([
-      { id: release.body.id, name: '2.0', date: '2027-02-02', released: false },
+      { id: release.body.id, name: '2.0', date: '2027-02-02', released: false, issueKeys: [] },
     ]);
 
     // Own dates win over the derived span.
@@ -158,6 +158,55 @@ describe('timeline', () => {
     const row = timeline.epics.find((entry) => entry.issue.key === epic.key);
     expect(row?.progress).toEqual({ done: 1, total: 2, unit: 'issues' });
     expect(row?.span).toEqual({ start: '2026-12-01', end: '2026-12-01', derived: false });
+  });
+
+  it('draws "blocks" links as dependencies and marks conflicts (TL-23)', async () => {
+    const epic = await create('Umzug', { issueType: 'epic' });
+    const first = await create('Server', {
+      parentKey: epic.key,
+      startDate: '2027-01-04',
+      dueDate: '2027-01-15',
+    });
+    const second = await create('Daten', {
+      parentKey: epic.key,
+      startDate: '2027-01-11',
+      dueDate: '2027-01-29',
+    });
+    const release = await admin.request<{ id: string }>('POST', '/projects/WEB/versions', {
+      name: '3.0',
+      releaseDate: '2027-01-22',
+    });
+    await admin.request('PATCH', `/issues/${second.key}`, { fixVersions: ['3.0'] });
+    await admin.request('POST', `/issues/${first.key}/links`, {
+      type: 'blocks',
+      issueKey: second.key,
+    });
+    await admin.request('POST', `/issues/${first.key}/links`, {
+      type: 'relates',
+      issueKey: second.key,
+    });
+    const timeline = (await admin.request<Timeline>('GET', '/projects/WEB/timeline')).body;
+    expect(timeline.dependencies).toEqual([
+      { linkId: expect.any(String), from: first.key, to: second.key, conflict: true },
+    ]);
+    expect(timeline.conflicts).toEqual(
+      expect.arrayContaining([
+        { kind: 'dependency', issueKey: second.key, blockerKey: first.key, days: 5 },
+        { kind: 'milestone', issueKey: second.key, version: '3.0', days: 7 },
+      ]),
+    );
+    expect(timeline.milestones.find((entry) => entry.id === release.body.id)?.issueKeys).toEqual([
+      second.key,
+    ]);
+    expect(timeline.canEditVersions).toBe(true);
+    // Moving the waiting issue after its blocker resolves the conflict.
+    await admin.request('PATCH', `/issues/${second.key}`, {
+      startDate: '2027-01-18',
+      dueDate: '2027-01-20',
+    });
+    const fixed = (await admin.request<Timeline>('GET', '/projects/WEB/timeline')).body;
+    expect(fixed.dependencies[0]?.conflict).toBe(false);
+    expect(fixed.conflicts).toEqual([]);
   });
 
   it('is only for people who can browse the project', async () => {
