@@ -232,6 +232,8 @@ export function IssueTable({
   onSort,
   selectedKey,
   onSelect,
+  checked,
+  onCheck,
 }: {
   issues: IssueSummary[];
   empty: ReactNode | null;
@@ -240,6 +242,9 @@ export function IssueTable({
   onSort?: (field: string) => void;
   selectedKey?: string;
   onSelect?: (key: string) => void;
+  /** Issues ticked for a bulk change (TL-16); without it there are no checkboxes. */
+  checked?: Set<string>;
+  onCheck?: (keys: string[], on: boolean) => void;
 }) {
   const { t } = useTranslation();
   const metaName = useMetaName();
@@ -451,6 +456,21 @@ export function IssueTable({
         >
           <thead>
             <tr className="tl-label text-left text-[var(--ink-muted)]">
+              {checked && onCheck && (
+                <th className="w-8 border-b border-[var(--border)] px-2">
+                  <input
+                    type="checkbox"
+                    aria-label={t('bulk.all')}
+                    checked={issues.length > 0 && issues.every((issue) => checked.has(issue.key))}
+                    onChange={(event) =>
+                      onCheck(
+                        issues.map((issue) => issue.key),
+                        event.target.checked,
+                      )
+                    }
+                  />
+                </th>
+              )}
               {all.map((column) => (
                 <Header
                   key={column}
@@ -471,6 +491,16 @@ export function IssueTable({
                 data-selected={issue.key === selectedKey}
                 className="h-[var(--row-compact)] hover:bg-[var(--surface-2)] data-[selected=true]:bg-[var(--accent-soft)]"
               >
+                {checked && onCheck && (
+                  <td className="border-b border-[var(--border)] px-2">
+                    <input
+                      type="checkbox"
+                      aria-label={t('bulk.one', { key: issue.key })}
+                      checked={checked.has(issue.key)}
+                      onChange={(event) => onCheck([issue.key], event.target.checked)}
+                    />
+                  </td>
+                )}
                 <td className="border-b border-[var(--border)] px-3">
                   <span className="flex items-center gap-2">
                     {!shown.has('issuetype') && <IssueTypeIcon type={issue.issueType} />}

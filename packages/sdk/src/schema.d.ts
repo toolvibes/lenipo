@@ -715,7 +715,11 @@ export interface paths {
     get: operations['Issues.get'];
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Delete an issue with its subtasks
+     * @description Needs the project permission `delete-issues`.
+     */
+    delete: operations['Issues.remove'];
     options?: never;
     head?: never;
     /** Change fields of an issue; every change is recorded in its history */
@@ -921,6 +925,46 @@ export interface paths {
     get: operations['Issues.pages'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/bulk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Change many issues at once
+     * @description Edit, transition, move to a sprint, delete, watch or unwatch. Each issue goes through the same checks as a single change; the result lists which failed and why.
+     */
+    post: operations['Issues.run'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/clone': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Copy an issue
+     * @description Copies fields, custom fields and the security level, links the copy to the original ("clones"), and optionally the subtasks. Needs create-issues.
+     */
+    post: operations['Issues.clone'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3792,6 +3836,57 @@ export interface components {
       /** @enum {string} */
       kind: 'mention' | 'macro';
       publishedAt: string | null;
+    };
+    BulkRequest: {
+      issueKeys: string[];
+      action: components['schemas']['BulkAction'];
+    };
+    BulkAction:
+      | {
+          /** @constant */
+          type: 'edit';
+          assigneeId?: string | null;
+          priority?: string;
+          /** @default [] */
+          addLabels?: string[];
+          /** @default [] */
+          removeLabels?: string[];
+        }
+      | {
+          /** @constant */
+          type: 'transition';
+          /** Format: uuid */
+          statusId: string;
+          resolution?: string;
+        }
+      | {
+          /** @constant */
+          type: 'sprint';
+          sprintId: string | null;
+        }
+      | {
+          /** @constant */
+          type: 'delete';
+        }
+      | {
+          /** @constant */
+          type: 'watch';
+        }
+      | {
+          /** @constant */
+          type: 'unwatch';
+        };
+    BulkResult: {
+      results: {
+        key: string;
+        ok: boolean;
+        error: string | null;
+      }[];
+    };
+    CloneIssueRequest: {
+      summary?: string;
+      /** @default false */
+      includeSubtasks?: boolean;
     };
     UpdateMeRequest: {
       displayName?: string;
@@ -6790,6 +6885,35 @@ export interface operations {
       };
     };
   };
+  'Issues.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Issues.update': {
     parameters: {
       query?: {
@@ -7370,6 +7494,74 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['IssuePageRef'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BulkRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BulkResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.clone': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CloneIssueRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

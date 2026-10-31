@@ -16,6 +16,7 @@ import { FormError } from '../../ui/FormError';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTable } from '../tracking/IssueTable';
 import { BasicSearch } from './BasicSearch';
+import { BulkChangeDialog } from './BulkChangeDialog';
 import { ColumnPicker } from './ColumnPicker';
 import { SaveFilterDialog } from './SaveFilterDialog';
 import { TqlInput } from './TqlInput';
@@ -112,6 +113,18 @@ export function SearchPage({
   const [offset, setOffset] = useState(0);
   const [checkNow, setCheckNow] = useState(false);
   const [saving, setSaving] = useState<'new' | 'details' | null>(null);
+  // Issues ticked for a bulk change (TL-16, E-97).
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const check = (keys: string[], on: boolean) =>
+    setChecked((current) => {
+      const next = new Set(current);
+      for (const key of keys) {
+        if (on) next.add(key);
+        else next.delete(key);
+      }
+      return next;
+    });
   const [deleting, setDeleting] = useState(false);
   const [mode, setMode] = useMode();
   const catalogue = useFieldCatalogue();
@@ -475,7 +488,20 @@ export function SearchPage({
             </div>
           </div>
 
+          {checked.size > 0 && (
+            <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-[13px]">
+              <span>{t('bulk.selected', { count: checked.size })}</span>
+              <Button variant="primary" onClick={() => setBulkOpen(true)}>
+                {t('bulk.open')}
+              </Button>
+              <Button variant="ghost" onClick={() => setChecked(new Set())}>
+                {t('bulk.clear')}
+              </Button>
+            </div>
+          )}
           <IssueTable
+            checked={checked}
+            onCheck={check}
             issues={page?.issues ?? []}
             empty={page && !results.error ? t('search.noResults') : null}
             columns={columns}
@@ -487,6 +513,12 @@ export function SearchPage({
         </IssueSplit>
       </div>
 
+      <BulkChangeDialog
+        issueKeys={[...checked]}
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onDone={() => setChecked(new Set())}
+      />
       <SaveFilterDialog
         open={saving !== null}
         onOpenChange={(open) => !open && setSaving(null)}

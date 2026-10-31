@@ -9,11 +9,13 @@ import {
 import { markdownToDoc, reviewMentions } from '@tasklore/editor';
 import type {
   ChangeGroup,
+  CloneIssueRequest,
   Comment,
   ComponentRef,
   CreateCommentRequest,
   CreateIssueLinkRequest,
   CreateIssueRequest,
+  CustomFieldInputs,
   CustomFieldValue,
   Issue,
   IssueList,
@@ -32,7 +34,20 @@ import type {
   VersionRef,
 } from '@tasklore/shared';
 import { formatDuration } from '@tasklore/tql';
-import { and, asc, count, desc, eq, inArray, isNull, max, min, type SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  max,
+  min,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -60,7 +75,7 @@ import { emitIssueEvent } from '../notifications/events.js';
 import { signalIssue } from '../realtime/signals.js';
 import { builtInId } from './builtins.js';
 import { ComponentService } from './component.service.js';
-import { CustomFieldService, type StoredValues } from './custom-field.service.js';
+import { appliesTo, CustomFieldService, type StoredValues } from './custom-field.service.js';
 import { durationSeconds } from './duration.js';
 import { type Change, displayText, recordChanges } from './history.js';
 import { securityVisible } from './issue-security.js';
@@ -1651,6 +1666,95 @@ export class IssueService {
         .filter((item) => item.groupId === group.id)
         .map((item) => ({ field: item.field, from: item.fromDisplay, to: item.toDisplay })),
     }));
+  }
+
+  /** Moves an issue and its subtasks to the trash (T-ISS-11); needs delete-issues. */
+  async deleteIssue(principal: Principal, key: string): Promise<void> {
+    const { issue } = await this.load(principal, key, 'delete-issues');
+    await this.database.db
+      .update(issues)
+      .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+      .where(
+        and(or(eq(issues.id, issue.id), eq(issues.parentId, issue.id)), isNull(issues.deletedAt)),
+      );
+  }
+
+  /**
+   * Copies an issue (T-ISS-10, E-97): summary with "Kopie:", description, priority, labels,
+   * estimates and dates, components, versions, the custom fields of its type, and its security
+   * level; it starts in the initial status, reported by the caller, unassigned, and links to the
+   * original with "clones". Subtasks come along on request.
+   */
+  async clone(
+    principal: Principal,
+    key: string,
+    request: CloneIssueRequest,
+    parentKey?: string,
+  ): Promise<Issue> {
+    const { issue: source, project } = await this.load(principal, key, 'browse');
+    const meta = await this.meta.load();
+    const type = meta.issueType.get(source.issueTypeId);
+    if (!type) throw new Error('Issue type missing');
+    const db = this.database.db;
+    const [parent] = source.parentId
+      ? await db.select({ key: issues.key }).from(issues).where(eq(issues.id, source.parentId))
+      : [];
+    const names = (list: Array<{ name: string }>) => list.map((entry) => entry.name);
+    const applying = new Set(
+      (await this.customFields.projectFieldConfig(project.id))
+        .filter((entry) => appliesTo(entry, source.issueTypeId))
+        .map((entry) => entry.fieldId),
+    );
+    const created = await this.create(principal, {
+      projectKey: project.key,
+      issueType: type.key,
+      summary: request.summary ?? `Kopie: ${source.summary}`.slice(0, 255),
+      description: (source.description as RichText | null) ?? null,
+      priority: meta.priority.get(source.priorityId)?.key,
+      assigneeId: null,
+      parentKey: parentKey ?? parent?.key ?? null,
+      labels: source.labels,
+      storyPoints: source.storyPoints,
+      startDate: source.startDate,
+      dueDate: source.dueDate,
+      components: names(await this.components.refsFor(source.id)),
+      fixVersions: names(await this.versions.refsFor(db, source.id, 'fix')),
+      affectsVersions: names(await this.versions.refsFor(db, source.id, 'affects')),
+      customFields: Object.fromEntries(
+        Object.entries(source.customFields as StoredValues).filter(([id]) => applying.has(id)),
+      ) as CustomFieldInputs,
+    });
+    const [copy] = await db.select().from(issues).where(eq(issues.key, created.key));
+    if (!copy) throw new Error('Clone vanished');
+    // The copy is as secret as the original, whatever the caller may set (E-94).
+    if (!parentKey && !parent && copy.securityLevelId !== source.securityLevelId) {
+      await db
+        .update(issues)
+        .set({ securityLevelId: source.securityLevelId })
+        .where(eq(issues.id, copy.id));
+    }
+    await this.links.create(principal, copy, {
+      type: 'clones',
+      direction: 'outward',
+      issueKey: source.key,
+    });
+    if (request.includeSubtasks) {
+      const children = await db
+        .select({ key: issues.key })
+        .from(issues)
+        .where(
+          and(
+            eq(issues.parentId, source.id),
+            isNull(issues.deletedAt),
+            securityVisible(principal.userId),
+          ),
+        )
+        .orderBy(asc(issues.rank));
+      for (const child of children) {
+        await this.clone(principal, child.key, { includeSubtasks: false }, copy.key);
+      }
+    }
+    return this.present(principal, copy.id);
   }
 
   async setWatching(principal: Principal, key: string, watching: boolean): Promise<void> {

@@ -1,6 +1,15 @@
-import { ArrowsOut, Check, Eye, EyeSlash, LinkSimple, Lock, X } from '@phosphor-icons/react';
+import {
+  ArrowsOut,
+  Check,
+  CopySimple,
+  Eye,
+  EyeSlash,
+  LinkSimple,
+  Lock,
+  X,
+} from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { Comment, Issue, Me, RichText, UpdateIssueRequest } from '@tasklore/shared';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -361,6 +370,19 @@ export function IssuePage({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: issueQuery(issueKey).queryKey }),
   });
 
+  // A copy with fields, subtasks and a "clones" link (TL-16, E-97).
+  const navigate = useNavigate();
+  const cloneIssue = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/issues/{key}/clone', {
+          params: { path: { key: issueKey } },
+          body: { includeSubtasks: (issue.data?.children.length ?? 0) > 0 },
+        }),
+      ),
+    onSuccess: (copy) => void navigate({ to: '/issues/$key', params: { key: copy.key } }),
+  });
+
   useCurrentProject(issue.data?.project.key);
   // In the panel the list keeps the keyboard; shortcuts belong to the full page (T-VIEW-04).
   useShortcuts(
@@ -476,6 +498,17 @@ export function IssuePage({
                 {copied ? <Check size={16} aria-hidden /> : <LinkSimple size={16} aria-hidden />}
                 {copied ? t('issues.linkCopied') : t('issues.copyLink')}
               </Button>
+              {permissions.has('create-issues') && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={cloneIssue.isPending}
+                  onClick={() => cloneIssue.mutate()}
+                >
+                  <CopySimple size={16} aria-hidden />
+                  {t('bulk.clone')}
+                </Button>
+              )}
               {watchButton}
             </>
           }

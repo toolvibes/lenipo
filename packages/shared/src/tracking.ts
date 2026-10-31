@@ -989,3 +989,53 @@ export const IssueLookup = z
   })
   .meta({ id: 'IssueLookup' });
 export type IssueLookup = z.infer<typeof IssueLookup>;
+
+// ---------------------------------------------------------------- bulk change and clone (TL-16, E-97)
+
+/** One change for many issues (T-ISS-11); each issue is handled on its own. */
+export const BulkAction = z
+  .discriminatedUnion('type', [
+    z.object({
+      type: z.literal('edit'),
+      /** Left out: no change; null unassigns. */
+      assigneeId: Id.nullable().optional(),
+      priority: z.string().min(1).optional(),
+      addLabels: Labels.default([]),
+      removeLabels: Labels.default([]),
+    }),
+    z.object({
+      type: z.literal('transition'),
+      statusId: Id,
+      resolution: z.string().min(1).optional(),
+    }),
+    /** Into a sprint, or the backlog with null. */
+    z.object({ type: z.literal('sprint'), sprintId: Id.nullable() }),
+    z.object({ type: z.literal('delete') }),
+    z.object({ type: z.literal('watch') }),
+    z.object({ type: z.literal('unwatch') }),
+  ])
+  .meta({ id: 'BulkAction' });
+export type BulkAction = z.infer<typeof BulkAction>;
+
+export const BulkRequest = z
+  .object({ issueKeys: z.array(z.string().min(1).max(30)).min(1).max(200), action: BulkAction })
+  .meta({ id: 'BulkRequest' });
+export type BulkRequest = z.infer<typeof BulkRequest>;
+
+export const BulkResult = z
+  .object({
+    results: z.array(
+      z.object({ key: z.string(), ok: z.boolean(), error: z.string().nullable() }),
+    ),
+  })
+  .meta({ id: 'BulkResult' });
+export type BulkResult = z.infer<typeof BulkResult>;
+
+/** A copy of an issue (T-ISS-10): fields, security level and a "clones" link to the original. */
+export const CloneIssueRequest = z
+  .object({
+    summary: Summary.optional(),
+    includeSubtasks: z.boolean().default(false),
+  })
+  .meta({ id: 'CloneIssueRequest' });
+export type CloneIssueRequest = z.infer<typeof CloneIssueRequest>;
