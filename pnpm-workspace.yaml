@@ -8,6 +8,8 @@ allowBuilds:
   esbuild: true
   # Install-time telemetry pulled in by swagger-ui-dist; never run it.
   "@scarf/scarf": false
+  # Its install script only checks versions; OpenTelemetry works without it.
+  protobufjs: false
 
 # One Node typings version across the workspace (matches the Node 24 LTS runtime).
 overrides:

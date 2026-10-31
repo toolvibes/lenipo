@@ -96,6 +96,14 @@ Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Date
 
 Betrieb (E-121): Administration → Betrieb schaltet Module ab, setzt den Wartungsmodus und einen Ankündigungsbanner und begrenzt Anfragen je Person, Token und IP. Mit `REDIS_URL` (Valkey) gelten die Grenzen über alle Instanzen; `RATE_LIMITS=false` schaltet sie ab, wenn ein Gateway davor schon begrenzt.
 
+### Kubernetes
+
+```bash
+helm install tasklore deploy/helm/tasklore --set image.repository=<registry>/tasklore --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' --set ingress.host=tasklore.example.org
+```
+
+Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen als Job vor jedem Update; PostgreSQL, Valkey und S3 laufen außerhalb (E-123). Updates rollen ohne Ausfall, solange Migrationen die Regel „erst erweitern, dann aufräumen“ einhalten (`pnpm migrations:check`). Metriken: `METRICS_PORT` (im Chart 9464) unter `/metrics`; Traces mit `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
 ### Aufbau
 
 ```

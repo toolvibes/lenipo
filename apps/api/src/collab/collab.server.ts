@@ -1,3 +1,4 @@
+import { Redis } from '@hocuspocus/extension-redis';
 import { Server } from '@hocuspocus/server';
 import { replaceSection, richTextSchema } from '@tasklore/editor';
 import {
@@ -6,11 +7,13 @@ import {
   yXmlFragmentToProsemirrorJSON,
 } from '@tiptap/y-tiptap';
 import { and, eq } from 'drizzle-orm';
+import { Redis as IORedis } from 'ioredis';
 import postgres from 'postgres';
 import * as Y from 'yjs';
 import { AccessService } from '../access/access.service.js';
 import type { AppDependencies } from '../app.module.js';
 import { AuditService } from '../audit/audit.service.js';
+import { countConnections } from '../core/metrics.js';
 import { collabWrites } from '../db/schema/index.js';
 import { isForeignOrigin } from '../identity/request-guards.js';
 import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
@@ -56,6 +59,11 @@ export function createCollabServer(
   const server: Server<CollabContext> = new Server<CollabContext>({
     name: 'tasklore-collab',
     port: config.COLLAB_PORT,
+    // Several collab instances share updates and presence through Valkey (TL-42, E-123);
+    // without it, run one.
+    extensions: config.REDIS_URL
+      ? [new Redis({ redis: new IORedis(config.REDIS_URL), prefix: 'tasklore:collab' })]
+      : [],
     quiet: true,
     stopOnSignals: false,
     // Persist at most every 2 s while typing, but never later than 10 s after the first change.
@@ -223,6 +231,7 @@ export function createCollabServer(
     log.debug({ id, document: write.document, error }, 'Agent change applied');
   }
 
+  countConnections('collab', () => server.hocuspocus.getConnectionsCount());
   return server;
 }
 

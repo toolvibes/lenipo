@@ -26,6 +26,8 @@ import { EventProcessor } from './event-processor.js';
 export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdown {
   private timers: NodeJS.Timeout[] = [];
   private busy = new Set<string>();
+  /** Jobs running right now; a shutdown lets them finish (TL-42). */
+  private running = new Set<Promise<void>>();
 
   constructor(
     @Inject(CONFIG) private readonly config: AppConfig,
@@ -84,16 +86,25 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     const timer = setInterval(() => {
       if (this.busy.has(name)) return;
       this.busy.add(name);
-      job()
+      const run: Promise<void> = job()
         .catch((error) => this.logger.error({ err: error, job: name }, 'Worker job failed'))
-        .finally(() => this.busy.delete(name));
+        .finally(() => {
+          this.busy.delete(name);
+          this.running.delete(run);
+        });
+      this.running.add(run);
     }, interval);
     timer.unref();
     this.timers.push(timer);
   }
 
-  onApplicationShutdown(): void {
+  /** No new jobs start; the running ones finish (the process limits how long it waits). */
+  async onApplicationShutdown(): Promise<void> {
     for (const timer of this.timers) clearInterval(timer);
     this.timers = [];
+    if (this.running.size > 0) {
+      this.logger.info({ jobs: this.running.size }, 'Waiting for running worker jobs');
+      await Promise.allSettled([...this.running]);
+    }
   }
 }

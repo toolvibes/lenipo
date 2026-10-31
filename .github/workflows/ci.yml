@@ -52,6 +52,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec biome ci .
       - run: pnpm licenses:check
+      - run: pnpm migrations:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
@@ -59,3 +60,9 @@ jobs:
         run: pnpm api:generate && git diff --exit-code packages/sdk
       - name: Migrations apply to an empty database
         run: pnpm db:migrate
+      - uses: azure/setup-helm@v4
+      - name: Helm chart renders
+        run: |
+          helm lint deploy/helm/tasklore --set secrets.DATABASE_URL=postgres://x
+          helm template t deploy/helm/tasklore --set secrets.DATABASE_URL=postgres://x > /dev/null
+          helm template t deploy/helm/tasklore --set existingSecret=s --set collab.replicas=2 --set api.autoscaling.enabled=true --set persistence.enabled=true --set persistence.existingClaim=files --set metrics.serviceMonitor.enabled=true > /dev/null

@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/drizzle/meta", "!pnpm-lock.yaml", "!.claude", "!**/*.md"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/drizzle/meta",
+      "!pnpm-lock.yaml",
+      "!.claude",
+      "!**/*.md",
+      "!deploy/helm"
+    ]
   },
   "formatter": {
     "enabled": true,

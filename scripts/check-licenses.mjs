@@ -27,6 +27,9 @@ const ALLOWED = new Set([
 const VERIFIED = new Map([
   // MIT per its LICENSE file; package.json lacks the field (TL-26, Mermaid).
   ['khroma@2.1.0', 'MIT'],
+  // MIT per its LICENSE.md (a fork of node-redlock); package.json wrongly says UNLICENSED
+  // (TL-42, via @hocuspocus/extension-redis).
+  ['@sesamecare-oss/redlock@1.4.0', 'MIT'],
 ]);
 
 const output = execFileSync('pnpm', ['licenses', 'list', '--json', '--prod'], { encoding: 'utf8' });

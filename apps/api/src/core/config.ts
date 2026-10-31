@@ -11,6 +11,10 @@ const configSchema = z.object({
   REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
   /** Request limits per person, token and IP (TL-40); off behind a gateway that limits already. */
   RATE_LIMITS: z.stringbool().default(true),
+  /** Prometheus metrics on this port at /metrics (TL-42); off when unset, never public. */
+  METRICS_PORT: z.coerce.number().int().positive().optional(),
+  /** How long a stopping process waits for running requests and jobs (TL-42). */
+  SHUTDOWN_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(25),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */
   WEB_DIST_DIR: z.string().min(1).optional(),
   /** Public address of this installation, used in log messages and links (e.g. https://tasklore.example.org). */

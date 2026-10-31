@@ -11,6 +11,7 @@ import { BoardService } from '../boards/board.service.js';
 import type { AppConfig } from '../core/config.js';
 import type { Principal } from '../core/http/principal.js';
 import type { Logger } from '../core/logger.js';
+import { countConnections } from '../core/metrics.js';
 import { CONFIG, LOGGER } from '../core/tokens.js';
 import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
 import { SessionService } from '../identity/session.service.js';
@@ -73,6 +74,7 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
       next();
     });
     io.on('connection', (socket) => this.connected(socket));
+    countConnections('realtime', () => io.engine.clientsCount);
     this.io = io;
 
     // A dedicated connection: LISTEN must not share a pooled one (E-58).

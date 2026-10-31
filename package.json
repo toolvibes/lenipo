@@ -21,6 +21,7 @@
     "docs:export": "pnpm --filter @tasklore/api lore export ../../docs --space TL",
     "docs:import": "pnpm --filter @tasklore/api lore import ../../docs --space TL --name Tasklore --skip README.md",
     "licenses:check": "node scripts/check-licenses.mjs",
+    "migrations:check": "node scripts/check-migrations.mjs",
     "design:tokens": "node scripts/build-design-tokens.mjs",
     "api:generate": "pnpm --filter @tasklore/shared build && pnpm --filter @tasklore/api build && pnpm --filter @tasklore/api openapi:export && pnpm --filter @tasklore/codegen generate && biome format --write packages/sdk"
   },

@@ -10,6 +10,13 @@ const HealthStatus = z
   .object({ status: z.enum(['ok', 'error']), database: z.enum(['ok', 'unreachable']).optional() })
   .meta({ id: 'HealthStatus' });
 
+let draining = false;
+
+/** From a shutdown signal on, readiness fails so load balancers stop sending requests (TL-42). */
+export function markDraining(): void {
+  draining = true;
+}
+
 @Public()
 @SkipRateLimit()
 @Controller('health')
@@ -31,6 +38,7 @@ export class HealthController {
   })
   @Get('ready')
   async ready() {
+    if (draining) throw new ServiceUnavailableException({ status: 'error', draining: true });
     try {
       await this.database.sql`select 1`;
     } catch {

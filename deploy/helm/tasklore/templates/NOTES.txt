@@ -1,0 +1,8 @@
+Tasklore {{ .Chart.AppVersion }} is installed as release {{ .Release.Name }}.
+
+{{- if .Values.ingress.enabled }}
+Open https://{{ .Values.ingress.host }} – on the first start the api pods log a setup code:
+  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=api | grep setupCode
+{{- end }}
+
+Metrics: port {{ .Values.metrics.port }} of every pod at /metrics (Service {{ include "tasklore.fullname" . }}-metrics).
