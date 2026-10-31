@@ -5,7 +5,7 @@ import type { TokenScope } from '@tasklore/shared';
  * MCP tools act as the token's owner with its scopes, marked as `mcp` in history (E-52).
  */
 export type Principal =
-  | { userId: string; via: 'session'; sessionId: string }
+  | { userId: string; via: 'session'; sessionId: string; stage?: string }
   | { userId: string; via: 'token' | 'mcp'; tokenId: string; scopes: readonly TokenScope[] };
 
 declare global {

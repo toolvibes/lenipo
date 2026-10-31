@@ -18,8 +18,11 @@ import {
   CreateTokenRequest,
   Me,
   PasswordChanged,
+  RecoveryCodes,
   SessionInfo,
   TokenInfo,
+  TwoFactorCodeRequest,
+  TwoFactorSetup,
   UpdateMeRequest,
 } from '@tasklore/shared';
 import type { Request } from 'express';
@@ -28,10 +31,12 @@ import { AuditService } from '../audit/audit.service.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
+import { AllowPartialSession } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
 import { clientOf } from './request-guards.js';
 import { SessionService } from './session.service.js';
 import { TokenService } from './token.service.js';
+import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
 
 /** Token-authenticated clients may read their own data but not mint or revoke credentials. */
@@ -49,12 +54,87 @@ export class MeController {
     @Inject(TokenService) private readonly tokens: TokenService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(AuthService) private readonly auth: AuthService,
+    @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
   ) {}
 
   @Endpoint({ tag: 'Me', summary: 'Get the signed-in user', response: Me })
+  @AllowPartialSession('second-factor', 'setup-2fa')
   @Get()
   me(@CurrentPrincipal() principal: Principal): Promise<Me> {
-    return this.users.me(principal.userId, principal.via);
+    return this.users.me(
+      principal.userId,
+      principal.via,
+      principal.via === 'session' ? principal.stage : undefined,
+    );
+  }
+
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Start setting up two-factor sign-in: a secret for the authenticator app',
+    response: TwoFactorSetup,
+  })
+  @AllowPartialSession('setup-2fa')
+  @Post('2fa/setup')
+  @HttpCode(200)
+  setupTwoFactor(@CurrentPrincipal() principal: Principal): Promise<TwoFactorSetup> {
+    requireSession(principal);
+    return this.twoFactor.setup(principal.userId);
+  }
+
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Turn two-factor sign-in on with a first code; returns recovery codes once',
+    response: RecoveryCodes,
+  })
+  @AllowPartialSession('setup-2fa')
+  @Post('2fa/enable')
+  @HttpCode(200)
+  async enableTwoFactor(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(TwoFactorCodeRequest) body: TwoFactorCodeRequest,
+  ): Promise<RecoveryCodes> {
+    requireSession(principal);
+    const codes = await this.twoFactor.enable(principal.userId, body.code);
+    if (principal.via === 'session' && principal.stage === 'setup-2fa') {
+      await this.sessions.setStage(principal.sessionId, 'full');
+    }
+    return { codes };
+  }
+
+  @Endpoint({ tag: 'Me', summary: 'Turn two-factor sign-in off with a valid code' })
+  @Post('2fa/disable')
+  @HttpCode(204)
+  async disableTwoFactor(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(TwoFactorCodeRequest) body: TwoFactorCodeRequest,
+  ): Promise<void> {
+    requireSession(principal);
+    await this.twoFactor.disable(principal.userId, body.code);
+  }
+
+  @Endpoint({
+    tag: 'Me',
+    summary: 'Replace the recovery codes; needs a valid code',
+    response: RecoveryCodes,
+  })
+  @Post('2fa/recovery-codes')
+  @HttpCode(200)
+  async recoveryCodes(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(TwoFactorCodeRequest) body: TwoFactorCodeRequest,
+  ): Promise<RecoveryCodes> {
+    requireSession(principal);
+    return { codes: await this.twoFactor.regenerate(principal.userId, body.code) };
+  }
+
+  @Endpoint({ tag: 'Me', summary: 'End all other sessions of the signed-in user' })
+  @Delete('sessions')
+  @HttpCode(204)
+  async revokeOtherSessions(@CurrentPrincipal() principal: Principal): Promise<void> {
+    requireSession(principal);
+    if (principal.via === 'session') {
+      await this.sessions.revokeOthers(principal.userId, principal.sessionId);
+    }
   }
 
   @Endpoint({

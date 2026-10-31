@@ -23,6 +23,10 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
     mutationFn: () => unwrap(client.POST('/api/v1/auth/login', { body: { email, password } })),
     onSuccess: async (me) => {
       queryClient.setQueryData(meQuery.queryKey, me);
+      if (me.twoFactor.pending) {
+        await navigate({ to: '/two-factor', search: { redirect } });
+        return;
+      }
       await navigate({ to: redirect ?? '/' });
     },
   });

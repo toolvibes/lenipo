@@ -7,6 +7,7 @@ import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import { groupMembers, groups, users } from '../db/schema/index.js';
 import { GroupService } from './group.service.js';
+import { TwoFactorService } from './two-factor.service.js';
 
 export interface NewUser {
   email: string;
@@ -21,11 +22,17 @@ export class UserService {
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(GroupService) private readonly groupService: GroupService,
     @Inject(AccessService) private readonly access: AccessService,
+    @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
   ) {}
 
   async findForLogin(email: string) {
     const [row] = await this.database.db
-      .select({ id: users.id, passwordHash: users.passwordHash, status: users.status })
+      .select({
+        id: users.id,
+        passwordHash: users.passwordHash,
+        status: users.status,
+        totpEnabledAt: users.totpEnabledAt,
+      })
       .from(users)
       .where(eq(users.email, email));
     return row ?? null;
@@ -60,7 +67,7 @@ export class UserService {
       .where(eq(users.id, userId));
   }
 
-  async me(userId: string, via: Me['authenticatedVia']): Promise<Me> {
+  async me(userId: string, via: Me['authenticatedVia'], stage = 'full'): Promise<Me> {
     const [user] = await this.database.db.select().from(users).where(eq(users.id, userId));
     if (!user) throw new NotFoundException('User not found');
     return {
@@ -74,6 +81,7 @@ export class UserService {
       onboarded: user.onboardedAt !== null,
       keyboardShortcuts: user.keyboardShortcuts,
       hasPassword: user.passwordHash !== null,
+      twoFactor: await this.twoFactor.status(userId, stage),
     };
   }
 

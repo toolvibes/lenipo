@@ -10,9 +10,11 @@ import postgres from 'postgres';
 import * as Y from 'yjs';
 import { AccessService } from '../access/access.service.js';
 import type { AppDependencies } from '../app.module.js';
+import { AuditService } from '../audit/audit.service.js';
 import { collabWrites } from '../db/schema/index.js';
 import { isForeignOrigin } from '../identity/request-guards.js';
 import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
+import { SecuritySettingsService } from '../identity/security-settings.service.js';
 import { SessionService } from '../identity/session.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
 import {
@@ -42,7 +44,11 @@ export function createCollabServer(
   { recheckMs = 30_000 }: { recheckMs?: number } = {},
 ) {
   const store = new CollabDocumentStore(database.db);
-  const sessions = new SessionService(database, config);
+  // The same sign-in rules as the API (TL-18): lifetimes from the security settings.
+  const sessions = new SessionService(
+    database,
+    new SecuritySettingsService(database, config, new AuditService(database)),
+  );
   const spaceAccess = new SpaceAccessService(database, new AccessService(database));
   const log = logger.child({ role: 'collab' });
   let listener: postgres.Sql | undefined;
@@ -67,7 +73,8 @@ export function createCollabServer(
       }
       const secret = readCookie(requestHeaders.get('cookie') ?? undefined, SESSION_COOKIE);
       const session = secret ? await sessions.authenticate(secret) : null;
-      if (!session) {
+      // A sign-in still waiting for its second factor does not edit pages.
+      if (session?.stage !== 'full') {
         throw new Error('Not signed in');
       }
       // Drafts are for editors only; everyone else is rejected, not given read-only (E-59).

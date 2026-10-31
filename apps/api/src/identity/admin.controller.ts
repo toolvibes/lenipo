@@ -8,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Req,
 } from '@nestjs/common';
 import {
@@ -15,6 +16,7 @@ import {
   CreateGroupRequest,
   CreateUserRequest,
   GroupSummary,
+  SecuritySettings,
   UserSummary,
 } from '@tasklore/shared';
 import type { Request } from 'express';
@@ -27,6 +29,9 @@ import type { Principal } from '../core/http/principal.js';
 import { GroupService } from './group.service.js';
 import { PasswordService } from './password.service.js';
 import { clientOf } from './request-guards.js';
+import { SecuritySettingsService } from './security-settings.service.js';
+import { SessionService } from './session.service.js';
+import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
 
 @RequireGlobal('admin')
@@ -37,7 +42,72 @@ export class AdminController {
     @Inject(GroupService) private readonly groups: GroupService,
     @Inject(PasswordService) private readonly passwords: PasswordService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(SecuritySettingsService) private readonly security: SecuritySettingsService,
+    @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
   ) {}
+
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Sign-in rules: session lifetimes and groups that must use two-factor sign-in',
+    response: SecuritySettings,
+  })
+  @Get('security-settings')
+  securitySettings(): Promise<SecuritySettings> {
+    return this.security.get();
+  }
+
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Change the sign-in rules (TL-18)',
+    response: SecuritySettings,
+  })
+  @Put('security-settings')
+  setSecuritySettings(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(SecuritySettings) body: SecuritySettings,
+  ): Promise<SecuritySettings> {
+    return this.security.set(principal, body);
+  }
+
+  @Endpoint({ tag: 'Admin', summary: 'End every session of a user' })
+  @Delete('users/:id/sessions')
+  @HttpCode(204)
+  async endSessions(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    const ended = await this.sessions.revokeAll(id);
+    await this.audit.record({
+      action: 'admin.sessions_ended',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+      details: { ended },
+    });
+  }
+
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Remove a user’s two-factor sign-in, e.g. after a lost phone',
+    description: 'If a group demands it, the person sets it up again at the next sign-in.',
+  })
+  @Delete('users/:id/2fa')
+  @HttpCode(204)
+  async resetTwoFactor(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.twoFactor.reset(id);
+    await this.audit.record({
+      action: 'admin.2fa_reset',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+    });
+  }
 
   @Endpoint({ tag: 'Admin', summary: 'List all users', response: z.array(UserSummary) })
   @Get('users')

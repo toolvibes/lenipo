@@ -337,6 +337,13 @@
       "when": 1793429782286,
       "tag": "0047_issue_key_aliases",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793430271565,
+      "tag": "0048_two_factor",
+      "breakpoints": true
     }
   ]
 }

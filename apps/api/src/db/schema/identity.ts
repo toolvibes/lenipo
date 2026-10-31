@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   index,
   inet,
@@ -29,6 +30,13 @@ export const users = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     lastLoginAt: timestamp({ withTimezone: true }),
+    /** TOTP secret (base32) once two-factor sign-in is on (TL-18, E-100). */
+    totpSecret: text(),
+    /** A secret being set up, until a first code confirms it. */
+    totpPendingSecret: text(),
+    totpEnabledAt: timestamp({ withTimezone: true }),
+    /** Last accepted time step, so a code cannot be used twice. */
+    totpLastStep: bigint({ mode: 'number' }),
     /** Finished or skipped the welcome steps (E-71); null sends the web app to /welcome. */
     onboardedAt: timestamp({ withTimezone: true }),
     /** Single-key shortcuts in the web app; off for people who type with speech or switches (TL-7). */
@@ -93,6 +101,11 @@ export const sessions = pgTable(
     lastSeenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     revokedAt: timestamp({ withTimezone: true }),
+    /**
+     * 'full'; 'second-factor' after the password while a TOTP code is due; 'setup-2fa' while a
+     * person who must use two-factor sign-in has not set it up yet (TL-18, E-100).
+     */
+    stage: text().notNull().default('full'),
   },
   (table) => [
     uniqueIndex('sessions_token_hash_unique').on(table.tokenHash),
@@ -150,3 +163,17 @@ export const oidcLoginAttempts = pgTable('oidc_login_attempts', {
   redirectTo: text().notNull(),
   expiresAt: timestamp({ withTimezone: true }).notNull(),
 });
+
+/** Single-use recovery codes for two-factor sign-in, stored hashed (TL-18, E-100). */
+export const recoveryCodes = pgTable(
+  'recovery_codes',
+  {
+    id: uuid().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text().notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [index('recovery_codes_user_idx').on(table.userId)],
+);

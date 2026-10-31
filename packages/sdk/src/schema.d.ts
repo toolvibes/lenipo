@@ -24,6 +24,72 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/security-settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Sign-in rules: session lifetimes and groups that must use two-factor sign-in
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.securitySettings'];
+    /**
+     * Change the sign-in rules (TL-18)
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Admin.setSecuritySettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/users/{id}/sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * End every session of a user
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Admin.endSessions'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/users/{id}/2fa': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove a user’s two-factor sign-in, e.g. after a lost phone
+     * @description If a group demands it, the person sets it up again at the next sign-in.
+     *
+     *     Requires the global permission `admin`.
+     */
+    delete: operations['Admin.resetTwoFactor'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/users': {
     parameters: {
       query?: never;
@@ -377,6 +443,26 @@ export interface paths {
     put?: never;
     /** Sign in with email and password */
     post: operations['Auth.login'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/2fa': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Complete a sign-in with the code from the authenticator app or a recovery code
+     * @description After a password sign-in whose `twoFactor.pending` is `verify` (TL-18, E-100).
+     */
+    post: operations['Auth.secondFactor'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1009,7 +1095,7 @@ export interface paths {
     patch: operations['Me.update'];
     trace?: never;
   };
-  '/api/v1/me/password': {
+  '/api/v1/me/2fa/setup': {
     parameters: {
       query?: never;
       header?: never;
@@ -1018,11 +1104,59 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /**
-     * Change the own password; other sessions end
-     * @description Needs the current password and a browser session. Failures count against the same limit as the login (429 when exceeded); accounts without a local password get 409. Personal access tokens stay valid.
-     */
-    post: operations['Me.changePassword'];
+    /** Start setting up two-factor sign-in: a secret for the authenticator app */
+    post: operations['Me.setupTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/2fa/enable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Turn two-factor sign-in on with a first code; returns recovery codes once */
+    post: operations['Me.enableTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/2fa/disable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Turn two-factor sign-in off with a valid code */
+    post: operations['Me.disableTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/2fa/recovery-codes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Replace the recovery codes; needs a valid code */
+    post: operations['Me.recoveryCodes'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1040,6 +1174,27 @@ export interface paths {
     get: operations['Me.listSessions'];
     put?: never;
     post?: never;
+    /** End all other sessions of the signed-in user */
+    delete: operations['Me.revokeOtherSessions'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Change the own password; other sessions end
+     * @description Needs the current password and a browser session. Failures count against the same limit as the login (429 when exceeded); accounts without a local password get 409. Personal access tokens stay valid.
+     */
+    post: operations['Me.changePassword'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2835,6 +2990,16 @@ export interface components {
       users: number;
       oidcEnabled: boolean;
     };
+    SecuritySettings: {
+      sessionIdleHours: number;
+      sessionMaxDays: number;
+      twoFactorGroupIds: string[];
+    };
+    SecuritySettingsInput: {
+      sessionIdleHours: number;
+      sessionMaxDays: number;
+      twoFactorGroupIds: string[];
+    };
     UserSummary: {
       /** Format: uuid */
       id: string;
@@ -3221,6 +3386,16 @@ export interface components {
       onboarded: boolean;
       keyboardShortcuts: boolean;
       hasPassword: boolean;
+      twoFactor: components['schemas']['TwoFactorStatus'];
+    };
+    TwoFactorStatus: {
+      enabled: boolean;
+      required: boolean;
+      pending: ('verify' | 'setup') | null;
+      recoveryCodesLeft: number;
+    };
+    TwoFactorCodeRequest: {
+      code: string;
     };
     AuthProviders: {
       password: boolean;
@@ -3921,6 +4096,13 @@ export interface components {
       issueType?: string;
       /** Format: uuid */
       statusId?: string;
+    };
+    TwoFactorSetup: {
+      secret: string;
+      uri: string;
+    };
+    RecoveryCodes: {
+      codes: string[];
     };
     UpdateMeRequest: {
       displayName?: string;
@@ -5218,6 +5400,126 @@ export interface operations {
       };
     };
   };
+  'Admin.securitySettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecuritySettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.setSecuritySettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SecuritySettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SecuritySettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.endSessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.resetTwoFactor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Admin.listUsers': {
     parameters: {
       query?: never;
@@ -6078,6 +6380,39 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['LoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Auth.secondFactor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorCodeRequest'];
       };
     };
     responses: {
@@ -7706,7 +8041,36 @@ export interface operations {
       };
     };
   };
-  'Me.changePassword': {
+  'Me.setupTwoFactor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TwoFactorSetup'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.enableTwoFactor': {
     parameters: {
       query?: never;
       header?: never;
@@ -7715,7 +8079,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['ChangePasswordRequest'];
+        'application/json': components['schemas']['TwoFactorCodeRequest'];
       };
     };
     responses: {
@@ -7725,7 +8089,71 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['PasswordChanged'];
+          'application/json': components['schemas']['RecoveryCodes'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.disableTwoFactor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorCodeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.recoveryCodes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorCodeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecoveryCodes'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -7755,6 +8183,66 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SessionInfo'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.revokeOtherSessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Me.changePassword': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PasswordChanged'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

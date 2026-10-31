@@ -72,6 +72,10 @@ export const Me = z
     keyboardShortcuts: z.boolean(),
     /** Has a local password to change; false for accounts that only sign in via OIDC (TL-59). */
     hasPassword: z.boolean(),
+    /** Two-factor sign-in (TL-18, E-100). */
+    get twoFactor() {
+      return TwoFactorStatus;
+    },
   })
   .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;
@@ -220,3 +224,49 @@ export const SystemInfo = z
   })
   .meta({ id: 'SystemInfo' });
 export type SystemInfo = z.infer<typeof SystemInfo>;
+
+// ---------------------------------------------------------------- two-factor sign-in (TL-18, E-100)
+
+export const TwoFactorStatus = z
+  .object({
+    enabled: z.boolean(),
+    /** A group of the person demands it (admin setting). */
+    required: z.boolean(),
+    /** What this session still needs: a code after the password, or setting it up. */
+    pending: z.enum(['verify', 'setup']).nullable(),
+    recoveryCodesLeft: z.number().int(),
+  })
+  .meta({ id: 'TwoFactorStatus' });
+export type TwoFactorStatus = z.infer<typeof TwoFactorStatus>;
+
+/** The secret for an authenticator app, as text and as an otpauth:// URI for a QR code. */
+export const TwoFactorSetup = z
+  .object({ secret: z.string(), uri: z.string() })
+  .meta({ id: 'TwoFactorSetup' });
+export type TwoFactorSetup = z.infer<typeof TwoFactorSetup>;
+
+export const TwoFactorCodeRequest = z
+  .object({ code: z.string().trim().min(6).max(20) })
+  .meta({ id: 'TwoFactorCodeRequest' });
+export type TwoFactorCodeRequest = z.infer<typeof TwoFactorCodeRequest>;
+
+/** Shown once: each code signs in a single time instead of an app code. */
+export const RecoveryCodes = z.object({ codes: z.array(z.string()) }).meta({ id: 'RecoveryCodes' });
+export type RecoveryCodes = z.infer<typeof RecoveryCodes>;
+
+/** Instance-wide sign-in rules for administrators (TL-18, E-100). */
+export const SecuritySettings = z
+  .object({
+    /** A session ends after this many hours without activity. */
+    sessionIdleHours: z
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 30),
+    /** And at the latest this many days after sign-in. */
+    sessionMaxDays: z.number().int().min(1).max(365),
+    /** Members of these groups must use two-factor sign-in with a password. */
+    twoFactorGroupIds: z.array(z.string().uuid()).max(100),
+  })
+  .meta({ id: 'SecuritySettings' });
+export type SecuritySettings = z.infer<typeof SecuritySettings>;

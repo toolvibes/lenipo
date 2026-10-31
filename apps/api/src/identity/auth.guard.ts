@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -38,6 +39,29 @@ export class AuthGuard implements CanActivate {
     if (!isPublic && !request.principal) {
       throw new UnauthorizedException('Authentication required');
     }
+    // A sign-in waiting for its second factor (or its setup) reaches only the routes for that.
+    const principal = request.principal;
+    if (
+      !isPublic &&
+      principal?.via === 'session' &&
+      principal.stage &&
+      principal.stage !== 'full'
+    ) {
+      const allowed =
+        this.reflector.getAllAndOverride<string[]>(PARTIAL_SESSION, [
+          context.getHandler(),
+          context.getClass(),
+        ]) ?? [];
+      if (!allowed.includes(principal.stage)) {
+        throw new ForbiddenException({
+          message:
+            principal.stage === 'second-factor'
+              ? 'Enter the code from your authenticator app first'
+              : 'Set up two-factor sign-in first',
+          type: 'urn:tasklore:problem:two-factor',
+        });
+      }
+    }
     return true;
   }
 
@@ -56,7 +80,17 @@ export class AuthGuard implements CanActivate {
     if (!secret) return undefined;
     const session = await this.sessions.authenticate(secret);
     return session
-      ? { userId: session.userId, via: 'session', sessionId: session.sessionId }
+      ? {
+          userId: session.userId,
+          via: 'session',
+          sessionId: session.sessionId,
+          stage: session.stage,
+        }
       : undefined;
   }
 }
+
+/** Session stages, besides a full one, that may use a route (TL-18, E-100). */
+export const PARTIAL_SESSION = 'tasklore:partial-session';
+export const AllowPartialSession = (...stages: Array<'second-factor' | 'setup-2fa'>) =>
+  SetMetadata(PARTIAL_SESSION, stages);

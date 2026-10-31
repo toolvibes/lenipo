@@ -13,10 +13,12 @@ import { GroupService } from './group.service.js';
 import { MeController } from './me.controller.js';
 import { OidcService } from './oidc.service.js';
 import { PasswordService } from './password.service.js';
+import { SecuritySettingsService } from './security-settings.service.js';
 import { SessionService } from './session.service.js';
 import { SetupController } from './setup.controller.js';
 import { SetupService } from './setup.service.js';
 import { TokenService } from './token.service.js';
+import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
 import { GroupsController, UsersController } from './users.controller.js';
 
@@ -32,6 +34,8 @@ import { GroupsController, UsersController } from './users.controller.js';
   ],
   providers: [
     AccessService,
+    SecuritySettingsService,
+    TwoFactorService,
     AttemptLimiter,
     AuditService,
     AuthService,

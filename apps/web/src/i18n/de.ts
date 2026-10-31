@@ -1061,6 +1061,58 @@ export const de = {
     none: 'Keine Seite ist beschränkt.',
     lift: 'Aufheben',
   },
+  twoFactor: {
+    section: 'Zwei-Faktor-Anmeldung',
+    title: 'Code eingeben',
+    setupTitle: 'Zwei-Faktor-Anmeldung einrichten',
+    enter:
+      'Gib den sechsstelligen Code aus deiner Authenticator-App ein, oder einen deiner Wiederherstellungscodes.',
+    required:
+      'Für dein Konto ist die Zwei-Faktor-Anmeldung vorgeschrieben. Richte sie einmal ein, dann geht es weiter.',
+    requiredHint: 'Für eine deiner Gruppen vorgeschrieben – sie lässt sich nicht abschalten.',
+    scan: 'Scanne den QR-Code mit einer Authenticator-App (z. B. Aegis, 2FAS, Google Authenticator) und gib den angezeigten Code ein.',
+    qr: 'QR-Code für die Authenticator-App',
+    manual: 'Oder diesen Schlüssel von Hand eintragen:',
+    code: 'Code',
+    confirmCode: 'Aktueller Code aus der App',
+    enable: 'Aktivieren',
+    verify: 'Bestätigen',
+    invalid: 'Der Code stimmt nicht.',
+    cancel: 'Abmelden',
+    recoveryIntro:
+      'Bewahre diese Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du keinen Zugriff auf die App hast. Sie werden nur jetzt angezeigt.',
+    copy: 'Kopieren',
+    saved: 'Ich habe sie gesichert',
+    on_one: 'Aktiv. Noch {{count}} Wiederherstellungscode übrig.',
+    on_other: 'Aktiv. Noch {{count}} Wiederherstellungscodes übrig.',
+    off: 'Nicht eingerichtet. Mit einer Authenticator-App schützt ein zweiter Faktor dein Konto, auch wenn das Passwort bekannt wird.',
+    setUp: 'Einrichten',
+    regenerate: 'Neue Wiederherstellungscodes',
+    disable: 'Abschalten',
+  },
+  signIn: {
+    title: 'Anmeldung & Sitzungen',
+    intro:
+      'Wie lange Sitzungen gelten und welche Gruppen sich mit einem zweiten Faktor anmelden müssen. Gilt für Anmeldungen mit Passwort; bei SSO regelt das der Identitätsanbieter.',
+    idleHours: 'Abmelden nach Inaktivität (Stunden)',
+    maxDays: 'Höchstdauer einer Sitzung (Tage)',
+    twoFactorGroups: 'Zwei-Faktor-Anmeldung vorschreiben für',
+    twoFactorHint: 'Mitglieder richten sie bei der nächsten Anmeldung ein.',
+    members_one: '{{count}} Mitglied',
+    members_other: '{{count}} Mitglieder',
+    saved: 'Gespeichert',
+    people: 'Einzelne Personen',
+    peopleIntro:
+      'Bei verlorenem Gerät: alle Sitzungen beenden oder die Zwei-Faktor-Anmeldung zurücksetzen.',
+    search: 'Person suchen',
+    endSessions: 'Sitzungen beenden',
+    endSessionsConfirm: 'Alle Sitzungen von {{name}} beenden?',
+    reset: '2FA zurücksetzen',
+    resetConfirm:
+      'Zwei-Faktor-Anmeldung von {{name}} zurücksetzen? Alle Sitzungen enden ebenfalls.',
+    sessionsEnded: 'Alle Sitzungen wurden beendet.',
+    twoFactorReset: 'Die Zwei-Faktor-Anmeldung wurde zurückgesetzt.',
+  },
   access: {
     title: 'Rechte prüfen',
     intro:

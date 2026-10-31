@@ -49,6 +49,140 @@
         }
       }
     },
+    "/api/v1/admin/security-settings": {
+      "get": {
+        "operationId": "Admin.securitySettings",
+        "summary": "Sign-in rules: session lifetimes and groups that must use two-factor sign-in",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecuritySettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Admin.setSecuritySettings",
+        "summary": "Change the sign-in rules (TL-18)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecuritySettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecuritySettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/sessions": {
+      "delete": {
+        "operationId": "Admin.endSessions",
+        "summary": "End every session of a user",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/2fa": {
+      "delete": {
+        "operationId": "Admin.resetTwoFactor",
+        "summary": "Remove a user’s two-factor sign-in, e.g. after a lost phone",
+        "description": "If a group demands it, the person sets it up again at the next sign-in.\n\nRequires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "Admin.listUsers",
@@ -1086,6 +1220,46 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/2fa": {
+      "post": {
+        "operationId": "Auth.secondFactor",
+        "summary": "Complete a sign-in with the code from the authenticator app or a recovery code",
+        "description": "After a password sign-in whose `twoFactor.pending` is `verify` (TL-18, E-100).",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeRequest"
               }
             }
           }
@@ -3205,6 +3379,197 @@
         }
       }
     },
+    "/api/v1/me/2fa/setup": {
+      "post": {
+        "operationId": "Me.setupTwoFactor",
+        "summary": "Start setting up two-factor sign-in: a secret for the authenticator app",
+        "tags": ["Me"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorSetup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/2fa/enable": {
+      "post": {
+        "operationId": "Me.enableTwoFactor",
+        "summary": "Turn two-factor sign-in on with a first code; returns recovery codes once",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/2fa/disable": {
+      "post": {
+        "operationId": "Me.disableTwoFactor",
+        "summary": "Turn two-factor sign-in off with a valid code",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/2fa/recovery-codes": {
+      "post": {
+        "operationId": "Me.recoveryCodes",
+        "summary": "Replace the recovery codes; needs a valid code",
+        "tags": ["Me"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/sessions": {
+      "delete": {
+        "operationId": "Me.revokeOtherSessions",
+        "summary": "End all other sessions of the signed-in user",
+        "tags": ["Me"],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Me.listSessions",
+        "summary": "List the signed-in user’s active sessions",
+        "tags": ["Me"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionInfo"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/password": {
       "post": {
         "operationId": "Me.changePassword",
@@ -3228,38 +3593,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasswordChanged"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error (RFC 9457 problem details)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/me/sessions": {
-      "get": {
-        "operationId": "Me.listSessions",
-        "summary": "List the signed-in user’s active sessions",
-        "tags": ["Me"],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SessionInfo"
-                  }
                 }
               }
             }
@@ -8802,6 +9135,57 @@
         ],
         "additionalProperties": false
       },
+      "SecuritySettings": {
+        "type": "object",
+        "properties": {
+          "sessionIdleHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 720
+          },
+          "sessionMaxDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "twoFactorGroupIds": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        },
+        "required": ["sessionIdleHours", "sessionMaxDays", "twoFactorGroupIds"],
+        "additionalProperties": false
+      },
+      "SecuritySettingsInput": {
+        "type": "object",
+        "properties": {
+          "sessionIdleHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 720
+          },
+          "sessionMaxDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "twoFactorGroupIds": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        },
+        "required": ["sessionIdleHours", "sessionMaxDays", "twoFactorGroupIds"]
+      },
       "UserSummary": {
         "type": "object",
         "properties": {
@@ -10036,6 +10420,9 @@
           },
           "hasPassword": {
             "type": "boolean"
+          },
+          "twoFactor": {
+            "$ref": "#/components/schemas/TwoFactorStatus"
           }
         },
         "required": [
@@ -10048,9 +10435,50 @@
           "authenticatedVia",
           "onboarded",
           "keyboardShortcuts",
-          "hasPassword"
+          "hasPassword",
+          "twoFactor"
         ],
         "additionalProperties": false
+      },
+      "TwoFactorStatus": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "pending": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["verify", "setup"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recoveryCodesLeft": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["enabled", "required", "pending", "recoveryCodesLeft"],
+        "additionalProperties": false
+      },
+      "TwoFactorCodeRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 20
+          }
+        },
+        "required": ["code"]
       },
       "AuthProviders": {
         "type": "object",
@@ -12946,6 +13374,32 @@
           }
         },
         "required": ["projectKey"]
+      },
+      "TwoFactorSetup": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          }
+        },
+        "required": ["secret", "uri"],
+        "additionalProperties": false
+      },
+      "RecoveryCodes": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["codes"],
+        "additionalProperties": false
       },
       "UpdateMeRequest": {
         "type": "object",

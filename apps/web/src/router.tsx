@@ -18,10 +18,12 @@ import {
 } from './features/admin/NotificationSchemes';
 import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
 import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/SecuritySchemes';
+import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { SetupPage } from './features/auth/SetupPage';
+import { TwoFactorPage } from './features/auth/TwoFactorPage';
 import { WelcomePage } from './features/auth/WelcomePage';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
@@ -89,6 +91,26 @@ const loginRoute = createRoute({
   },
 });
 
+/** The second step of a sign-in, or setting it up where a group demands it (TL-18, E-100). */
+const twoFactorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/two-factor',
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: safeRedirectPath(search.redirect),
+  }),
+  beforeLoad: async ({ context }) => {
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (!me) throw redirect({ to: '/login' });
+    if (!me.twoFactor.pending) throw redirect({ to: '/' });
+    applyLocale(me.locale);
+    return { me };
+  },
+  component: function TwoFactor() {
+    const { redirect: target } = twoFactorRoute.useSearch();
+    return <TwoFactorPage me={twoFactorRoute.useRouteContext().me} redirect={target} />;
+  },
+});
+
 /** The welcome steps after the first sign-in, full screen outside the app shell (E-71). */
 const welcomeRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -96,6 +118,8 @@ const welcomeRoute = createRoute({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (!me) throw redirect({ to: '/login', search: { redirect: '/welcome' } });
+    if (me.twoFactor.pending)
+      throw redirect({ to: '/two-factor', search: { redirect: '/welcome' } });
     if (me.onboarded) throw redirect({ to: '/' });
     applyLocale(me.locale);
     return { me };
@@ -139,6 +163,9 @@ const appRoute = createRoute({
   beforeLoad: async ({ context, location }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+    if (me.twoFactor.pending) {
+      throw redirect({ to: '/two-factor', search: { redirect: location.href } });
+    }
     applyLocale(me.locale);
     // New people start with the welcome steps (E-71).
     if (!me.onboarded) throw redirect({ to: '/welcome' });
@@ -573,6 +600,12 @@ const customFieldsRoute = createRoute({
   component: CustomFieldsPage,
 });
 
+const signInSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/sign-in',
+  component: SignInSettingsPage,
+});
+
 const timeTrackingRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/time-tracking',
@@ -590,6 +623,7 @@ const webhookRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   setupRoute,
+  twoFactorRoute,
   loginRoute,
   welcomeRoute,
   printRoute,
@@ -624,6 +658,7 @@ const routeTree = rootRoute.addChildren([
     adminRoute.addChildren([
       webhooksRoute,
       webhookRoute,
+      signInSettingsRoute,
       timeTrackingRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,

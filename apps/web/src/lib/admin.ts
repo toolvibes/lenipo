@@ -27,3 +27,8 @@ export const timeTrackingSettingsQuery = queryOptions({
   queryKey: ['admin', 'time-tracking'],
   queryFn: () => unwrap(client.GET('/api/v1/admin/time-tracking')),
 });
+
+export const securitySettingsQuery = queryOptions({
+  queryKey: ['admin', 'security-settings'],
+  queryFn: () => unwrap(client.GET('/api/v1/admin/security-settings')),
+});

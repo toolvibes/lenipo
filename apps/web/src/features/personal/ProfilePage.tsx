@@ -20,6 +20,7 @@ import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 import { TopBar } from '../../ui/TopBar';
+import { RecoveryCodeList, TwoFactorSetupFlow } from '../auth/TwoFactorPage';
 import { Settings as EmailSettings } from '../notifications/NotificationBell';
 
 const tokensQuery = queryOptions({
@@ -460,7 +461,8 @@ function Sessions() {
   const queryClient = useQueryClient();
   const sessions = useQuery(sessionsQuery);
   const revoke = useMutation({
-    mutationFn: async (ids: string[]) => {
+    mutationFn: async (ids: string[] | 'others') => {
+      if (ids === 'others') return unwrap(client.DELETE('/api/v1/me/sessions'));
       for (const id of ids) {
         await unwrap(client.DELETE('/api/v1/me/sessions/{id}', { params: { path: { id } } }));
       }
@@ -510,11 +512,110 @@ function Sessions() {
           <Button
             variant="danger"
             disabled={revoke.isPending}
-            onClick={() => revoke.mutate(others.map((session) => session.id))}
+            onClick={() => revoke.mutate('others')}
           >
             {t('profile.signOutOthers', { count: others.length })}
           </Button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Two-factor sign-in with an authenticator app and recovery codes (TL-18, E-100). */
+function TwoFactor({ me }: { me: Me }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [mode, setMode] = useState<'idle' | 'setup' | 'disable' | 'regenerate'>('idle');
+  const [code, setCode] = useState('');
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
+  const act = useMutation({
+    mutationFn: async () => {
+      if (mode === 'disable') {
+        await unwrap(client.POST('/api/v1/me/2fa/disable', { body: { code } }));
+        return null;
+      }
+      return unwrap(client.POST('/api/v1/me/2fa/recovery-codes', { body: { code } }));
+    },
+    onSuccess: async (result) => {
+      setMode('idle');
+      setCode('');
+      setCodes(result?.codes ?? null);
+      await refresh();
+    },
+  });
+  const status = me.twoFactor;
+  if (codes) return <RecoveryCodeList codes={codes} onDone={() => setCodes(null)} />;
+  if (mode === 'setup') {
+    return (
+      <div className="max-w-[560px]">
+        <TwoFactorSetupFlow
+          onDone={() => {
+            setMode('idle');
+            void refresh();
+          }}
+          onCancel={() => setMode('idle')}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="flex max-w-[560px] flex-col gap-3">
+      <p className="m-0 text-[13.5px]">
+        {status.enabled
+          ? t('twoFactor.on', { count: status.recoveryCodesLeft })
+          : t('twoFactor.off')}
+      </p>
+      {status.required && (
+        <p className="m-0 text-xs text-[var(--ink-muted)]">{t('twoFactor.requiredHint')}</p>
+      )}
+      {mode === 'idle' ? (
+        <div className="flex flex-wrap gap-2">
+          {status.enabled ? (
+            <>
+              <Button onClick={() => setMode('regenerate')}>{t('twoFactor.regenerate')}</Button>
+              {!status.required && (
+                <Button variant="danger" onClick={() => setMode('disable')}>
+                  {t('twoFactor.disable')}
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button variant="primary" onClick={() => setMode('setup')}>
+              {t('twoFactor.setUp')}
+            </Button>
+          )}
+        </div>
+      ) : (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            act.mutate();
+          }}
+        >
+          {act.error && <FormError message={act.error.message} />}
+          <TextField
+            label={t('twoFactor.confirmCode')}
+            value={code}
+            autoFocus
+            autoComplete="one-time-code"
+            onChange={(event) => setCode(event.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              variant={mode === 'disable' ? 'danger' : 'primary'}
+              disabled={code.trim().length < 6 || act.isPending}
+            >
+              {mode === 'disable' ? t('twoFactor.disable') : t('twoFactor.regenerate')}
+            </Button>
+            <Button variant="ghost" onClick={() => setMode('idle')}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </form>
       )}
     </div>
   );
@@ -545,6 +646,11 @@ export function ProfilePage() {
         {me.data.hasPassword && (
           <Section id="password" title={t('profile.password')}>
             <PasswordForm />
+          </Section>
+        )}
+        {me.data.hasPassword && (
+          <Section id="two-factor" title={t('twoFactor.section')}>
+            <TwoFactor me={me.data} />
           </Section>
         )}
         <Section id="appearance" title={t('profile.appearance')}>

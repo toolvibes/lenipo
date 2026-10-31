@@ -14,6 +14,7 @@ import { users } from '../db/schema/index.js';
 import { AttemptLimiter } from './attempt-limiter.js';
 import { PasswordService } from './password.service.js';
 import { SessionService } from './session.service.js';
+import { TwoFactorService } from './two-factor.service.js';
 import { UserService } from './user.service.js';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class AuthService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(AttemptLimiter) private readonly limiter: AttemptLimiter,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
+    @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
   ) {}
 
   /** Checks credentials and opens a session. One message for every failure, so emails stay private. */
@@ -44,7 +46,13 @@ export class AuthService {
         type: 'urn:tasklore:problem:invalid-credentials',
       });
     }
-    const session = await this.sessions.create(user.id, 'password', client);
+    // A second factor follows the password where it is on, or must be set up first (E-100).
+    const stage = user.totpEnabledAt
+      ? 'second-factor'
+      : (await this.twoFactor.required(user.id))
+        ? 'setup-2fa'
+        : 'full';
+    const session = await this.sessions.create(user.id, 'password', client, stage);
     await this.users.recordLogin(user.id);
     await this.audit.record({
       action: 'auth.login',
@@ -52,7 +60,7 @@ export class AuthService {
       via: 'session',
       ip: client.ip,
     });
-    return { userId: user.id, session };
+    return { userId: user.id, session, stage };
   }
 
   /**
