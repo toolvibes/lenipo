@@ -73,7 +73,31 @@ export const de = {
     allBoards: 'Alle Boards',
     settings: 'Einstellungen',
   },
+  accessibility: {
+    link: 'Barrierefreiheit',
+    title: 'Barrierefreiheit',
+    intro:
+      'Tasklore soll für alle benutzbar sein – mit Tastatur, Screenreader, Vergrößerung und auf dem Handy.',
+    targetTitle: 'Ziel',
+    target:
+      'Tasklore richtet sich nach den Web Content Accessibility Guidelines (WCAG) 2.1, Stufe AA.',
+    checkedTitle: 'Wie wir das prüfen',
+    checked:
+      'Jede Änderung durchläuft eine automatische Prüfung mit axe-core auf den wichtigsten Seiten; schwere Verstöße halten sie auf. Dazu kommen Prüfungen mit Tastatur und Screenreader bei neuen Oberflächen.',
+    gapsTitle: 'Bekannte Lücken',
+    gaps: 'Auf Boards und in der Seitenstruktur ist Ziehen und Ablegen der bequemste Weg; Status, Sprint und übergeordnete Seite lassen sich auch über Felder und Menüs ändern, die Reihenfolge per Tastatur noch nicht überall.\nDiagramme (Mermaid, Berichte) haben Textalternativen nur, wenn sie beim Anlegen ergänzt werden.\nEingebettete Inhalte anderer Anbieter liegen außerhalb unserer Kontrolle.',
+    reportTitle: 'Barrieren melden',
+    report:
+      'Wenn dich etwas behindert, melde es der Administration deiner Tasklore-Instanz oder als Vorgang im Projekt des Teams, das Tasklore betreut. Bitte nenne die Seite, was du tun wolltest und welche Hilfsmittel du benutzt.',
+    back: 'Zu Tasklore',
+  },
   shell: {
+    newVersion: 'Eine neue Version von Tasklore ist da.',
+    reload: 'Neu laden',
+    later: 'Später',
+    skipToContent: 'Zum Inhalt springen',
+    openMenu: 'Menü öffnen',
+    closeMenu: 'Menü schließen',
     breadcrumbs: 'Brotkrumen',
     navigation: 'Hauptnavigation',
     home: 'Startseite',

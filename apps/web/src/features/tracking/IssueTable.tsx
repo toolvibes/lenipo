@@ -362,10 +362,10 @@ export function IssueTable({
         return issue.canAssign ? (
           <button
             type="button"
-            aria-label={`${label(issue, 'assignee')}: ${issue.assignee?.displayName ?? t('issues.unassigned')}`}
             onClick={() => setAssigning(issue)}
             className={`${inputClass} flex items-center text-left`}
           >
+            <span className="sr-only">{label(issue, 'assignee')}: </span>
             <Person user={issue.assignee} none={t('issues.unassigned')} />
           </button>
         ) : (

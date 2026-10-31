@@ -13,7 +13,8 @@
       "!pnpm-lock.yaml",
       "!.claude",
       "!**/*.md",
-      "!deploy/helm"
+      "!deploy/helm",
+      "!**/e2e/.state"
     ]
   },
   "formatter": {
@@ -42,6 +43,9 @@
       "complexity": {
         "noStaticOnlyClass": "off"
       }
+    },
+    "domains": {
+      "playwright": "none"
     }
   },
   "assist": {
@@ -50,5 +54,15 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/e2e/**"],
+      "linter": {
+        "domains": {
+          "playwright": "recommended"
+        }
+      }
+    }
+  ]
 }

@@ -312,7 +312,7 @@ export function CalendarPage({
                   key === today
                     ? 'bg-[var(--accent)] font-semibold text-white'
                     : outside
-                      ? 'text-[var(--ink-muted)] opacity-60'
+                      ? 'text-[var(--ink-muted)] italic'
                       : 'text-[var(--ink-muted)]'
                 }`}
               >

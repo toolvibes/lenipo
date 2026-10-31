@@ -35,6 +35,9 @@ export function AuthLayout({
           </div>
           {children}
         </div>
+        <a href="/accessibility" className="text-xs text-[var(--ink-muted)]">
+          {t('accessibility.link')}
+        </a>
       </main>
       <aside
         aria-label={t('auth.pitchLabel')}

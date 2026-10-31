@@ -1,7 +1,10 @@
+import { List, MagnifyingGlass, X } from '@phosphor-icons/react';
+import * as RadixDialog from '@radix-ui/react-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { Me } from '@tasklore/shared';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
@@ -43,11 +46,73 @@ export function AppShell({ me: signedIn }: { me: Me }) {
     await navigate({ to: '/login' });
   }
 
+  const { t } = useTranslation();
+  const narrow = useNarrow();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  // The drawer closes when a link in it was followed.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every navigation
+  useEffect(() => setMenuOpen(false), [path]);
+  const sidebar = (
+    <Sidebar
+      me={me}
+      onSearch={() => {
+        setMenuOpen(false);
+        setPaletteOpen(true);
+      }}
+      onSignOut={signOut}
+    />
+  );
+
   return (
     <CurrentProjectProvider value={currentProject}>
+      {/* The first stop for keyboard users: past the navigation (WCAG 2.4.1, TL-43). */}
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-[var(--radius-sm)] bg-[var(--surface-1)] px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        {t('shell.skipToContent')}
+      </a>
+      {narrow && (
+        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-2)] px-2">
+          <RadixDialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
+            <RadixDialog.Trigger
+              className="grid size-9 place-items-center rounded-[var(--radius-sm)]"
+              aria-label={t('shell.openMenu')}
+            >
+              <List size={20} aria-hidden />
+            </RadixDialog.Trigger>
+            <RadixDialog.Portal>
+              <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
+              <RadixDialog.Content
+                aria-describedby={undefined}
+                className="fixed inset-y-0 left-0 z-50 flex w-[min(300px,85vw)] flex-col overflow-y-auto bg-[var(--surface-2)] shadow-[var(--shadow-float)]"
+              >
+                <RadixDialog.Title className="sr-only">{t('shell.navigation')}</RadixDialog.Title>
+                <RadixDialog.Close
+                  className="absolute top-3 right-3 grid size-8 place-items-center rounded-[var(--radius-sm)]"
+                  aria-label={t('shell.closeMenu')}
+                >
+                  <X size={18} aria-hidden />
+                </RadixDialog.Close>
+                {sidebar}
+              </RadixDialog.Content>
+            </RadixDialog.Portal>
+          </RadixDialog.Root>
+          <span className="flex-1 text-[15px] font-bold">{t('common.product')}</span>
+          <button
+            type="button"
+            className="grid size-9 place-items-center rounded-[var(--radius-sm)]"
+            aria-label={t('sidebar.search')}
+            onClick={() => setPaletteOpen(true)}
+          >
+            <MagnifyingGlass size={20} aria-hidden />
+          </button>
+        </header>
+      )}
       <div className="flex min-h-screen flex-wrap">
-        <Sidebar me={me} onSearch={() => setPaletteOpen(true)} onSignOut={signOut} />
-        <div className="min-w-0 flex-[999_1_560px]">
+        {!narrow && sidebar}
+        <div id="main" tabIndex={-1} className="min-w-0 flex-[999_1_560px] outline-none">
           <Announcement />
           <Outlet />
         </div>
@@ -57,4 +122,17 @@ export function AppShell({ me: signedIn }: { me: Me }) {
       </div>
     </CurrentProjectProvider>
   );
+}
+
+/** Below 768 px the sidebar moves into a drawer behind a top bar (TL-43, E-124). */
+function useNarrow(): boolean {
+  const query = '(max-width: 767px)';
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const change = () => setNarrow(list.matches);
+    list.addEventListener('change', change);
+    return () => list.removeEventListener('change', change);
+  }, []);
+  return narrow;
 }

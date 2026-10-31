@@ -60,6 +60,10 @@ jobs:
         run: pnpm api:generate && git diff --exit-code packages/sdk
       - name: Migrations apply to an empty database
         run: pnpm db:migrate
+      - name: Accessibility of the built app (axe-core, WCAG 2.1 AA)
+        run: |
+          pnpm --filter @tasklore/web exec playwright install --with-deps chromium
+          pnpm --filter @tasklore/web e2e
       - uses: azure/setup-helm@v4
       - name: Helm chart renders
         run: |

@@ -27,6 +27,7 @@ import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/Secu
 import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
+import { AccessibilityPage } from './features/auth/AccessibilityPage';
 import { InvitePage, RegisterPage } from './features/auth/InvitePage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
 import { type AuthorizeParams, OAuthConsentPage } from './features/auth/OAuthConsentPage';
@@ -229,6 +230,13 @@ const printRoute = createRoute({
       />
     );
   },
+});
+
+/** The accessibility statement, readable without signing in (TL-43, E-124). */
+const accessibilityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/accessibility',
+  component: AccessibilityPage,
 });
 
 /** While maintenance mode keeps people out (TL-40, E-121). */
@@ -895,6 +903,7 @@ const webhookRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   setupRoute,
+  accessibilityRoute,
   maintenanceRoute,
   twoFactorRoute,
   loginRoute,

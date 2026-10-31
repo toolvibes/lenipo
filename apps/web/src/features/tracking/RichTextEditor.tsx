@@ -155,6 +155,8 @@ export function RichTextView({
       editorProps: {
         attributes: {
           class: variant === 'page' ? 'tl-prose tl-prose-read tl-lore' : 'tl-prose tl-prose-read',
+          // Read-only text is no input field for screen readers (WCAG 4.1.2, TL-43).
+          role: 'article',
         },
       },
     },

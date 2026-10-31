@@ -28,6 +28,22 @@ body {
   outline-offset: 2px;
 }
 
+/* No animations for people who asked their system for less motion (WCAG 2.3.3, TL-43). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    /* biome-ignore lint/complexity/noImportantStyles: must win over every component style */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must win over every component style */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must win over every component style */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must win over every component style */
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Rich text: issue descriptions and comments in the interface font (E-67). */
 .tl-prose {
   min-height: 60vh;

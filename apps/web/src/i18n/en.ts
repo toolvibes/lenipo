@@ -72,7 +72,30 @@ export const en: Messages = {
     allBoards: 'All boards',
     settings: 'Settings',
   },
+  accessibility: {
+    link: 'Accessibility',
+    title: 'Accessibility',
+    intro:
+      'Tasklore should work for everyone – with a keyboard, a screen reader, magnification and on a phone.',
+    targetTitle: 'Target',
+    target: 'Tasklore follows the Web Content Accessibility Guidelines (WCAG) 2.1, level AA.',
+    checkedTitle: 'How we check',
+    checked:
+      'Every change runs an automated axe-core check on the main pages; serious violations stop it. New interfaces are also checked with a keyboard and a screen reader.',
+    gapsTitle: 'Known gaps',
+    gaps: 'On boards and in the page tree, drag and drop is the easiest way; status, sprint and parent page can also be changed with fields and menus, the order not yet everywhere by keyboard.\nDiagrams (Mermaid, reports) have text alternatives only if they are added when created.\nEmbedded content of other providers is outside our control.',
+    reportTitle: 'Report a barrier',
+    report:
+      'If something gets in your way, tell the administrators of your Tasklore instance or file an issue in the project of the team running Tasklore. Please name the page, what you wanted to do and which assistive technology you use.',
+    back: 'To Tasklore',
+  },
   shell: {
+    newVersion: 'A new version of Tasklore is available.',
+    reload: 'Reload',
+    later: 'Later',
+    skipToContent: 'Skip to content',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
     breadcrumbs: 'Breadcrumbs',
     navigation: 'Main navigation',
     home: 'Home',

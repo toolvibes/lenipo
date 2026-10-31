@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { UpdatePrompt } from './features/shell/UpdatePrompt';
 import { applyTheme, readTheme } from './lib/theme';
 import { createAppRouter } from './router';
 
@@ -24,6 +25,7 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      {import.meta.env.PROD && <UpdatePrompt />}
     </QueryClientProvider>
   </StrictMode>,
 );

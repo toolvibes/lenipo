@@ -35,10 +35,11 @@ export function Popover({
       <RadixPopover.Trigger
         type="button"
         disabled={disabled}
-        aria-label={triggerLabel}
         data-active={active}
         className={triggerClassName}
       >
+        {/* A hidden prefix keeps the visible text part of the name (WCAG 2.5.3, TL-43). */}
+        {triggerLabel && <span className="sr-only">{triggerLabel}: </span>}
         {trigger}
       </RadixPopover.Trigger>
       <RadixPopover.Portal>
