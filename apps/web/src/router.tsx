@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
+import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
 import {
   NotificationSchemeEditor,
   NotificationSchemesPage,
@@ -658,6 +659,12 @@ const customFieldsRoute = createRoute({
   component: CustomFieldsPage,
 });
 
+const embedHostsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/embeds',
+  component: EmbedHostsPage,
+});
+
 const automationAdminRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/automation',
@@ -776,6 +783,7 @@ const routeTree = rootRoute.addChildren([
       signInSettingsRoute,
       timeTrackingRoute,
       automationAdminRoute,
+      embedHostsRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,
       notificationSchemesRoute,

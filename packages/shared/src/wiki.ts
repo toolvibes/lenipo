@@ -432,3 +432,42 @@ export const RestrictedPage = z
   .object({ id: Id, title: z.string(), view: z.boolean(), edit: z.boolean() })
   .meta({ id: 'RestrictedPage' });
 export type RestrictedPage = z.infer<typeof RestrictedPage>;
+
+// ---------------------------------------------------------------- macros with data (TL-26, E-107)
+
+export const MacroPageQuery = z.object({
+  space: z.string().trim().min(1).max(20).optional(),
+  label: z.string().trim().min(1).max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  /** For tasks: only those that mention the caller. */
+  assignee: z.enum(['me', 'all']).default('all'),
+});
+export type MacroPageQuery = z.infer<typeof MacroPageQuery>;
+
+const PageLink = z.object({ id: Id, title: z.string(), spaceKey: z.string() });
+
+/** Page properties of labelled pages as one table (W-MAC-09). */
+export const PagePropertiesReport = z
+  .object({
+    keys: z.array(z.string()),
+    rows: z.array(z.object({ page: PageLink, values: z.record(z.string(), z.string()) })),
+  })
+  .meta({ id: 'PagePropertiesReport' });
+export type PagePropertiesReport = z.infer<typeof PagePropertiesReport>;
+
+/** An open task of a wiki page: `- [ ] @person … 2026-11-30` (W-MAC-11, W-INT-07). */
+export const WikiTask = z
+  .object({
+    page: PageLink,
+    text: z.string(),
+    assignees: z.array(UserRef),
+    due: z.iso.date().nullable(),
+  })
+  .meta({ id: 'WikiTask' });
+export type WikiTask = z.infer<typeof WikiTask>;
+
+/** Hosts whose pages may be embedded (W-MAC-16); everything else shows as a link. */
+export const EmbedHosts = z
+  .object({ hosts: z.array(z.string().trim().toLowerCase().min(3).max(200)).max(100) })
+  .meta({ id: 'EmbedHosts' });
+export type EmbedHosts = z.infer<typeof EmbedHosts>;

@@ -1,6 +1,7 @@
 import { mergeAttributes, Node, type NodeViewRenderer } from '@tiptap/core';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
+import { type LayoutViews, layoutExtensions } from './layout-macros.js';
 
 /** The macros of the wiki (W-MAC-01 to -07, E-66): typed nodes of the shared schema. */
 
@@ -25,7 +26,8 @@ export type MacroViews = Partial<
     | 'childPages',
     NodeViewRenderer
   >
->;
+> &
+  LayoutViews;
 
 /** Where child pages are listed from; set by the web app on wiki pages. */
 export interface ChildPagesOptions {
@@ -202,6 +204,9 @@ export const REPORT_MACRO_KINDS = [
   'field-series',
   'pie',
   'time-tracking',
+  'burndown',
+  'velocity',
+  'sprint-report',
 ] as const;
 
 /** A report of the reports page, run as the reader (T-RPT-10). */
@@ -281,5 +286,6 @@ export function macroExtensions(views: MacroViews = {}, children: Partial<ChildP
     withView(ReportMacro, views.report),
     withView(TableOfContents, views.tableOfContents),
     withView(ChildPages, views.childPages).configure(children),
+    ...layoutExtensions(views),
   ];
 }

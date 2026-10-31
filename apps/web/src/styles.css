@@ -740,3 +740,90 @@ body {
     word-break: break-all;
   }
 }
+
+/* Layout and data macros (TL-26, E-107). */
+.tl-prose .tl-columns {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0.75rem 0;
+  grid-template-columns: 1fr 1fr;
+}
+.tl-prose .tl-columns[data-columns="1-1-1"] {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.tl-prose .tl-columns[data-columns="1-2"] {
+  grid-template-columns: 1fr 2fr;
+}
+.tl-prose .tl-columns[data-columns="2-1"] {
+  grid-template-columns: 2fr 1fr;
+}
+.tl-prose .tl-column {
+  min-width: 0;
+}
+.ProseMirror[contenteditable="true"] .tl-column {
+  outline: 1px dashed var(--border);
+  outline-offset: 4px;
+}
+@media (max-width: 720px) {
+  .tl-prose .tl-columns,
+  .tl-prose .tl-columns[data-columns] {
+    grid-template-columns: 1fr;
+  }
+}
+.tl-prose .tl-section {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.tl-prose .tl-section[data-tone="blue"] {
+  background: var(--accent-soft);
+}
+.tl-prose .tl-section[data-tone="green"] {
+  background: var(--success-soft);
+}
+.tl-prose .tl-section[data-tone="yellow"] {
+  background: var(--warning-soft);
+}
+.tl-prose .tl-excerpt {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.75rem;
+}
+.ProseMirror[contenteditable="true"] .tl-properties {
+  outline: 1px dashed var(--border);
+  outline-offset: 4px;
+}
+.tl-prose .tl-macro-list {
+  margin: 0.25rem 0;
+  padding-left: 1.1rem;
+}
+.tl-prose .tl-include {
+  border-left: 3px solid var(--accent-soft);
+  padding-left: 0.75rem;
+}
+.tl-prose .tl-gallery {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+.tl-prose .tl-file-card {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--ink);
+}
+.tl-prose .tl-file-card span {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.tl-prose .tl-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+.tl-prose .tl-chart-macro .tl-chart-data table {
+  font-size: 12.5px;
+}

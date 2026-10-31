@@ -1,6 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { Burndown, ControlChart, ReportConfig, SeriesField } from '@tasklore/shared';
+import type {
+  Burndown,
+  ControlChart,
+  ReportConfig,
+  SeriesField,
+  SprintReport,
+  Velocity,
+} from '@tasklore/shared';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -8,7 +15,8 @@ import { formatDate, formatDateTime } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { CreatedVsResolved, Pie, useValueLabel } from '../dashboards/gadgets';
 import { useDuration } from '../tracking/TimeTracking';
-import { useValueFormat } from './charts';
+import { BurndownChart, useValueFormat, VelocityChart } from './charts';
+import { SprintReportView } from './ReportsPage';
 
 /** Categorical series in their fixed order (E-101); more fold into "other". */
 const SERIES = Array.from({ length: 8 }, (_, index) => `var(--series-${index + 1})`);
@@ -618,6 +626,63 @@ function ScopeProgressView({ query, boardId }: { query: string; boardId: string 
   );
 }
 
+/** Burndown, velocity and sprint report of a board's latest started sprint (W-MAC-14). */
+function AgileView({
+  kind,
+  boardId,
+}: {
+  kind: 'burndown' | 'velocity' | 'sprint-report';
+  boardId: string;
+}) {
+  const { t } = useTranslation();
+  const sprints = useQuery({
+    queryKey: ['board', boardId, 'sprints', 'all'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/boards/{id}/sprints', { params: { path: { id: boardId }, query: {} } }),
+      ),
+    enabled: kind !== 'velocity',
+  });
+  const sprint = (sprints.data ?? [])
+    .filter((entry) => entry.startedAt)
+    .sort((a, b) => (b.startedAt ?? '').localeCompare(a.startedAt ?? ''))[0];
+  const data = useQuery({
+    queryKey: ['report', kind, boardId, sprint?.id],
+    queryFn: async () =>
+      kind === 'velocity'
+        ? {
+            velocity: await unwrap(
+              client.GET('/api/v1/boards/{id}/velocity', { params: { path: { id: boardId } } }),
+            ),
+          }
+        : kind === 'burndown'
+          ? {
+              burndown: await unwrap(
+                client.GET('/api/v1/sprints/{id}/burndown', {
+                  params: { path: { id: sprint?.id ?? '' } },
+                }),
+              ),
+            }
+          : {
+              report: await unwrap(
+                client.GET('/api/v1/sprints/{id}/report', {
+                  params: { path: { id: sprint?.id ?? '' } },
+                }),
+              ),
+            },
+    enabled: kind === 'velocity' || !!sprint,
+  });
+  if (sprints.error ?? data.error) return <Failed error={(sprints.error ?? data.error) as Error} />;
+  if (kind !== 'velocity' && sprints.data && !sprint) {
+    return <Muted>{t('reports.noStartedSprint')}</Muted>;
+  }
+  if (!data.data) return <Muted>{t('common.loading')}</Muted>;
+  const value = data.data as { velocity?: Velocity; burndown?: Burndown; report?: SprintReport };
+  if (value.velocity) return <VelocityChart data={value.velocity} />;
+  if (value.burndown) return <BurndownChart data={value.burndown} />;
+  return value.report ? <SprintReportView report={value.report} /> : null;
+}
+
 /** Scope and done work during a sprint, rebuilt from its burndown events (T-RPT-04). */
 function burnup(data: Burndown) {
   let scope = data.committed;
@@ -936,6 +1001,10 @@ export function ReportView({ config }: { config: ReportConfig }) {
       return <ScopeProgressView query={config.query} boardId={config.boardId} />;
     case 'burnup':
       return <BurnupView boardId={config.boardId} />;
+    case 'burndown':
+    case 'velocity':
+    case 'sprint-report':
+      return <AgileView kind={config.kind} boardId={config.boardId} />;
     case 'time-tracking':
       return config.groupBy === 'issue' && config.period === 'none' ? (
         <TimeReportView query={config.query} days={config.days} />

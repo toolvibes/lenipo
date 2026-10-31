@@ -26,6 +26,7 @@ import { IssueTypeIcon, StatusLozenge } from '../features/tracking/icons';
 import { client, unwrap } from '../lib/api';
 import { issueQuery } from '../lib/tracking';
 import { nest, pageTreeQuery, type TreeNode } from '../lib/wiki';
+import { layoutViews, MermaidDiagram } from './layoutViews';
 
 /** Macros render live with the reader's permissions (E-66); stored are only references. */
 
@@ -436,6 +437,7 @@ function ExpandView({ node, updateAttributes, editor }: NodeViewProps) {
 
 const LANGUAGES = [
   'plaintext',
+  'mermaid',
   'bash',
   'css',
   'go',
@@ -525,7 +527,8 @@ function CodeBlockView({ node, updateAttributes, editor }: NodeViewProps) {
           )}
         </div>
       )}
-      <pre hidden={!shown}>
+      {language === 'mermaid' && <MermaidDiagram code={node.textContent} />}
+      <pre hidden={!shown || (language === 'mermaid' && !editable)}>
         {lineNumbers && (
           <span className="tl-code-gutter" aria-hidden contentEditable={false}>
             {Array.from({ length: lines }, (_, index) => index + 1).join('\n')}
@@ -622,4 +625,5 @@ export const macroViews = {
   status: ReactNodeViewRenderer(StatusView, { as: 'span' }),
   expand: ReactNodeViewRenderer(ExpandView),
   codeBlock: ReactNodeViewRenderer(CodeBlockView),
+  ...layoutViews,
 };

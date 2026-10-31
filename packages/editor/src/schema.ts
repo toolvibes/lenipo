@@ -5,6 +5,7 @@ import { TableKit } from '@tiptap/extension-table';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 import { AttachmentImage, IMAGE_ALIGNMENTS } from './image.js';
+import { CHART_TYPES, COLUMN_LAYOUTS, SECTION_TONES, validLeafAttrs } from './layout-macros.js';
 import {
   type ChildPagesOptions,
   ISSUE_LIST_DISPLAYS,
@@ -130,12 +131,22 @@ function validAttrs(node: PMNode): boolean {
         node.attrs.days <= 365 &&
         text(node.attrs.boardId, 40)
       );
+    case 'columns':
+      return (COLUMN_LAYOUTS as readonly unknown[]).includes(node.attrs.layout);
+    case 'section':
+      return (SECTION_TONES as readonly unknown[]).includes(node.attrs.tone);
+    case 'excerpt':
+      return text(node.attrs.name, 100);
+    case 'chart':
+      return (
+        (CHART_TYPES as readonly unknown[]).includes(node.attrs.type) && text(node.attrs.title, 200)
+      );
     case 'tableOfContents':
       return level(node.attrs.maxLevel, 6);
     case 'childPages':
       return level(node.attrs.depth, 5);
     default:
-      return true;
+      return validLeafAttrs(node.type.name, node.attrs);
   }
 }
 

@@ -8,6 +8,7 @@ const PAGES = [
   { to: '/admin/security-schemes', label: 'security.title' },
   { to: '/admin/sign-in', label: 'signIn.title' },
   { to: '/admin/automation', label: 'automation.title' },
+  { to: '/admin/embeds', label: 'wikiMacros.embedTitle' },
   { to: '/admin/access-check', label: 'access.title' },
   { to: '/admin/custom-fields', label: 'fields.title' },
   { to: '/admin/time-tracking', label: 'time.settingsTitle' },

@@ -18,10 +18,13 @@ import { SpaceAccessService } from './space-access.service.js';
 import { SpacesController } from './spaces.controller.js';
 import { TemplateService } from './template.service.js';
 import { TemplatesController } from './templates.controller.js';
+import { WikiMacrosController } from './wiki-macros.controller.js';
+import { WikiMacrosService } from './wiki-macros.service.js';
 
 @Module({
   imports: [IdentityModule, TrackingModule],
   controllers: [
+    WikiMacrosController,
     AccessCheckController,
     TemplatesController,
     IssuePagesController,
@@ -34,6 +37,7 @@ import { TemplatesController } from './templates.controller.js';
     LabelsController,
   ],
   providers: [
+    WikiMacrosService,
     AccessCheckService,
     SpaceAccessService,
     SpaceService,

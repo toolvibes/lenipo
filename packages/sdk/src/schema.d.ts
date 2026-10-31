@@ -252,6 +252,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/embed-hosts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Change the embed allow-list */
+    put: operations['Admin.setEmbedHosts'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/permission-schemes': {
     parameters: {
       query?: never;
@@ -3347,6 +3364,74 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/wiki/recent-pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Recently published pages, optionally of a space or with a label */
+    get: operations['Wiki.recent'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/wiki/page-properties': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Page properties of the pages with a label, as one table */
+    get: operations['Wiki.properties'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/wiki/tasks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open tasks of wiki pages with their mentioned people and due dates */
+    get: operations['Wiki.tasks'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/wiki/embed-hosts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Hosts whose pages may be embedded */
+    get: operations['Wiki.embedHosts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/workflow': {
     parameters: {
       query?: never;
@@ -3581,6 +3666,12 @@ export interface components {
     WorkingTimeInput: {
       hoursPerDay: number;
       daysPerWeek: number;
+    };
+    EmbedHosts: {
+      hosts: string[];
+    };
+    EmbedHostsOutput: {
+      hosts: string[];
     };
     PermissionSchemeSummary: {
       /** Format: uuid */
@@ -4815,6 +4906,24 @@ export interface components {
         }
       | {
           /** @constant */
+          kind: 'burndown';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'velocity';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'sprint-report';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
           kind: 'time-tracking';
           query: string;
           /** @default 30 */
@@ -4970,6 +5079,24 @@ export interface components {
       | {
           /** @constant */
           kind: 'burnup';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'burndown';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'velocity';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          kind: 'sprint-report';
           /** Format: uuid */
           boardId: string;
         }
@@ -6692,6 +6819,31 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    PagePropertiesReport: {
+      keys: string[];
+      rows: {
+        page: {
+          /** Format: uuid */
+          id: string;
+          title: string;
+          spaceKey: string;
+        };
+        values: {
+          [key: string]: string;
+        };
+      }[];
+    };
+    WikiTask: {
+      page: {
+        /** Format: uuid */
+        id: string;
+        title: string;
+        spaceKey: string;
+      };
+      text: string;
+      assignees: components['schemas']['UserRef'][];
+      due: string | null;
+    };
     ProjectWorkflow: {
       /** Format: uuid */
       versionId: string;
@@ -7323,6 +7475,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['WorkingTime'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.setEmbedHosts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmbedHosts'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmbedHostsOutput'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -14647,6 +14832,137 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['WebhookDelivery'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.recent': {
+    parameters: {
+      query?: {
+        space?: string;
+        label?: string;
+        limit?: number;
+        assignee?: 'me' | 'all';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LabelledPage'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.properties': {
+    parameters: {
+      query?: {
+        space?: string;
+        label?: string;
+        limit?: number;
+        assignee?: 'me' | 'all';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PagePropertiesReport'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.tasks': {
+    parameters: {
+      query?: {
+        space?: string;
+        label?: string;
+        limit?: number;
+        assignee?: 'me' | 'all';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WikiTask'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.embedHosts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmbedHostsOutput'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

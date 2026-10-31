@@ -106,3 +106,62 @@ describe('macros in Markdown (E-66)', () => {
     ).toBe(false);
   });
 });
+
+describe('layout and leaf macros (TL-26)', () => {
+  const source = [
+    ':::columns{layout=1-2}',
+    ':::column',
+    'Links',
+    ':::',
+    ':::column',
+    ':::section{tone=blue}',
+    'Rechts im Kasten',
+    ':::',
+    ':::',
+    ':::',
+    '',
+    ':::excerpt{name="kurz"}',
+    'Zum Einbinden.',
+    ':::',
+    '',
+    ':::properties',
+    '| Feld | Wert |',
+    '| --- | --- |',
+    '| Status | Entwurf |',
+    ':::',
+    '',
+    '::include{page="01a00000-0000-7000-8000-000000000001"}',
+    '',
+    '::recent{space="DOC" limit=5}',
+    '',
+    '::attachments{images}',
+    '',
+    '::embed{url="https://www.youtube.com/watch?v=abc"}',
+  ].join('\n');
+
+  it('reads containers and leaf macros and writes them back', () => {
+    const doc = markdownToDoc(source) as Json;
+    expect(doc.content?.map((node) => node.type)).toEqual([
+      'columns',
+      'excerpt',
+      'pageProperties',
+      'includePage',
+      'recentlyUpdated',
+      'attachmentList',
+      'embed',
+    ]);
+    const [columns, excerpt] = doc.content as Json[];
+    expect(columns?.attrs).toEqual({ layout: '1-2' });
+    expect(columns?.content?.map((node) => node.type)).toEqual(['column', 'column']);
+    expect(columns?.content?.[1]?.content?.[0]).toMatchObject({
+      type: 'section',
+      attrs: { tone: 'blue' },
+    });
+    expect(excerpt?.attrs).toEqual({ name: 'kurz' });
+    expect(doc.content?.[4]?.attrs).toEqual({ space: 'DOC', limit: 5 });
+    expect(doc.content?.[5]?.attrs).toEqual({ images: true });
+    expect(isValidDoc(doc)).toBe(true);
+    const again = docToMarkdown(doc);
+    expect(markdownToDoc(again)).toEqual(doc);
+  });
+});

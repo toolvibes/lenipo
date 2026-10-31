@@ -60,7 +60,7 @@ function Entries({
   );
 }
 
-function SprintReportView({ report }: { report: SprintReport }) {
+export function SprintReportView({ report }: { report: SprintReport }) {
   const { t } = useTranslation();
   const format = useValueFormat(report.estimation);
   return (

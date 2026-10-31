@@ -210,6 +210,10 @@ export const ReportConfig = z
     z.object({ kind: z.literal('pie'), query: TqlText, field: StatisticField }),
     z.object({ kind: z.literal('scope-progress'), query: TqlText, boardId: Id }),
     z.object({ kind: z.literal('burnup'), boardId: Id }),
+    /** The agile reports of a Scrum board, for gadgets and wiki macros (TL-26). */
+    z.object({ kind: z.literal('burndown'), boardId: Id }),
+    z.object({ kind: z.literal('velocity'), boardId: Id }),
+    z.object({ kind: z.literal('sprint-report'), boardId: Id }),
     z.object({
       kind: z.literal('time-tracking'),
       query: TqlText,
@@ -232,4 +236,7 @@ export const REPORT_KINDS = [
   'field-series',
   'pie',
   'time-tracking',
+  'burndown',
+  'velocity',
+  'sprint-report',
 ] as const satisfies readonly ReportKind[];

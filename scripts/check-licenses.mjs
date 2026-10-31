@@ -18,6 +18,15 @@ const ALLOWED = new Set([
   'OFL-1.1',
 ]);
 
+/**
+ * Packages without a license field whose LICENSE file was read and found permissive. Checked
+ * per exact version, so an update has to be looked at again.
+ */
+const VERIFIED = new Map([
+  // MIT per its LICENSE file; package.json lacks the field (TL-26, Mermaid).
+  ['khroma@2.1.0', 'MIT'],
+]);
+
 const output = execFileSync('pnpm', ['licenses', 'list', '--json', '--prod'], { encoding: 'utf8' });
 const byLicense = JSON.parse(output);
 
@@ -30,7 +39,9 @@ function isAllowed(license) {
 const violations = Object.entries(byLicense)
   .filter(([license]) => !isAllowed(license))
   .flatMap(([license, packages]) =>
-    packages.map((pkg) => `${pkg.name}@${pkg.versions.join(',')} (${license})`),
+    packages
+      .filter((pkg) => !pkg.versions.every((version) => VERIFIED.has(`${pkg.name}@${version}`)))
+      .map((pkg) => `${pkg.name}@${pkg.versions.join(',')} (${license})`),
   );
 
 if (violations.length > 0) {

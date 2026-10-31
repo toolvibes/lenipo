@@ -38,6 +38,9 @@ export function reportOf(
     case 'scope-progress':
       return { kind, query, boardId };
     case 'burnup':
+    case 'burndown':
+    case 'velocity':
+    case 'sprint-report':
       return { kind, boardId };
   }
 }

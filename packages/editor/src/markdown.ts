@@ -9,6 +9,12 @@ import {
   MarkdownSerializer,
   type MarkdownSerializerState,
 } from 'prosemirror-markdown';
+import {
+  CONTAINER_MACROS,
+  LEAF_MACRO_NAMES,
+  LEAF_MACROS,
+  type LeafMacroName,
+} from './layout-macros.js';
 import { richTextSchema } from './schema.js';
 
 /** A rich text document as stored: ProseMirror JSON of {@link richTextSchema}. */
@@ -196,9 +202,37 @@ function alertPanels(state: StateCore): void {
   }
 }
 
-const EXPAND = /^:::expand(?:[ \t]+(.*))?$/;
+const EXPAND =
+  /^:::(expand|columns|column|section|excerpt|properties|chart)(?:\{([^}]*)\}|[ \t]+(.*))?$/;
+const ANY_CONTAINER = /^:::[a-z]/;
 
-/** `:::expand Title` … `:::` around any Markdown. */
+/** The node and attributes of a container directive (E-66, TL-26). */
+function containerOf(name: string, braces: string | undefined, rest: string | undefined) {
+  const attrs = parseDirectiveAttrs(braces ?? '');
+  const text = (value: string | true | undefined, fallback: string) =>
+    typeof value === 'string' ? value : fallback;
+  switch (name) {
+    case 'expand':
+      return { type: 'expand', attrs: { title: (rest ?? '').trim() } };
+    case 'columns':
+      return { type: 'columns', attrs: { layout: text(attrs.layout, '1-1') } };
+    case 'section':
+      return { type: 'section', attrs: { tone: text(attrs.tone, 'grey') } };
+    case 'excerpt':
+      return { type: 'excerpt', attrs: { name: text(attrs.name, '') } };
+    case 'properties':
+      return { type: 'pageProperties', attrs: {} };
+    case 'chart':
+      return {
+        type: 'chart',
+        attrs: { type: text(attrs.type, 'bar'), title: text(attrs.title, '') },
+      };
+    default:
+      return { type: 'column', attrs: {} };
+  }
+}
+
+/** `:::expand Title`, `:::columns{layout=1-2}` and other containers … `:::` around Markdown. */
 function expandRule(state: StateBlock, startLine: number, endLine: number, silent: boolean) {
   const lineText = (line: number) =>
     state.src.slice(
@@ -212,22 +246,40 @@ function expandRule(state: StateBlock, startLine: number, endLine: number, silen
   let depth = 1;
   for (; next < endLine; next++) {
     const text = lineText(next).trim();
-    if (EXPAND.test(text)) depth++;
+    if (ANY_CONTAINER.test(text)) depth++;
     else if (text === ':::' && --depth === 0) break;
   }
   const lineMax = state.lineMax;
   state.lineMax = next;
-  const open = state.push('expand_open', 'details', 1);
-  open.meta = { title: (match[1] ?? '').trim() };
+  const container = containerOf(match[1] as string, match[2], match[3]);
+  const open = state.push(`${container.type}_open`, 'div', 1);
+  open.meta = container.attrs;
   open.map = [startLine, next];
   state.md.block.tokenize(state, startLine + 1, next);
-  state.push('expand_close', 'details', -1);
+  state.push(`${container.type}_close`, 'div', -1);
   state.lineMax = lineMax;
   state.line = Math.min(next + 1, endLine);
   return true;
 }
 
-const LEAF = /^::(toc|children|issues|report)(?:\{(.*)\})?[ \t]*$/;
+const LEAF = new RegExp(
+  `^::(toc|children|issues|report|${LEAF_MACRO_NAMES.map((name) => LEAF_MACROS[name].directive).join('|')})(?:\\{(.*)\\})?[ \\t]*$`,
+);
+const LEAF_BY_DIRECTIVE = new Map(
+  LEAF_MACRO_NAMES.map((name) => [LEAF_MACROS[name].directive as string, name]),
+);
+
+/** Attributes of a leaf macro, typed by their defaults. */
+function leafAttrs(name: LeafMacroName, attrs: Record<string, string | true>) {
+  return Object.fromEntries(
+    Object.entries(LEAF_MACROS[name].attrs).map(([key, fallback]) => {
+      const value = attrs[key];
+      if (typeof fallback === 'number') return [key, intAttr(value, fallback)];
+      if (typeof fallback === 'boolean') return [key, value === true || value === 'true'];
+      return [key, typeof value === 'string' ? value : fallback];
+    }),
+  );
+}
 
 /** `::toc`, `::children` and `::issues{query="…"}` on a line of their own. */
 function leafDirectiveRule(
@@ -244,8 +296,10 @@ function leafDirectiveRule(
   const token = state.push('macro_leaf', '', 0);
   token.map = [startLine, startLine + 1];
   token.type = `macro_${match[1]}`;
-  token.meta =
-    match[1] === 'toc'
+  const leafName = LEAF_BY_DIRECTIVE.get(match[1] as string);
+  token.meta = leafName
+    ? { type: leafName, attrs: leafAttrs(leafName, attrs) }
+    : match[1] === 'toc'
       ? { type: 'tableOfContents', attrs: { maxLevel: intAttr(attrs.maxLevel, 3) } }
       : match[1] === 'children'
         ? { type: 'childPages', attrs: { depth: intAttr(attrs.depth, 1) } }
@@ -340,6 +394,22 @@ const parser = new MarkdownParser(richTextSchema, markdownIt, {
   fence: { block: 'codeBlock', getAttrs: (token) => fenceAttrs(token.info), noCloseToken: true },
   panel: { block: 'panel', getAttrs: (token) => token.meta },
   expand: { block: 'expand', getAttrs: (token) => token.meta },
+  columns: { block: 'columns', getAttrs: (token) => token.meta },
+  column: { block: 'column' },
+  section: { block: 'section', getAttrs: (token) => token.meta },
+  excerpt: { block: 'excerpt', getAttrs: (token) => token.meta },
+  pageProperties: { block: 'pageProperties' },
+  chart: { block: 'chart', getAttrs: (token) => token.meta },
+  ...Object.fromEntries(
+    LEAF_MACRO_NAMES.map((name) => [
+      `macro_${LEAF_MACROS[name].directive}`,
+      {
+        node: name,
+        getAttrs: (token: { meta: { attrs: unknown } }) => token.meta.attrs,
+        noCloseToken: true,
+      },
+    ]),
+  ),
   hr: { node: 'horizontalRule' },
   hardbreak: { node: 'hardBreak' },
   em: { mark: 'italic' },
@@ -444,6 +514,55 @@ const serializer = new MarkdownSerializer(
         state.renderContent(node);
       });
     },
+    ...Object.fromEntries(
+      (
+        [
+          [
+            'columns',
+            (node: { attrs: Record<string, unknown> }) => `{layout=${node.attrs.layout}}`,
+          ],
+          ['column', () => ''],
+          ['section', (node: { attrs: Record<string, unknown> }) => `{tone=${node.attrs.tone}}`],
+          [
+            'excerpt',
+            (node: { attrs: Record<string, unknown> }) =>
+              node.attrs.name ? `{name=${quoteAttr(String(node.attrs.name))}}` : '',
+          ],
+          ['pageProperties', () => ''],
+          [
+            'chart',
+            (node: { attrs: Record<string, unknown> }) =>
+              `{type=${node.attrs.type}${node.attrs.title ? ` title=${quoteAttr(String(node.attrs.title))}` : ''}}`,
+          ],
+        ] as const
+      ).map(([name, attrs]) => [
+        name,
+        (state: MarkdownSerializerState, node: PMNode) => {
+          state.write(`:::${CONTAINER_MACROS[name]}${attrs(node)}`);
+          state.ensureNewLine();
+          state.renderContent(node);
+          state.write(':::');
+          state.closeBlock(node);
+        },
+      ]),
+    ),
+    ...Object.fromEntries(
+      LEAF_MACRO_NAMES.map((name) => [
+        name,
+        (state: MarkdownSerializerState, node: PMNode) => {
+          const parts = Object.entries(LEAF_MACROS[name].attrs).flatMap(([key, fallback]) => {
+            const value = node.attrs[key];
+            if (value === fallback || value === undefined) return [];
+            if (typeof value === 'boolean') return value ? [key] : [];
+            return [`${key}=${typeof value === 'number' ? value : quoteAttr(String(value))}`];
+          });
+          state.write(
+            `::${LEAF_MACROS[name].directive}${parts.length > 0 ? `{${parts.join(' ')}}` : ''}`,
+          );
+          state.closeBlock(node);
+        },
+      ]),
+    ),
     expand: (state, node) => {
       state.write(`:::expand ${String(node.attrs.title ?? '').replace(/\s+/g, ' ')}`.trimEnd());
       state.ensureNewLine();
