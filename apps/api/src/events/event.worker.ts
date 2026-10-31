@@ -9,6 +9,7 @@ import { type AppConfig, runsRole } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
+import { DirectoryService } from '../identity/directory.service.js';
 import { OAuthService } from '../identity/oauth.service.js';
 import { ImportService } from '../imports/import.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
@@ -34,6 +35,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(PageService) private readonly pages: PageService,
     @Inject(FilterSubscriptionService) private readonly subscriptions: FilterSubscriptionService,
     @Inject(OAuthService) private readonly oauth: OAuthService,
+    @Inject(DirectoryService) private readonly directories: DirectoryService,
     @Inject(ImportService) private readonly imports: ImportService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
@@ -63,6 +65,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       await this.webhooks.cleanUp();
       await this.automation.cleanUp();
       await this.oauth.cleanUp();
+      // LDAP directories mirror people and groups once an hour (TL-38, E-119).
+      await this.directories.syncAll();
     });
     this.logger.info('Event worker running');
   }

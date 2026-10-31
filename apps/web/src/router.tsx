@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
+import { DirectoriesPage } from './features/admin/DirectoriesPage';
 import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
 import { GitConnectionsPage } from './features/admin/GitConnectionsPage';
 import { ImportPage } from './features/admin/ImportPage';
@@ -769,6 +770,12 @@ const customFieldsRoute = createRoute({
   component: CustomFieldsPage,
 });
 
+const directoriesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/directories',
+  component: DirectoriesPage,
+});
+
 const importRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/import',
@@ -914,6 +921,7 @@ const routeTree = rootRoute.addChildren([
       embedHostsRoute,
       gitConnectionsRoute,
       importRoute,
+      directoriesRoute,
       permissionSchemesRoute,
       permissionSchemeRoute,
       notificationSchemesRoute,

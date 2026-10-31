@@ -6,7 +6,7 @@ import {
   type UserLookup,
   type UserSummary,
 } from '@tasklore/shared';
-import { and, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, ne, or, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';
@@ -32,6 +32,15 @@ export class UserService {
   ) {}
 
   async findForLogin(email: string) {
+    return this.loginRow(eq(users.email, email));
+  }
+
+  /** The same for an account a directory signed in (E-119). */
+  async findForLoginById(id: string) {
+    return this.loginRow(eq(users.id, id));
+  }
+
+  private async loginRow(where: SQL) {
     const [row] = await this.database.db
       .select({
         id: users.id,
@@ -40,7 +49,7 @@ export class UserService {
         totpEnabledAt: users.totpEnabledAt,
       })
       .from(users)
-      .where(eq(users.email, email));
+      .where(where);
     return row ?? null;
   }
 

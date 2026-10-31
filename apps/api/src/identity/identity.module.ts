@@ -9,6 +9,8 @@ import { AttemptLimiter } from './attempt-limiter.js';
 import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
+import { DirectoriesController } from './directories.controller.js';
+import { DirectoryService } from './directory.service.js';
 import { GroupService } from './group.service.js';
 import { MeController } from './me.controller.js';
 import { OAuthController } from './oauth.controller.js';
@@ -34,6 +36,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     UsersController,
     GroupsController,
     OAuthController,
+    DirectoriesController,
   ],
   providers: [
     AccessService,
@@ -45,6 +48,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     GroupService,
     OidcService,
     OAuthService,
+    DirectoryService,
     PasswordService,
     SessionService,
     SetupService,
@@ -64,6 +68,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     UserService,
     OAuthService,
     PasswordService,
+    DirectoryService,
   ],
 })
 export class IdentityModule {}

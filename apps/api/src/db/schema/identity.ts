@@ -4,6 +4,8 @@ import {
   boolean,
   index,
   inet,
+  integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -43,6 +45,10 @@ export const users = pgTable(
     keyboardShortcuts: boolean().notNull().default(true),
     /** Secret for reading feeds without a session (TL-29). */
     feedToken: text(),
+    /** The LDAP directory the account comes from; null: the internal directory (E-119). */
+    directoryId: uuid(),
+    /** Its id there, e.g. the LDAP DN, to find it again on renames. */
+    externalId: text(),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
 );
@@ -53,6 +59,8 @@ export const groups = pgTable(
     id: uuid().primaryKey(),
     name: text().notNull(),
     description: text().notNull().default(''),
+    /** Mirrored from this directory; its sync owns the members (E-119). */
+    directoryId: uuid(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('groups_name_unique').on(table.name)],
@@ -179,3 +187,17 @@ export const recoveryCodes = pgTable(
   },
   (table) => [index('recovery_codes_user_idx').on(table.userId)],
 );
+
+/** User directories in sign-in order: the internal one and LDAP/AD servers (P-USR-07, E-119). */
+export const directories = pgTable('directories', {
+  id: uuid().primaryKey(),
+  name: text().notNull(),
+  type: text().notNull(),
+  position: integer().notNull(),
+  enabled: boolean().notNull().default(true),
+  /** LDAP settings including the bind password, which the API never shows. */
+  config: jsonb().$type<Record<string, unknown>>(),
+  lastSyncAt: timestamp({ withTimezone: true }),
+  lastSyncResult: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

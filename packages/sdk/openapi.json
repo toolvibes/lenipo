@@ -2552,6 +2552,307 @@
         }
       }
     },
+    "/api/v1/admin/directories": {
+      "get": {
+        "operationId": "Directories.list",
+        "summary": "List user directories in sign-in order",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Directories"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Directory"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Directories.create",
+        "summary": "Add an LDAP/AD directory",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Directories"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveDirectoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Directory"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/directories/test": {
+      "post": {
+        "operationId": "Directories.test",
+        "summary": "Try LDAP settings",
+        "description": "Connects, binds and searches people without saving anything.\n\nRequires the global permission `admin`.",
+        "tags": ["Directories"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LdapConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["ok", "message"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/directories/order": {
+      "put": {
+        "operationId": "Directories.reorder",
+        "summary": "Change the sign-in order of the directories",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Directories"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Directory"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/directories/{id}": {
+      "put": {
+        "operationId": "Directories.update",
+        "summary": "Change an LDAP/AD directory",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Directories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveDirectoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Directory"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Directories.remove",
+        "summary": "Remove an LDAP/AD directory",
+        "description": "Its people are deactivated; its groups stay as ordinary groups.\n\nRequires the global permission `admin`.",
+        "tags": ["Directories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Directory"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/directories/{id}/sync": {
+      "post": {
+        "operationId": "Directories.sync",
+        "summary": "Synchronise a directory now",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Directories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectorySyncResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/filters/{id}/subscriptions": {
       "get": {
         "operationId": "Filters.listSubscriptions",
@@ -17948,6 +18249,288 @@
           }
         },
         "required": ["columns"]
+      },
+      "Directory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["internal", "ldap"]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "pattern": "^ldaps?:\\/\\/.+"
+                  },
+                  "startTls": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "bindDn": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "userBase": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "userFilter": {
+                    "default": "(objectClass=person)",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "loginAttribute": {
+                    "default": "uid",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "emailAttribute": {
+                    "default": "mail",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "nameAttribute": {
+                    "default": "cn",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "groupBase": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "groupFilter": {
+                    "default": "(objectClass=groupOfNames)",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "groupNameAttribute": {
+                    "default": "cn",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "groupMemberAttribute": {
+                    "default": "member",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "hasPassword": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "url",
+                  "startTls",
+                  "bindDn",
+                  "userBase",
+                  "userFilter",
+                  "loginAttribute",
+                  "emailAttribute",
+                  "nameAttribute",
+                  "groupBase",
+                  "groupFilter",
+                  "groupNameAttribute",
+                  "groupMemberAttribute",
+                  "hasPassword"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "users": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "lastSyncAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastSyncResult": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "position",
+          "enabled",
+          "config",
+          "users",
+          "lastSyncAt",
+          "lastSyncResult"
+        ],
+        "additionalProperties": false
+      },
+      "SaveDirectoryRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "config": {
+            "$ref": "#/components/schemas/LdapConfig"
+          }
+        },
+        "required": ["name", "config"]
+      },
+      "LdapConfig": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 500,
+            "pattern": "^ldaps?:\\/\\/.+"
+          },
+          "startTls": {
+            "default": false,
+            "type": "boolean"
+          },
+          "bindDn": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "bindPassword": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "userBase": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "userFilter": {
+            "default": "(objectClass=person)",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "loginAttribute": {
+            "default": "uid",
+            "type": "string",
+            "maxLength": 100
+          },
+          "emailAttribute": {
+            "default": "mail",
+            "type": "string",
+            "maxLength": 100
+          },
+          "nameAttribute": {
+            "default": "cn",
+            "type": "string",
+            "maxLength": 100
+          },
+          "groupBase": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "groupFilter": {
+            "default": "(objectClass=groupOfNames)",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "groupNameAttribute": {
+            "default": "cn",
+            "type": "string",
+            "maxLength": 100
+          },
+          "groupMemberAttribute": {
+            "default": "member",
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": ["url", "bindDn", "userBase"]
+      },
+      "DirectoryOrder": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        },
+        "required": ["ids"]
+      },
+      "DirectorySyncResult": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "updated": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "deactivated": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "groups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["created", "updated", "deactivated", "groups", "problems"],
+        "additionalProperties": false
       },
       "FilterSubscription": {
         "type": "object",

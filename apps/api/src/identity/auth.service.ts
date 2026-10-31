@@ -12,6 +12,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import { AttemptLimiter } from './attempt-limiter.js';
+import { DirectoryService } from './directory.service.js';
 import { PasswordService } from './password.service.js';
 import { SessionService } from './session.service.js';
 import { TwoFactorService } from './two-factor.service.js';
@@ -27,13 +28,22 @@ export class AuthService {
     @Inject(AttemptLimiter) private readonly limiter: AttemptLimiter,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
+    @Inject(DirectoryService) private readonly directories: DirectoryService,
   ) {}
 
   /** Checks credentials and opens a session. One message for every failure, so emails stay private. */
   async login(request: LoginRequest, client: { ip: string | null; userAgent: string | null }) {
-    const user = await this.users.findForLogin(request.email);
+    let user = await this.users.findForLogin(request.email);
     await this.limiter.check({ userId: user?.id, email: request.email, ip: client.ip });
-    const passwordOk = await this.passwords.verify(user?.passwordHash, request.password);
+    // Directories in their order decide first (P-USR-07, E-119); the internal one falls through.
+    const directory = await this.directories.authenticate(request.email, request.password);
+    let passwordOk: boolean;
+    if (directory.decided) {
+      passwordOk = !!directory.userId;
+      if (directory.userId) user = await this.users.findForLoginById(directory.userId);
+    } else {
+      passwordOk = await this.passwords.verify(user?.passwordHash, request.password);
+    }
     if (!user || !passwordOk || user.status !== 'active') {
       await this.audit.record({
         action: 'auth.login_failed',

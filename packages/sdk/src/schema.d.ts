@@ -822,6 +822,118 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/directories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List user directories in sign-in order
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Directories.list'];
+    put?: never;
+    /**
+     * Add an LDAP/AD directory
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Directories.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/directories/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Try LDAP settings
+     * @description Connects, binds and searches people without saving anything.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Directories.test'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/directories/order': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Change the sign-in order of the directories
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Directories.reorder'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/directories/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Change an LDAP/AD directory
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Directories.update'];
+    post?: never;
+    /**
+     * Remove an LDAP/AD directory
+     * @description Its people are deactivated; its groups stay as ordinary groups.
+     *
+     *     Requires the global permission `admin`.
+     */
+    delete: operations['Directories.remove'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/directories/{id}/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Synchronise a directory now
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Directories.sync'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/filters/{id}/subscriptions': {
     parameters: {
       query?: never;
@@ -5882,6 +5994,83 @@ export interface components {
     ArrangeGadgetsRequest: {
       columns: string[][];
     };
+    Directory: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @enum {string} */
+      type: 'internal' | 'ldap';
+      position: number;
+      enabled: boolean;
+      config: {
+        url: string;
+        /** @default false */
+        startTls: boolean;
+        bindDn: string;
+        userBase: string;
+        /** @default (objectClass=person) */
+        userFilter: string;
+        /** @default uid */
+        loginAttribute: string;
+        /** @default mail */
+        emailAttribute: string;
+        /** @default cn */
+        nameAttribute: string;
+        /** @default  */
+        groupBase: string;
+        /** @default (objectClass=groupOfNames) */
+        groupFilter: string;
+        /** @default cn */
+        groupNameAttribute: string;
+        /** @default member */
+        groupMemberAttribute: string;
+        hasPassword: boolean;
+      } | null;
+      users: number;
+      lastSyncAt: string | null;
+      lastSyncResult: string | null;
+    };
+    SaveDirectoryRequest: {
+      name: string;
+      /** @default true */
+      enabled?: boolean;
+      config: components['schemas']['LdapConfig'];
+    };
+    LdapConfig: {
+      url: string;
+      /** @default false */
+      startTls?: boolean;
+      bindDn: string;
+      /** @default  */
+      bindPassword?: string;
+      userBase: string;
+      /** @default (objectClass=person) */
+      userFilter?: string;
+      /** @default uid */
+      loginAttribute?: string;
+      /** @default mail */
+      emailAttribute?: string;
+      /** @default cn */
+      nameAttribute?: string;
+      /** @default  */
+      groupBase?: string;
+      /** @default (objectClass=groupOfNames) */
+      groupFilter?: string;
+      /** @default cn */
+      groupNameAttribute?: string;
+      /** @default member */
+      groupMemberAttribute?: string;
+    };
+    DirectoryOrder: {
+      ids: string[];
+    };
+    DirectorySyncResult: {
+      created: number;
+      updated: number;
+      deactivated: number;
+      groups: number;
+      problems: string[];
+    };
     FilterSubscription: {
       /** Format: uuid */
       id: string;
@@ -10170,6 +10359,234 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Directory'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveDirectoryRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Directory'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LdapConfig'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ok: boolean;
+            message: string;
+          };
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.reorder': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryOrder'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Directory'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveDirectoryRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Directory'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Directory'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Directories.sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DirectorySyncResult'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

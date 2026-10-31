@@ -9,6 +9,7 @@ const PAGES = [
   { to: '/admin/notification-schemes', label: 'notificationSchemes.title' },
   { to: '/admin/security-schemes', label: 'security.title' },
   { to: '/admin/sign-in', label: 'signIn.title' },
+  { to: '/admin/directories', label: 'directories.title' },
   { to: '/admin/automation', label: 'automation.title' },
   { to: '/admin/embeds', label: 'wikiMacros.embedTitle' },
   { to: '/admin/access-check', label: 'access.title' },

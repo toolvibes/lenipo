@@ -4,6 +4,7 @@ export * from './access-check.js';
 export * from './automation.js';
 export * from './boards.js';
 export * from './dashboards.js';
+export * from './directories.js';
 export * from './exports.js';
 export * from './fields.js';
 export * from './git.js';
