@@ -923,6 +923,60 @@ export const de = {
     limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
     back: 'Zurück zur Seite',
   },
+  git: {
+    title: 'Git-Anbindung',
+    intro:
+      'GitHub, GitLab oder Gitea/Forgejo schicken Pushes, Pull Requests und Builds per Webhook. Vorgangsschlüssel in Branch-Namen, Commits und Pull-Request-Titeln verknüpfen sie mit dem Vorgang; Smart Commits wie „WEB-12 #comment Fertig #time 2h #erledigt“ wirken im Namen der Person mit der E-Mail des Commits.',
+    add: 'Verbindung anlegen',
+    name: 'Name',
+    provider: 'Anbieter',
+    providers: { github: 'GitHub', gitlab: 'GitLab', gitea: 'Gitea / Forgejo' },
+    created: 'Verbindung „{{name}}“ angelegt',
+    secretOnce: 'Das Geheimnis wird nur jetzt angezeigt.',
+    webhookUrl: 'Webhook-Adresse',
+    secret: 'Geheimnis',
+    setup: {
+      github:
+        'GitHub: Repository oder Organisation → Settings → Webhooks → Add webhook. Payload URL wie oben, Content type „application/json“, Secret wie oben. Ereignisse: Pushes, Branch or tag creation, Pull requests, Pull request reviews, Workflow runs, Check runs, Statuses.',
+      gitlab:
+        'GitLab: Projekt oder Gruppe → Settings → Webhooks. URL wie oben, „Secret token“ wie oben. Auslöser: Push events, Merge request events, Pipeline events.',
+      gitea:
+        'Gitea/Forgejo: Repository oder Organisation → Einstellungen → Webhooks → Gitea. Ziel-URL wie oben, Content-Type „application/json“, Geheimnis wie oben. Ereignisse: Push, Branch erstellen, Pull Request, Pull-Request-Review, Status.',
+    },
+    lastEvent: 'Letzte Lieferung {{when}}',
+    never: 'Noch keine Lieferung',
+    remove: 'Entfernen',
+    none: 'Noch keine Git-Anbindung.',
+    panel: 'Entwicklung',
+    branches_one: '{{count}} Branch',
+    branches_other: '{{count}} Branches',
+    commits_one: '{{count}} Commit',
+    commits_other: '{{count}} Commits',
+    pullRequest: 'PR',
+    states: {
+      open: 'offen',
+      draft: 'Entwurf',
+      merged: 'gemergt',
+      closed: 'geschlossen',
+      pending: 'läuft',
+      success: 'erfolgreich',
+      failure: 'fehlgeschlagen',
+      approved: 'freigegeben',
+      changes_requested: 'Änderungen gewünscht',
+    },
+    event: 'Ereignis',
+    events: {
+      branch_created: 'Branch angelegt',
+      commit_pushed: 'Commit gepusht',
+      pull_request_opened: 'Pull Request geöffnet',
+      pull_request_merged: 'Pull Request gemergt',
+      build_failed: 'Build fehlgeschlagen',
+    },
+    openPrs_one: '{{count}} offener PR',
+    openPrs_other: '{{count}} offene PRs',
+    failingBuilds_one: '{{count}} Build rot',
+    failingBuilds_other: '{{count}} Builds rot',
+  },
   oauth: {
     title: '{{name}} möchte auf Tasklore zugreifen',
     subtitle:
@@ -1319,7 +1373,6 @@ export const de = {
       blocked: 'wird noch von {{key}} blockiert.',
       unassigned: 'hat niemanden, der es bearbeitet.',
     },
-    scmLater: 'Hinweise zu offenen Pull Requests und Builds folgen mit der Quellcode-Anbindung.',
     notes: 'Release Notes',
     notesTitle: 'Release Notes veröffentlichen',
     notesHelp:
@@ -1408,6 +1461,7 @@ export const de = {
       'version-released': 'Version veröffentlicht',
       schedule: 'Zeitplan',
       'incoming-webhook': 'Eingehender Webhook',
+      git: 'Git (Branch, Commit, Pull Request, Build)',
     },
     triggerHelp: {
       'issue-created': 'Läuft für jeden neuen Vorgang.',
@@ -1421,6 +1475,7 @@ export const de = {
       schedule: 'Läuft zu den Zeiten des Cron-Ausdrucks in deiner Zeitzone.',
       'incoming-webhook':
         'Läuft, wenn ein anderes System die Adresse aufruft; der Body steht in {{webhookData}}.',
+      git: 'Läuft, wenn ein Branch, Commit, Pull Request oder Build einen Vorgang nennt; Angaben in {{git.title}}, {{git.url}}, {{git.repository}}.',
     },
     components: {
       tql: 'TQL-Bedingung',

@@ -92,7 +92,8 @@ export class NotificationService {
    */
   async handle(tx: Executor, row: EventRow): Promise<void> {
     if (row.pageId) return this.handlePage(tx, row, row.pageId);
-    if (!row.issueId) return;
+    // Git activity is for automation and the development panel only (E-116).
+    if (!row.issueId || row.type.startsWith('git.')) return;
     const [issue] = await tx.select().from(issues).where(eq(issues.id, row.issueId));
     if (!issue || issue.deletedAt) return;
     const event = issueEvent(row);

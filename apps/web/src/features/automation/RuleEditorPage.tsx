@@ -6,6 +6,7 @@ import {
   type AutomationRule,
   type AutomationTrigger,
   type AutomationTriggerType,
+  GIT_EVENTS,
 } from '@tasklore/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ const TRIGGERS: AutomationTriggerType[] = [
   'version-released',
   'schedule',
   'incoming-webhook',
+  'git',
 ];
 
 function triggerOf(type: AutomationTriggerType): AutomationTrigger {
@@ -39,6 +41,8 @@ function triggerOf(type: AutomationTriggerType): AutomationTrigger {
       return { type, fields: ['priority'] };
     case 'schedule':
       return { type, cron: '0 8 * * 1-5', query: '' };
+    case 'git':
+      return { type, event: 'pull_request_merged' };
     default:
       return { type } as AutomationTrigger;
   }
@@ -89,6 +93,16 @@ function TriggerFields({
                 .map((field) => field.trim())
                 .filter(Boolean),
             })
+          }
+        />
+      )}
+      {trigger.type === 'git' && (
+        <Select
+          label={t('git.event')}
+          value={trigger.event}
+          options={GIT_EVENTS.map((event) => ({ value: event, label: t(`git.events.${event}`) }))}
+          onChange={(event) =>
+            onChange({ type: 'git', event: event.target.value as (typeof GIT_EVENTS)[number] })
           }
         />
       )}

@@ -33,7 +33,7 @@ import { OAUTH_SCOPES, OAuthError, OAuthService } from './oauth.service.js';
 
 /** OAuth endpoints are called by other programs without cookies; cross-site posts are fine. */
 export const ALLOW_CROSS_SITE = 'tasklore:allow-cross-site';
-const AllowCrossSite = () => SetMetadata(ALLOW_CROSS_SITE, true);
+export const AllowCrossSite = () => SetMetadata(ALLOW_CROSS_SITE, true);
 
 const Uuid = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
 

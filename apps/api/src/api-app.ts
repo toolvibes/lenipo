@@ -11,6 +11,8 @@ import { RealtimeService } from './realtime/realtime.service.js';
 export async function createApiApp(deps: AppDependencies): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(deps), {
     bufferLogs: true,
+    // Git hosting signs the exact bytes of its webhooks (E-116).
+    rawBody: true,
   });
   app.useLogger(app.get(NestPinoLogger));
   // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115).

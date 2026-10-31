@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GIT_EVENTS } from './git.js';
 import { TqlText } from './search.js';
 
 /**
@@ -40,6 +41,8 @@ export const AutomationTrigger = z
       query: TqlText.default(''),
     }),
     z.object({ type: z.literal('incoming-webhook') }),
+    /** Branches, commits, pull requests and builds that name an issue (TL-89, E-116). */
+    z.object({ type: z.literal('git'), event: z.enum(GIT_EVENTS) }),
   ])
   .meta({ id: 'AutomationTrigger' });
 export type AutomationTrigger = z.infer<typeof AutomationTrigger>;

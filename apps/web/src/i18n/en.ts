@@ -909,6 +909,60 @@ export const en: Messages = {
     limited_other: 'The first {{count}} child pages are printed.',
     back: 'Back to the page',
   },
+  git: {
+    title: 'Git integration',
+    intro:
+      'GitHub, GitLab or Gitea/Forgejo send pushes, pull requests and builds by webhook. Issue keys in branch names, commits and pull request titles link them to the issue; smart commits like “WEB-12 #comment Done #time 2h #done” act on behalf of the person with the commit’s e-mail.',
+    add: 'Add connection',
+    name: 'Name',
+    provider: 'Provider',
+    providers: { github: 'GitHub', gitlab: 'GitLab', gitea: 'Gitea / Forgejo' },
+    created: 'Connection “{{name}}” added',
+    secretOnce: 'The secret is shown only now.',
+    webhookUrl: 'Webhook URL',
+    secret: 'Secret',
+    setup: {
+      github:
+        'GitHub: repository or organization → Settings → Webhooks → Add webhook. Payload URL as above, content type “application/json”, secret as above. Events: pushes, branch or tag creation, pull requests, pull request reviews, workflow runs, check runs, statuses.',
+      gitlab:
+        'GitLab: project or group → Settings → Webhooks. URL as above, “Secret token” as above. Triggers: push events, merge request events, pipeline events.',
+      gitea:
+        'Gitea/Forgejo: repository or organization → Settings → Webhooks → Gitea. Target URL as above, content type “application/json”, secret as above. Events: push, create branch, pull request, pull request review, status.',
+    },
+    lastEvent: 'Last delivery {{when}}',
+    never: 'No delivery yet',
+    remove: 'Remove',
+    none: 'No Git integration yet.',
+    panel: 'Development',
+    branches_one: '{{count}} branch',
+    branches_other: '{{count}} branches',
+    commits_one: '{{count}} commit',
+    commits_other: '{{count}} commits',
+    pullRequest: 'PR',
+    states: {
+      open: 'open',
+      draft: 'draft',
+      merged: 'merged',
+      closed: 'closed',
+      pending: 'running',
+      success: 'passed',
+      failure: 'failed',
+      approved: 'approved',
+      changes_requested: 'changes requested',
+    },
+    event: 'Event',
+    events: {
+      branch_created: 'Branch created',
+      commit_pushed: 'Commit pushed',
+      pull_request_opened: 'Pull request opened',
+      pull_request_merged: 'Pull request merged',
+      build_failed: 'Build failed',
+    },
+    openPrs_one: '{{count}} open PR',
+    openPrs_other: '{{count}} open PRs',
+    failingBuilds_one: '{{count}} failing build',
+    failingBuilds_other: '{{count}} failing builds',
+  },
   oauth: {
     title: '{{name}} wants to access Tasklore',
     subtitle: 'Afterwards you return to {{host}}. Access is on your behalf, with your rights.',
@@ -1300,8 +1354,6 @@ export const en: Messages = {
       blocked: 'is still blocked by {{key}}.',
       unassigned: 'has nobody working on it.',
     },
-    scmLater:
-      'Notes about open pull requests and builds follow with the source-hosting integration.',
     notes: 'Release notes',
     notesTitle: 'Publish release notes',
     notesHelp:
@@ -1389,6 +1441,7 @@ export const en: Messages = {
       'version-released': 'Version released',
       schedule: 'Schedule',
       'incoming-webhook': 'Incoming webhook',
+      git: 'Git (branch, commit, pull request, build)',
     },
     triggerHelp: {
       'issue-created': 'Runs for every new issue.',
@@ -1402,6 +1455,7 @@ export const en: Messages = {
       schedule: 'Runs at the times of the cron expression in your time zone.',
       'incoming-webhook':
         'Runs when another system calls the address; the body is in {{webhookData}}.',
+      git: 'Runs when a branch, commit, pull request or build names an issue; details in {{git.title}}, {{git.url}}, {{git.repository}}.',
     },
     components: {
       tql: 'TQL condition',

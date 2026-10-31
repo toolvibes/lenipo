@@ -407,6 +407,13 @@
       "when": 1793447745124,
       "tag": "0057_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793448349389,
+      "tag": "0058_git",
+      "breakpoints": true
     }
   ]
 }

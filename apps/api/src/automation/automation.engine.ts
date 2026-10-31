@@ -84,6 +84,9 @@ function triggersOf(row: EventRow): { types: AutomationTrigger['type'][]; label:
     case 'version.released':
       return { types: ['version-released'], label: 'Version veröffentlicht' };
     default:
+      // Branches, commits, pull requests and builds (TL-89, E-116).
+      if (row.type.startsWith('git.'))
+        return { types: ['git'], label: `Git: ${row.type.slice(4)}` };
       return { types: [], label: '' };
   }
 }
@@ -109,6 +112,8 @@ function triggerMatches(trigger: AutomationTrigger, row: EventRow): boolean {
       return items.some((item) =>
         trigger.fields.some((field) => field.toLowerCase() === item.field.toLowerCase()),
       );
+    case 'git':
+      return row.type === `git.${trigger.event}`;
     default:
       return true;
   }
@@ -215,7 +220,9 @@ export class AutomationEngine implements OnApplicationBootstrap {
             ? { version: { id: payload.versionId, name: payload.name } }
             : row.type === 'issue.commented'
               ? { comment: { body: payload.excerpt } }
-              : {},
+              : row.type.startsWith('git.')
+                ? { git: payload }
+                : {},
       });
     }
   }

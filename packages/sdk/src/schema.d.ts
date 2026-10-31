@@ -921,6 +921,92 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/git-connections': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Git connections (admin)
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Git.list'];
+    put?: never;
+    /**
+     * Connect Git hosting (admin)
+     * @description Returns the webhook URL and the secret once: as webhook secret for GitHub and Gitea/Forgejo, as secret token for GitLab.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Git.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/git-connections/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove a Git connection and its links (admin)
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Git.remove'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/development': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Development info of an issue
+     * @description Branches, commits (latest five), pull requests and the latest build per pipeline that name the issue.
+     */
+    get: operations['Git.development'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/releases/{id}/development': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Pull requests and builds of a release
+     * @description Per issue of the version with Git activity: open and merged pull requests, failing builds.
+     */
+    get: operations['Git.release'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health/live': {
     parameters: {
       query?: never;
@@ -4401,6 +4487,17 @@ export interface components {
       | {
           /** @constant */
           type: 'incoming-webhook';
+        }
+      | {
+          /** @constant */
+          type: 'git';
+          /** @enum {string} */
+          event:
+            | 'branch_created'
+            | 'commit_pushed'
+            | 'pull_request_opened'
+            | 'pull_request_merged'
+            | 'build_failed';
         };
     AutomationRuleInput: {
       name: string;
@@ -4463,6 +4560,17 @@ export interface components {
       | {
           /** @constant */
           type: 'incoming-webhook';
+        }
+      | {
+          /** @constant */
+          type: 'git';
+          /** @enum {string} */
+          event:
+            | 'branch_created'
+            | 'commit_pushed'
+            | 'pull_request_opened'
+            | 'pull_request_merged'
+            | 'build_failed';
         };
     __schema0:
       | (
@@ -5568,6 +5676,84 @@ export interface components {
       description?: string;
       query?: string;
       shares?: components['schemas']['FilterShareInput'][];
+    };
+    GitConnection: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      provider: components['schemas']['GitProvider'];
+      webhookUrl: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastEventAt: string | null;
+      lastError: string | null;
+    };
+    /** @enum {string} */
+    GitProvider: 'github' | 'gitlab' | 'gitea';
+    CreateGitConnectionRequest: {
+      name: string;
+      provider: components['schemas']['GitProvider'];
+    };
+    CreatedGitConnection: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      provider: components['schemas']['GitProvider'];
+      webhookUrl: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastEventAt: string | null;
+      lastError: string | null;
+      secret: string;
+    };
+    IssueDevelopment: {
+      branches: {
+        name: string;
+        repository: string;
+        url: string | null;
+        /** Format: date-time */
+        updatedAt: string;
+      }[];
+      commits: {
+        count: number;
+        latest: {
+          sha: string;
+          message: string;
+          repository: string;
+          url: string | null;
+          author: string | null;
+          /** Format: date-time */
+          at: string;
+          smart: string[];
+        }[];
+      };
+      pullRequests: {
+        number: string;
+        title: string;
+        repository: string;
+        url: string | null;
+        /** @enum {string} */
+        state: 'open' | 'draft' | 'merged' | 'closed';
+        review: ('approved' | 'changes_requested') | null;
+        author: string | null;
+        /** Format: date-time */
+        updatedAt: string;
+      }[];
+      builds: {
+        name: string;
+        repository: string;
+        url: string | null;
+        /** @enum {string} */
+        state: 'pending' | 'success' | 'failure';
+        /** Format: date-time */
+        updatedAt: string;
+      }[];
+    };
+    DevelopmentSummary: {
+      issueKey: string;
+      openPullRequests: number;
+      mergedPullRequests: number;
+      failingBuilds: number;
     };
     HealthStatus: {
       /** @enum {string} */
@@ -9934,6 +10120,160 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Git.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GitConnection'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Git.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateGitConnectionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedGitConnection'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Git.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Git.development': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueDevelopment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Git.release': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DevelopmentSummary'][];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

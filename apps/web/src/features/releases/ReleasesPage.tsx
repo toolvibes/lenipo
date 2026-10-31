@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { IssueSummary, Release } from '@tasklore/shared';
+import type { DevelopmentSummary, IssueSummary, Release } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -83,7 +83,17 @@ export function ReleasesPage({ projectKey }: { projectKey: string }) {
   );
 }
 
-function IssueList({ title, issues }: { title: string; issues: IssueSummary[] }) {
+function IssueList({
+  title,
+  issues,
+  development,
+}: {
+  title: string;
+  issues: IssueSummary[];
+  /** Open pull requests and failing builds per issue key (TL-36, E-116). */
+  development: Map<string, DevelopmentSummary>;
+}) {
+  const { t } = useTranslation();
   return (
     <section className="flex flex-col gap-1">
       <h2 className="m-0 text-[14px] font-semibold">
@@ -100,6 +110,16 @@ function IssueList({ title, issues }: { title: string; issues: IssueSummary[] })
               {issue.key}
             </Link>
             <span className="min-w-0 flex-1 truncate">{issue.summary}</span>
+            {(development.get(issue.key)?.openPullRequests ?? 0) > 0 && (
+              <span className="text-xs text-[var(--ink-muted)]">
+                {t('git.openPrs', { count: development.get(issue.key)?.openPullRequests ?? 0 })}
+              </span>
+            )}
+            {(development.get(issue.key)?.failingBuilds ?? 0) > 0 && (
+              <span className="text-xs font-semibold text-[var(--danger)]">
+                {t('git.failingBuilds', { count: development.get(issue.key)?.failingBuilds ?? 0 })}
+              </span>
+            )}
             <StatusLozenge status={issue.status} />
           </li>
         ))}
@@ -212,6 +232,18 @@ export function ReleasePage({ projectKey, id }: { projectKey: string; id: string
   const { t } = useTranslation();
   const project = useQuery(projectQuery(projectKey));
   const [notes, setNotes] = useState(false);
+  const developmentQuery = useQuery({
+    queryKey: ['release', id, 'development'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/releases/{id}/development', {
+          params: { path: { key: projectKey, id } },
+        }),
+      ),
+  });
+  const development = new Map(
+    (developmentQuery.data ?? []).map((entry) => [entry.issueKey, entry]),
+  );
   const release = useQuery({
     queryKey: ['release', id],
     queryFn: () =>
@@ -294,12 +326,15 @@ export function ReleasePage({ projectKey, id }: { projectKey: string; id: string
                     </li>
                   ))}
                 </ul>
-                <p className="m-0 text-xs text-[var(--ink-muted)]">{t('releases.scmLater')}</p>
               </section>
             )}
-            <IssueList title={t('home.todo')} issues={data.todo} />
-            <IssueList title={t('home.inProgress')} issues={data.inProgress} />
-            <IssueList title={t('home.done')} issues={data.done} />
+            <IssueList title={t('home.todo')} issues={data.todo} development={development} />
+            <IssueList
+              title={t('home.inProgress')}
+              issues={data.inProgress}
+              development={development}
+            />
+            <IssueList title={t('home.done')} issues={data.done} development={development} />
             <NotesDialog
               projectKey={projectKey}
               release={data}

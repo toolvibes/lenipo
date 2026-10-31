@@ -343,7 +343,7 @@ export class WebhookService {
 
   /** Creates the deliveries for an outbox event, inside the event's processing transaction. */
   async enqueue(tx: Executor, row: EventRow): Promise<void> {
-    if (!row.issueId) return;
+    if (!row.issueId || row.type.startsWith('git.')) return;
     const event = { type: row.type, ...(row.payload as object) } as IssueEvent;
     const type = webhookEventType(event);
     const [issue] = await tx

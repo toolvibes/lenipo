@@ -32,6 +32,7 @@ import { TopBar } from '../../ui/TopBar';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
 import { CustomFieldRows } from './CustomFields';
+import { DevelopmentPanel } from './DevelopmentPanel';
 import { useFieldLabel } from './fieldLabel';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
@@ -856,6 +857,7 @@ export function IssuePage({
             onUpdate={(body) => update.mutate(body)}
             onLogWork={() => setLoggingWork(true)}
           />
+          <DevelopmentPanel issueKey={data.key} />
           <p className="m-0 mt-auto flex flex-col text-xs leading-normal text-[var(--ink-muted)]">
             <span>
               {data.reporter

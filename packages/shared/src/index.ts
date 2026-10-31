@@ -6,6 +6,7 @@ export * from './boards.js';
 export * from './dashboards.js';
 export * from './exports.js';
 export * from './fields.js';
+export * from './git.js';
 export * from './home.js';
 export * from './identity.js';
 export * from './notifications.js';
