@@ -57,11 +57,17 @@ export function CreateIssueDialog({
   // Required custom fields of the project, filled in right here (TL-12, E-89).
   const [custom, setCustom] = useState<Record<string, CustomFieldInput>>({});
   const [shown, setShown] = useState<Record<string, CustomFieldValue | undefined>>({});
+  const typeId = project.issueTypes.find((type) => type.key === form.issueType)?.id ?? '';
   const requiredFields = project.customFieldSettings
-    .filter((setting) => setting.required && !setting.hidden)
+    .filter(
+      (setting) =>
+        setting.required &&
+        !setting.hidden &&
+        (setting.issueTypeIds.length === 0 || setting.issueTypeIds.includes(typeId)),
+    )
     .flatMap((setting) => {
       const field = meta.data?.customFields.find((entry) => entry.id === setting.fieldId);
-      return field && !field.archived ? [{ field, help: setting.description }] : [];
+      return field && !field.archived ? [{ field, setting }] : [];
     });
   const canAssign = project.permissions.includes('assign-issues');
 
@@ -225,13 +231,19 @@ export function CreateIssueDialog({
             {t('issues.assignToMe')}
           </label>
         )}
-        {requiredFields.map(({ field, help }) => (
+        {requiredFields.map(({ field, setting }) => (
           <div key={field.id} className="flex flex-col gap-1">
             <span className="tl-label text-[var(--ink-muted)]">{field.name} *</span>
             <FieldEditor
               field={field}
-              value={shown[field.id]}
+              // Until changed, the project's default shows; the server applies it (TL-80).
+              value={
+                field.id in custom
+                  ? shown[field.id]
+                  : shownValue(field, setting.defaultValue ?? undefined)
+              }
               projectKey={project.key}
+              offered={setting.optionIds}
               disabled={create.isPending}
               onChange={(value, display) => {
                 setCustom((current) => ({ ...current, [field.id]: value }));
@@ -241,8 +253,10 @@ export function CreateIssueDialog({
                 }));
               }}
             />
-            {(help || field.description) && (
-              <span className="text-xs text-[var(--ink-muted)]">{help || field.description}</span>
+            {(setting.description || field.description) && (
+              <span className="text-xs text-[var(--ink-muted)]">
+                {setting.description || field.description}
+              </span>
             )}
           </div>
         ))}

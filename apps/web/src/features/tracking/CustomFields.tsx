@@ -65,6 +65,7 @@ export function FieldEditor({
   disabled,
   onChange,
   label = field.name,
+  offered = [],
 }: {
   field: CustomField;
   value: CustomFieldValue | undefined;
@@ -73,11 +74,15 @@ export function FieldEditor({
   /** The value as written, and how it shows, so a form not yet sent needs no round trip. */
   onChange: (value: CustomFieldInput, shown?: CustomFieldValue | null) => void;
   label?: string;
+  /** The options the project offers for this field (TL-80); empty or missing means all. */
+  offered?: string[];
 }) {
   const { t } = useTranslation();
   const me = useQuery(meQuery).data;
   const [picking, setPicking] = useState(false);
-  const usable = field.options.filter((option) => !option.archived);
+  const usable = field.options.filter(
+    (option) => !option.archived && (offered.length === 0 || offered.includes(option.id)),
+  );
   const groups = useQuery({ ...groupsQuery, enabled: field.type === 'group' && !disabled });
   const versions = useQuery({
     ...versionsQuery(projectKey),
@@ -425,6 +430,10 @@ export function CustomFieldRows({
     const field = fields.find((entry) => entry.id === id);
     if (!field || field.archived) return [];
     const setting = settings.find((entry) => entry.fieldId === id);
+    // A field whose context leaves out this issue type is not shown (TL-80, E-91).
+    if (setting?.issueTypeIds.length && !setting.issueTypeIds.includes(issue.issueType.id)) {
+      return [];
+    }
     return [
       <div key={id} className="contents">
         <dt
@@ -440,6 +449,7 @@ export function CustomFieldRows({
             value={issue.customFields[id]}
             projectKey={issue.project.key}
             disabled={disabled}
+            offered={setting?.optionIds}
             onChange={(value) => onChange(id, value)}
           />
         </dd>

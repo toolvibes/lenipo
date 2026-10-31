@@ -4004,6 +4004,12 @@ export interface components {
       hidden: boolean;
       /** @default null */
       description: string | null;
+      /** @default [] */
+      issueTypeIds: string[];
+      /** @default [] */
+      optionIds: string[];
+      /** @default null */
+      defaultValue: string | number | boolean | string[] | string[] | null;
       /** Format: uuid */
       fieldId: string;
     };
@@ -4119,6 +4125,12 @@ export interface components {
       hidden?: boolean;
       /** @default null */
       description?: string | null;
+      /** @default [] */
+      issueTypeIds?: string[];
+      /** @default [] */
+      optionIds?: string[];
+      /** @default null */
+      defaultValue?: string | number | boolean | string[] | string[] | null;
     };
     Velocity: {
       /** @enum {string} */

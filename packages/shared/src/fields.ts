@@ -70,33 +70,6 @@ export const UpdateCustomFieldRequest = z
   .meta({ id: 'UpdateCustomFieldRequest' });
 export type UpdateCustomFieldRequest = z.infer<typeof UpdateCustomFieldRequest>;
 
-/** How a project uses one of its fields (TL-12, E-89). */
-export const ProjectFieldSetting = z
-  .object({
-    /** Forms and the API insist on a value. */
-    required: z.boolean().default(false),
-    /** Not shown in the project's forms; stored values stay. */
-    hidden: z.boolean().default(false),
-    /** Help text instead of the field's own description; null keeps that. */
-    description: z.string().trim().max(500).nullable().default(null),
-  })
-  .meta({ id: 'ProjectFieldSetting' });
-export type ProjectFieldSetting = z.infer<typeof ProjectFieldSetting>;
-
-export const ProjectFieldConfig = ProjectFieldSetting.extend({ fieldId: Id }).meta({
-  id: 'ProjectFieldConfig',
-});
-export type ProjectFieldConfig = z.infer<typeof ProjectFieldConfig>;
-
-export const ProjectCustomFieldsRequest = z
-  .object({
-    fieldIds: z.array(Id).max(200),
-    /** By field id; fields left out are optional and shown. */
-    settings: z.record(Id, ProjectFieldSetting).default({}),
-  })
-  .meta({ id: 'ProjectCustomFieldsRequest' });
-export type ProjectCustomFieldsRequest = z.infer<typeof ProjectCustomFieldsRequest>;
-
 /**
  * A value as written: text and URLs as strings, numbers, dates as `YYYY-MM-DD`, date and time
  * as ISO timestamp, selects as option ids, people as user ids (a list for several), a group
@@ -116,6 +89,39 @@ export type CustomFieldInput = z.infer<typeof CustomFieldInput>;
 /** Values to change, by field id. */
 export const CustomFieldInputs = z.record(Id, CustomFieldInput);
 export type CustomFieldInputs = z.infer<typeof CustomFieldInputs>;
+
+/** How a project uses one of its fields (TL-12, E-89). */
+export const ProjectFieldSetting = z
+  .object({
+    /** Forms and the API insist on a value. */
+    required: z.boolean().default(false),
+    /** Not shown in the project's forms; stored values stay. */
+    hidden: z.boolean().default(false),
+    /** Help text instead of the field's own description; null keeps that. */
+    description: z.string().trim().max(500).nullable().default(null),
+    /** Context (TL-80, E-91): only for these issue types; empty means all. */
+    issueTypeIds: z.array(Id).max(20).default([]),
+    /** Only these of the field's options are offered; empty means all. */
+    optionIds: z.array(Id).max(200).default([]),
+    /** Set on create when no value is given, in the form the issue API takes. */
+    defaultValue: CustomFieldInput.default(null),
+  })
+  .meta({ id: 'ProjectFieldSetting' });
+export type ProjectFieldSetting = z.infer<typeof ProjectFieldSetting>;
+
+export const ProjectFieldConfig = ProjectFieldSetting.extend({ fieldId: Id }).meta({
+  id: 'ProjectFieldConfig',
+});
+export type ProjectFieldConfig = z.infer<typeof ProjectFieldConfig>;
+
+export const ProjectCustomFieldsRequest = z
+  .object({
+    fieldIds: z.array(Id).max(200),
+    /** By field id; fields left out are optional and shown. */
+    settings: z.record(Id, ProjectFieldSetting).default({}),
+  })
+  .meta({ id: 'ProjectCustomFieldsRequest' });
+export type ProjectCustomFieldsRequest = z.infer<typeof ProjectCustomFieldsRequest>;
 
 /**
  * A stored value as the API shows it: option ids and user ids come with their names.

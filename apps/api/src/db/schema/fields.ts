@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -85,6 +86,12 @@ export const projectCustomFields = pgTable(
     hidden: boolean().notNull().default(false),
     /** Help text in the project's forms instead of the field's own description. */
     description: text(),
+    /** Context (TL-80, E-91): only for these issue types; empty means all. */
+    issueTypeIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
+    /** Only these options are offered; empty means all. */
+    optionIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
+    /** Set on create when no value is given (a CustomFieldInput). */
+    defaultValue: jsonb(),
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.fieldId] }),

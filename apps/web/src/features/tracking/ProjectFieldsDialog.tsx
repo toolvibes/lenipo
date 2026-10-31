@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ProjectDetails, ProjectFieldSetting } from '@tasklore/shared';
+import type { CustomFieldValue, ProjectDetails, ProjectFieldSetting } from '@tasklore/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -8,8 +8,18 @@ import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { CheckRow } from '../../ui/Popover';
+import { FieldEditor, shownValue } from './CustomFields';
 
-const PLAIN: ProjectFieldSetting = { required: false, hidden: false, description: null };
+const PLAIN: ProjectFieldSetting = {
+  required: false,
+  hidden: false,
+  description: null,
+  issueTypeIds: [],
+  optionIds: [],
+  defaultValue: null,
+};
+const toggled = (list: string[], id: string) =>
+  list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id];
 
 /**
  * Which custom fields a project uses (E-50), and how: required, hidden from forms, or with help
@@ -31,6 +41,8 @@ export function ProjectFieldsDialog({
   );
   const [chosen, setChosen] = useState<string[]>([]);
   const [settings, setSettings] = useState<Record<string, ProjectFieldSetting>>({});
+  // How chosen defaults show, e.g. a person's name, until the server answers.
+  const [shown, setShown] = useState<Record<string, CustomFieldValue | undefined>>({});
   useEffect(() => {
     if (!open) return;
     setChosen(project.customFieldSettings.map((entry) => entry.fieldId));
@@ -128,6 +140,82 @@ export function ProjectFieldsDialog({
                         }
                         className="h-7 min-w-0 flex-1 rounded-[var(--radius-sm)] border border-[var(--border-control)] bg-[var(--surface-1)] px-2 text-[12.5px] text-[var(--ink)]"
                       />
+                      <details className="w-full">
+                        <summary className="cursor-pointer text-[var(--ink-muted)]">
+                          {t('fields.project.context')}
+                          {(setting.issueTypeIds.length > 0 ||
+                            setting.optionIds.length > 0 ||
+                            setting.defaultValue !== null) &&
+                            ` · ${t('fields.project.contextSet')}`}
+                        </summary>
+                        <div className="mt-1 flex flex-col gap-1.5 pl-3">
+                          <span className="text-[var(--ink-muted)]">
+                            {t('fields.project.types')}
+                          </span>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                            {project.issueTypes.map((type) => (
+                              <label key={type.id} className="flex items-center gap-1.5">
+                                <input
+                                  type="checkbox"
+                                  checked={setting.issueTypeIds.includes(type.id)}
+                                  onChange={() =>
+                                    change(field.id, {
+                                      issueTypeIds: toggled(setting.issueTypeIds, type.id),
+                                    })
+                                  }
+                                />
+                                {type.name}
+                              </label>
+                            ))}
+                          </div>
+                          {field.options.length > 0 && (
+                            <>
+                              <span className="text-[var(--ink-muted)]">
+                                {t('fields.project.options')}
+                              </span>
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                                {field.options
+                                  .filter((option) => !option.archived)
+                                  .map((option) => (
+                                    <label key={option.id} className="flex items-center gap-1.5">
+                                      <input
+                                        type="checkbox"
+                                        checked={setting.optionIds.includes(option.id)}
+                                        onChange={() =>
+                                          change(field.id, {
+                                            optionIds: toggled(setting.optionIds, option.id),
+                                          })
+                                        }
+                                      />
+                                      {option.value}
+                                    </label>
+                                  ))}
+                              </div>
+                            </>
+                          )}
+                          <span className="text-[var(--ink-muted)]">
+                            {t('fields.project.default')}
+                          </span>
+                          <FieldEditor
+                            field={field}
+                            label={t('fields.project.default')}
+                            value={
+                              shown[field.id] ??
+                              shownValue(field, setting.defaultValue ?? undefined)
+                            }
+                            projectKey={project.key}
+                            offered={setting.optionIds}
+                            disabled={false}
+                            onChange={(value, display) => {
+                              change(field.id, { defaultValue: value });
+                              setShown((current) => ({
+                                ...current,
+                                [field.id]: shownValue(field, value, display),
+                              }));
+                            }}
+                          />
+                        </div>
+                      </details>
                     </div>
                   )}
                 </div>

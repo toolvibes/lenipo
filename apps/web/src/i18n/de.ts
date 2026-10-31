@@ -604,6 +604,11 @@ export const de = {
       hidden: 'Versteckt',
       help: 'Hilfetext für {{name}}',
       helpPlaceholder: 'Hilfetext (optional)',
+      context: 'Kontext',
+      contextSet: 'eingeschränkt',
+      types: 'Nur für diese Vorgangstypen (keiner gewählt: alle)',
+      options: 'Nur diese Optionen anbieten (keine gewählt: alle)',
+      default: 'Standardwert beim Anlegen',
     },
   },
   boards: {

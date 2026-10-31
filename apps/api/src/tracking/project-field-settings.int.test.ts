@@ -60,7 +60,7 @@ describe('field configuration per project (TL-12)', () => {
     expect(project.status).toBe(200);
     // Forms show only the visible fields; the settings list all of them.
     expect(project.body.customFieldIds).toEqual([kunde.id]);
-    expect(project.body.customFieldSettings).toEqual([
+    expect(project.body.customFieldSettings).toMatchObject([
       { fieldId: kunde.id, required: true, hidden: false, description: 'Für wen ist das?' },
       { fieldId: intern.id, required: false, hidden: true, description: null },
     ]);

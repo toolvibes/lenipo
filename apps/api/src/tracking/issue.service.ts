@@ -566,8 +566,14 @@ export class IssueService {
       request.assigneeId ?? (await this.components.defaultAssignee(project.id, components));
     const workflowVersionId = await this.projectService.workflowVersionFor(project, type.id);
     const workflow = await this.projectService.workflow(workflowVersionId);
-    const custom = await this.customFields.apply(project.id, {}, request.customFields);
-    const missing = await this.customFields.missingRequired(project.id, custom.next);
+    // Defaults of the project's contexts fill what the request leaves out (TL-80, E-91).
+    const custom = await this.customFields.apply(
+      project.id,
+      {},
+      await this.customFields.withDefaults(project.id, type.id, request.customFields),
+      type.id,
+    );
+    const missing = await this.customFields.missingRequired(project.id, custom.next, type.id);
     if (missing.length > 0) throw new BadRequestException(`Fill in: ${missing.join(', ')}`);
     const fixVersions = await this.versions.resolve(project.id, request.fixVersions);
     const affectsVersions = await this.versions.resolve(project.id, request.affectsVersions);
@@ -844,15 +850,18 @@ export class IssueService {
       }
     }
     if (request.customFields !== undefined) {
+      const typeId = patch.issueTypeId ?? issue.issueTypeId;
       const custom = await this.customFields.apply(
         project.id,
         issue.customFields as StoredValues,
         request.customFields,
+        typeId,
       );
       // Required fields cannot be emptied (TL-12, E-89).
       const missing = await this.customFields.missingRequired(
         project.id,
         custom.next,
+        typeId,
         Object.keys(request.customFields),
       );
       if (missing.length > 0) throw new BadRequestException(`Fill in: ${missing.join(', ')}`);
@@ -1351,7 +1360,7 @@ export class IssueService {
         default: {
           const input = action.action === 'clear' ? null : (action.value ?? null);
           const applied = await this.customFields
-            .apply(issue.projectId, custom, { [action.field]: input })
+            .apply(issue.projectId, custom, { [action.field]: input }, issue.issueTypeId)
             .catch(() => undefined);
           if (!applied) break;
           custom = applied.next;

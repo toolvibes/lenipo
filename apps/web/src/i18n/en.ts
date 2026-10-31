@@ -590,6 +590,11 @@ export const en: Messages = {
       hidden: 'Hidden',
       help: 'Help text for {{name}}',
       helpPlaceholder: 'Help text (optional)',
+      context: 'Context',
+      contextSet: 'limited',
+      types: 'Only for these issue types (none chosen: all)',
+      options: 'Only offer these options (none chosen: all)',
+      default: 'Default value on create',
     },
   },
   boards: {

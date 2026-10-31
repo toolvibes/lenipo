@@ -25,6 +25,7 @@ import {
   customFieldOptions,
   customFields,
   groups,
+  issueTypes,
   projectCustomFields,
   projectVersions,
   users,
@@ -241,17 +242,43 @@ export class CustomFieldService {
 
   /** The project's fields with their configuration, in display order (TL-12, E-89). */
   async projectFieldConfig(projectId: string): Promise<ProjectFieldConfig[]> {
-    return this.database.db
+    const rows = await this.database.db
       .select({
         fieldId: projectCustomFields.fieldId,
         required: projectCustomFields.required,
         hidden: projectCustomFields.hidden,
         description: projectCustomFields.description,
+        issueTypeIds: projectCustomFields.issueTypeIds,
+        optionIds: projectCustomFields.optionIds,
+        defaultValue: projectCustomFields.defaultValue,
       })
       .from(projectCustomFields)
       .innerJoin(customFields, eq(customFields.id, projectCustomFields.fieldId))
       .where(and(eq(projectCustomFields.projectId, projectId), isNull(customFields.archivedAt)))
       .orderBy(asc(projectCustomFields.position));
+    return rows.map((row) => ({
+      ...row,
+      defaultValue: (row.defaultValue ?? null) as ProjectFieldConfig['defaultValue'],
+    }));
+  }
+
+  /**
+   * The project's default values (TL-80, E-91) for fields of this issue type that `given` leaves
+   * out, merged under the given values.
+   */
+  async withDefaults(
+    projectId: string,
+    issueTypeId: string,
+    given: CustomFieldInputs,
+  ): Promise<CustomFieldInputs> {
+    const defaults = (await this.projectFieldConfig(projectId)).filter(
+      (entry) =>
+        entry.defaultValue !== null && !(entry.fieldId in given) && appliesTo(entry, issueTypeId),
+    );
+    return {
+      ...Object.fromEntries(defaults.map((entry) => [entry.fieldId, entry.defaultValue])),
+      ...given,
+    };
   }
 
   /**
@@ -261,12 +288,19 @@ export class CustomFieldService {
   async missingRequired(
     projectId: string,
     values: StoredValues,
+    issueTypeId: string,
     only?: string[],
   ): Promise<string[]> {
     const config = await this.projectFieldConfig(projectId);
     const fields = await this.list();
     return config
-      .filter((entry) => entry.required && !entry.hidden && (!only || only.includes(entry.fieldId)))
+      .filter(
+        (entry) =>
+          entry.required &&
+          !entry.hidden &&
+          appliesTo(entry, issueTypeId) &&
+          (!only || only.includes(entry.fieldId)),
+      )
       .filter((entry) => {
         const value = values[entry.fieldId];
         return (
@@ -291,9 +325,27 @@ export class CustomFieldService {
     for (const id of ids) {
       const field = fields.find((entry) => entry.id === id);
       if (!field || field.archived) throw new BadRequestException('Unknown custom field');
-      if (settings[id]?.required && settings[id]?.hidden) {
+      const setting = settings[id];
+      if (setting?.required && setting.hidden) {
         throw new BadRequestException(`${field.name} cannot be both required and hidden`);
       }
+      if (
+        setting?.optionIds.some((option) => !field.options.some((entry) => entry.id === option))
+      ) {
+        throw new BadRequestException(`${field.name}: unknown option`);
+      }
+      if (setting && setting.defaultValue !== null) {
+        // The default must be a value the field accepts here, from the offered options.
+        await this.normalize(field, setting.defaultValue, projectId, undefined, setting.optionIds);
+      }
+    }
+    const types = new Set(
+      (await this.database.db.select({ id: issueTypes.id }).from(issueTypes)).map((row) => row.id),
+    );
+    if (
+      Object.values(settings).some((setting) => setting.issueTypeIds.some((id) => !types.has(id)))
+    ) {
+      throw new BadRequestException('Unknown issue type');
     }
     await this.database.db.transaction(async (tx) => {
       await tx.delete(projectCustomFields).where(eq(projectCustomFields.projectId, projectId));
@@ -306,6 +358,9 @@ export class CustomFieldService {
             required: settings[fieldId]?.required ?? false,
             hidden: settings[fieldId]?.hidden ?? false,
             description: settings[fieldId]?.description || null,
+            issueTypeIds: [...new Set(settings[fieldId]?.issueTypeIds ?? [])],
+            optionIds: [...new Set(settings[fieldId]?.optionIds ?? [])],
+            defaultValue: settings[fieldId]?.defaultValue ?? null,
           })),
         );
       }
@@ -476,17 +531,27 @@ export class CustomFieldService {
     projectId: string,
     current: StoredValues,
     inputs: CustomFieldInputs,
+    /** With the issue's type, the project's contexts apply too (TL-80); without, only the project. */
+    issueTypeId?: string,
   ): Promise<{ next: StoredValues; changes: Change[] }> {
     const fields = await this.list();
-    const enabled = new Set(await this.projectFieldIds(projectId));
+    const config = new Map(
+      (await this.projectFieldConfig(projectId)).map((entry) => [entry.fieldId, entry]),
+    );
     const next: StoredValues = { ...current };
     for (const [id, input] of Object.entries(inputs)) {
       const field = fields.find((entry) => entry.id === id);
-      if (!field || field.archived || !enabled.has(id)) {
+      const setting = config.get(id);
+      if (!field || field.archived || !setting) {
         throw new BadRequestException(`The field ${id} is not used in this project`);
       }
+      if (issueTypeId && !appliesTo(setting, issueTypeId) && input !== null) {
+        throw new BadRequestException(`${field.name} is not used for this issue type`);
+      }
       const value =
-        input === null ? undefined : await this.normalize(field, input, projectId, current[id]);
+        input === null
+          ? undefined
+          : await this.normalize(field, input, projectId, current[id], setting.optionIds);
       if (value === undefined) delete next[id];
       else next[id] = value;
     }
@@ -530,13 +595,16 @@ export class CustomFieldService {
     input: NonNullable<CustomFieldInputs[string]>,
     projectId: string,
     current: unknown,
+    /** The options the project offers for this field (TL-80); empty means all. */
+    offered: string[] = [],
   ): Promise<unknown> {
-    // An archived option may stay where it is set, but cannot be chosen anew.
+    // An archived or no longer offered option may stay where it is set, but cannot be chosen anew.
+    const kept = (id: string) => current === id || (Array.isArray(current) && current.includes(id));
     const usable = (id: string) =>
       field.options.some(
         (option) =>
           option.id === id &&
-          (!option.archived || current === id || (Array.isArray(current) && current.includes(id))),
+          (kept(id) || (!option.archived && (offered.length === 0 || offered.includes(id)))),
       );
     switch (field.type) {
       case 'text':
@@ -641,4 +709,9 @@ export class CustomFieldService {
       }
     }
   }
+}
+
+/** Whether a project field's context covers the issue type (TL-80, E-91). */
+export function appliesTo(setting: { issueTypeIds: string[] }, issueTypeId: string): boolean {
+  return setting.issueTypeIds.length === 0 || setting.issueTypeIds.includes(issueTypeId);
 }
