@@ -17,6 +17,7 @@ import {
   FolderSimple,
   GearSix,
   Kanban,
+  Newspaper,
   Plus,
   Tag,
   Trash,
@@ -527,6 +528,14 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
           >
             <Tag size={14} aria-hidden />
             {t('wiki.labels.overview')}
+          </Link>
+          <Link
+            to="/spaces/$key/blog"
+            params={{ key: spaceKey }}
+            className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1 text-sm text-[var(--ink-muted)] no-underline hover:text-[var(--ink)]"
+          >
+            <Newspaper size={14} aria-hidden />
+            {t('blog.title')}
           </Link>
           {canEdit && (
             <Link

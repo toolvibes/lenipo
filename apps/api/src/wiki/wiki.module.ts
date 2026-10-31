@@ -3,6 +3,7 @@ import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
 import { AccessCheckController } from './access-check.controller.js';
 import { AccessCheckService } from './access-check.service.js';
+import { BlogController } from './blog.controller.js';
 import { DraftService } from './draft.service.js';
 import { IssuePagesController } from './issue-pages.controller.js';
 import { LabelsController } from './labels.controller.js';
@@ -24,6 +25,7 @@ import { WikiMacrosService } from './wiki-macros.service.js';
 @Module({
   imports: [IdentityModule, TrackingModule],
   controllers: [
+    BlogController,
     WikiMacrosController,
     AccessCheckController,
     TemplatesController,

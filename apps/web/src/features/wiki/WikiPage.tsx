@@ -29,6 +29,7 @@ import { PageAttachments } from './PageAttachments';
 import { PageLabelList, WatchMenu } from './PageMeta';
 import { PageOutline, readingMinutes } from './PageOutline';
 import { PageRestrictionsDialog } from './PageRestrictions';
+import { PageStatusBar } from './PageStatus';
 import { CreatePageDialog } from './SpaceLayout';
 
 export function Breadcrumbs({ page, current }: { page: Page; current?: ReactNode }) {
@@ -349,6 +350,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
               />
             </h1>
             <PageLabelList page={data} />
+            <PageStatusBar page={data} />
           </header>
           {doc ? (
             <article ref={article}>

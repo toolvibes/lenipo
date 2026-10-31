@@ -64,6 +64,56 @@ export function EmbedHostsPage() {
           </span>
         )}
       </div>
+      <OutdatedSetting />
     </main>
+  );
+}
+
+/** After how many days verified pages count as outdated (TL-29, E-110). */
+function OutdatedSetting() {
+  const { t } = useTranslation();
+  const settings = useQuery({
+    queryKey: ['admin', 'wiki-settings'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/wiki-settings')),
+  });
+  const [days, setDays] = useState('');
+  useEffect(() => {
+    if (settings.data)
+      setDays(settings.data.outdatedAfterDays ? String(settings.data.outdatedAfterDays) : '');
+  }, [settings.data]);
+  const save = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.PUT('/api/v1/admin/wiki-settings', {
+          body: { outdatedAfterDays: days.trim() ? Number(days) : null },
+        }),
+      ),
+  });
+  return (
+    <section className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+      <h2 className="m-0 text-base font-semibold">{t('pageStatus.outdatedTitle')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('pageStatus.outdatedHelp')}</p>
+      {save.error && <FormError message={save.error.message} />}
+      <div className="flex items-end gap-3">
+        <label className="flex flex-col gap-1 text-[13px]">
+          <span className="tl-field-label">{t('pageStatus.outdatedDays')}</span>
+          <input
+            type="number"
+            min={1}
+            value={days}
+            placeholder={t('pageStatus.never')}
+            onChange={(event) => {
+              setDays(event.target.value);
+              save.reset();
+            }}
+            className="h-8 w-32 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+          />
+        </label>
+        <Button disabled={save.isPending} onClick={() => save.mutate()}>
+          {t('common.save')}
+        </Button>
+        {save.isSuccess && <span role="status">{t('signIn.saved')}</span>}
+      </div>
+    </section>
   );
 }

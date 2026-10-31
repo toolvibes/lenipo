@@ -1,5 +1,6 @@
 import { Check, Copy } from '@phosphor-icons/react';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import {
   type CreatedToken,
   type Me,
@@ -621,6 +622,23 @@ function TwoFactor({ me }: { me: Me }) {
   );
 }
 
+/** Opens the person's private space, created on first use (TL-29, E-110). */
+function PersonalSpaceButton() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const open = useMutation({
+    mutationFn: () => unwrap(client.POST('/api/v1/me/space')),
+    onSuccess: (space) => navigate({ to: '/spaces/$key', params: { key: space.key } }),
+  });
+  return (
+    <div>
+      <Button size="sm" disabled={open.isPending} onClick={() => open.mutate()}>
+        {t('spaceTypes.openPersonal')}
+      </Button>
+    </div>
+  );
+}
+
 /**
  * The person's own page (TL-4, E-78): profile, password (TL-59, E-80), appearance with the
  * shortcut switch (TL-7),
@@ -639,6 +657,7 @@ export function ProfilePage() {
             {t('profile.title')}
           </h1>
           <p className="m-0 text-[var(--ink-muted)]">{t('profile.intro')}</p>
+          <PersonalSpaceButton />
         </header>
         <Section id="profile" title={t('profile.profile')}>
           <ProfileForm me={me.data} />

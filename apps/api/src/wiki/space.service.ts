@@ -90,7 +90,7 @@ export class SpaceService {
     tx: Executor,
     userId: string,
     id: string,
-    request: CreateSpaceRequest,
+    request: CreateSpaceRequest | (Omit<CreateSpaceRequest, 'type'> & { type: 'personal' }),
     projectId: string | null = null,
   ) {
     await tx.insert(spaces).values({
@@ -100,6 +100,7 @@ export class SpaceService {
       description: request.description,
       createdById: userId,
       projectId,
+      type: request.type ?? 'team',
     });
     await tx.insert(spaceRoleMembers).values({
       id: uuidv7(),
@@ -111,7 +112,8 @@ export class SpaceService {
       .select({ id: groups.id })
       .from(groups)
       .where(eq(groups.name, USERS_GROUP));
-    if (everyone) {
+    // A personal space is private until its owner shares it (TL-29, E-110).
+    if (everyone && request.type !== 'personal') {
       await tx
         .insert(spaceRoleMembers)
         .values({ id: uuidv7(), spaceId: id, role: 'editors', groupId: everyone.id });
@@ -159,6 +161,39 @@ export class SpaceService {
     if (!space || space.archivedAt) throw new NotFoundException('Space not found');
     const permissions = await this.spaceAccess.require(principal, space.id, permission);
     return { space, permissions };
+  }
+
+  /** The caller's personal space, created on first use with a free key like PLENA (TL-29). */
+  async personal(principal: Principal): Promise<Space> {
+    const [existing] = await this.database.db
+      .select({ key: spaces.key })
+      .from(spaces)
+      .where(and(eq(spaces.type, 'personal'), eq(spaces.createdById, principal.userId)));
+    if (existing) return this.get(principal, existing.key);
+    const [user] = await this.database.db
+      .select({ displayName: users.displayName })
+      .from(users)
+      .where(eq(users.id, principal.userId));
+    const base =
+      `P${(user?.displayName ?? 'USER')
+        .normalize('NFD')
+        .replace(/[^A-Za-z0-9]/g, '')
+        .toUpperCase()}`.slice(0, 8) || 'PUSER';
+    const taken = new Set(
+      (await this.database.db.select({ key: spaces.key }).from(spaces)).map((row) => row.key),
+    );
+    let key = base.length >= 2 ? base : `${base}X`;
+    for (let index = 2; taken.has(key); index++) key = `${base.slice(0, 8)}${index}`;
+    const id = uuidv7();
+    await this.database.db.transaction((tx) =>
+      this.insertSpace(tx, principal.userId, id, {
+        key,
+        name: user?.displayName ?? key,
+        description: '',
+        type: 'personal',
+      }),
+    );
+    return this.get(principal, key);
   }
 
   async get(principal: Principal, key: string): Promise<Space> {
@@ -387,6 +422,7 @@ export class SpaceService {
       createdAt: space.createdAt.toISOString(),
       favourite: starred.has(space.id),
       watching: watched.has(space.id),
+      type: (space.type as SpaceSummary['type']) ?? 'team',
       project: (space.projectId && linked.get(space.projectId)) || null,
     }));
   }

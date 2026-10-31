@@ -14,6 +14,8 @@ import {
   withoutPlaceholders,
 } from '@tasklore/editor';
 import type {
+  Blog,
+  BlogQuery,
   ContentFormat,
   CreatePageRequest,
   LabelCount,
@@ -23,6 +25,7 @@ import type {
   PageDiff,
   PageRef,
   PageRestrictions,
+  PageStatus,
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
@@ -31,11 +34,14 @@ import type {
   RestrictedPage,
   RichText,
   SetPageRestrictionsRequest,
+  SetPageStatusRequest,
   SpacePermission,
   TrashedPage,
+  UserRef,
 } from '@tasklore/shared';
+import { AUTOMATION_ACTOR_ID } from '@tasklore/shared';
 import { prosemirrorJSONToYDoc, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
-import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, not, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, ne, not, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';
 import { AuditService } from '../audit/audit.service.js';
@@ -200,7 +206,8 @@ export class PageService {
         version: pages.version,
       })
       .from(pages)
-      .where(and(eq(pages.spaceId, space.id), isNull(pages.deletedAt)))
+      // Blog posts live outside the tree (TL-29).
+      .where(and(eq(pages.spaceId, space.id), isNull(pages.deletedAt), eq(pages.kind, 'page')))
       .orderBy(asc(pages.rank), asc(pages.createdAt));
     // A view list that leaves the user out hides the page and everything below (E-95).
     const hidden = new Set(
@@ -279,7 +286,8 @@ export class PageService {
     options: { publish?: boolean; labels?: string[] } = {},
   ): Promise<Page> {
     const { space } = await this.spaces.find(principal, spaceKey, 'edit');
-    let parentId = await this.checkParent(space.id, request.parentId);
+    const blog = request.kind === 'blog';
+    let parentId = blog ? null : await this.checkParent(space.id, request.parentId);
     // A template's content becomes the new draft right away (E-72).
     const resolved = request.template
       ? await this.templates.resolve(principal, space.id, request.template)
@@ -333,9 +341,11 @@ export class PageService {
         rank: await this.lastRank(tx, space.id, parentId),
         title,
         labels: [...labels, ...(options.labels ?? [])],
+        kind: blog ? 'blog' : 'page',
+        ownerId: principal.userId === AUTOMATION_ACTOR_ID ? null : principal.userId,
         createdById: principal.userId,
       });
-      if (!space.homePageId) {
+      if (!space.homePageId && !blog) {
         await tx.update(spaces).set({ homePageId: id }).where(eq(spaces.id, space.id));
       }
       await autoWatch(tx, principal.userId, id);
@@ -398,6 +408,107 @@ export class PageService {
     return index.id;
   }
 
+  /** The owner, unless deactivated: then the space administrators answer (TL-29, E-110). */
+  private async ownerOf(ownerId: string | null): Promise<UserRef | null> {
+    if (!ownerId) return null;
+    const [owner] = await this.database.db
+      .select({ id: users.id, displayName: users.displayName, status: users.status })
+      .from(users)
+      .where(eq(users.id, ownerId));
+    return owner && owner.status === 'active'
+      ? { id: owner.id, displayName: owner.displayName }
+      : null;
+  }
+
+  async setStatus(principal: Principal, id: string, request: SetPageStatusRequest): Promise<Page> {
+    const { page } = await this.authorize(principal, id, 'edit');
+    if (request.ownerId) {
+      const [owner] = await this.database.db
+        .select({ status: users.status })
+        .from(users)
+        .where(eq(users.id, request.ownerId));
+      if (owner?.status !== 'active')
+        throw new BadRequestException('The owner must be an active user');
+    }
+    await this.database.db
+      .update(pages)
+      .set({
+        status: request.status,
+        ...(request.status !== page.status ? { statusChangedAt: new Date() } : {}),
+        ...(request.ownerId !== undefined ? { ownerId: request.ownerId } : {}),
+      })
+      .where(eq(pages.id, id));
+    return this.get(principal, id);
+  }
+
+  /** Published blog posts of a space, newest first, with the months for the archive. */
+  async blog(principal: Principal, spaceKey: string, query: BlogQuery): Promise<Blog> {
+    const { space } = await this.spaces.find(principal, spaceKey);
+    const where = and(
+      eq(pages.spaceId, space.id),
+      eq(pages.kind, 'blog'),
+      isNull(pages.deletedAt),
+      gt(pages.version, 0),
+      pageVisible(principal.userId),
+    );
+    const month = sql<string>`to_char(${pages.publishedAt}, 'YYYY-MM')`;
+    const [rows, months] = await Promise.all([
+      this.database.db
+        .select({
+          id: pages.id,
+          title: pages.title,
+          publishedAt: pages.publishedAt,
+          text: pageVersions.text,
+          authorId: users.id,
+          authorName: users.displayName,
+        })
+        .from(pages)
+        .innerJoin(
+          pageVersions,
+          and(eq(pageVersions.pageId, pages.id), eq(pageVersions.number, pages.version)),
+        )
+        .leftJoin(users, eq(users.id, pages.createdById))
+        .where(and(where, query.month ? sql`${month} = ${query.month}` : undefined))
+        .orderBy(desc(pages.publishedAt))
+        .limit(query.limit),
+      this.database.db
+        .select({ month, count: sql<number>`count(*)::int` })
+        .from(pages)
+        .where(where)
+        .groupBy(sql`1`)
+        .orderBy(desc(sql`1`)),
+    ]);
+    return {
+      posts: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        spaceKey: space.key,
+        publishedAt: row.publishedAt?.toISOString() ?? '',
+        author:
+          row.authorId && row.authorName ? { id: row.authorId, displayName: row.authorName } : null,
+        excerpt: row.text.slice(0, 280),
+      })),
+      months: months.map((entry) => ({ month: entry.month, count: entry.count })),
+    };
+  }
+
+  /** Verified pages without changes for `days` become outdated (TL-29); returns how many. */
+  async markOutdated(days: number): Promise<number> {
+    const rows = await this.database.db
+      .update(pages)
+      .set({ status: 'outdated', statusChangedAt: new Date() })
+      .where(
+        and(
+          eq(pages.status, 'verified'),
+          isNull(pages.deletedAt),
+          sql`coalesce(${pages.publishedAt}, ${pages.createdAt}) < now() - make_interval(days => ${days})`,
+          sql`coalesce(${pages.statusChangedAt}, ${pages.createdAt}) < now() - make_interval(days => ${days})`,
+        ),
+      )
+      .returning({ id: pages.id });
+    return rows.length;
+  }
+
   // ---------------------------------------------------------------- reading
 
   private async ancestors(pageId: string): Promise<PageRef[]> {
@@ -445,6 +556,9 @@ export class PageService {
       canEdit: permissions.has('edit'),
       favourite: await this.starred(principal.userId, page.id),
       draftChanged: permissions.has('edit') ? await this.draftChanged(page.id, content) : false,
+      kind: page.kind === 'blog' ? 'blog' : 'page',
+      status: page.status as PageStatus,
+      owner: await this.ownerOf(page.ownerId),
       canComment: permissions.has('comment'),
       labels: page.labels,
       watch: await watchState(this.database.db, principal.userId, page.id),

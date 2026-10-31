@@ -51,6 +51,7 @@ import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
+import { BlogPage } from './features/wiki/BlogPage';
 import { LabelPages, SpaceLabelsPage } from './features/wiki/LabelPages';
 import { PageEditor } from './features/wiki/PageEditor';
 import { PageHistory } from './features/wiki/PageHistory';
@@ -255,6 +256,14 @@ const pageHistoryRoute = createRoute({
     const { key, id } = pageHistoryRoute.useParams();
     const search = pageHistoryRoute.useSearch();
     return <PageHistory key={id} spaceKey={key.toUpperCase()} id={id} {...search} />;
+  },
+});
+
+const blogRoute = createRoute({
+  getParentRoute: () => spaceRoute,
+  path: '/blog',
+  component: function SpaceBlog() {
+    return <BlogPage spaceKey={spaceRoute.useParams().key.toUpperCase()} />;
   },
 });
 
@@ -752,6 +761,7 @@ const routeTree = rootRoute.addChildren([
       pageEditRoute,
       pageHistoryRoute,
       trashRoute,
+      blogRoute,
       spaceSettingsRoute,
       spaceTemplateRoute,
       spaceLabelsRoute,

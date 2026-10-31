@@ -18,6 +18,16 @@ export const SpaceKey = z
   .regex(/^[A-Z][A-Z0-9]{1,9}$/, 'Use 2 to 10 upper-case letters or digits, starting with a letter')
   .meta({ id: 'SpaceKey' });
 
+/** Kinds of space (W-SPC-02, TL-29, E-110); the kind only sets defaults. */
+export const SPACE_TYPES = ['team', 'project', 'documentation', 'personal'] as const;
+export const SpaceType = z.enum(SPACE_TYPES).meta({ id: 'SpaceType' });
+export type SpaceType = z.infer<typeof SpaceType>;
+
+/** Page status (W-PAG-11, TL-29, E-110). */
+export const PAGE_STATUSES = ['none', 'draft', 'in-review', 'verified', 'outdated'] as const;
+export const PageStatus = z.enum(PAGE_STATUSES).meta({ id: 'PageStatus' });
+export type PageStatus = z.infer<typeof PageStatus>;
+
 export const SpaceSummary = z
   .object({
     id: Id,
@@ -31,6 +41,7 @@ export const SpaceSummary = z
     watching: z.boolean(),
     /** The linked tracking project; null if none or the caller may not browse it (E-60). */
     project: z.object({ key: z.string(), name: z.string() }).nullable(),
+    type: SpaceType,
   })
   .meta({ id: 'SpaceSummary' });
 export type SpaceSummary = z.infer<typeof SpaceSummary>;
@@ -47,6 +58,7 @@ export const CreateSpaceRequest = z
     key: SpaceKey,
     name: SpaceName,
     description: z.string().max(2000).default(''),
+    type: SpaceType.exclude(['personal']).optional(),
   })
   .meta({ id: 'CreateSpaceRequest' });
 export type CreateSpaceRequest = z.infer<typeof CreateSpaceRequest>;
@@ -160,6 +172,11 @@ export const Page = z
     favourite: z.boolean(),
     /** The live draft differs from the published version; only ever true for editors. */
     draftChanged: z.boolean(),
+    /** A blog post lives outside the page tree (W-PAG-10). */
+    kind: z.enum(['page', 'blog']),
+    status: PageStatus,
+    /** Responsible for the content; null falls back to the space administrators. */
+    owner: UserRef.nullable(),
     /** May write, answer and resolve comments (E-63). */
     canComment: z.boolean(),
     /** Free-text labels, lower case (W-PAG-08, E-65). */
@@ -178,6 +195,8 @@ export const CreatePageRequest = z
     title: PageTitle,
     /** Null or missing: a top-level page. */
     parentId: Id.nullable().optional(),
+    /** A blog post instead of a page of the tree (TL-29). */
+    kind: z.enum(['page', 'blog']).optional(),
     /** A template id or `blueprint:<key>`; its content becomes the new draft (E-72). */
     template: z.string().max(64).optional(),
     /** Values of the template's input variables (TL-27). */
@@ -475,3 +494,52 @@ export const EmbedHosts = z
   .object({ hosts: z.array(z.string().trim().toLowerCase().min(3).max(200)).max(100) })
   .meta({ id: 'EmbedHosts' });
 export type EmbedHosts = z.infer<typeof EmbedHosts>;
+
+export const SetPageStatusRequest = z
+  .object({ status: PageStatus, ownerId: Id.nullable().optional() })
+  .meta({ id: 'SetPageStatusRequest' });
+export type SetPageStatusRequest = z.infer<typeof SetPageStatusRequest>;
+
+/** A blog post in a space's blog (W-PAG-10, TL-29). */
+export const BlogPost = z
+  .object({
+    id: Id,
+    title: z.string(),
+    spaceKey: z.string(),
+    publishedAt: z.iso.datetime(),
+    author: UserRef.nullable(),
+    excerpt: z.string(),
+  })
+  .meta({ id: 'BlogPost' });
+export type BlogPost = z.infer<typeof BlogPost>;
+
+export const BlogQuery = z.object({
+  /** Posts of this month (yyyy-MM) for the archive. */
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type BlogQuery = z.infer<typeof BlogQuery>;
+
+export const Blog = z
+  .object({
+    posts: z.array(BlogPost),
+    /** Months with posts, newest first, for the archive. */
+    months: z.array(z.object({ month: z.string(), count: z.number().int() })),
+  })
+  .meta({ id: 'Blog' });
+export type Blog = z.infer<typeof Blog>;
+
+/** Secret for reading feeds without a session (W-PAG-10). */
+export const FeedToken = z.object({ token: z.string() }).meta({ id: 'FeedToken' });
+export type FeedToken = z.infer<typeof FeedToken>;
+
+export const WikiSettings = z
+  .object({
+    /** Verified pages become outdated after this many days without changes; null: never. */
+    outdatedAfterDays: z.number().int().min(1).max(3650).nullable(),
+  })
+  .meta({ id: 'WikiSettings' });
+export type WikiSettings = z.infer<typeof WikiSettings>;

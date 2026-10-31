@@ -10,6 +10,7 @@ import { spacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
+import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 import { FavouriteButton } from '../personal/FavouriteButton';
 
@@ -42,6 +43,7 @@ function CreateSpaceDialog({
   const [key, setKey] = useState('');
   const [keyTouched, setKeyTouched] = useState(false);
   const [description, setDescription] = useState('');
+  const [type, setType] = useState<'team' | 'project' | 'documentation'>('team');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const create = useMutation({
@@ -56,7 +58,7 @@ function CreateSpaceDialog({
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const parsed = CreateSpaceRequest.safeParse({ key, name, description });
+    const parsed = CreateSpaceRequest.safeParse({ key, name, description, type });
     if (!parsed.success) {
       setErrors(
         Object.fromEntries(
@@ -97,6 +99,15 @@ function CreateSpaceDialog({
             setKeyTouched(true);
             setKey(event.target.value.toUpperCase());
           }}
+        />
+        <Select
+          label={t('spaceTypes.label')}
+          value={type}
+          options={(['team', 'project', 'documentation'] as const).map((value) => ({
+            value,
+            label: t(`spaceTypes.${value}`),
+          }))}
+          onChange={(event) => setType(event.target.value as typeof type)}
         />
         <TextField
           label={t('wiki.spaceDescription')}

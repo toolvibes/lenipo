@@ -39,6 +39,8 @@ export const spaces = pgTable(
     createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp({ withTimezone: true }),
+    /** team, project, documentation or personal (TL-29, E-110). */
+    type: text().notNull().default('team'),
     /** The tracking project this space documents; a project may have several (E-60). */
     projectId: uuid().references(() => projects.id, { onDelete: 'set null' }),
   },
@@ -93,6 +95,12 @@ export const pages = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     /** In the space's trash (W-PAG-13), together with the pages below it. */
     deletedAt: timestamp({ withTimezone: true }),
+    /** page, or blog for posts outside the tree (TL-29, E-110). */
+    kind: text().notNull().default('page'),
+    /** none, draft, in-review, verified or outdated. */
+    status: text().notNull().default('none'),
+    ownerId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    statusChangedAt: timestamp({ withTimezone: true }),
     deletedById: uuid().references(() => users.id, { onDelete: 'set null' }),
     /** Free-text labels, lower case (W-PAG-08, E-65); not part of the versions. */
     labels: text().array().notNull().default(sql`'{}'::text[]`),

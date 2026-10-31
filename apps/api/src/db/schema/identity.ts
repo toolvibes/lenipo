@@ -41,6 +41,8 @@ export const users = pgTable(
     onboardedAt: timestamp({ withTimezone: true }),
     /** Single-key shortcuts in the web app; off for people who type with speech or switches (TL-7). */
     keyboardShortcuts: boolean().notNull().default(true),
+    /** Secret for reading feeds without a session (TL-29). */
+    feedToken: text(),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
 );

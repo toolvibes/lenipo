@@ -7,9 +7,12 @@ import {
 import { AutomationEngine } from '../automation/automation.engine.js';
 import { type AppConfig, runsRole } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
-import { CONFIG, LOGGER } from '../core/tokens.js';
+import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
+import type { DatabaseHandle } from '../db/client.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
+import { wikiSettings } from '../wiki/blog.controller.js';
+import { PageService } from '../wiki/page.service.js';
 import { EventProcessor } from './event-processor.js';
 
 /** The worker role's loops (E-44, E-45). Off in tests, which call the services directly. */
@@ -25,6 +28,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(NotificationService) private readonly notifications: NotificationService,
     @Inject(WebhookService) private readonly webhooks: WebhookService,
     @Inject(AutomationEngine) private readonly automation: AutomationEngine,
+    @Inject(PageService) private readonly pages: PageService,
+    @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -38,6 +43,11 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       while ((await this.automation.runDue()) > 0);
     });
     this.every('schedules', 30_000, () => this.automation.tickSchedules());
+    // Verified pages that nobody touched for long enough become outdated (TL-29).
+    this.every('outdated', 60 * 60_000, async () => {
+      const { outdatedAfterDays } = await wikiSettings(this.database);
+      if (outdatedAfterDays) await this.pages.markOutdated(outdatedAfterDays);
+    });
     this.every('cleanup', 60 * 60_000, async () => {
       await this.webhooks.cleanUp();
       await this.automation.cleanUp();
