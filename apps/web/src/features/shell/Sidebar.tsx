@@ -11,6 +11,7 @@ import { useCurrentProjectKey } from '../../lib/shortcuts';
 import { projectsQuery } from '../../lib/tracking';
 import { projectSpacesQuery } from '../../lib/wiki';
 import { NotificationBell } from '../notifications/NotificationBell';
+import { TimerBar } from '../time/TimerBar';
 
 /** Assigned to me and not done: "Meine Aufgaben" (S2, E-67). */
 export const MY_ISSUES =
@@ -289,6 +290,8 @@ export function Sidebar({
 
       <OtherFavourites path={path} />
 
+      <TimerBar />
+
       <div className="mt-auto flex flex-col gap-px">
         <NavRow to="/projects" active={path === '/projects'}>
           {t('sidebar.allProjects')}
@@ -304,6 +307,9 @@ export function Sidebar({
         </NavRow>
         <NavRow to="/activity" active={path === '/activity'}>
           {t('activity.title')}
+        </NavRow>
+        <NavRow to="/timesheet" search={{}} active={path === '/timesheet'}>
+          {t('timesheet.title')}
         </NavRow>
         {isAdmin && (
           <NavRow to="/admin/webhooks" active={path.startsWith('/admin')}>

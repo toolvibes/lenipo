@@ -686,3 +686,14 @@ export const issueWorklogs = pgTable(
     check('issue_worklogs_positive', sql`${table.timeSpentSeconds} > 0`),
   ],
 );
+
+/** A running timer, one per person (TL-24, E-105); stopping it logs the time. */
+export const issueTimers = pgTable('issue_timers', {
+  userId: uuid()
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  issueId: uuid()
+    .notNull()
+    .references(() => issues.id, { onDelete: 'cascade' }),
+  startedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

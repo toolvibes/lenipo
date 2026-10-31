@@ -8,6 +8,8 @@ import type {
   ScopeProgress,
   ScopeProgressRequest,
   SeriesField,
+  TimePivot,
+  TimePivotRequest,
   TimeReport,
   TimeReportRequest,
 } from '@tasklore/shared';
@@ -21,6 +23,7 @@ import {
   issueChangeItems,
   issues,
   issueWorklogs,
+  projects,
   sprints,
   users,
 } from '../db/schema/index.js';
@@ -122,6 +125,8 @@ export class AnalysisService {
         originalEstimateSeconds: issues.originalEstimateSeconds,
         remainingEstimateSeconds: issues.remainingEstimateSeconds,
         timeSpentSeconds: issues.timeSpentSeconds,
+        projectId: issues.projectId,
+        parentId: issues.parentId,
       })
       .from(issues)
       .where(and(scope.where, extra))
@@ -380,6 +385,136 @@ export class AnalysisService {
       velocity: Math.round(velocity * 10) / 10,
       forecastSprints: velocity > 0 ? Math.ceil(remaining / velocity) : null,
     };
+  }
+
+  /** Logged time grouped by issue, project, person or epic, per day, week or month (TL-24). */
+  async timePivot(principal: Principal, request: TimePivotRequest): Promise<TimePivot> {
+    const { timeZone, rows } = await this.matching(principal, request.query);
+    const empty = { columns: [], rows: [], totals: [], total: 0 };
+    if (rows.length === 0) return empty;
+    const local = sql`${issueWorklogs.startedAt} at time zone ${timeZone}`;
+    const bucket =
+      request.period === 'day'
+        ? sql<string>`to_char(${local}, 'YYYY-MM-DD')`
+        : request.period === 'week'
+          ? sql<string>`to_char(date_trunc('week', ${local}), 'YYYY-MM-DD')`
+          : request.period === 'month'
+            ? sql<string>`to_char(date_trunc('month', ${local}), 'YYYY-MM-DD')`
+            : sql<string>`'total'`;
+    const logged = await this.database.db
+      .select({
+        bucket,
+        issueId: issueWorklogs.issueId,
+        authorId: issueWorklogs.authorId,
+        seconds: sql<number>`sum(${issueWorklogs.timeSpentSeconds})::int`,
+      })
+      .from(issueWorklogs)
+      .where(
+        and(
+          inArray(
+            issueWorklogs.issueId,
+            rows.map((row) => row.id),
+          ),
+          sql`(${local})::date >= ${request.from}::date`,
+          sql`(${local})::date <= ${request.to}::date`,
+        ),
+      )
+      // By position: the time zone is a parameter, so the expression would not match.
+      .groupBy(sql`1`, sql`2`, sql`3`);
+    const byIssue = new Map(rows.map((row) => [row.id, row]));
+    const meta = await this.meta.load();
+    const labels = new Map<string | null, string>();
+    let groupOf: (entry: (typeof logged)[number]) => string | null;
+    if (request.groupBy === 'issue') {
+      for (const row of rows) labels.set(row.id, `${row.key} ${row.summary}`);
+      groupOf = (entry) => entry.issueId;
+    } else if (request.groupBy === 'project') {
+      const ids = [...new Set(rows.map((row) => row.projectId))];
+      for (const project of await this.database.db
+        .select({ id: projects.id, name: projects.name })
+        .from(projects)
+        .where(inArray(projects.id, ids))) {
+        labels.set(project.id, project.name);
+      }
+      groupOf = (entry) => byIssue.get(entry.issueId)?.projectId ?? null;
+    } else if (request.groupBy === 'person') {
+      const ids = [...new Set(logged.flatMap((entry) => (entry.authorId ? [entry.authorId] : [])))];
+      if (ids.length > 0) {
+        for (const user of await this.database.db
+          .select({ id: users.id, name: users.displayName })
+          .from(users)
+          .where(inArray(users.id, ids))) {
+          labels.set(user.id, user.name);
+        }
+      }
+      groupOf = (entry) => entry.authorId;
+    } else {
+      // The nearest ancestor of epic level (a subtask's story's epic, too).
+      const ancestors = new Map<
+        string,
+        { id: string; key: string; summary: string; parentId: string | null; level: number }
+      >();
+      let pending = [...new Set(rows.flatMap((row) => (row.parentId ? [row.parentId] : [])))];
+      for (let depth = 0; depth < 3 && pending.length > 0; depth++) {
+        const found = await this.database.db
+          .select({
+            id: issues.id,
+            key: issues.key,
+            summary: issues.summary,
+            parentId: issues.parentId,
+            typeId: issues.issueTypeId,
+          })
+          .from(issues)
+          .where(inArray(issues.id, pending));
+        for (const entry of found) {
+          ancestors.set(entry.id, {
+            ...entry,
+            level: meta.issueType.get(entry.typeId)?.hierarchyLevel ?? 0,
+          });
+        }
+        pending = found.flatMap((entry) =>
+          entry.parentId && !ancestors.has(entry.parentId) ? [entry.parentId] : [],
+        );
+      }
+      const epicOf = (issueId: string): string | null => {
+        const row = byIssue.get(issueId);
+        if (row && (meta.issueType.get(row.issueTypeId)?.hierarchyLevel ?? 0) >= 1) return row.id;
+        let parent = row?.parentId ?? null;
+        for (let depth = 0; parent && depth < 3; depth++) {
+          const ancestor = ancestors.get(parent);
+          if (!ancestor) return null;
+          if (ancestor.level >= 1) return ancestor.id;
+          parent = ancestor.parentId;
+        }
+        return null;
+      };
+      for (const ancestor of ancestors.values()) {
+        labels.set(ancestor.id, `${ancestor.key} ${ancestor.summary}`);
+      }
+      for (const row of rows) labels.set(row.id, `${row.key} ${row.summary}`);
+      groupOf = (entry) => epicOf(entry.issueId);
+    }
+    const columns = [...new Set(logged.map((entry) => entry.bucket))].sort();
+    const table = new Map<string | null, number[]>();
+    for (const entry of logged) {
+      const key = groupOf(entry);
+      const line = table.get(key) ?? columns.map(() => 0);
+      const index = columns.indexOf(entry.bucket);
+      line[index] = (line[index] ?? 0) + entry.seconds;
+      table.set(key, line);
+    }
+    const result = [...table.entries()]
+      .map(([key, values]) => ({
+        key,
+        label: key === null ? '' : (labels.get(key) ?? key),
+        values,
+        total: values.reduce((sum, value) => sum + value, 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+    const totals = columns.map((_, index) =>
+      result.reduce((sum, row) => sum + (row.values[index] ?? 0), 0),
+    );
+    return { columns, rows: result, totals, total: totals.reduce((sum, value) => sum + value, 0) };
   }
 
   async timeReport(principal: Principal, request: TimeReportRequest): Promise<TimeReport> {

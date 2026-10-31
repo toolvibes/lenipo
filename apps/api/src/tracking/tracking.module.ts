@@ -20,6 +20,8 @@ import { SecuritySchemeService } from './security-scheme.service.js';
 import { SecuritySchemesController } from './security-schemes.controller.js';
 import { TimeTrackingController } from './time-tracking.controller.js';
 import { TimelineService } from './timeline.service.js';
+import { TimesheetController } from './timesheet.controller.js';
+import { TimesheetService } from './timesheet.service.js';
 import { VersionService } from './version.service.js';
 import { WorkflowService } from './workflow.service.js';
 import { WorkingTimeService } from './working-time.service.js';
@@ -32,6 +34,7 @@ import { WorklogService } from './worklog.service.js';
     IssuesController,
     AttachmentsController,
     TimeTrackingController,
+    TimesheetController,
     CustomFieldsController,
     PermissionSchemesController,
     SecuritySchemesController,
@@ -53,6 +56,7 @@ import { WorklogService } from './worklog.service.js';
     TimelineService,
     WorkflowService,
     WorklogService,
+    TimesheetService,
     AttachmentService,
   ],
   exports: [

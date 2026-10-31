@@ -2492,6 +2492,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/reports/time-pivot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Logged time grouped by issue, project, person or epic, per period */
+    post: operations['Reports.timePivot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -3019,6 +3036,95 @@ export interface paths {
     post?: never;
     /** Delete a template */
     delete: operations['Templates.delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/timesheet': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A person's logged time for one week, by issue and day */
+    get: operations['Time tracking.week'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/timesheet/cells': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the time of one cell of one’s own timesheet
+     * @description Creates the day’s worklog, changes it, or removes it with 0 seconds.
+     */
+    put: operations['Time tracking.setCell'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/timer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The caller’s running timer */
+    get: operations['Time tracking.timer'];
+    put?: never;
+    post?: never;
+    /** Discard the timer without logging */
+    delete: operations['Time tracking.discard'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/timer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start a timer on an issue */
+    post: operations['Time tracking.start'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/timer/stop': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Stop the timer and log the elapsed time */
+    post: operations['Time tracking.stop'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -4678,6 +4784,16 @@ export interface components {
           query: string;
           /** @default 30 */
           days: number;
+          /**
+           * @default issue
+           * @enum {string}
+           */
+          groupBy: 'issue' | 'project' | 'person' | 'epic';
+          /**
+           * @default none
+           * @enum {string}
+           */
+          period: 'none' | 'day' | 'week' | 'month';
         };
     /** @enum {string} */
     SeriesField: 'status' | 'statusCategory' | 'priority' | 'assignee' | 'issueType';
@@ -4828,6 +4944,16 @@ export interface components {
           query: string;
           /** @default 30 */
           days?: number;
+          /**
+           * @default issue
+           * @enum {string}
+           */
+          groupBy?: 'issue' | 'project' | 'person' | 'epic';
+          /**
+           * @default none
+           * @enum {string}
+           */
+          period?: 'none' | 'day' | 'week' | 'month';
         };
     UpdateGadgetRequest: {
       title?: string;
@@ -6006,6 +6132,34 @@ export interface components {
       };
       truncated: boolean;
     };
+    TimePivotRequest: {
+      query: string;
+      /** Format: date */
+      from: string;
+      /** Format: date */
+      to: string;
+      /**
+       * @default person
+       * @enum {string}
+       */
+      groupBy?: 'issue' | 'project' | 'person' | 'epic';
+      /**
+       * @default week
+       * @enum {string}
+       */
+      period?: 'none' | 'day' | 'week' | 'month';
+    };
+    TimePivot: {
+      columns: string[];
+      rows: {
+        key: string | null;
+        label: string;
+        values: number[];
+        total: number;
+      }[];
+      totals: number[];
+      total: number;
+    };
     SearchRequest: {
       /** @default  */
       query?: string;
@@ -6315,6 +6469,53 @@ export interface components {
       updatedAt: string | null;
       content: components['schemas']['RichText'];
       canEdit: boolean;
+    };
+    Timesheet: {
+      user: components['schemas']['UserRef'];
+      /** Format: date */
+      week: string;
+      days: string[];
+      rows: {
+        issue: {
+          key: string;
+          summary: string;
+          project: {
+            key: string;
+            name: string;
+          };
+        };
+        cells: {
+          /** Format: date */
+          date: string;
+          seconds: number;
+          worklogIds: string[];
+        }[];
+        total: number;
+      }[];
+      dayTotals: number[];
+      total: number;
+      editable: boolean;
+    };
+    TimesheetCellRequest: {
+      issueKey: string;
+      /** Format: date */
+      date: string;
+      seconds: number;
+    };
+    TimerState: {
+      timer: components['schemas']['RunningTimer'] | null;
+    };
+    RunningTimer: {
+      issue: {
+        key: string;
+        summary: string;
+      };
+      /** Format: date-time */
+      startedAt: string;
+    };
+    StopTimerRequest: {
+      /** @default  */
+      comment?: string;
     };
     UserLookup: {
       /** Format: uuid */
@@ -12536,6 +12737,39 @@ export interface operations {
       };
     };
   };
+  'Reports.timePivot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TimePivotRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TimePivot'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Search.run': {
     parameters: {
       query?: never;
@@ -13713,6 +13947,191 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.week': {
+    parameters: {
+      query?: {
+        user?: string;
+        week?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Timesheet'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.setCell': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TimesheetCellRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Timesheet'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.timer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TimerState'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.discard': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TimerState'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Time tracking.stop': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StopTimerRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Worklog'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

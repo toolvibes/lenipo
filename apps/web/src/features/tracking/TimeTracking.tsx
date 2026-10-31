@@ -11,9 +11,10 @@ import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { StartTimerButton } from '../time/TimerBar';
 import { Avatar } from './UserPicker';
 
-function useWorkingTime() {
+export function useWorkingTime() {
   return useQuery(trackingMetaQuery).data?.workingTime ?? DEFAULT_WORKING_TIME;
 }
 
@@ -97,10 +98,13 @@ export function TimeTrackingPanel({
       <div className="flex items-center justify-between gap-2">
         <h2 className="tl-label text-[var(--ink-muted)]">{t('time.title')}</h2>
         {canEdit && (
-          <Button size="sm" variant="ghost" onClick={onLogWork}>
-            <Timer size={16} aria-hidden />
-            {t('time.log')}
-          </Button>
+          <div className="flex items-center gap-1">
+            <StartTimerButton issueKey={issue.key} />
+            <Button size="sm" variant="ghost" onClick={onLogWork}>
+              <Timer size={16} aria-hidden />
+              {t('time.log')}
+            </Button>
+          </div>
         )}
       </div>
       <div

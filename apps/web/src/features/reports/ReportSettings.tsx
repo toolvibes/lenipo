@@ -7,6 +7,8 @@ import {
   type SeriesField,
   STATISTIC_FIELDS,
   type StatisticField,
+  TIME_GROUPS,
+  TIME_PERIODS,
 } from '@tasklore/shared';
 import { useTranslation } from 'react-i18next';
 import { boardsQuery } from '../../lib/boards';
@@ -26,8 +28,9 @@ export function reportOf(
     case 'control-chart':
     case 'average-age':
     case 'created-vs-resolved':
-    case 'time-tracking':
       return { kind, query, days };
+    case 'time-tracking':
+      return { kind, query, days, groupBy: 'issue', period: 'none' };
     case 'field-series':
       return { kind, query, field: 'assignee', days };
     case 'pie':
@@ -113,6 +116,32 @@ export function ReportSettings({
           }))}
           onChange={(event) => onChange({ ...config, field: event.target.value as StatisticField })}
         />
+      )}
+      {config.kind === 'time-tracking' && (
+        <>
+          <Select
+            label={t('timesheet.groupBy')}
+            value={config.groupBy}
+            options={TIME_GROUPS.map((value) => ({
+              value,
+              label: t(`timesheet.groups.${value}`),
+            }))}
+            onChange={(event) =>
+              onChange({ ...config, groupBy: event.target.value as typeof config.groupBy })
+            }
+          />
+          <Select
+            label={t('timesheet.period')}
+            value={config.period}
+            options={TIME_PERIODS.map((value) => ({
+              value,
+              label: t(`timesheet.periods.${value}`),
+            }))}
+            onChange={(event) =>
+              onChange({ ...config, period: event.target.value as typeof config.period })
+            }
+          />
+        </>
       )}
       {needsBoard && (
         <Select

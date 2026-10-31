@@ -44,6 +44,7 @@ import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { AppShell } from './features/shell/AppShell';
+import { TimesheetPage } from './features/time/TimesheetPage';
 import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
@@ -650,6 +651,19 @@ const automationAdminRoute = createRoute({
   },
 });
 
+const timesheetRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/timesheet',
+  validateSearch: (search: Record<string, unknown>): { user?: string; week?: string } => ({
+    user: typeof search.user === 'string' ? search.user : undefined,
+    week: typeof search.week === 'string' ? search.week : undefined,
+  }),
+  component: function Timesheet() {
+    const { user, week } = timesheetRoute.useSearch();
+    return <TimesheetPage user={user} week={week} />;
+  },
+});
+
 const newRuleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/automation/new',
@@ -722,6 +736,7 @@ const routeTree = rootRoute.addChildren([
     timelineRoute,
     projectReportsRoute,
     newRuleRoute,
+    timesheetRoute,
     ruleRoute,
     projectSettingsRoute,
     everythingRoute,

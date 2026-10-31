@@ -5,6 +5,7 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/format';
+import { Button } from '../../ui/Button';
 import { CreatedVsResolved, Pie, useValueLabel } from '../dashboards/gadgets';
 import { useDuration } from '../tracking/TimeTracking';
 import { useValueFormat } from './charts';
@@ -673,6 +674,127 @@ function BurnupView({ boardId }: { boardId: string }) {
   );
 }
 
+/** Downloads rows as a CSV file (semicolons, for spreadsheet apps in German locales too). */
+export function downloadCsv(name: string, rows: (string | number)[][]) {
+  const text = rows
+    .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(';'))
+    .join('\r\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+const hoursOf = (seconds: number) =>
+  (Math.round((seconds / 3600) * 100) / 100).toString().replace('.', ',');
+
+function TimePivotView({
+  query,
+  days,
+  groupBy,
+  period,
+}: {
+  query: string;
+  days: number;
+  groupBy: 'issue' | 'project' | 'person' | 'epic';
+  period: 'none' | 'day' | 'week' | 'month';
+}) {
+  const { t } = useTranslation();
+  const duration = useDuration();
+  const to = new Date();
+  const from = new Date(to.getTime() - (days - 1) * 86_400_000);
+  const iso = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const body = { query, from: iso(from), to: iso(to), groupBy, period };
+  const result = useQuery({
+    queryKey: ['report', 'time-pivot', body],
+    queryFn: () => unwrap(client.POST('/api/v1/reports/time-pivot', { body })),
+    retry: false,
+  });
+  if (result.error) return <Failed error={result.error} />;
+  if (!result.data) return <Muted>{t('common.loading')}</Muted>;
+  const data = result.data;
+  const heading = (column: string) =>
+    column === 'total' ? t('dashboards.sum') : formatDate(column);
+  const name = (label: string) => label || t('analysis.formerUser');
+  const show = (seconds: number) => (seconds ? (duration(seconds) ?? '–') : '–');
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <Button
+          size="sm"
+          onClick={() =>
+            downloadCsv(`zeit-${groupBy}-${period}.csv`, [
+              [t(`timesheet.groups.${groupBy}`), ...data.columns.map(heading), t('dashboards.sum')],
+              ...data.rows.map((row) => [
+                name(row.label),
+                ...row.values.map(hoursOf),
+                hoursOf(row.total),
+              ]),
+              [t('dashboards.sum'), ...data.totals.map(hoursOf), hoursOf(data.total)],
+            ])
+          }
+        >
+          {t('timesheet.csv')}
+        </Button>
+      </div>
+      {data.rows.length === 0 ? (
+        <Muted>{t('analysis.noTime')}</Muted>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr>
+                <th className={cell}>{t(`timesheet.groups.${groupBy}`)}</th>
+                {data.columns.map((column) => (
+                  <th key={column} className={`${cell} text-right whitespace-nowrap`}>
+                    {heading(column)}
+                  </th>
+                ))}
+                {period !== 'none' && (
+                  <th className={`${cell} text-right`}>{t('dashboards.sum')}</th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((row) => (
+                <tr key={row.key ?? 'none'}>
+                  <th scope="row" className={`${cell} font-normal`}>
+                    {name(row.label)}
+                  </th>
+                  {row.values.map((value, index) => (
+                    <td key={data.columns[index]} className={number}>
+                      {show(value)}
+                    </td>
+                  ))}
+                  {period !== 'none' && (
+                    <td className={`${number} font-semibold`}>{show(row.total)}</td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="font-semibold">
+                <th scope="row" className={cell}>
+                  {t('dashboards.sum')}
+                </th>
+                {data.totals.map((value, index) => (
+                  <td key={data.columns[index]} className={number}>
+                    {show(value)}
+                  </td>
+                ))}
+                {period !== 'none' && <td className={number}>{show(data.total)}</td>}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TimeReportView({ query, days }: { query: string; days: number }) {
   const { t } = useTranslation();
   const duration = useDuration();
@@ -692,6 +814,31 @@ function TimeReportView({ query, days }: { query: string; days: number }) {
   const show = (seconds: number | null) => (seconds ? (duration(seconds) ?? '–') : '–');
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <Button
+          size="sm"
+          onClick={() =>
+            downloadCsv('zeit-vorgaenge.csv', [
+              [
+                t('analysis.issue'),
+                t('analysis.estimate'),
+                t('analysis.spent'),
+                t('analysis.remainingTime'),
+                t('analysis.logged', { count: days }),
+              ],
+              ...data.issues.map((issue) => [
+                `${issue.key} ${issue.summary}`,
+                hoursOf(issue.originalEstimateSeconds ?? 0),
+                hoursOf(issue.timeSpentSeconds),
+                hoursOf(issue.remainingEstimateSeconds ?? 0),
+                hoursOf(issue.loggedSeconds),
+              ]),
+            ])
+          }
+        >
+          {t('timesheet.csv')}
+        </Button>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
@@ -790,6 +937,15 @@ export function ReportView({ config }: { config: ReportConfig }) {
     case 'burnup':
       return <BurnupView boardId={config.boardId} />;
     case 'time-tracking':
-      return <TimeReportView query={config.query} days={config.days} />;
+      return config.groupBy === 'issue' && config.period === 'none' ? (
+        <TimeReportView query={config.query} days={config.days} />
+      ) : (
+        <TimePivotView
+          query={config.query}
+          days={config.days}
+          groupBy={config.groupBy}
+          period={config.period}
+        />
+      );
   }
 }

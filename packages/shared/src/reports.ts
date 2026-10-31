@@ -210,7 +210,14 @@ export const ReportConfig = z
     z.object({ kind: z.literal('pie'), query: TqlText, field: StatisticField }),
     z.object({ kind: z.literal('scope-progress'), query: TqlText, boardId: Id }),
     z.object({ kind: z.literal('burnup'), boardId: Id }),
-    z.object({ kind: z.literal('time-tracking'), query: TqlText, days: Days }),
+    z.object({
+      kind: z.literal('time-tracking'),
+      query: TqlText,
+      days: Days,
+      /** Pivot of logged time (TL-24); issue without periods is the per-issue table. */
+      groupBy: z.enum(['issue', 'project', 'person', 'epic']).default('issue'),
+      period: z.enum(['none', 'day', 'week', 'month']).default('none'),
+    }),
   ])
   .meta({ id: 'ReportConfig' });
 export type ReportConfig = z.infer<typeof ReportConfig>;

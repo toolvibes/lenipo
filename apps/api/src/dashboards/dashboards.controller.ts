@@ -29,6 +29,8 @@ import {
   ScopeProgressRequest,
   Statistics,
   StatisticsRequest,
+  TimePivot,
+  TimePivotRequest,
   TimeReport,
   TimeReportRequest,
   UpdateDashboardRequest,
@@ -284,5 +286,19 @@ export class DashboardsController {
     @ValidBody(TimeReportRequest) body: TimeReportRequest,
   ): Promise<TimeReport> {
     return this.analysis.timeReport(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Reports',
+    summary: 'Logged time grouped by issue, project, person or epic, per period',
+    response: TimePivot,
+  })
+  @Post('reports/time-pivot')
+  @HttpCode(200)
+  timePivot(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(TimePivotRequest) body: TimePivotRequest,
+  ): Promise<TimePivot> {
+    return this.analysis.timePivot(principal, body);
   }
 }
