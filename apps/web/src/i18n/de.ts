@@ -942,6 +942,13 @@ export const de = {
     details: 'Bericht und Protokoll',
     mappings: 'Zugeordnet',
     skipped: 'Nicht übernommen',
+    confluenceTitle: 'Confluence',
+    confluenceIntro:
+      'Den XML-Export eines Bereichs hochladen (Bereich → Bereichswerkzeuge → Inhaltswerkzeuge → Export → XML). Seiten mit allen Versionen, Blogbeiträge, Kommentare, Anhänge und Stichwörter; Confluence-Makros werden zu Tasklore-Makros, wo es eins gibt. Nach dem Probelauf „Übernehmen“.',
+    confluenceFile: 'Export-Datei (ZIP)',
+    spaceKey: 'Schlüssel des neuen Bereichs',
+    spaceKeyHelp: 'Leer lassen für den Schlüssel aus dem Export.',
+    runChecked: 'Übernehmen',
     states: { pending: 'wartet', running: 'läuft', done: 'fertig', failed: 'fehlgeschlagen' },
   },
   git: {

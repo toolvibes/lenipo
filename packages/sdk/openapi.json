@@ -3263,6 +3263,114 @@
         }
       }
     },
+    "/api/v1/admin/imports/confluence": {
+      "post": {
+        "operationId": "Import.confluence",
+        "summary": "Import a Confluence Server/DC space export",
+        "description": "The space XML export as a ZIP (field \"file\"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.\n\nRequires the global permission `admin`.",
+        "tags": ["Import"],
+        "parameters": [
+          {
+            "name": "spaceKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9]{1,9}$"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "true",
+              "type": "string",
+              "enum": ["true", "false"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/imports/{id}/run": {
+      "post": {
+        "operationId": "Import.run",
+        "summary": "Import what a Confluence dry run checked",
+        "description": "Starts the real import with the export uploaded for the dry run.\n\nRequires the global permission `admin`.",
+        "tags": ["Import"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/imports/{id}": {
       "get": {
         "operationId": "Import.get",

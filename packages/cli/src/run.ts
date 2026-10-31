@@ -54,6 +54,7 @@ Weiteres
   tl mcp                      lokaler MCP-Server (stdio) als Brücke zu <adresse>/mcp
   tl admin users              Personen der Instanz (Administration)
   tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]
+  tl admin import confluence <export.zip> [--space KEY] [--run]
   tl completion bash|zsh|fish
 
 Optionen überall: --profile <name>, --output table|json|md
@@ -688,11 +689,13 @@ async function adminImport(args: string[], io: Io) {
       url: { type: 'string' },
       token: { type: 'string' },
       projects: { type: 'string' },
+      space: { type: 'string' },
       run: { type: 'boolean' },
     },
   });
   const format = formatOf(values.output);
-  const { client } = await openSession(io, values.profile);
+  const session = await openSession(io, values.profile);
+  const { client } = session;
   let job: { id: string; state: string; progress: string; log: string[]; report: unknown };
   if (source === 'status') {
     const id = positionals[0];
@@ -716,8 +719,32 @@ async function adminImport(args: string[], io: Io) {
       }),
     );
     if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
+  } else if (source === 'confluence') {
+    const file = positionals[0];
+    if (!file)
+      throw new CliError('tl admin import confluence <export.zip> [--space KEY] [--run]', 2);
+    const { readFile } = await import('node:fs/promises');
+    const { basename } = await import('node:path');
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([await readFile(file)], { type: 'application/zip' }),
+      basename(file),
+    );
+    const query = new URLSearchParams({ dryRun: values.run ? 'false' : 'true' });
+    if (values.space) query.set('spaceKey', values.space.toUpperCase());
+    const response = await session.authorizedFetch(
+      `${session.url}/api/v1/admin/imports/confluence?${query}`,
+      {
+        method: 'POST',
+        body: form,
+      },
+    );
+    if (!response.ok) throw new CliError(`Upload abgelehnt (${response.status})`);
+    job = (await response.json()) as typeof job;
+    if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
   } else {
-    throw new CliError('tl admin import jira|status', 2);
+    throw new CliError('tl admin import jira|confluence|status', 2);
   }
   let shown = '';
   while (job.state === 'pending' || job.state === 'running') {

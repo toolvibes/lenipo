@@ -927,6 +927,13 @@ export const en: Messages = {
     details: 'Report and log',
     mappings: 'Mapped',
     skipped: 'Not imported',
+    confluenceTitle: 'Confluence',
+    confluenceIntro:
+      'Upload the XML export of a space (Space → Space tools → Content tools → Export → XML). Pages with all versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. After the dry run, choose “Import”.',
+    confluenceFile: 'Export file (ZIP)',
+    spaceKey: 'Key of the new space',
+    spaceKeyHelp: 'Leave empty for the key from the export.',
+    runChecked: 'Import',
     states: { pending: 'waiting', running: 'running', done: 'done', failed: 'failed' },
   },
   git: {

@@ -56,7 +56,64 @@ function JobReport({ job }: { job: ImportJob }) {
   );
 }
 
-/** Imports from Jira (and Confluence) Server/DC (TL-35, E-118). */
+/** Upload of a Confluence space export; a dry run first (P-ADM-11). */
+function ConfluenceForm() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [spaceKey, setSpaceKey] = useState('');
+  const upload = useMutation({
+    mutationFn: async () => {
+      if (!file) return;
+      const form = new FormData();
+      form.append('file', file);
+      const query = new URLSearchParams({ dryRun: 'true' });
+      if (spaceKey.trim()) query.set('spaceKey', spaceKey.trim().toUpperCase());
+      const response = await fetch(`/api/v1/admin/imports/confluence?${query}`, {
+        method: 'POST',
+        body: form,
+      });
+      if (!response.ok) {
+        const problem = (await response.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(problem.detail ?? response.statusText);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'imports'] }),
+  });
+  return (
+    <form
+      className="flex flex-col gap-3 border-t border-[var(--border)] pt-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        upload.mutate();
+      }}
+    >
+      <h2 className="m-0 text-base font-semibold">{t('imports.confluenceTitle')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('imports.confluenceIntro')}</p>
+      <input
+        type="file"
+        accept=".zip,application/zip"
+        aria-label={t('imports.confluenceFile')}
+        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+      />
+      <TextField
+        label={t('imports.spaceKey')}
+        help={t('imports.spaceKeyHelp')}
+        value={spaceKey}
+        maxLength={10}
+        onChange={(event) => setSpaceKey(event.target.value)}
+      />
+      {upload.error && <FormError message={upload.error.message} />}
+      <div>
+        <Button type="submit" variant="primary" disabled={!file || upload.isPending}>
+          {t('imports.dryRun')}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/** Imports from Jira and Confluence Server/DC (TL-35, E-118). */
 export function ImportPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -87,6 +144,12 @@ export function ImportPage() {
           },
         }),
       ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'imports'] }),
+  });
+
+  const runFor = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.POST('/api/v1/admin/imports/{id}/run', { params: { path: { id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'imports'] }),
   });
 
@@ -139,6 +202,7 @@ export function ImportPage() {
           </Button>
         </div>
       </form>
+      <ConfluenceForm />
       <section className="flex flex-col gap-2">
         <h2 className="m-0 text-base font-semibold">{t('imports.jobs')}</h2>
         {jobs.data?.length === 0 && (
@@ -168,6 +232,13 @@ export function ImportPage() {
               </span>
             </span>
             <JobReport job={job} />
+            {job.source === 'confluence' && job.dryRun && job.state === 'done' && (
+              <div>
+                <Button size="sm" onClick={() => runFor.mutate(job.id)} disabled={runFor.isPending}>
+                  {t('imports.runChecked')}
+                </Button>
+              </div>
+            )}
           </article>
         ))}
       </section>

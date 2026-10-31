@@ -57,3 +57,15 @@ export const JiraImportRequest = z
   })
   .meta({ id: 'JiraImportRequest' });
 export type JiraImportRequest = z.infer<typeof JiraImportRequest>;
+
+export const ConfluenceImportQuery = z.object({
+  /** Key of the new space; the export's key if empty. */
+  spaceKey: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z][A-Z0-9]{1,9}$/)
+    .optional(),
+  dryRun: z.enum(['true', 'false']).default('true'),
+});
+export type ConfluenceImportQuery = z.infer<typeof ConfluenceImportQuery>;

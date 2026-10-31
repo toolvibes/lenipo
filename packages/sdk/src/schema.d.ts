@@ -1083,6 +1083,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/imports/confluence': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import a Confluence Server/DC space export
+     * @description The space XML export as a ZIP (field "file"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Import.confluence'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/imports/{id}/run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import what a Confluence dry run checked
+     * @description Starts the real import with the export uploaded for the dry run.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Import.run'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/imports/{id}': {
     parameters: {
       query?: never;
@@ -10484,6 +10528,76 @@ export interface operations {
         'application/json': components['schemas']['JiraImportRequest'];
       };
     };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.confluence': {
+    parameters: {
+      query?: {
+        spaceKey?: string;
+        dryRun?: 'true' | 'false';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImportJob'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Import.run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Success */
       201: {
