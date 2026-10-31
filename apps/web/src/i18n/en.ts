@@ -31,6 +31,7 @@ export const en: Messages = {
     invalidCredentials: 'The email address or password is incorrect.',
     or: 'or',
     signInWith: 'Sign in with {{provider}}',
+    samlFailed: 'Signing in with SAML did not work. Please try again or ask your administrators.',
     oidcFailed: 'Signing in through the identity provider failed. Please try again.',
     oidcDenied: 'This account cannot sign in. Please contact your administrators.',
   },
@@ -925,6 +926,13 @@ export const en: Messages = {
     down: 'Move down',
     name: 'Name',
     keepPassword: 'unchanged',
+    samlTitle: 'SAML 2.0',
+    samlIntro:
+      'Sign-in through an identity provider (e.g. ADFS, Entra ID, Okta). Paste the provider metadata; then enter the entity ID and ACS address from here at the provider. People are matched by e-mail or created on first sign-in.',
+    spEntity: 'Entity ID',
+    samlMetadata: 'Identity provider metadata (XML)',
+    samlGroups: 'Groups attribute (optional)',
+    samlAdd: 'Add provider',
     fields: {
       url: 'Address (ldap:// or ldaps://)',
       startTls: 'StartTLS',

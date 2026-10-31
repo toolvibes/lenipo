@@ -29,6 +29,8 @@ export const de = {
     invalidCredentials: 'E-Mail-Adresse oder Passwort ist falsch.',
     or: 'oder',
     signInWith: 'Mit {{provider}} anmelden',
+    samlFailed:
+      'Die Anmeldung über SAML hat nicht geklappt. Bitte erneut versuchen oder die Administration fragen.',
     oidcFailed:
       'Die Anmeldung über den Identitätsanbieter ist fehlgeschlagen. Bitte erneut versuchen.',
     oidcDenied: 'Für dieses Konto ist keine Anmeldung möglich. Bitte an die Administration wenden.',
@@ -939,6 +941,13 @@ export const de = {
     down: 'Nach unten',
     name: 'Name',
     keepPassword: 'unverändert',
+    samlTitle: 'SAML 2.0',
+    samlIntro:
+      'Anmeldung über einen Identitätsanbieter (z. B. ADFS, Entra ID, Okta). Metadaten des Anbieters einfügen; dort dann Entity-ID und ACS-Adresse von hier eintragen. Personen werden über die E-Mail zugeordnet oder bei der ersten Anmeldung angelegt.',
+    spEntity: 'Entity-ID',
+    samlMetadata: 'Metadaten des Identitätsanbieters (XML)',
+    samlGroups: 'Attribut für Gruppen (optional)',
+    samlAdd: 'Anbieter hinzufügen',
     fields: {
       url: 'Adresse (ldap:// oder ldaps://)',
       startTls: 'StartTLS',

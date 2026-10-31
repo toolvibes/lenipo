@@ -3282,6 +3282,56 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/saml-providers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List SAML identity providers
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['SAML.list'];
+    put?: never;
+    /**
+     * Add a SAML identity provider
+     * @description From its metadata XML; the answer names the entity ID and ACS URL to enter at the IdP.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['SAML.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/saml-providers/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Change a SAML identity provider
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['SAML.update'];
+    post?: never;
+    /**
+     * Remove a SAML identity provider
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['SAML.remove'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -4791,6 +4841,11 @@ export interface components {
         enabled: boolean;
         displayName: string | null;
       };
+      saml: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      }[];
     };
     AutomationRule: {
       /** Format: uuid */
@@ -7575,6 +7630,37 @@ export interface components {
       }[];
       totals: number[];
       total: number;
+    };
+    SamlProvider: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      enabled: boolean;
+      idpEntityId: string;
+      ssoUrl: string;
+      certificates: number;
+      emailAttribute: string;
+      nameAttribute: string;
+      groupsAttribute: string;
+      createUsers: boolean;
+      spEntityId: string;
+      acsUrl: string;
+      metadataUrl: string;
+    };
+    SaveSamlProviderRequest: {
+      name: string;
+      /** @default true */
+      enabled?: boolean;
+      /** @default  */
+      metadata?: string;
+      /** @default email */
+      emailAttribute?: string;
+      /** @default displayName */
+      nameAttribute?: string;
+      /** @default  */
+      groupsAttribute?: string;
+      /** @default true */
+      createUsers?: boolean;
     };
     SearchRequest: {
       /** @default  */
@@ -15783,6 +15869,132 @@ export interface operations {
         content: {
           'application/json': components['schemas']['TimePivot'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'SAML.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SamlProvider'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'SAML.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveSamlProviderRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SamlProvider'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'SAML.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveSamlProviderRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SamlProvider'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'SAML.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

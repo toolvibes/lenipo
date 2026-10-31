@@ -9,7 +9,7 @@ import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { AuthLayout } from './AuthLayout';
 
-export type LoginError = 'oidc' | 'oidc_denied';
+export type LoginError = 'oidc' | 'oidc_denied' | 'saml';
 
 export function LoginPage({ redirect, error }: { redirect?: string; error?: LoginError }) {
   const { t } = useTranslation();
@@ -46,7 +46,13 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
         {login.isError && <FormError message={t('auth.invalidCredentials')} />}
         {!login.isError && error && (
           <FormError
-            message={error === 'oidc_denied' ? t('auth.oidcDenied') : t('auth.oidcFailed')}
+            message={
+              error === 'oidc_denied'
+                ? t('auth.oidcDenied')
+                : error === 'saml'
+                  ? t('auth.samlFailed')
+                  : t('auth.oidcFailed')
+            }
           />
         )}
         <TextField
@@ -79,6 +85,15 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
           {t('invite.noAccount')} <Link to="/register">{t('invite.registerLink')}</Link>
         </p>
       )}
+      {(providers.data?.saml ?? []).map((provider) => (
+        <a
+          key={provider.id}
+          href={`/api/v1/auth/saml/${provider.id}/start?redirect=${encodeURIComponent(redirect ?? '/')}`}
+          className={`${buttonClass('secondary')} h-10 text-[13.5px]`}
+        >
+          {t('auth.signInWith', { provider: provider.name })}
+        </a>
+      ))}
       {providers.data?.oidc.enabled && (
         <>
           <div className="flex items-center gap-3 text-xs text-[var(--ink-muted)]">

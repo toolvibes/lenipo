@@ -201,3 +201,19 @@ export const directories = pgTable('directories', {
   lastSyncResult: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+/** SAML 2.0 identity providers (P-USR-05, E-119). */
+export const samlProviders = pgTable('saml_providers', {
+  id: uuid().primaryKey(),
+  name: text().notNull(),
+  enabled: boolean().notNull().default(true),
+  idpEntityId: text().notNull(),
+  ssoUrl: text().notNull(),
+  /** PEM bodies of the IdP's signing certificates. */
+  certificates: text().array().notNull(),
+  emailAttribute: text().notNull().default('email'),
+  nameAttribute: text().notNull().default('displayName'),
+  groupsAttribute: text().notNull().default(''),
+  createUsers: boolean().notNull().default(true),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

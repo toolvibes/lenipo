@@ -246,6 +246,7 @@ export function DirectoriesPage() {
           {t('directories.add')}
         </Button>
       </div>
+      <SamlProviders />
       {dialog && (
         <DirectoryDialog
           editing={dialog.editing}
@@ -254,5 +255,110 @@ export function DirectoriesPage() {
         />
       )}
     </div>
+  );
+}
+
+/** SAML 2.0 identity providers (P-USR-05, E-119). */
+function SamlProviders() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const providers = useQuery({
+    queryKey: ['admin', 'saml'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/saml-providers')),
+  });
+  const [name, setName] = useState('');
+  const [metadata, setMetadata] = useState('');
+  const [groupsAttribute, setGroupsAttribute] = useState('');
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'saml'] });
+  const add = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/admin/saml-providers', {
+          body: {
+            name: name.trim(),
+            metadata,
+            groupsAttribute: groupsAttribute.trim(),
+            enabled: true,
+            emailAttribute: 'email',
+            nameAttribute: 'displayName',
+            createUsers: true,
+          },
+        }),
+      ),
+    onSuccess: () => {
+      setName('');
+      setMetadata('');
+      void refresh();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/admin/saml-providers/{id}', { params: { path: { id } } })),
+    onSettled: refresh,
+  });
+  return (
+    <section className="flex flex-col gap-3 border-t border-[var(--border)] pt-5">
+      <h2 className="m-0 text-base font-semibold">{t('directories.samlTitle')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('directories.samlIntro')}</p>
+      {(add.error || remove.error) && (
+        <FormError message={(add.error ?? remove.error)?.message ?? ''} />
+      )}
+      <ul className="m-0 flex list-none flex-col p-0">
+        {(providers.data ?? []).map((provider) => (
+          <li
+            key={provider.id}
+            className="flex flex-wrap items-start gap-3 border-b border-[var(--border)] py-2.5 text-[13px]"
+          >
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <strong>{provider.name}</strong>
+              <span className="text-xs text-[var(--ink-muted)]">{provider.idpEntityId}</span>
+              <span className="text-xs break-all">
+                {t('directories.spEntity')}: <code>{provider.spEntityId}</code>
+              </span>
+              <span className="text-xs break-all">
+                ACS: <code>{provider.acsUrl}</code>
+              </span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => remove.mutate(provider.id)}>
+              {t('directories.remove')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          add.mutate();
+        }}
+      >
+        <TextField
+          label={t('directories.name')}
+          value={name}
+          required
+          onChange={(event) => setName(event.target.value)}
+        />
+        <label className="flex flex-col gap-1.5">
+          <span className="tl-label text-[var(--ink-muted)]">{t('directories.samlMetadata')}</span>
+          <textarea
+            value={metadata}
+            required
+            rows={4}
+            onChange={(event) => setMetadata(event.target.value)}
+            className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 py-1.5 font-mono text-xs"
+          />
+        </label>
+        <TextField
+          label={t('directories.samlGroups')}
+          value={groupsAttribute}
+          onChange={(event) => setGroupsAttribute(event.target.value)}
+        />
+        <div>
+          <Button type="submit" variant="primary" disabled={add.isPending}>
+            {t('directories.samlAdd')}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

@@ -31,6 +31,7 @@ import { AllowPartialSession } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
 import { OidcService } from './oidc.service.js';
 import { clientOf } from './request-guards.js';
+import { SamlService } from './saml.service.js';
 import { SessionService } from './session.service.js';
 import { clearSessionCookie, setSessionCookie } from './session-cookie.js';
 import { TwoFactorService } from './two-factor.service.js';
@@ -48,6 +49,7 @@ export class AuthController {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
     @Inject(AttemptLimiter) private readonly limiter: AttemptLimiter,
+    @Inject(SamlService) private readonly saml: SamlService,
   ) {}
 
   @Endpoint({ tag: 'Auth', summary: 'Sign in with email and password', response: Me })
@@ -127,13 +129,14 @@ export class AuthController {
     summary: 'List the sign-in methods this installation offers',
     response: AuthProviders,
   })
-  providers(): AuthProviders {
+  async providers(): Promise<AuthProviders> {
     return {
       password: true,
       oidc: {
         enabled: this.oidc.enabled,
         displayName: this.oidc.enabled ? this.config.OIDC_DISPLAY_NAME : null,
       },
+      saml: await this.saml.enabled(),
     };
   }
 

@@ -17,6 +17,8 @@ import { OAuthController } from './oauth.controller.js';
 import { OAuthService } from './oauth.service.js';
 import { OidcService } from './oidc.service.js';
 import { PasswordService } from './password.service.js';
+import { SamlController } from './saml.controller.js';
+import { SamlService } from './saml.service.js';
 import { SecuritySettingsService } from './security-settings.service.js';
 import { SessionService } from './session.service.js';
 import { SetupController } from './setup.controller.js';
@@ -37,6 +39,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     GroupsController,
     OAuthController,
     DirectoriesController,
+    SamlController,
   ],
   providers: [
     AccessService,
@@ -49,6 +52,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     OidcService,
     OAuthService,
     DirectoryService,
+    SamlService,
     PasswordService,
     SessionService,
     SetupService,

@@ -68,3 +68,40 @@ export const DirectorySyncResult = z
   })
   .meta({ id: 'DirectorySyncResult' });
 export type DirectorySyncResult = z.infer<typeof DirectorySyncResult>;
+
+/** A SAML 2.0 identity provider (P-USR-05, E-119). */
+export const SamlProvider = z
+  .object({
+    id: Id,
+    name: z.string(),
+    enabled: z.boolean(),
+    /** From the IdP metadata. */
+    idpEntityId: z.string(),
+    ssoUrl: z.string(),
+    certificates: z.number().int(),
+    emailAttribute: z.string(),
+    nameAttribute: z.string(),
+    groupsAttribute: z.string(),
+    /** Create accounts on first sign-in; otherwise only existing e-mail addresses may sign in. */
+    createUsers: z.boolean(),
+    /** What to enter at the IdP. */
+    spEntityId: z.string(),
+    acsUrl: z.string(),
+    metadataUrl: z.string(),
+  })
+  .meta({ id: 'SamlProvider' });
+export type SamlProvider = z.infer<typeof SamlProvider>;
+
+export const SaveSamlProviderRequest = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    enabled: z.boolean().default(true),
+    /** The IdP metadata XML; on update, empty keeps the stored one. */
+    metadata: z.string().max(200_000).default(''),
+    emailAttribute: z.string().max(200).default('email'),
+    nameAttribute: z.string().max(200).default('displayName'),
+    groupsAttribute: z.string().max(200).default(''),
+    createUsers: z.boolean().default(true),
+  })
+  .meta({ id: 'SaveSamlProviderRequest' });
+export type SaveSamlProviderRequest = z.infer<typeof SaveSamlProviderRequest>;

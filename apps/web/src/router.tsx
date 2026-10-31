@@ -113,7 +113,10 @@ const loginRoute = createRoute({
   path: '/login',
   validateSearch: (search: Record<string, unknown>): { redirect?: string; error?: LoginError } => ({
     redirect: safeRedirectPath(search.redirect),
-    error: search.error === 'oidc' || search.error === 'oidc_denied' ? search.error : undefined,
+    error:
+      search.error === 'oidc' || search.error === 'oidc_denied' || search.error === 'saml'
+        ? search.error
+        : undefined,
   }),
   beforeLoad: async ({ context }) => {
     const status = await context.queryClient.fetchQuery(setupStatusQuery);

@@ -25,6 +25,7 @@
     "@nestjs/core": "12.3.2",
     "@nestjs/platform-express": "12.3.2",
     "@node-rs/argon2": "2.2.2",
+    "@node-saml/node-saml": "5.1.0",
     "@tasklore/editor": "workspace:*",
     "@tasklore/shared": "workspace:*",
     "@tasklore/tql": "workspace:*",
@@ -62,9 +63,11 @@
     "concurrently": "10.0.6",
     "drizzle-kit": "0.31.11",
     "ldapjs": "3.0.7",
+    "selfsigned": "5.5.0",
     "socket.io-client": "4.8.4",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
-    "ws": "8.22.0"
+    "ws": "8.22.0",
+    "xml-crypto": "6.4.0"
   }
 }

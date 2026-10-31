@@ -195,6 +195,8 @@ export const AuthProviders = z
   .object({
     password: z.boolean(),
     oidc: z.object({ enabled: z.boolean(), displayName: z.string().nullable() }),
+    /** SAML identity providers to offer as buttons (P-USR-05, E-119). */
+    saml: z.array(z.object({ id: Id, name: z.string() })),
   })
   .meta({ id: 'AuthProviders' });
 export type AuthProviders = z.infer<typeof AuthProviders>;

@@ -9682,6 +9682,158 @@
         }
       }
     },
+    "/api/v1/admin/saml-providers": {
+      "get": {
+        "operationId": "SAML.list",
+        "summary": "List SAML identity providers",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["SAML"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SamlProvider"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "SAML.create",
+        "summary": "Add a SAML identity provider",
+        "description": "From its metadata XML; the answer names the entity ID and ACS URL to enter at the IdP.\n\nRequires the global permission `admin`.",
+        "tags": ["SAML"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSamlProviderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamlProvider"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/saml-providers/{id}": {
+      "put": {
+        "operationId": "SAML.update",
+        "summary": "Change a SAML identity provider",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["SAML"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSamlProviderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamlProvider"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "SAML.remove",
+        "summary": "Remove a SAML identity provider",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["SAML"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/search": {
       "post": {
         "operationId": "Search.run",
@@ -14365,9 +14517,27 @@
             },
             "required": ["enabled", "displayName"],
             "additionalProperties": false
+          },
+          "saml": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "name"],
+              "additionalProperties": false
+            }
           }
         },
-        "required": ["password", "oidc"],
+        "required": ["password", "oidc", "saml"],
         "additionalProperties": false
       },
       "AutomationRule": {
@@ -24585,6 +24755,109 @@
         },
         "required": ["columns", "rows", "totals", "total"],
         "additionalProperties": false
+      },
+      "SamlProvider": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "idpEntityId": {
+            "type": "string"
+          },
+          "ssoUrl": {
+            "type": "string"
+          },
+          "certificates": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "emailAttribute": {
+            "type": "string"
+          },
+          "nameAttribute": {
+            "type": "string"
+          },
+          "groupsAttribute": {
+            "type": "string"
+          },
+          "createUsers": {
+            "type": "boolean"
+          },
+          "spEntityId": {
+            "type": "string"
+          },
+          "acsUrl": {
+            "type": "string"
+          },
+          "metadataUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "enabled",
+          "idpEntityId",
+          "ssoUrl",
+          "certificates",
+          "emailAttribute",
+          "nameAttribute",
+          "groupsAttribute",
+          "createUsers",
+          "spEntityId",
+          "acsUrl",
+          "metadataUrl"
+        ],
+        "additionalProperties": false
+      },
+      "SaveSamlProviderRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "metadata": {
+            "default": "",
+            "type": "string",
+            "maxLength": 200000
+          },
+          "emailAttribute": {
+            "default": "email",
+            "type": "string",
+            "maxLength": 200
+          },
+          "nameAttribute": {
+            "default": "displayName",
+            "type": "string",
+            "maxLength": 200
+          },
+          "groupsAttribute": {
+            "default": "",
+            "type": "string",
+            "maxLength": 200
+          },
+          "createUsers": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": ["name"]
       },
       "SearchRequest": {
         "type": "object",
