@@ -1,5 +1,6 @@
 export * from './boards.js';
 export * from './collab.js';
+export * from './dashboards.js';
 export * from './fields.js';
 export * from './identity.js';
 export * from './notifications.js';

@@ -6,6 +6,7 @@ import type { AppConfig } from './core/config.js';
 import { CoreModule } from './core/core.module.js';
 import { ProblemFilter } from './core/http/problem.filter.js';
 import type { Logger } from './core/logger.js';
+import { DashboardsModule } from './dashboards/dashboards.module.js';
 import type { DatabaseHandle } from './db/client.js';
 import { EventsModule } from './events/events.module.js';
 import { IdentityModule } from './identity/identity.module.js';
@@ -42,6 +43,7 @@ export class AppModule {
         EventsModule,
         PersonalModule,
         BoardsModule,
+        DashboardsModule,
         WikiModule,
         OnboardingModule,
         McpModule,

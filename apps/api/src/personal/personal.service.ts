@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type BoardSummary,
+  type DashboardSummary,
   DEFAULT_ISSUE_COLUMNS,
   type Favourite,
   type FavouriteKind,
@@ -12,6 +13,7 @@ import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
+import { DashboardService } from '../dashboards/dashboard.service.js';
 import type { DatabaseHandle } from '../db/client.js';
 import {
   favourites,
@@ -47,6 +49,7 @@ export class PersonalService {
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(PageService) private readonly pages: PageService,
     @Inject(BoardService) private readonly boards: BoardService,
+    @Inject(DashboardService) private readonly dashboards: DashboardService,
   ) {}
 
   // ---------------------------------------------------------------- favourites
@@ -71,6 +74,9 @@ export class PersonalService {
       case 'board':
         if (!UUID.test(ref)) throw new NotFoundException('Board not found');
         return (await this.boards.get(principal, ref)).id;
+      case 'dashboard':
+        if (!UUID.test(ref)) throw new NotFoundException('Dashboard not found');
+        return (await this.dashboards.get(principal, ref)).id;
     }
   }
 
@@ -140,6 +146,11 @@ export class PersonalService {
     );
     const wiki = await this.wikiTargets(principal.userId, rows);
     const visibleBoards = await this.visibleBoards(principal, rows);
+    const starredDashboards = rows.some((row) => row.kind === 'dashboard')
+      ? new Map(
+          (await this.dashboards.list(principal, 'favourites')).map((entry) => [entry.id, entry]),
+        )
+      : new Map<string, DashboardSummary>();
     return rows.flatMap((row): Favourite[] => {
       switch (row.kind) {
         case 'project': {
@@ -170,6 +181,12 @@ export class PersonalService {
                   projectKey: board.project.key,
                 },
               ]
+            : [];
+        }
+        case 'dashboard': {
+          const dashboard = starredDashboards.get(row.targetId);
+          return dashboard
+            ? [{ kind: 'dashboard', id: dashboard.id, ref: dashboard.id, name: dashboard.name }]
             : [];
         }
         default: {

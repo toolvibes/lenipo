@@ -28,6 +28,8 @@ import { WelcomePage } from './features/auth/WelcomePage';
 import { BacklogPage } from './features/boards/BacklogPage';
 import { BoardPage } from './features/boards/BoardPage';
 import { BoardsPage } from './features/boards/BoardsPage';
+import { DashboardPage, StartPage } from './features/dashboards/DashboardPage';
+import { DashboardsPage } from './features/dashboards/DashboardsPage';
 import {
   NotificationsPage,
   type NotificationTab,
@@ -39,7 +41,6 @@ import { EverythingPage } from './features/search/EverythingPage';
 import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { AppShell } from './features/shell/AppShell';
-import { HomePage } from './features/shell/HomePage';
 import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
@@ -180,7 +181,7 @@ const homeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
   component: function Home() {
-    return <HomePage me={homeRoute.useRouteContext().me} />;
+    return <StartPage me={homeRoute.useRouteContext().me} />;
   },
 });
 
@@ -397,6 +398,23 @@ const issueRoute = createRoute({
     const { me } = issueRoute.useRouteContext();
     const { key } = issueRoute.useParams();
     return <IssuePage key={key} me={me} issueKey={key.toUpperCase()} />;
+  },
+});
+
+const dashboardsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/dashboards',
+  component: function Dashboards() {
+    return <DashboardsPage me={dashboardsRoute.useRouteContext().me} />;
+  },
+});
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/dashboards/$id',
+  component: function DashboardRoute() {
+    const { id } = dashboardRoute.useParams();
+    return <DashboardPage key={id} id={id} me={dashboardRoute.useRouteContext().me} />;
   },
 });
 
@@ -629,6 +647,8 @@ const routeTree = rootRoute.addChildren([
   printRoute,
   appRoute.addChildren([
     homeRoute,
+    dashboardsRoute,
+    dashboardRoute,
     spacesRoute,
     spaceRoute.addChildren([
       spaceHomeRoute,

@@ -47,6 +47,35 @@ function shareKey(share: FilterShareInput): string {
   }
 }
 
+/** A share row joined with its user, group or project, as the API shows it. */
+export interface ShareRow {
+  type: FilterShare['type'];
+  userId: string | null;
+  userName: string | null;
+  groupId: string | null;
+  groupName: string | null;
+  projectId: string | null;
+  projectKey: string | null;
+  projectName: string | null;
+}
+
+export function presentShare(share: ShareRow): FilterShare | null {
+  if (share.type === 'authenticated') return { type: 'authenticated' };
+  if (share.type === 'user' && share.userId && share.userName) {
+    return { type: 'user', user: { id: share.userId, displayName: share.userName } };
+  }
+  if (share.type === 'group' && share.groupId && share.groupName) {
+    return { type: 'group', group: { id: share.groupId, name: share.groupName } };
+  }
+  if (share.type === 'project' && share.projectId && share.projectKey && share.projectName) {
+    return {
+      type: 'project',
+      project: { id: share.projectId, key: share.projectKey, name: share.projectName },
+    };
+  }
+  return null;
+}
+
 /** Saved TQL filters: the owner edits, shares grant read access (decision E-37). */
 @Injectable()
 export class FilterService {
@@ -128,23 +157,7 @@ export class FilterService {
     const favourite = new Set(favourites.map((entry) => entry.filterId));
     const sharesByFilter = new Map<string, FilterShare[]>();
     for (const share of shares) {
-      let presented: FilterShare | null = null;
-      if (share.type === 'authenticated') presented = { type: 'authenticated' };
-      else if (share.type === 'user' && share.userId && share.userName) {
-        presented = { type: 'user', user: { id: share.userId, displayName: share.userName } };
-      } else if (share.type === 'group' && share.groupId && share.groupName) {
-        presented = { type: 'group', group: { id: share.groupId, name: share.groupName } };
-      } else if (
-        share.type === 'project' &&
-        share.projectId &&
-        share.projectKey &&
-        share.projectName
-      ) {
-        presented = {
-          type: 'project',
-          project: { id: share.projectId, key: share.projectKey, name: share.projectName },
-        };
-      }
+      const presented = presentShare(share);
       if (presented)
         sharesByFilter.set(share.filterId, [
           ...(sharesByFilter.get(share.filterId) ?? []),
@@ -209,8 +222,11 @@ export class FilterService {
     return filter as SavedFilter;
   }
 
-  /** Checks every share target; sharing at all needs the global permission `share-filters`. */
-  private async validateShares(
+  /**
+   * Checks every share target; sharing at all needs the global permission `share-filters`.
+   * Dashboards share the same way (E-101).
+   */
+  async validateShares(
     principal: Principal,
     shares: FilterShareInput[],
   ): Promise<FilterShareInput[]> {

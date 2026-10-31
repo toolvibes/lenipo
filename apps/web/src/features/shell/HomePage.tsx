@@ -56,7 +56,7 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 /** Issue rows like the 1a task table: type, key, summary, status, due date. */
-function IssueTable({ issues }: { issues: IssueSummary[] }) {
+export function IssueTable({ issues }: { issues: IssueSummary[] }) {
   return (
     <ul className="m-0 flex list-none flex-col p-0">
       {issues.map((issue) => (
@@ -83,7 +83,7 @@ function IssueTable({ issues }: { issues: IssueSummary[] }) {
   );
 }
 
-function ShowAll({ query, total }: { query: string; total: number }) {
+export function ShowAll({ query, total }: { query: string; total: number }) {
   const { t } = useTranslation();
   return (
     <Link to="/issues" search={{ q: query }} className={LINK}>

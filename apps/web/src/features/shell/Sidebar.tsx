@@ -126,6 +126,17 @@ function OtherFavourites({ path }: { path: string }) {
         </NavRow>
       );
     }
+    if (favourite.kind === 'dashboard') {
+      return (
+        <NavRow
+          to="/dashboards/$id"
+          params={{ id: favourite.ref }}
+          active={path === `/dashboards/${favourite.ref}`}
+        >
+          <span className="truncate">{favourite.name}</span>
+        </NavRow>
+      );
+    }
     if (favourite.kind === 'board') {
       return (
         <NavRow
@@ -278,6 +289,9 @@ export function Sidebar({
         </NavRow>
         <NavRow to="/boards" active={path === '/boards'}>
           {t('sidebar.allBoards')}
+        </NavRow>
+        <NavRow to="/dashboards" active={path === '/dashboards'}>
+          {t('dashboards.title')}
         </NavRow>
         <NavRow to="/activity" active={path === '/activity'}>
           {t('activity.title')}

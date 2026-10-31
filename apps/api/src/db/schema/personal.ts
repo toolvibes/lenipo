@@ -16,6 +16,7 @@ export const favouriteKind = pgEnum('favourite_kind', [
   'space',
   'page',
   'board',
+  'dashboard',
 ]);
 
 /**

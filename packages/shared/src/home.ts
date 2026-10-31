@@ -38,7 +38,14 @@ export const ActivityQuery = z.object({
 });
 export type ActivityQuery = z.infer<typeof ActivityQuery>;
 
-export const FAVOURITE_KINDS = ['project', 'filter', 'space', 'page', 'board'] as const;
+export const FAVOURITE_KINDS = [
+  'project',
+  'filter',
+  'space',
+  'page',
+  'board',
+  'dashboard',
+] as const;
 export const FavouriteKind = z.enum(FAVOURITE_KINDS).meta({ id: 'FavouriteKind' });
 export type FavouriteKind = z.infer<typeof FavouriteKind>;
 
@@ -47,7 +54,7 @@ export const Favourite = z
   .object({
     kind: FavouriteKind,
     id: z.uuid(),
-    /** Project or space key; id for filters, pages and boards. */
+    /** Project or space key; id for filters, pages, boards and dashboards. */
     ref: z.string(),
     name: z.string(),
     /** For pages: the key of their space. */

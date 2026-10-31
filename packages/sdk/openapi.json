@@ -1637,6 +1637,508 @@
         }
       }
     },
+    "/api/v1/dashboards": {
+      "get": {
+        "operationId": "Dashboards.list",
+        "summary": "List dashboards the caller can see",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "visible",
+              "type": "string",
+              "enum": ["visible", "mine", "shared", "favourites", "home"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DashboardSummary"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Dashboards.create",
+        "summary": "Create a dashboard",
+        "description": "Sharing requires the global permission `share-filters`.",
+        "tags": ["Dashboards"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDashboardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}": {
+      "get": {
+        "operationId": "Dashboards.get",
+        "summary": "Get a dashboard with its gadgets",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "Dashboards.update",
+        "summary": "Change name, layout or shares (owner or administrator)",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDashboardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Dashboards.delete",
+        "summary": "Delete a dashboard (owner or administrator)",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}/copy": {
+      "post": {
+        "operationId": "Dashboards.copy",
+        "summary": "Copy a dashboard one can see as one’s own",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyDashboardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}/home": {
+      "put": {
+        "operationId": "Dashboards.home",
+        "summary": "Use a dashboard as one’s start page",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Dashboards.unhome",
+        "summary": "Go back to the usual start page",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}/gadgets": {
+      "post": {
+        "operationId": "Dashboards.addGadget",
+        "summary": "Add a gadget on top of a column",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddGadgetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}/gadgets/{gadgetId}": {
+      "patch": {
+        "operationId": "Dashboards.updateGadget",
+        "summary": "Change a gadget’s title or settings",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gadgetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGadgetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Dashboards.removeGadget",
+        "summary": "Remove a gadget",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gadgetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/{id}/arrangement": {
+      "put": {
+        "operationId": "Dashboards.arrange",
+        "summary": "Rearrange the gadgets",
+        "tags": ["Dashboards"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrangeGadgetsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/filters": {
       "get": {
         "operationId": "Filters.list",
@@ -6684,6 +7186,84 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SprintReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/statistics": {
+      "post": {
+        "operationId": "Reports.stats",
+        "summary": "Count issues of a TQL query by one or two fields",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatisticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Statistics"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/created-vs-resolved": {
+      "post": {
+        "operationId": "Reports.createdResolved",
+        "summary": "Issues created and resolved per day for a TQL query",
+        "tags": ["Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatedResolvedRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResolved"
                 }
               }
             }
@@ -11937,7 +12517,7 @@
         "required": ["id", "key", "summary", "issueType", "status", "priority"],
         "additionalProperties": false
       },
-      "SavedFilter": {
+      "DashboardSummary": {
         "type": "object",
         "properties": {
           "id": {
@@ -11951,11 +12531,23 @@
           "description": {
             "type": "string"
           },
-          "query": {
-            "type": "string"
+          "layout": {
+            "$ref": "#/components/schemas/DashboardLayout"
           },
           "owner": {
-            "$ref": "#/components/schemas/UserRef"
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName"],
+            "additionalProperties": false
           },
           "shares": {
             "type": "array",
@@ -11966,13 +12558,11 @@
           "favourite": {
             "type": "boolean"
           },
-          "editable": {
+          "home": {
             "type": "boolean"
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          "editable": {
+            "type": "boolean"
           },
           "updatedAt": {
             "type": "string",
@@ -11984,15 +12574,19 @@
           "id",
           "name",
           "description",
-          "query",
+          "layout",
           "owner",
           "shares",
           "favourite",
+          "home",
           "editable",
-          "createdAt",
           "updatedAt"
         ],
         "additionalProperties": false
+      },
+      "DashboardLayout": {
+        "type": "string",
+        "enum": ["one", "two", "wide-left", "three"]
       },
       "FilterShare": {
         "oneOf": [
@@ -12078,7 +12672,7 @@
           }
         ]
       },
-      "CreateFilterRequest": {
+      "CreateDashboardRequest": {
         "type": "object",
         "properties": {
           "name": {
@@ -12091,9 +12685,9 @@
             "type": "string",
             "maxLength": 1000
           },
-          "query": {
-            "type": "string",
-            "maxLength": 10000
+          "layout": {
+            "default": "two",
+            "$ref": "#/components/schemas/DashboardLayout"
           },
           "shares": {
             "default": [],
@@ -12102,13 +12696,9 @@
             "items": {
               "$ref": "#/components/schemas/FilterShareInput"
             }
-          },
-          "favourite": {
-            "default": true,
-            "type": "boolean"
           }
         },
-        "required": ["name", "query"]
+        "required": ["name"]
       },
       "FilterShareInput": {
         "oneOf": [
@@ -12168,6 +12758,668 @@
             "required": ["type"]
           }
         ]
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/DashboardLayout"
+          },
+          "owner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName"],
+            "additionalProperties": false
+          },
+          "shares": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterShare"
+            }
+          },
+          "favourite": {
+            "type": "boolean"
+          },
+          "home": {
+            "type": "boolean"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Gadget"
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "layout",
+          "owner",
+          "shares",
+          "favourite",
+          "home",
+          "editable",
+          "updatedAt",
+          "columns"
+        ],
+        "additionalProperties": false
+      },
+      "Gadget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "config": {
+            "$ref": "#/components/schemas/GadgetConfig"
+          }
+        },
+        "required": ["id", "title", "config"],
+        "additionalProperties": false
+      },
+      "GadgetConfig": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "filter-results"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type", "query", "limit"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "assigned-to-me"
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type", "limit"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "activity"
+              },
+              "projectKey": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type", "projectKey", "limit"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "pie"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["type", "query", "field"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "two-dimensional"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "x": {
+                "$ref": "#/components/schemas/StatisticField"
+              },
+              "y": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["type", "query", "x", "y"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "created-vs-resolved"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["type", "query", "days"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-burndown"
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["type", "boardId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "calendar"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              }
+            },
+            "required": ["type", "query"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "wiki-page"
+              },
+              "pageId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["type", "pageId"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "text"
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 20000
+              }
+            },
+            "required": ["type", "markdown"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "StatisticField": {
+        "type": "string",
+        "enum": [
+          "status",
+          "statusCategory",
+          "priority",
+          "assignee",
+          "reporter",
+          "issueType",
+          "project",
+          "resolution",
+          "component",
+          "label"
+        ]
+      },
+      "UpdateDashboardRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "layout": {
+            "$ref": "#/components/schemas/DashboardLayout"
+          },
+          "shares": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterShareInput"
+            }
+          }
+        }
+      },
+      "CopyDashboardRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": ["name"]
+      },
+      "AddGadgetRequest": {
+        "type": "object",
+        "properties": {
+          "column": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2
+          },
+          "title": {
+            "default": "",
+            "type": "string",
+            "maxLength": 100
+          },
+          "config": {
+            "$ref": "#/components/schemas/GadgetConfigInput"
+          }
+        },
+        "required": ["config"]
+      },
+      "GadgetConfigInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "filter-results"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "assigned-to-me"
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "activity"
+              },
+              "projectKey": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "limit": {
+                "default": 10,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "pie"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "field": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["type", "query", "field"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "two-dimensional"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "x": {
+                "$ref": "#/components/schemas/StatisticField"
+              },
+              "y": {
+                "$ref": "#/components/schemas/StatisticField"
+              }
+            },
+            "required": ["type", "query", "x", "y"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "created-vs-resolved"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "days": {
+                "default": 30,
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              }
+            },
+            "required": ["type", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "sprint-burndown"
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["type", "boardId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "calendar"
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 10000
+              }
+            },
+            "required": ["type", "query"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "wiki-page"
+              },
+              "pageId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["type", "pageId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "text"
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 20000
+              }
+            },
+            "required": ["type", "markdown"]
+          }
+        ]
+      },
+      "UpdateGadgetRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "config": {
+            "$ref": "#/components/schemas/GadgetConfigInput"
+          }
+        }
+      },
+      "ArrangeGadgetsRequest": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            }
+          }
+        },
+        "required": ["columns"]
+      },
+      "SavedFilter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "shares": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterShare"
+            }
+          },
+          "favourite": {
+            "type": "boolean"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "query",
+          "owner",
+          "shares",
+          "favourite",
+          "editable",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CreateFilterRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "shares": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterShareInput"
+            }
+          },
+          "favourite": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "query"]
       },
       "UpdateFilterRequest": {
         "type": "object",
@@ -14776,7 +16028,7 @@
       },
       "FavouriteKind": {
         "type": "string",
-        "enum": ["project", "filter", "space", "page", "board"]
+        "enum": ["project", "filter", "space", "page", "board", "dashboard"]
       },
       "RecordRecentRequest": {
         "type": "object",
@@ -16198,6 +17450,128 @@
           }
         },
         "required": ["issue", "estimate", "addedAfterStart"],
+        "additionalProperties": false
+      },
+      "StatisticsRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "x": {
+            "$ref": "#/components/schemas/StatisticField"
+          },
+          "y": {
+            "$ref": "#/components/schemas/StatisticField"
+          }
+        },
+        "required": ["query", "x"]
+      },
+      "Statistics": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "x": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatisticValue"
+            }
+          },
+          "y": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StatisticValue"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        },
+        "required": ["total", "x", "y", "counts"],
+        "additionalProperties": false
+      },
+      "StatisticValue": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": ["string", "null"]
+          },
+          "label": {
+            "type": "string"
+          },
+          "color": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["key", "label", "color"],
+        "additionalProperties": false
+      },
+      "CreatedResolvedRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "days": {
+            "default": 30,
+            "type": "integer",
+            "minimum": 7,
+            "maximum": 365
+          }
+        },
+        "required": ["query"]
+      },
+      "CreatedResolved": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "created": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "resolved": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": ["date", "created", "resolved"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["points"],
         "additionalProperties": false
       },
       "SearchRequest": {

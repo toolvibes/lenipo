@@ -586,6 +586,133 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/dashboards': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List dashboards the caller can see */
+    get: operations['Dashboards.list'];
+    put?: never;
+    /**
+     * Create a dashboard
+     * @description Sharing requires the global permission `share-filters`.
+     */
+    post: operations['Dashboards.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a dashboard with its gadgets */
+    get: operations['Dashboards.get'];
+    put?: never;
+    post?: never;
+    /** Delete a dashboard (owner or administrator) */
+    delete: operations['Dashboards.delete'];
+    options?: never;
+    head?: never;
+    /** Change name, layout or shares (owner or administrator) */
+    patch: operations['Dashboards.update'];
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}/copy': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Copy a dashboard one can see as one’s own */
+    post: operations['Dashboards.copy'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}/home': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Use a dashboard as one’s start page */
+    put: operations['Dashboards.home'];
+    post?: never;
+    /** Go back to the usual start page */
+    delete: operations['Dashboards.unhome'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}/gadgets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a gadget on top of a column */
+    post: operations['Dashboards.addGadget'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}/gadgets/{gadgetId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a gadget */
+    delete: operations['Dashboards.removeGadget'];
+    options?: never;
+    head?: never;
+    /** Change a gadget’s title or settings */
+    patch: operations['Dashboards.updateGadget'];
+    trace?: never;
+  };
+  '/api/v1/dashboards/{id}/arrangement': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rearrange the gadgets */
+    put: operations['Dashboards.arrange'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/filters': {
     parameters: {
       query?: never;
@@ -2172,6 +2299,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/reports/statistics': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Count issues of a TQL query by one or two fields */
+    post: operations['Reports.stats'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reports/created-vs-resolved': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Issues created and resolved per day for a TQL query */
+    post: operations['Reports.createdResolved'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -3740,21 +3901,26 @@ export interface components {
       status: components['schemas']['StatusInfo'];
       priority: components['schemas']['PriorityInfo'];
     };
-    SavedFilter: {
+    DashboardSummary: {
       /** Format: uuid */
       id: string;
       name: string;
       description: string;
-      query: string;
-      owner: components['schemas']['UserRef'];
+      layout: components['schemas']['DashboardLayout'];
+      owner: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      };
       shares: components['schemas']['FilterShare'][];
       favourite: boolean;
+      home: boolean;
       editable: boolean;
-      /** Format: date-time */
-      createdAt: string;
       /** Format: date-time */
       updatedAt: string;
     };
+    /** @enum {string} */
+    DashboardLayout: 'one' | 'two' | 'wide-left' | 'three';
     FilterShare:
       | {
           /** @constant */
@@ -3784,15 +3950,14 @@ export interface components {
           /** @constant */
           type: 'authenticated';
         };
-    CreateFilterRequest: {
+    CreateDashboardRequest: {
       name: string;
       /** @default  */
       description?: string;
-      query: string;
+      /** @default two */
+      layout?: components['schemas']['DashboardLayout'];
       /** @default [] */
       shares?: components['schemas']['FilterShareInput'][];
-      /** @default true */
-      favourite?: boolean;
     };
     FilterShareInput:
       | {
@@ -3817,6 +3982,219 @@ export interface components {
           /** @constant */
           type: 'authenticated';
         };
+    Dashboard: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      layout: components['schemas']['DashboardLayout'];
+      owner: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      };
+      shares: components['schemas']['FilterShare'][];
+      favourite: boolean;
+      home: boolean;
+      editable: boolean;
+      /** Format: date-time */
+      updatedAt: string;
+      columns: components['schemas']['Gadget'][][];
+    };
+    Gadget: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      config: components['schemas']['GadgetConfig'];
+    };
+    GadgetConfig:
+      | {
+          /** @constant */
+          type: 'filter-results';
+          query: string;
+          /** @default 10 */
+          limit: number;
+        }
+      | {
+          /** @constant */
+          type: 'assigned-to-me';
+          /** @default 10 */
+          limit: number;
+        }
+      | {
+          /** @constant */
+          type: 'activity';
+          /** @default null */
+          projectKey: string | null;
+          /** @default 10 */
+          limit: number;
+        }
+      | {
+          /** @constant */
+          type: 'pie';
+          query: string;
+          field: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          type: 'two-dimensional';
+          query: string;
+          x: components['schemas']['StatisticField'];
+          y: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          type: 'created-vs-resolved';
+          query: string;
+          /** @default 30 */
+          days: number;
+        }
+      | {
+          /** @constant */
+          type: 'sprint-burndown';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          type: 'calendar';
+          query: string;
+        }
+      | {
+          /** @constant */
+          type: 'wiki-page';
+          /** Format: uuid */
+          pageId: string;
+        }
+      | {
+          /** @constant */
+          type: 'text';
+          markdown: string;
+        };
+    /** @enum {string} */
+    StatisticField:
+      | 'status'
+      | 'statusCategory'
+      | 'priority'
+      | 'assignee'
+      | 'reporter'
+      | 'issueType'
+      | 'project'
+      | 'resolution'
+      | 'component'
+      | 'label';
+    UpdateDashboardRequest: {
+      name?: string;
+      description?: string;
+      layout?: components['schemas']['DashboardLayout'];
+      shares?: components['schemas']['FilterShareInput'][];
+    };
+    CopyDashboardRequest: {
+      name: string;
+    };
+    AddGadgetRequest: {
+      /** @default 0 */
+      column?: number;
+      /** @default  */
+      title?: string;
+      config: components['schemas']['GadgetConfigInput'];
+    };
+    GadgetConfigInput:
+      | {
+          /** @constant */
+          type: 'filter-results';
+          query: string;
+          /** @default 10 */
+          limit?: number;
+        }
+      | {
+          /** @constant */
+          type: 'assigned-to-me';
+          /** @default 10 */
+          limit?: number;
+        }
+      | {
+          /** @constant */
+          type: 'activity';
+          /** @default null */
+          projectKey?: string | null;
+          /** @default 10 */
+          limit?: number;
+        }
+      | {
+          /** @constant */
+          type: 'pie';
+          query: string;
+          field: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          type: 'two-dimensional';
+          query: string;
+          x: components['schemas']['StatisticField'];
+          y: components['schemas']['StatisticField'];
+        }
+      | {
+          /** @constant */
+          type: 'created-vs-resolved';
+          query: string;
+          /** @default 30 */
+          days?: number;
+        }
+      | {
+          /** @constant */
+          type: 'sprint-burndown';
+          /** Format: uuid */
+          boardId: string;
+        }
+      | {
+          /** @constant */
+          type: 'calendar';
+          query: string;
+        }
+      | {
+          /** @constant */
+          type: 'wiki-page';
+          /** Format: uuid */
+          pageId: string;
+        }
+      | {
+          /** @constant */
+          type: 'text';
+          markdown: string;
+        };
+    UpdateGadgetRequest: {
+      title?: string;
+      config?: components['schemas']['GadgetConfigInput'];
+    };
+    ArrangeGadgetsRequest: {
+      columns: string[][];
+    };
+    SavedFilter: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      query: string;
+      owner: components['schemas']['UserRef'];
+      shares: components['schemas']['FilterShare'][];
+      favourite: boolean;
+      editable: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    CreateFilterRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      query: string;
+      /** @default [] */
+      shares?: components['schemas']['FilterShareInput'][];
+      /** @default true */
+      favourite?: boolean;
+    };
     UpdateFilterRequest: {
       name?: string;
       description?: string;
@@ -4452,7 +4830,7 @@ export interface components {
       projectKey?: string;
     };
     /** @enum {string} */
-    FavouriteKind: 'project' | 'filter' | 'space' | 'page' | 'board';
+    FavouriteKind: 'project' | 'filter' | 'space' | 'page' | 'board' | 'dashboard';
     RecordRecentRequest: {
       kind: components['schemas']['RecentKind'];
       ref: string;
@@ -4807,6 +5185,35 @@ export interface components {
       issue: components['schemas']['IssueSummary'];
       estimate: number | null;
       addedAfterStart: boolean;
+    };
+    StatisticsRequest: {
+      query: string;
+      x: components['schemas']['StatisticField'];
+      y?: components['schemas']['StatisticField'];
+    };
+    Statistics: {
+      total: number;
+      x: components['schemas']['StatisticValue'][];
+      y: components['schemas']['StatisticValue'][] | null;
+      counts: number[][];
+    };
+    StatisticValue: {
+      key: string | null;
+      label: string;
+      color: string | null;
+    };
+    CreatedResolvedRequest: {
+      query: string;
+      /** @default 30 */
+      days?: number;
+    };
+    CreatedResolved: {
+      points: {
+        /** Format: date */
+        date: string;
+        created: number;
+        resolved: number;
+      }[];
     };
     SearchRequest: {
       /** @default  */
@@ -6706,6 +7113,394 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.list': {
+    parameters: {
+      query?: {
+        scope?: 'visible' | 'mine' | 'shared' | 'favourites' | 'home';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DashboardSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateDashboardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateDashboardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.copy': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CopyDashboardRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.home': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.unhome': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.addGadget': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddGadgetRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.removeGadget': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        gadgetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.updateGadget': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        gadgetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateGadgetRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Dashboards.arrange': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ArrangeGadgetsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dashboard'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -10479,6 +11274,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SprintReport'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StatisticsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Statistics'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Reports.createdResolved': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatedResolvedRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedResolved'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

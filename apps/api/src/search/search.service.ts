@@ -91,7 +91,7 @@ export class SearchService {
   async compile(
     principal: Principal,
     text: string,
-  ): Promise<CompiledQuery & { projectIds: string[] }> {
+  ): Promise<CompiledQuery & { projectIds: string[]; timeZone: string }> {
     const [catalogue, fields] = await Promise.all([
       this.customFields.catalogue(),
       this.customFields.list(),
@@ -153,6 +153,7 @@ export class SearchService {
       ...compiled,
       where: and(compiled.where, securityVisible(principal.userId)),
       projectIds,
+      timeZone,
     };
   }
 
