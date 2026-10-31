@@ -1657,6 +1657,144 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/oauth/client': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Describe a client asking for access
+     * @description For the consent page; unknown clients and unregistered redirect URIs answer 404.
+     */
+    get: operations['OAuth.client'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/oauth/consent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Allow or deny a client
+     * @description Signed in with a browser session only. Returns where the browser goes next: the client’s redirect URI with a single-use code, or with error=access_denied.
+     */
+    post: operations['OAuth.consent'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/oauth-grants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List your connected apps */
+    get: operations['OAuth.mine'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/oauth-grants/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Disconnect one of your apps */
+    delete: operations['OAuth.endMine'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-grants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List all connected apps (admin)
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['OAuth.all'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-grants/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Disconnect any app (admin)
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['OAuth.endAny'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/oauth-settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * OAuth settings (admin)
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['OAuth.settings'];
+    /**
+     * Change the OAuth settings (admin)
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['OAuth.setSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/status': {
     parameters: {
       query?: never;
@@ -5869,6 +6007,52 @@ export interface components {
       digestHour?: number;
       /** @default false */
       notifyOwnChanges?: boolean;
+    };
+    OAuthClientInfo: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      redirectHost: string;
+      requestedScopes: components['schemas']['TokenScope'][];
+    };
+    OAuthConsentRequest: {
+      /** Format: uuid */
+      clientId: string;
+      redirectUri: string;
+      scopes: components['schemas']['TokenScope'][];
+      approve: boolean;
+      codeChallenge: string;
+      /** @constant */
+      codeChallengeMethod: 'S256';
+      state?: string;
+      resource?: string;
+    };
+    OAuthConsentResult: {
+      redirect: string;
+    };
+    OAuthGrant: {
+      /** Format: uuid */
+      id: string;
+      client: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      };
+      user: {
+        /** Format: uuid */
+        id: string;
+        displayName: string;
+      };
+      scopes: components['schemas']['TokenScope'][];
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+    };
+    OAuthSettings: {
+      registrationOpen: boolean;
+    };
+    OAuthSettingsInput: {
+      registrationOpen: boolean;
     };
     SetPageStatusRequest: {
       status: components['schemas']['PageStatus'];
@@ -11465,6 +11649,250 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['NotificationSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.client': {
+    parameters: {
+      query: {
+        client_id: string;
+        redirect_uri: string;
+        scope?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthClientInfo'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.consent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OAuthConsentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthConsentResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.mine': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthGrant'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.endMine': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.all': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthGrant'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.endAny': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'OAuth.setSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OAuthSettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OAuthSettings'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

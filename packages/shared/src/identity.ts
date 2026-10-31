@@ -270,3 +270,64 @@ export const SecuritySettings = z
   })
   .meta({ id: 'SecuritySettings' });
 export type SecuritySettings = z.infer<typeof SecuritySettings>;
+
+// ---------------------------------------------------------------- OAuth for MCP clients (TL-69, E-115)
+
+/** A client asking for access, as the consent page shows it. */
+export const OAuthClientInfo = z
+  .object({
+    id: Id,
+    name: z.string(),
+    /** Host of the redirect, so people see where the access goes. */
+    redirectHost: z.string(),
+    /** Scopes the client asked for; all if it named none. */
+    requestedScopes: z.array(TokenScope),
+  })
+  .meta({ id: 'OAuthClientInfo' });
+export type OAuthClientInfo = z.infer<typeof OAuthClientInfo>;
+
+export const OAuthAuthorizeQuery = z.object({
+  client_id: z.string().max(100),
+  redirect_uri: z.string().max(2_000),
+  scope: z.string().max(500).optional(),
+});
+export type OAuthAuthorizeQuery = z.infer<typeof OAuthAuthorizeQuery>;
+
+export const OAuthConsentRequest = z
+  .object({
+    clientId: Id,
+    redirectUri: z.string().max(2_000),
+    /** Empty when access was denied. */
+    scopes: z.array(TokenScope),
+    approve: z.boolean(),
+    codeChallenge: z.string().min(43).max(128),
+    codeChallengeMethod: z.literal('S256'),
+    state: z.string().max(2_000).optional(),
+    resource: z.string().max(2_000).optional(),
+  })
+  .meta({ id: 'OAuthConsentRequest' });
+export type OAuthConsentRequest = z.infer<typeof OAuthConsentRequest>;
+
+/** Where the browser goes next: back to the client with a code or an error. */
+export const OAuthConsentResult = z
+  .object({ redirect: z.string() })
+  .meta({ id: 'OAuthConsentResult' });
+export type OAuthConsentResult = z.infer<typeof OAuthConsentResult>;
+
+/** A client someone connected (profile page; for admins with the person). */
+export const OAuthGrant = z
+  .object({
+    id: Id,
+    client: z.object({ id: Id, name: z.string() }),
+    user: z.object({ id: Id, displayName: z.string() }),
+    scopes: z.array(TokenScope),
+    createdAt: z.iso.datetime(),
+    lastUsedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'OAuthGrant' });
+export type OAuthGrant = z.infer<typeof OAuthGrant>;
+
+export const OAuthSettings = z
+  .object({ registrationOpen: z.boolean() })
+  .meta({ id: 'OAuthSettings' });
+export type OAuthSettings = z.infer<typeof OAuthSettings>;

@@ -923,6 +923,35 @@ export const de = {
     limited_other: 'Gedruckt werden die ersten {{count}} Unterseiten.',
     back: 'Zurück zur Seite',
   },
+  oauth: {
+    title: '{{name}} möchte auf Tasklore zugreifen',
+    subtitle:
+      'Danach geht es zurück zu {{host}}. Der Zugriff gilt in Ihrem Namen mit Ihren Rechten.',
+    scopes: 'Erlauben',
+    scopeNames: {
+      issuesRead: 'Vorgänge, Boards und Sprints lesen',
+      issuesWrite: 'Vorgänge anlegen und ändern',
+      wikiRead: 'Wiki-Seiten lesen',
+      wikiWrite: 'Wiki-Seiten bearbeiten',
+    },
+    hint: 'Erlauben Sie nur Anwendungen, die Sie selbst gerade verbinden. Im Profil unter „Verbundene Anwendungen“ lässt sich der Zugriff jederzeit beenden.',
+    allow: 'Erlauben',
+    deny: 'Ablehnen',
+    invalidTitle: 'Anmeldung nicht möglich',
+    invalidRequest:
+      'Die Anfrage der Anwendung ist unvollständig (OAuth mit PKCE S256 erforderlich).',
+    unknownClient: 'Diese Anwendung oder ihre Rückleitungsadresse ist nicht registriert.',
+    connected: 'Verbundene Anwendungen',
+    connectedIntro:
+      'KI-Agenten wie Claude Code melden sich per OAuth im Browser an, ganz ohne Token in der Konfiguration. Diesen Befehl ausführen, danach öffnet sich die Anmeldung:',
+    noneConnected: 'Noch keine Anwendung verbunden.',
+    lastUsed: 'zuletzt genutzt {{when}}',
+    connectedAt: 'verbunden {{when}}',
+    disconnect: 'Trennen',
+    registration:
+      'Neue Anwendungen dürfen sich selbst registrieren (für die Anmeldung von MCP-Clients)',
+    allGrants: 'Verbundene Anwendungen aller Personen',
+  },
   calendar: {
     title: 'Kalender',
     query: 'TQL-Abfrage',

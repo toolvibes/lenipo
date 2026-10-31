@@ -8,9 +8,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { IS_PUBLIC } from '../core/http/decorators.js';
 import type { Principal } from '../core/http/principal.js';
+import { ALLOW_CROSS_SITE } from './oauth.controller.js';
+import { ACCESS_PREFIX, OAuthService } from './oauth.service.js';
 import { isCrossSiteWrite } from './request-guards.js';
 import { readCookie, SESSION_COOKIE } from './secrets.js';
 import { SessionService } from './session.service.js';
@@ -23,20 +25,43 @@ export class AuthGuard implements CanActivate {
     @Inject(Reflector) private readonly reflector: Reflector,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(TokenService) private readonly tokens: TokenService,
+    @Inject(OAuthService) private readonly oauth: OAuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    if (isCrossSiteWrite(request)) {
+    const crossSiteAllowed = this.reflector.getAllAndOverride<boolean>(ALLOW_CROSS_SITE, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!crossSiteAllowed && isCrossSiteWrite(request)) {
       throw new ForbiddenException('Cross-site request rejected');
     }
 
-    request.principal = await this.resolve(request);
+    // MCP clients learn from the 401 where to sign in (MCP authorization, RFC 9728; E-115).
+    const challenge = (error?: string) => {
+      if (!request.path.startsWith('/mcp')) return;
+      const base = `${request.protocol}://${request.get('host')}`;
+      context
+        .switchToHttp()
+        .getResponse<Response>()
+        .set(
+          'WWW-Authenticate',
+          `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/mcp"${error ? `, error="${error}"` : ''}`,
+        );
+    };
+    try {
+      request.principal = await this.resolve(request);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) challenge('invalid_token');
+      throw error;
+    }
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (!isPublic && !request.principal) {
+      challenge();
       throw new UnauthorizedException('Authentication required');
     }
     // A sign-in waiting for its second factor (or its setup) reaches only the routes for that.
@@ -71,6 +96,16 @@ export class AuthGuard implements CanActivate {
       const [scheme, secret] = authorization.split(' ');
       if (scheme?.toLowerCase() !== 'bearer' || !secret) {
         throw new UnauthorizedException('Unsupported authorization scheme');
+      }
+      if (secret.startsWith(ACCESS_PREFIX)) {
+        const access = await this.oauth.authenticate(secret);
+        if (!access) throw new UnauthorizedException('Invalid or expired token');
+        return {
+          userId: access.userId,
+          via: 'token',
+          tokenId: access.grantId,
+          scopes: access.scopes,
+        };
       }
       const token = await this.tokens.authenticate(secret);
       if (!token) throw new UnauthorizedException('Invalid or expired token');

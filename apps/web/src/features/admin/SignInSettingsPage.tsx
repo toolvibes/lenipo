@@ -156,6 +156,8 @@ export function SignInSettingsPage() {
         </div>
       </form>
 
+      <OAuthAdmin />
+
       <section className="flex max-w-[720px] flex-col gap-3">
         <h2 className="m-0 text-base font-semibold">{t('signIn.people')}</h2>
         <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('signIn.peopleIntro')}</p>
@@ -206,5 +208,67 @@ export function SignInSettingsPage() {
         </ul>
       </section>
     </main>
+  );
+}
+
+/** Registration switch and every connected app, for administrators (TL-69, E-115). */
+function OAuthAdmin() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const settings = useQuery({
+    queryKey: ['admin', 'oauth-settings'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/oauth-settings')),
+  });
+  const grants = useQuery({
+    queryKey: ['admin', 'oauth-grants'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/oauth-grants')),
+  });
+  const save = useMutation({
+    mutationFn: (registrationOpen: boolean) =>
+      unwrap(client.PUT('/api/v1/admin/oauth-settings', { body: { registrationOpen } })),
+    onSuccess: (saved) => queryClient.setQueryData(['admin', 'oauth-settings'], saved),
+  });
+  const end = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/admin/oauth-grants/{id}', { params: { path: { id } } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin', 'oauth-grants'] }),
+  });
+  return (
+    <section className="flex max-w-[720px] flex-col gap-3">
+      <h2 className="m-0 text-base font-semibold">{t('oauth.connected')}</h2>
+      {(save.error || end.error) && (
+        <FormError message={(save.error ?? end.error)?.message ?? ''} />
+      )}
+      {settings.data && (
+        <label className="flex items-center gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            checked={settings.data.registrationOpen}
+            onChange={(event) => save.mutate(event.target.checked)}
+          />
+          {t('oauth.registration')}
+        </label>
+      )}
+      <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t('oauth.allGrants')}</h3>
+      {grants.data?.length === 0 && (
+        <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('oauth.noneConnected')}</p>
+      )}
+      <ul className="m-0 flex list-none flex-col p-0">
+        {(grants.data ?? []).map((grant) => (
+          <li
+            key={grant.id}
+            className="flex items-center gap-3 border-b border-[var(--border)] py-2 text-[13px]"
+          >
+            <span className="flex-1">
+              <strong>{grant.client.name}</strong> · {grant.user.displayName} ·{' '}
+              <span className="text-[var(--ink-muted)]">{grant.scopes.join(', ')}</span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => end.mutate(grant.id)}>
+              {t('oauth.disconnect')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

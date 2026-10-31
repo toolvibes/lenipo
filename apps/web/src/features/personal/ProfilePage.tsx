@@ -457,6 +457,56 @@ function deviceOf(userAgent: string | null, unknown: string): string {
   return [browser, system].filter(Boolean).join(' · ') || unknown;
 }
 
+/** MCP clients signed in with OAuth (TL-69, E-115), each can be disconnected. */
+function ConnectedApps() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const grants = useQuery({
+    queryKey: ['oauth-grants'],
+    queryFn: () => unwrap(client.GET('/api/v1/me/oauth-grants')),
+  });
+  const end = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/me/oauth-grants/{id}', { params: { path: { id } } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['oauth-grants'] }),
+  });
+  const command = `claude mcp add --transport http tasklore ${window.location.origin}/mcp`;
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('oauth.connectedIntro')}</p>
+      <div className="flex max-w-[720px] flex-wrap items-center gap-2">
+        <code className="min-w-0 flex-1 text-xs break-all">{command}</code>
+        <CopyButton text={command} />
+      </div>
+      {end.error && <FormError message={end.error.message} />}
+      {grants.data?.length === 0 && (
+        <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('oauth.noneConnected')}</p>
+      )}
+      <ul className="m-0 flex max-w-[720px] list-none flex-col p-0">
+        {(grants.data ?? []).map((grant) => (
+          <li
+            key={grant.id}
+            className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] py-2.5 text-[13px]"
+          >
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-semibold">{grant.client.name}</span>
+              <span className="text-xs text-[var(--ink-muted)]">
+                {grant.scopes.join(', ')} ·{' '}
+                {grant.lastUsedAt
+                  ? t('oauth.lastUsed', { when: formatRelative(grant.lastUsedAt) })
+                  : t('oauth.connectedAt', { when: formatRelative(grant.createdAt) })}
+              </span>
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => end.mutate(grant.id)}>
+              {t('oauth.disconnect')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Sessions() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -682,6 +732,9 @@ export function ProfilePage() {
         </Section>
         <Section id="tokens" title={t('profile.tokens')}>
           <Tokens me={me.data} />
+        </Section>
+        <Section id="connected-apps" title={t('oauth.connected')}>
+          <ConnectedApps />
         </Section>
         <Section id="sessions" title={t('profile.sessions')}>
           <Sessions />

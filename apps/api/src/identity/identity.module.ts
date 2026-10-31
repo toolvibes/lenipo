@@ -11,6 +11,8 @@ import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
 import { GroupService } from './group.service.js';
 import { MeController } from './me.controller.js';
+import { OAuthController } from './oauth.controller.js';
+import { OAuthService } from './oauth.service.js';
 import { OidcService } from './oidc.service.js';
 import { PasswordService } from './password.service.js';
 import { SecuritySettingsService } from './security-settings.service.js';
@@ -31,6 +33,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     SystemController,
     UsersController,
     GroupsController,
+    OAuthController,
   ],
   providers: [
     AccessService,
@@ -41,6 +44,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     AuthService,
     GroupService,
     OidcService,
+    OAuthService,
     PasswordService,
     SessionService,
     SetupService,
@@ -52,6 +56,6 @@ import { GroupsController, UsersController } from './users.controller.js';
     { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useExisting: GlobalPermissionGuard },
   ],
-  exports: [AccessService, AuditService, SessionService, SetupService, UserService],
+  exports: [AccessService, AuditService, SessionService, SetupService, UserService, OAuthService],
 })
 export class IdentityModule {}

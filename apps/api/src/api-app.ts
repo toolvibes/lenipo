@@ -13,8 +13,15 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
     bufferLogs: true,
   });
   app.useLogger(app.get(NestPinoLogger));
-  // MCP clients expect the server at /mcp (D-MCP-01).
-  app.setGlobalPrefix('api/v1', { exclude: ['mcp'] });
+  // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115).
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      'mcp',
+      '.well-known/oauth-protected-resource',
+      '.well-known/oauth-protected-resource/mcp',
+      '.well-known/oauth-authorization-server',
+    ],
+  });
   // Behind Caddy or another proxy on the local network: take the client IP from X-Forwarded-For.
   app.set('trust proxy', 'loopback, linklocal, uniquelocal');
   serveApiDocs(app);

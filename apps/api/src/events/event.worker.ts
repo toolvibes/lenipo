@@ -9,6 +9,7 @@ import { type AppConfig, runsRole } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
+import { OAuthService } from '../identity/oauth.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
@@ -31,6 +32,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(AutomationEngine) private readonly automation: AutomationEngine,
     @Inject(PageService) private readonly pages: PageService,
     @Inject(FilterSubscriptionService) private readonly subscriptions: FilterSubscriptionService,
+    @Inject(OAuthService) private readonly oauth: OAuthService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
   ) {}
 
@@ -56,6 +58,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     this.every('cleanup', 60 * 60_000, async () => {
       await this.webhooks.cleanUp();
       await this.automation.cleanUp();
+      await this.oauth.cleanUp();
     });
     this.logger.info('Event worker running');
   }

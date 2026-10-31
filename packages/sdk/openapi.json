@@ -5102,6 +5102,303 @@
         }
       }
     },
+    "/api/v1/oauth/client": {
+      "get": {
+        "operationId": "OAuth.client",
+        "summary": "Describe a client asking for access",
+        "description": "For the consent page; unknown clients and unregistered redirect URIs answer 404.",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClientInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/oauth/consent": {
+      "post": {
+        "operationId": "OAuth.consent",
+        "summary": "Allow or deny a client",
+        "description": "Signed in with a browser session only. Returns where the browser goes next: the client’s redirect URI with a single-use code, or with error=access_denied.",
+        "tags": ["OAuth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthConsentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/oauth-grants": {
+      "get": {
+        "operationId": "OAuth.mine",
+        "summary": "List your connected apps",
+        "tags": ["OAuth"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthGrant"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/oauth-grants/{id}": {
+      "delete": {
+        "operationId": "OAuth.endMine",
+        "summary": "Disconnect one of your apps",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-grants": {
+      "get": {
+        "operationId": "OAuth.all",
+        "summary": "List all connected apps (admin)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthGrant"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-grants/{id}": {
+      "delete": {
+        "operationId": "OAuth.endAny",
+        "summary": "Disconnect any app (admin)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/oauth-settings": {
+      "get": {
+        "operationId": "OAuth.settings",
+        "summary": "OAuth settings (admin)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "OAuth.setSettings",
+        "summary": "Change the OAuth settings (admin)",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["OAuth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pages/{id}/status": {
       "put": {
         "operationId": "Pages.setStatus",
@@ -18922,6 +19219,172 @@
           }
         },
         "required": ["emailEnabled", "emailCategories"]
+      },
+      "OAuthClientInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "redirectHost": {
+            "type": "string"
+          },
+          "requestedScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          }
+        },
+        "required": ["id", "name", "redirectHost", "requestedScopes"],
+        "additionalProperties": false
+      },
+      "OAuthConsentRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "redirectUri": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          },
+          "approve": {
+            "type": "boolean"
+          },
+          "codeChallenge": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 128
+          },
+          "codeChallengeMethod": {
+            "type": "string",
+            "const": "S256"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "resource": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "clientId",
+          "redirectUri",
+          "scopes",
+          "approve",
+          "codeChallenge",
+          "codeChallengeMethod"
+        ]
+      },
+      "OAuthConsentResult": {
+        "type": "object",
+        "properties": {
+          "redirect": {
+            "type": "string"
+          }
+        },
+        "required": ["redirect"],
+        "additionalProperties": false
+      },
+      "OAuthGrant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "client": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "displayName"],
+            "additionalProperties": false
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["id", "client", "user", "scopes", "createdAt", "lastUsedAt"],
+        "additionalProperties": false
+      },
+      "OAuthSettings": {
+        "type": "object",
+        "properties": {
+          "registrationOpen": {
+            "type": "boolean"
+          }
+        },
+        "required": ["registrationOpen"],
+        "additionalProperties": false
+      },
+      "OAuthSettingsInput": {
+        "type": "object",
+        "properties": {
+          "registrationOpen": {
+            "type": "boolean"
+          }
+        },
+        "required": ["registrationOpen"]
       },
       "SetPageStatusRequest": {
         "type": "object",

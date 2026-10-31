@@ -23,6 +23,7 @@ import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
+import { type AuthorizeParams, OAuthConsentPage } from './features/auth/OAuthConsentPage';
 import { SetupPage } from './features/auth/SetupPage';
 import { TwoFactorPage } from './features/auth/TwoFactorPage';
 import { WelcomePage } from './features/auth/WelcomePage';
@@ -118,6 +119,36 @@ const twoFactorRoute = createRoute({
   component: function TwoFactor() {
     const { redirect: target } = twoFactorRoute.useSearch();
     return <TwoFactorPage me={twoFactorRoute.useRouteContext().me} redirect={target} />;
+  },
+});
+
+/** Consent for MCP clients signing in with OAuth (TL-69, E-115); needs a signed-in person. */
+const oauthAuthorizeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oauth/authorize',
+  validateSearch: (search: Record<string, unknown>): AuthorizeParams =>
+    Object.fromEntries(
+      [
+        'response_type',
+        'client_id',
+        'redirect_uri',
+        'code_challenge',
+        'code_challenge_method',
+        'state',
+        'scope',
+        'resource',
+      ].flatMap((key) => {
+        const value = search[key];
+        return typeof value === 'string' || typeof value === 'number' ? [[key, String(value)]] : [];
+      }),
+    ),
+  beforeLoad: async ({ context, location }) => {
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+    applyLocale(me.locale);
+  },
+  component: function OAuthAuthorize() {
+    return <OAuthConsentPage params={oauthAuthorizeRoute.useSearch()} />;
   },
 });
 
@@ -798,6 +829,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   welcomeRoute,
   printRoute,
+  oauthAuthorizeRoute,
   issuesPrintRoute,
   appRoute.addChildren([
     homeRoute,
