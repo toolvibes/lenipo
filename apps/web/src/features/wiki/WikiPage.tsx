@@ -5,7 +5,6 @@ import {
   DotsThree,
   Lock,
   PencilSimple,
-  Printer,
 } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import { FormError } from '../../ui/FormError';
 import { TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { PageComments } from './comments';
+import { PageExportMenu } from './ExportMenu';
 import { CommentedText, InlineThreads } from './InlineComments';
 import { PageAttachments } from './PageAttachments';
 import { PageLabelList, WatchMenu } from './PageMeta';
@@ -261,17 +261,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
                 {t('wiki.comments.title', { count: openComments })}
               </a>
             )}
-            {data.version > 0 && (
-              <a
-                href={`/spaces/${spaceKey}/pages/${data.id}/print?auto=true`}
-                target="_blank"
-                rel="noopener"
-                className={buttonClass('ghost', 'sm')}
-              >
-                <Printer size={16} aria-hidden />
-                {t('print.action')}
-              </a>
-            )}
+            {data.version > 0 && <PageExportMenu spaceKey={spaceKey} pageId={data.id} />}
             <WatchMenu page={data} />
             {data.canEdit && (
               <DropdownMenu.Root>

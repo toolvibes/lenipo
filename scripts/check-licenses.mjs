@@ -14,6 +14,8 @@ const ALLOWED = new Set([
   'CC0-1.0',
   'BlueOak-1.0.0',
   'Python-2.0',
+  // zlib's license, permissive like MIT (pako, via docx: TL-30).
+  'Zlib',
   // Fonts (Source Sans 3, Source Serif 4, JetBrains Mono): may be bundled with any software.
   'OFL-1.1',
 ]);
@@ -30,10 +32,15 @@ const VERIFIED = new Map([
 const output = execFileSync('pnpm', ['licenses', 'list', '--json', '--prod'], { encoding: 'utf8' });
 const byLicense = JSON.parse(output);
 
-/** Accepts SPDX expressions like "(MIT OR Apache-2.0)" if at least one option is allowed. */
+/**
+ * Accepts SPDX expressions like "(MIT OR Apache-2.0)" if at least one option is allowed, and
+ * "(MIT AND Zlib)" if every part is.
+ */
 function isAllowed(license) {
   const options = license.replace(/[()]/g, '').split(/\s+OR\s+/);
-  return options.some((option) => ALLOWED.has(option.trim()));
+  return options.some((option) =>
+    option.split(/\s+AND\s+/).every((part) => ALLOWED.has(part.trim())),
+  );
 }
 
 const violations = Object.entries(byLicense)

@@ -44,6 +44,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { FavouriteButton } from '../personal/FavouriteButton';
+import { SpaceExportMenu } from './ExportMenu';
 import { fillTitle, TemplateGallery } from './templates';
 
 /** Asks for a title, creates the page as a draft and opens it for editing (W-PAG-02, -03). */
@@ -537,6 +538,10 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
             <Newspaper size={14} aria-hidden />
             {t('blog.title')}
           </Link>
+          <SpaceExportMenu
+            spaceKey={spaceKey}
+            className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border-0 bg-transparent px-2 py-1 text-left text-sm text-[var(--ink-muted)] hover:text-[var(--ink)]"
+          />
           {canEdit && (
             <Link
               to="/spaces/$key/trash"

@@ -43,6 +43,7 @@ import { ReleasePage, ReleasesPage } from './features/releases/ReleasesPage';
 import { ProjectReportsPage } from './features/reports/ProjectReportsPage';
 import { type ReportKind as BoardReportKind, ReportsPage } from './features/reports/ReportsPage';
 import { EverythingPage } from './features/search/EverythingPage';
+import { IssuePrintPage } from './features/search/IssueExport';
 import { SearchPage } from './features/search/SearchPage';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { AppShell } from './features/shell/AppShell';
@@ -141,8 +142,11 @@ const welcomeRoute = createRoute({
 const printRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/spaces/$key/pages/$id/print',
-  validateSearch: (search: Record<string, unknown>): { children?: boolean; auto?: boolean } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { children?: boolean; contents?: boolean; auto?: boolean } => ({
     children: search.children === true || search.children === 'true' ? true : undefined,
+    contents: search.contents === true || search.contents === 'true' ? true : undefined,
     auto: search.auto === true || search.auto === 'true' || search.auto === 1 ? true : undefined,
   }),
   beforeLoad: async ({ context, location }) => {
@@ -152,12 +156,13 @@ const printRoute = createRoute({
   },
   component: function Print() {
     const { key, id } = printRoute.useParams();
-    const { children, auto } = printRoute.useSearch();
+    const { children, contents, auto } = printRoute.useSearch();
     return (
       <PrintPage
         spaceKey={key.toUpperCase()}
         id={id}
         withChildren={children ?? false}
+        contents={contents ?? false}
         auto={auto ?? false}
       />
     );
@@ -419,6 +424,25 @@ const everythingRoute = createRoute({
   component: function Everything() {
     const { q, type, project } = everythingRoute.useSearch();
     return <EverythingPage q={q ?? ''} type={type} project={project} />;
+  },
+});
+
+/** Search results for paper, outside the app shell like the page print view (T-QRY-09). */
+const issuesPrintRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues/print',
+  validateSearch: (search: Record<string, unknown>): { q?: string; auto?: boolean } => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+    auto: search.auto === true || search.auto === 'true' ? true : undefined,
+  }),
+  beforeLoad: async ({ context, location }) => {
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+    applyLocale(me.locale);
+  },
+  component: function IssuesPrint() {
+    const { q, auto } = issuesPrintRoute.useSearch();
+    return <IssuePrintPage query={q ?? ''} auto={auto ?? false} />;
   },
 });
 
@@ -750,6 +774,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   welcomeRoute,
   printRoute,
+  issuesPrintRoute,
   appRoute.addChildren([
     homeRoute,
     dashboardsRoute,

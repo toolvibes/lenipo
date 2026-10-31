@@ -42,13 +42,13 @@ interface Mark {
   type: string;
   attrs?: Record<string, unknown>;
 }
-interface JsonNode {
+export interface JsonNode {
   marks?: Mark[];
   content?: JsonNode[];
 }
 
 /** Calls `change` with every link target in the document and stores what it returns. */
-function rewriteLinks(node: JsonNode, change: (href: string) => string): void {
+export function rewriteLinks(node: JsonNode, change: (href: string) => string): void {
   for (const mark of node.marks ?? []) {
     if (mark.type === 'link' && typeof mark.attrs?.href === 'string') {
       mark.attrs.href = change(mark.attrs.href);
@@ -91,7 +91,7 @@ export function parseMarkdownFile(path: string, content: string): MarkdownFile {
   };
 }
 
-const slug = (title: string) =>
+export const slug = (title: string) =>
   title
     .toLowerCase()
     .replace(/ä/g, 'ae')

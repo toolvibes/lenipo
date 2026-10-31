@@ -1,5 +1,6 @@
 export * from './anchors.js';
 export * from './diff.js';
+export * from './html.js';
 export * from './image.js';
 export * from './layout-macros.js';
 export * from './markdown.js';

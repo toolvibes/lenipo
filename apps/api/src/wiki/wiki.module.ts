@@ -49,6 +49,13 @@ import { WikiMacrosService } from './wiki-macros.service.js';
     PageAttachmentService,
     PageCommentService,
   ],
-  exports: [SpaceAccessService, SpaceService, PageService, DraftService, PageCommentService],
+  exports: [
+    SpaceAccessService,
+    SpaceService,
+    PageService,
+    PageAttachmentService,
+    DraftService,
+    PageCommentService,
+  ],
 })
 export class WikiModule {}

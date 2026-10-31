@@ -10,6 +10,7 @@ import type { Logger } from './core/logger.js';
 import { DashboardsModule } from './dashboards/dashboards.module.js';
 import type { DatabaseHandle } from './db/client.js';
 import { EventsModule } from './events/events.module.js';
+import { ExportsModule } from './exports/exports.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './modules/health/health.module.js';
@@ -42,6 +43,7 @@ export class AppModule {
         IdentityModule,
         TrackingModule,
         SearchModule,
+        ExportsModule,
         EventsModule,
         PersonalModule,
         BoardsModule,

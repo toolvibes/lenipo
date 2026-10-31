@@ -18,6 +18,7 @@ import { IssueTable } from '../tracking/IssueTable';
 import { BasicSearch } from './BasicSearch';
 import { BulkChangeDialog } from './BulkChangeDialog';
 import { ColumnPicker } from './ColumnPicker';
+import { IssueExportMenu } from './IssueExport';
 import { SaveFilterDialog } from './SaveFilterDialog';
 import { TqlInput } from './TqlInput';
 
@@ -484,6 +485,7 @@ export function SearchPage({
                   </Button>
                 </nav>
               )}
+              <IssueExportMenu query={applied ?? ''} total={page?.total} />
               <ColumnPicker columns={columns} />
             </div>
           </div>

@@ -1616,6 +1616,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set the status and owner of a page */
+    put: operations['Pages.setStatus'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/labels/{label}/pages': {
     parameters: {
       query?: never;
@@ -1966,16 +1983,19 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/pages/{id}/status': {
+  '/api/v1/pages/{id}/export/{format}': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get?: never;
-    /** Set the status and owner of a page */
-    put: operations['Pages.setStatus'];
+    /**
+     * Export a page
+     * @description `docx` is a Word document with header, footer and, with child pages, a table of contents; `markdown` a ZIP with the page as Markdown and its attachments; `html` one self-contained HTML file. `children=true` adds the published child pages (at most 200). Only published pages can be exported; whoever may read a page may export it.
+     */
+    get: operations['Pages.page'];
+    put?: never;
     post?: never;
     delete?: never;
     options?: never;
@@ -2674,6 +2694,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/search/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Export search results
+     * @description Every issue of the TQL query (at most 10,000) as CSV (semicolons, UTF-8 with byte order mark), Excel or JSON. CSV and Excel have key, summary and the given columns; JSON has the full issue summaries.
+     */
+    post: operations['Search.search'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/setup/status': {
     parameters: {
       query?: never;
@@ -2702,6 +2742,40 @@ export interface paths {
     put?: never;
     /** Create the first administrator with the setup code and sign in */
     post: operations['Setup.complete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/blog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The blog of a space, newest first */
+    get: operations['Spaces.blog'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/feeds/spaces/{key}/blog.atom': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Atom feed of a space’s blog, read with a personal feed token */
+    get: operations['Spaces.feed'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2760,40 +2834,6 @@ export interface paths {
      * @description Only spaces the caller can see; a space is linked with at most one project.
      */
     get: operations['Spaces.ofProject'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/spaces/{key}/blog': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** The blog of a space, newest first */
-    get: operations['Spaces.blog'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/feeds/spaces/{key}/blog.atom': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Atom feed of a space’s blog, read with a personal feed token */
-    get: operations['Spaces.feed'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2976,6 +3016,26 @@ export interface paths {
      * @description Each entry was deleted on its own; pages below it come back with it.
      */
     get: operations['Spaces.trash'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/export/{format}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export a space
+     * @description A ZIP with every published page the caller can read as Markdown or HTML files in the page tree’s folders, plus their attachments (at most 2,000 pages).
+     */
+    get: operations['Spaces.space'];
     put?: never;
     post?: never;
     delete?: never;
@@ -5711,6 +5771,54 @@ export interface components {
       emailEnabled: boolean;
       emailCategories: components['schemas']['NotificationCategory'][];
     };
+    SetPageStatusRequest: {
+      status: components['schemas']['PageStatus'];
+      ownerId?: string | null;
+    };
+    /** @enum {string} */
+    PageStatus: 'none' | 'draft' | 'in-review' | 'verified' | 'outdated';
+    Page: {
+      /** Format: uuid */
+      id: string;
+      space: {
+        key: string;
+        name: string;
+      };
+      parentId: string | null;
+      ancestors: components['schemas']['PageRef'][];
+      title: string;
+      version: number;
+      content: components['schemas']['RichTextOutput'] | null;
+      publishedAt: string | null;
+      publishedBy: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      canEdit: boolean;
+      favourite: boolean;
+      draftChanged: boolean;
+      /** @enum {string} */
+      kind: 'page' | 'blog';
+      status: components['schemas']['PageStatus'];
+      owner: components['schemas']['UserRef'] | null;
+      canComment: boolean;
+      labels: string[];
+      watch: components['schemas']['PageWatchState'];
+      restrictions: {
+        view: boolean;
+        edit: boolean;
+        inherited: boolean;
+      };
+    };
+    PageRef: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+    };
+    PageWatchState: {
+      page: boolean;
+      subtree: boolean;
+      inherited: ('ancestor' | 'space') | null;
+    };
     LabelledPage: {
       /** Format: uuid */
       id: string;
@@ -5764,50 +5872,6 @@ export interface components {
     };
     UpdatePageCommentRequest: {
       body: components['schemas']['RichTextInput'];
-    };
-    Page: {
-      /** Format: uuid */
-      id: string;
-      space: {
-        key: string;
-        name: string;
-      };
-      parentId: string | null;
-      ancestors: components['schemas']['PageRef'][];
-      title: string;
-      version: number;
-      content: components['schemas']['RichTextOutput'] | null;
-      publishedAt: string | null;
-      publishedBy: components['schemas']['UserRef'] | null;
-      /** Format: date-time */
-      createdAt: string;
-      canEdit: boolean;
-      favourite: boolean;
-      draftChanged: boolean;
-      /** @enum {string} */
-      kind: 'page' | 'blog';
-      status: components['schemas']['PageStatus'];
-      owner: components['schemas']['UserRef'] | null;
-      canComment: boolean;
-      labels: string[];
-      watch: components['schemas']['PageWatchState'];
-      restrictions: {
-        view: boolean;
-        edit: boolean;
-        inherited: boolean;
-      };
-    };
-    PageRef: {
-      /** Format: uuid */
-      id: string;
-      title: string;
-    };
-    /** @enum {string} */
-    PageStatus: 'none' | 'draft' | 'in-review' | 'verified' | 'outdated';
-    PageWatchState: {
-      page: boolean;
-      subtree: boolean;
-      inherited: ('ancestor' | 'space') | null;
     };
     UpdatePageRequest: {
       title: string;
@@ -5930,10 +5994,6 @@ export interface components {
     RestoreVersionRequest: {
       /** @default  */
       comment?: string;
-    };
-    SetPageStatusRequest: {
-      status: components['schemas']['PageStatus'];
-      ownerId?: string | null;
     };
     Favourite: {
       kind: components['schemas']['FavouriteKind'];
@@ -6620,6 +6680,35 @@ export interface components {
       detail?: string;
       key?: string;
     };
+    IssueExportRequest: {
+      /** @default  */
+      query?: string;
+      /** @enum {string} */
+      format: 'csv' | 'xlsx' | 'json';
+      /** @default [] */
+      columns?: (
+        | (
+            | 'issuetype'
+            | 'status'
+            | 'priority'
+            | 'assignee'
+            | 'reporter'
+            | 'created'
+            | 'updated'
+            | 'due'
+            | 'resolution'
+            | 'labels'
+            | 'component'
+            | 'fixVersion'
+            | 'storyPoints'
+            | 'originalEstimate'
+            | 'remainingEstimate'
+            | 'timeSpent'
+          )
+        | string
+      )[];
+      headings?: string[];
+    };
     SetupStatusResponse: {
       required: boolean;
     };
@@ -6632,6 +6721,23 @@ export interface components {
         displayName: string;
         password: string;
       };
+    };
+    Blog: {
+      posts: components['schemas']['BlogPost'][];
+      months: {
+        month: string;
+        count: number;
+      }[];
+    };
+    BlogPost: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      spaceKey: string;
+      /** Format: date-time */
+      publishedAt: string;
+      author: components['schemas']['UserRef'] | null;
+      excerpt: string;
     };
     RestrictedPage: {
       /** Format: uuid */
@@ -6656,23 +6762,6 @@ export interface components {
         name: string;
       } | null;
       type: components['schemas']['SpaceType'];
-    };
-    Blog: {
-      posts: components['schemas']['BlogPost'][];
-      months: {
-        month: string;
-        count: number;
-      }[];
-    };
-    BlogPost: {
-      /** Format: uuid */
-      id: string;
-      title: string;
-      spaceKey: string;
-      /** Format: date-time */
-      publishedAt: string;
-      author: components['schemas']['UserRef'] | null;
-      excerpt: string;
     };
     CreateSpaceRequest: {
       key: components['schemas']['SpaceKey'];
@@ -11167,6 +11256,41 @@ export interface operations {
       };
     };
   };
+  'Pages.setStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetPageStatusRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Pages.pagesWithLabel': {
     parameters: {
       query?: {
@@ -12028,28 +12152,28 @@ export interface operations {
       };
     };
   };
-  'Pages.setStatus': {
+  'Pages.page': {
     parameters: {
-      query?: never;
+      query?: {
+        children?: 'true' | 'false';
+        locale?: 'de' | 'en';
+      };
       header?: never;
       path: {
         id: string;
+        format: string;
       };
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SetPageStatusRequest'];
-      };
-    };
+    requestBody?: never;
     responses: {
-      /** @description Success */
+      /** @description The file content */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['Page'];
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -13559,6 +13683,39 @@ export interface operations {
       };
     };
   };
+  'Search.search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IssueExportRequest'];
+      };
+    };
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Setup.status': {
     parameters: {
       query?: never;
@@ -13608,6 +13765,71 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Me'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.blog': {
+    parameters: {
+      query?: {
+        month?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Blog'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.feed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -13700,71 +13922,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SpaceSummary'][];
-        };
-      };
-      /** @description Error (RFC 9457 problem details) */
-      default: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['Problem'];
-        };
-      };
-    };
-  };
-  'Spaces.blog': {
-    parameters: {
-      query?: {
-        month?: string;
-        limit?: number;
-      };
-      header?: never;
-      path: {
-        key: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Success */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Blog'];
-        };
-      };
-      /** @description Error (RFC 9457 problem details) */
-      default: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['Problem'];
-        };
-      };
-    };
-  };
-  'Spaces.feed': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        key: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The file content */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -14213,6 +14370,40 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['TrashedPage'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.space': {
+    parameters: {
+      query?: {
+        locale?: 'de' | 'en';
+      };
+      header?: never;
+      path: {
+        key: string;
+        format: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
         };
       };
       /** @description Error (RFC 9457 problem details) */
