@@ -61,10 +61,14 @@ export class SpaceService {
     if (!(await this.access.hasGlobal(principal.userId, 'create-spaces'))) {
       throw new ForbiddenException('Requires the global permission "create-spaces"');
     }
+    // Linking needs administer on the project, as when linking later (E-60).
+    const projectId = request.projectKey
+      ? await this.linkableProject(principal, request.projectKey)
+      : null;
     const id = uuidv7();
     try {
       await this.database.db.transaction((tx) =>
-        this.insertSpace(tx, principal.userId, id, request),
+        this.insertSpace(tx, principal.userId, id, request, projectId),
       );
     } catch (error) {
       if (isUniqueViolation(error))
@@ -77,7 +81,10 @@ export class SpaceService {
       via: principal.via,
       targetType: 'space',
       targetId: id,
-      details: { key: request.key },
+      details: {
+        key: request.key,
+        ...(request.projectKey ? { projectKey: request.projectKey } : {}),
+      },
     });
     return this.get(principal, request.key);
   }

@@ -8747,6 +8747,7 @@ export interface components {
       description?: string;
       /** @enum {string} */
       type?: 'team' | 'project' | 'documentation';
+      projectKey?: string | null;
     };
     SpaceKey: string;
     UpdateSpaceRequest: {

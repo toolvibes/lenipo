@@ -17,7 +17,7 @@ import type {
 } from '@toolvibes/shared';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { groups, projectRoleMembers, projects } from '../db/schema/index.js';
+import { groups, projectRoleMembers, projects, spaces as spacesTable } from '../db/schema/index.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 
@@ -287,6 +287,31 @@ describe('project link (E-60)', () => {
     expect((await mira.request('PATCH', '/spaces/DOCS', { projectKey: null })).status).toBe(403);
     const spaces = await olaf.request<SpaceSummary[]>('GET', '/projects/WEB/spaces');
     expect(spaces.body.map((space) => space.key)).toEqual(['DOCS']);
+  });
+
+  it('links a project right when creating a space (TL-83)', async () => {
+    const refused = await mira.request('POST', '/spaces', {
+      key: 'WEBDOC',
+      name: 'Web-Doku',
+      projectKey: 'WEB',
+    });
+    expect(refused.status).toBe(403);
+    const created = await admin.request<Space>('POST', '/spaces', {
+      key: 'WEBDOC',
+      name: 'Web-Doku',
+      projectKey: 'WEB',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.project).toEqual({ key: 'WEB', name: 'Web-Relaunch' });
+    const general = await admin.request<Space>('POST', '/spaces', {
+      key: 'ALLG',
+      name: 'Allgemein',
+    });
+    expect(general.body.project).toBeNull();
+    // Both spaces go again, so later tests see the same spaces as before.
+    for (const key of ['WEBDOC', 'ALLG']) {
+      await test.database.db.delete(spacesTable).where(eq(spacesTable.key, key));
+    }
   });
 
   it('shows the link only to those who may see the other side', async () => {

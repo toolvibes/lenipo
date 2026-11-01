@@ -69,7 +69,6 @@ export const en: Messages = {
     lore: 'Wiki',
     noProjects: 'No projects yet.',
     allProjects: 'All projects',
-    allSpaces: 'All wiki spaces',
     allBoards: 'All boards',
     settings: 'Settings',
   },
@@ -2646,6 +2645,22 @@ export const en: Messages = {
     collapse: 'Collapse',
     expandLines_one: 'Show {{count}} line',
     expandLines_other: 'Show {{count}} lines',
+  },
+  wikiHome: {
+    title: 'Wiki',
+    start: 'Start page',
+    intro:
+      'Knowledge from every space: general spaces for the whole team and the spaces of projects.',
+    search: 'Search the wiki',
+    searchPlaceholder: 'Search pages of all spaces …',
+    noResults: 'No page found.',
+    changed: 'Recently changed',
+    generalSpaces: 'General spaces',
+    projectSpaces: 'Project spaces',
+    belongsTo: 'Belongs to',
+    general: 'General (no project)',
+    belongsHelp:
+      'A project space also shows in the project navigation; linking needs project administration.',
   },
   wiki: {
     onThisPage: 'On this page',

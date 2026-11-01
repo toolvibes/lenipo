@@ -59,6 +59,8 @@ export const CreateSpaceRequest = z
     name: SpaceName,
     description: z.string().max(2000).default(''),
     type: SpaceType.exclude(['personal']).optional(),
+    /** Belongs to this project from the start; without it a general space (TL-83, E-130). */
+    projectKey: z.string().trim().min(1).max(20).nullable().optional(),
   })
   .meta({ id: 'CreateSpaceRequest' });
 export type CreateSpaceRequest = z.infer<typeof CreateSpaceRequest>;

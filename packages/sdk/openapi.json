@@ -28003,6 +28003,18 @@
           "type": {
             "type": "string",
             "enum": ["team", "project", "documentation"]
+          },
+          "projectKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": ["key", "name"]

@@ -10,7 +10,7 @@ import { favouritesQuery } from '../../lib/personal';
 import { initials, presenceColor } from '../../lib/presence';
 import { useCurrentProjectKey } from '../../lib/shortcuts';
 import { projectsQuery } from '../../lib/tracking';
-import { projectSpacesQuery } from '../../lib/wiki';
+import { projectSpacesQuery, spacesQuery } from '../../lib/wiki';
 import { LogoMark } from '../../ui/Logo';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { TimerBar } from '../time/TimerBar';
@@ -145,7 +145,10 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
 function OtherFavourites({ path }: { path: string }) {
   const { t } = useTranslation();
   const favourites = useQuery(favouritesQuery);
-  const list = (favourites.data ?? []).filter((favourite) => favourite.kind !== 'project');
+  // Starred spaces are listed in the wiki section (TL-83).
+  const list = (favourites.data ?? []).filter(
+    (favourite) => favourite.kind !== 'project' && favourite.kind !== 'space',
+  );
   if (list.length === 0) return null;
   const row = (favourite: Favourite) => {
     if (favourite.kind === 'filter') {
@@ -178,17 +181,6 @@ function OtherFavourites({ path }: { path: string }) {
         </NavRow>
       );
     }
-    if (favourite.kind === 'space') {
-      return (
-        <NavRow
-          to="/spaces/$key"
-          params={{ key: favourite.ref }}
-          active={path === `/spaces/${favourite.ref}`}
-        >
-          <span className="truncate">{favourite.name}</span>
-        </NavRow>
-      );
-    }
     return (
       <NavRow
         to="/spaces/$key/pages/$id"
@@ -204,6 +196,43 @@ function OtherFavourites({ path }: { path: string }) {
       <SectionLabel>{t('favourites.title')}</SectionLabel>
       {list.map((favourite) => (
         <div key={`${favourite.kind}:${favourite.id}`}>{row(favourite)}</div>
+      ))}
+    </div>
+  );
+}
+
+/** How many spaces the wiki section lists before "all spaces" takes over. */
+const WIKI_SPACES = 8;
+
+/**
+ * The wiki on its own, apart from projects (TL-83, E-130): its start page, then starred spaces
+ * and the general ones that belong to no project.
+ */
+function WikiSection({ path }: { path: string }) {
+  const { t } = useTranslation();
+  const spaces = useQuery(spacesQuery);
+  const listed = (spaces.data ?? [])
+    .filter((space) => space.type !== 'personal' && (space.favourite || !space.project))
+    .sort((a, b) => Number(b.favourite) - Number(a.favourite) || a.name.localeCompare(b.name))
+    .slice(0, WIKI_SPACES);
+  return (
+    <div className="flex flex-col gap-px">
+      <SectionLabel>{t('wikiHome.title')}</SectionLabel>
+      <NavRow to="/spaces" active={path === '/spaces'}>
+        {t('wikiHome.start')}
+      </NavRow>
+      {listed.map((space) => (
+        <NavRow
+          key={space.id}
+          to="/spaces/$key"
+          params={{ key: space.key }}
+          active={path === `/spaces/${space.key}` || path.startsWith(`/spaces/${space.key}/`)}
+        >
+          <span className="min-w-0 flex-1 truncate">{space.name}</span>
+          <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
+            {space.key}
+          </span>
+        </NavRow>
       ))}
     </div>
   );
@@ -304,6 +333,8 @@ export function Sidebar({
         )}
       </div>
 
+      {modules.wiki && <WikiSection path={path} />}
+
       <OtherFavourites path={path} />
 
       {modules['time-tracking'] && <TimerBar />}
@@ -312,11 +343,6 @@ export function Sidebar({
         <NavRow to="/projects" active={path === '/projects'}>
           {t('sidebar.allProjects')}
         </NavRow>
-        {modules.wiki && (
-          <NavRow to="/spaces" active={path === '/spaces'}>
-            {t('sidebar.allSpaces')}
-          </NavRow>
-        )}
         {modules.boards && (
           <NavRow to="/boards" active={path === '/boards'}>
             {t('sidebar.allBoards')}

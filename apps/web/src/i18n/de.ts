@@ -70,7 +70,6 @@ export const de = {
     lore: 'Wiki',
     noProjects: 'Noch keine Projekte.',
     allProjects: 'Alle Projekte',
-    allSpaces: 'Alle Wiki-Bereiche',
     allBoards: 'Alle Boards',
     settings: 'Einstellungen',
   },
@@ -2692,6 +2691,22 @@ export const de = {
     collapse: 'Einklappen',
     expandLines_one: '{{count}} Zeile anzeigen',
     expandLines_other: '{{count}} Zeilen anzeigen',
+  },
+  wikiHome: {
+    title: 'Wiki',
+    start: 'Startseite',
+    intro:
+      'Das Wissen aller Bereiche: allgemeine Bereiche für das ganze Team und die Bereiche der Projekte.',
+    search: 'Im Wiki suchen',
+    searchPlaceholder: 'Seiten aller Bereiche durchsuchen …',
+    noResults: 'Keine Seite gefunden.',
+    changed: 'Zuletzt geändert',
+    generalSpaces: 'Allgemeine Bereiche',
+    projectSpaces: 'Bereiche der Projekte',
+    belongsTo: 'Gehört zu',
+    general: 'Allgemein (ohne Projekt)',
+    belongsHelp:
+      'Ein Projekt-Bereich erscheint auch in der Navigation des Projekts; dafür braucht es die Projektadministration.',
   },
   wiki: {
     onThisPage: 'Auf dieser Seite',

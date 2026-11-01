@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=3 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=4 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -7,7 +7,7 @@ Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suc
 
 Nach der ersten Anmeldung führen drei kurze Schritte durch Profil, Sprache und einen Start: ein Scrum- oder Kanban-Projekt mit Board und eigenem Wiki-Bereich, oder nur ein Wiki-Bereich. Alles lässt sich später ändern; „Überspringen“ führt direkt zur Startseite.
 
-Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen, die Projekte (das aktuelle mit Backlog, Board, Timeline, Berichten, Kalender, Releases und Wiki) und Favoriten. Auf dem Handy öffnet das Menüsymbol oben links die Seitenleiste.
+Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen, die Projekte (das aktuelle mit Backlog, Board, Timeline, Berichten, Kalender, Releases und Wiki), den Abschnitt Wiki und Favoriten. Auf dem Handy öffnet das Menüsymbol oben links die Seitenleiste.
 
 ## Vorgänge
 
@@ -41,7 +41,8 @@ Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Fi
 
 ## Wiki
 
-- **Bereiche** enthalten Seiten in einem Baum; jedes Projekt kann einen eigenen Bereich haben.
+- **Wiki in der Seitenleiste:** Der Abschnitt „Wiki“ führt zur Wiki-Startseite und zu favorisierten und allgemeinen Bereichen, egal welches Projekt gerade offen ist. Die Startseite sucht in allen Bereichen und zeigt, was zuletzt geändert und besucht wurde.
+- **Bereiche** enthalten Seiten in einem Baum. Ein Bereich ist allgemein (für das ganze Team) oder gehört zu einem Projekt; das wählt man beim Anlegen.
 - **Bearbeiten** geschieht gemeinsam in Echtzeit: Mehrere Personen schreiben gleichzeitig, jede sieht die anderen. „Veröffentlichen“ macht den Entwurf zur neuen Version.
 - **Makros** über `/` im Editor: Inhaltsverzeichnis, Info-Kästen, Vorgangslisten per TQL, Diagramme (Mermaid), Seitenbäume, Einbettungen und mehr.
 - **Vorlagen** und Blueprints (Besprechungsnotizen, Entscheidungen, Retrospektive …) beim Anlegen einer Seite.
