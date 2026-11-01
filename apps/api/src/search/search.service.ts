@@ -17,6 +17,7 @@ import {
   inArray,
   isNull,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
@@ -153,6 +154,9 @@ export class SearchService {
     return {
       ...compiled,
       where: and(compiled.where, securityVisible(principal.userId)),
+      ...(compiled.rowWhere
+        ? { rowWhere: and(compiled.rowWhere, securityVisible(principal.userId)) }
+        : {}),
       projectIds,
       timeZone,
     };
@@ -169,30 +173,41 @@ export class SearchService {
       offset: request.offset,
     };
     if (compiled.projectIds.length === 0) return empty;
-    const where = and(
-      inArray(issues.projectId, compiled.projectIds),
-      isNull(issues.deletedAt),
-      compiled.where,
-    );
-    const [rows, [total]] = await Promise.all([
+    const scope = (conditions: SQL | undefined) =>
+      and(inArray(issues.projectId, compiled.projectIds), isNull(issues.deletedAt), conditions);
+    const where = scope(compiled.where);
+    const list = (conditions: SQL | undefined) =>
       this.database.db
         .select(issueColumns)
         .from(issues)
-        .where(where)
+        .where(conditions)
         .orderBy(...compiled.orderBy)
         .limit(request.limit)
-        .offset(request.offset),
-      // Counted up to one past the cap: enough to say "more than", without counting a million.
-      this.database.db.select({ total: count() }).from(
+        .offset(request.offset);
+    // Counted up to one past the cap: enough to say "more than", without counting a million.
+    const countOf = async (conditions: SQL | undefined) => {
+      const [row] = await this.database.db.select({ total: count() }).from(
         this.database.db
           .select({ one: sql`1` })
           .from(issues)
-          .where(where)
+          .where(conditions)
           .limit(SEARCH_TOTAL_CAP + 1)
           .as('matches'),
-      ),
-    ]);
-    const counted = total?.total ?? 0;
+      );
+      return row?.total ?? 0;
+    };
+    let rows: Awaited<ReturnType<typeof list>>;
+    let counted: number;
+    if (compiled.rowWhere) {
+      // Full text: a common word matches too many issues to collect and sort them all; then the
+      // sort order is walked and each issue checked. A rare one is collected through the index
+      // (TL-90). Which one it is, the capped count tells, and that is fast both ways.
+      const rowWhere = scope(compiled.rowWhere);
+      counted = await countOf(rowWhere);
+      rows = await list(counted > SEARCH_TOTAL_CAP ? rowWhere : where);
+    } else {
+      [rows, counted] = await Promise.all([list(where), countOf(where)]);
+    }
     return {
       issues: await this.issueService.summarize(principal.userId, rows),
       total: Math.min(counted, SEARCH_TOTAL_CAP),

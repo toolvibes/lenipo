@@ -75,6 +75,11 @@ export interface CompileContext {
 export interface CompiledQuery {
   where: SQL | undefined;
   orderBy: SQL[];
+  /**
+   * With full text: the same conditions checked row by row, for when the text matches so many
+   * issues that walking the sort order beats collecting all matches first (TL-90).
+   */
+  rowWhere?: SQL | undefined;
 }
 
 type Item = ValueOperand | FunctionOperand;
@@ -126,6 +131,9 @@ export class TqlCompiler {
   private issuesByKey = new Map<string, string>();
   private sprintsByValue = new Map<string, string[]>();
   private versionsByValue = new Map<string, string[]>();
+  /** Whether the query searches text, and in which of the two forms (TL-90). */
+  private hasText = false;
+  private textByRow = false;
 
   constructor(
     private readonly db: Executor,
@@ -135,7 +143,14 @@ export class TqlCompiler {
   async compile(query: Query): Promise<CompiledQuery> {
     await this.resolveReferences(query.where);
     const where = query.where ? this.expression(query.where) : undefined;
-    return { where, orderBy: this.orderBy(query) };
+    const orderBy = this.orderBy(query);
+    if (!this.hasText || !query.where) return { where, orderBy };
+    // Same clauses again, now with text matches per row; errors were collected the first time.
+    const errors = this.errors.length;
+    this.textByRow = true;
+    const rowWhere = this.expression(query.where);
+    this.errors.length = errors;
+    return { where, orderBy, rowWhere };
   }
 
   // ---------------------------------------------------------------- references
@@ -715,6 +730,7 @@ export class TqlCompiler {
     if (item?.kind !== 'value') return sql`false`;
     const query = this.tsQuery(item, clause.field);
     if (!query) return sql`false`;
+    this.hasText = true;
     const inIssue = (weight: 'a' | 'b' | null) =>
       weight
         ? sql`(${issues.searchVector} @@ ${query} and ts_filter(${issues.searchVector}, ${`{${weight}}`}::"char"[]) @@ ${query})`
@@ -722,7 +738,10 @@ export class TqlCompiler {
     // Uncorrelated, so both GIN indexes do the work instead of a check per issue (TL-44, E-125).
     const commented = sql`select ${issueComments.issueId} from ${issueComments}
       where ${issueComments.deletedAt} is null and ${issueComments.searchVector} @@ ${query}`;
-    const inComments = sql`${issues.id} in (${commented})`;
+    // Row by row, the commented issues come as one array computed once (TL-90).
+    const inComments = this.textByRow
+      ? sql`${issues.id} = any(array(${commented}))`
+      : sql`${issues.id} in (${commented})`;
     let match: SQL;
     switch (clause.field.id) {
       case 'summary':
@@ -735,7 +754,9 @@ export class TqlCompiler {
         match = inComments;
         break;
       default:
-        match = sql`${issues.id} in (
+        match = this.textByRow
+          ? sql`(${issues.searchVector} @@ ${query} or ${inComments})`
+          : sql`${issues.id} in (
           select ${issues.id} from ${issues} where ${issues.searchVector} @@ ${query}
           union all ${commented})`;
     }
