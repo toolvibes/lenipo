@@ -1,119 +1,162 @@
-# Lenipo: Projektplan
+# Lenipo
 
-> **Lenipo** (früher Tasklore, E-129). Eine selbst gehostete Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center**: eine Plattform, eine Datenbank, ein Login.
+**Projekte, Aufgaben und Wissen – einfach verbunden.** Lenipo ist eine selbst gehostete Plattform für Vorgänge, Boards und Wiki: eine Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center** mit einer Anwendung, einer Datenbank und einem Login.
 
-Repository: https://github.com/toolvibes/lenipo (privat)
+Website: <https://lenipo.de> · Früherer Projektname: Tasklore (siehe [E-129](docs/08-entscheidungen.md))
 
-## Worum es geht
+> **Stand:** in Entwicklung, noch vor Version 1.0. Eine Lizenz ist noch nicht festgelegt (E-02); bis dahin gilt für den Code „alle Rechte vorbehalten“.
 
-Atlassian hat die Server-Produkte eingestellt. Was bleibt, sind die Cloud-Version oder sehr teures Data Center. Wir bauen das nach, was die Server-Versionen stark gemacht hat:
+## Was Lenipo kann
 
-- **Tracking (Jira-Teil):** Projekte, frei konfigurierbare Vorgangstypen, Felder und Workflows, Scrum- und Kanban-Boards, Backlog, Sprints, Releases, Roadmaps, Berichte und eine eigene Abfragesprache (wie JQL).
-- **Wiki (Confluence-Teil):** Bereiche, Seitenbäume, ein Editor, in dem mehrere Leute **gleichzeitig live** an einer Seite schreiben, Makros, Vorlagen, Versionshistorie, Inline-Kommentare.
-- **Für Entwickler und Maschinen:** Eine vollständige REST-API (API-first), Webhooks, ein **MCP-Server** für KI-Agenten, eine CLI und Git-Anbindung.
-- **Administration:** Benutzer, Gruppen, SSO, Berechtigungsschemata, Audit-Log, Backup und Restore, Import aus Jira und Confluence.
+- **Vorgänge und Boards:** Projekte mit eigenen Vorgangstypen, Feldern und Workflows (Regeln, Übergangsmasken), Scrum- und Kanban-Boards, Backlog, Sprints, Releases, Timeline, Kalender und Berichte.
+- **Wiki:** Bereiche (allgemein oder zu einem Projekt) mit Seitenbäumen, gemeinsames Bearbeiten in Echtzeit, Makros, Vorlagen, Versionen, Inline-Kommentare, Export als Word, Markdown, HTML oder PDF.
+- **Suche:** die Abfragesprache **TQL** (nah an JQL), gespeicherte Filter mit Abonnements, Dashboards und eine globale Suche über Vorgänge, Seiten, Projekte und Bereiche.
+- **Automatisierung und Anbindung:** Regeln auf Ereignisse, Zeitpläne und eingehende Webhooks; ausgehende Webhooks und Chat-Nachrichten (Slack, Teams, Mattermost, Rocket.Chat); Git-Anbindung.
+- **Für Entwickler und KI-Assistenten:** REST-API mit OpenAPI, TypeScript-SDK, Kommandozeile `lenipo`, OAuth-Apps und ein eingebauter **MCP-Server**.
+- **Administration:** Gruppen und Berechtigungsschemata, Sicherheitsstufen, SSO über OIDC, SAML und LDAP, Zwei-Faktor-Anmeldung, Audit-Log, Backup und Wiederherstellung, Import aus Jira und Confluence.
+- **Barrierefrei** nach WCAG 2.1 AA, als App installierbar, Oberfläche auf Deutsch und Englisch.
 
-## Dokumente
+## Lokal starten
 
-Die Dokumentation lebt im eigenen Wiki (Wiki-Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md).
+### Voraussetzungen
 
-| # | Dokument | Inhalt |
-|---|----------|--------|
-| 1 | [Vision & Scope](docs/01-vision-scope.md) | Ziele, Zielgruppen, Leitprinzipien, was wir bewusst nicht machen |
-| 2 | [Features: Tracking (Jira)](docs/02-features-tracking.md) | Vorgänge, Workflows, Boards, Sprints, Releases, Berichte, Abfragesprache |
-| 3 | [Features: Wiki (Confluence)](docs/03-features-wiki.md) | Bereiche, Seiten, Live-Editor, Makros, Vorlagen, Historie |
-| 4 | [Plattform & Administration](docs/04-plattform-admin.md) | Benutzer, Rechte, Benachrichtigungen, Suche, Admin-Konsole, Betrieb |
-| 5 | [API, MCP & Entwickler-Tools](docs/05-api-mcp-devtools.md) | REST-API, Webhooks, MCP-Server, CLI, SDK, Git-Integration |
-| 6 | [Architektur & Technik](docs/06-architektur.md) | Stack, Module, Datenmodell, Echtzeit, Suche, Sicherheit, Deployment |
-| 7 | [Roadmap](docs/07-roadmap.md) | Phasen, Meilensteine, MVP, Definition of Done, Risiken |
-| 8 | [Entscheidungen](docs/08-entscheidungen.md) | Offene und getroffene Architekturentscheidungen |
-| 9 | [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
-| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
-| 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
-| 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
+- **Node.js 24** oder neuer
+- **pnpm 11** (`corepack enable` aktiviert die im Repository festgelegte Version)
+- **Docker** mit Compose, für PostgreSQL, Valkey, S3-Speicher und ein Test-Postfach
 
-## Priorisierung
-
-Jedes Feature hat eine ID (z. B. `T-BRD-03`) und eine Priorität:
-
-- **P1**: gehört zum MVP. Ohne das können wir das Tool nicht selbst nutzen.
-- **P2**: gehört zu Version 1.0, also zum vollwertigen Ersatz für Jira/Confluence Server.
-- **P3**: kommt später oder ist optional.
-
-## Leitidee für die Umsetzung
-
-Seit dem MVP (Ende Phase 3) **verwalten wir die Weiterentwicklung im Tool selbst**: Diese Dokumentation ist ins eigene Wiki umgezogen (Bereich `TL`), der Backlog steht im Projekt `TL` (ein Epic je Roadmap-Phase). So merken wir früh, was im Alltag fehlt.
-
-## Entwicklung
-
-Voraussetzungen: Node 24+, pnpm 11, Docker.
+### Erster Start
 
 ```bash
+git clone https://github.com/toolvibes/lenipo.git
+cd lenipo
 cp .env.example .env      # Standardwerte passen zu docker-compose.yml
 pnpm install
-pnpm infra:up             # PostgreSQL (5440), Valkey (6380), RustFS als S3 (9010, Konsole 9011), Mailpit (SMTP 1026, Postfach http://localhost:8026)
+pnpm infra:up             # Dienste im Hintergrund starten (siehe Tabelle unten)
 pnpm dev                  # API :4000, Collab-Server :4001, Web :5173
 ```
 
-Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dokument live. Mit `?doc=page:<name>` lassen sich weitere Dokumente öffnen.
+Dann <http://localhost:5173> öffnen. Beim allerersten Start gibt es noch keinen Administrator: Die Seite leitet zu `/setup`, und im Log der API steht ein **Einrichtungscode** (Feld `setupCode`). Mit ihm legt der Assistent das erste Konto an; danach führen drei kurze Schritte zu einem ersten Projekt oder Wiki-Bereich. Die Migrationen der Datenbank laufen beim Start der API automatisch.
+
+| Dienst aus `docker-compose.yml` | Adresse |
+| --- | --- |
+| PostgreSQL 17 | `localhost:5440` (Benutzer, Passwort und Datenbank `tasklore`) |
+| Valkey (Redis-kompatibel) | `localhost:6380` |
+| RustFS als S3-Speicher | `localhost:9010`, Konsole <http://localhost:9011> |
+| Mailpit (alle E-Mails landen hier) | SMTP `localhost:1026`, Postfach <http://localhost:8026> |
+| Keycloak für OIDC, optional | `docker compose --profile oidc up -d keycloak`, siehe [dev/keycloak](dev/keycloak/README.md) |
+
+Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vor der Umbenennung und bleiben, damit vorhandene Entwicklungsdaten erhalten bleiben (E-129). Anhänge liegen standardmäßig in `apps/api/data/files`; für S3 die `S3_*`-Zeilen in `.env` einkommentieren.
+
+`pnpm infra:down` stoppt die Dienste, die Daten bleiben in Docker-Volumes.
+
+### Prüfen
 
 | Befehl | Zweck |
-|--------|-------|
+| --- | --- |
 | `pnpm lint` / `pnpm format` | Biome prüfen / automatisch korrigieren |
 | `pnpm typecheck` | TypeScript in allen Paketen |
-| `pnpm test` | Unit-Tests (Vitest) |
+| `pnpm test` | Unit- und Integrationstests (Vitest); jede Testdatei bekommt eine eigene, frische Datenbank im lokalen PostgreSQL |
+| `pnpm --filter @toolvibes/web e2e` | End-to-End- und Barrierefreiheitstests mit Playwright (lokal im installierten Chrome) |
 | `pnpm build` | Alle Pakete bauen |
-| `pnpm db:generate` | Migration aus dem Drizzle-Schema erzeugen |
-| `pnpm db:migrate` | Migrationen anwenden (passiert auch beim API-Start) |
+| `pnpm migrations:check` | Migrationen müssen Updates ohne Ausfall erlauben |
 | `pnpm licenses:check` | Nur permissive Lizenzen in Produktionsabhängigkeiten |
+| `node tools/loadtest/run.mjs --smoke` | Kleiner Lasttest (voll ohne `--smoke`, siehe [Lasttests](docs/12-lasttests.md)) |
 
-### KI-Agenten (MCP)
+Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://localhost:9010` mit `TEST_S3_ACCESS_KEY_ID=tasklore` und `TEST_S3_SECRET_ACCESS_KEY=tasklore-dev-secret`), die Valkey-Tests nur mit `TEST_REDIS_URL`. Die CI in `.github/workflows/ci.yml` führt alles zusammen aus.
 
-Lenipo hat einen eingebauten MCP-Server unter `/mcp` (E-52) mit Werkzeugen, Ressourcen (`lenipo://issue/WEB-1` …) und Prompts (E-114). Clients melden sich per OAuth im Browser an (E-115), zum Beispiel in Claude Code:
+### Weitere Befehle
 
-```bash
-claude mcp add --transport http lenipo http://localhost:5173/mcp
-```
+| Befehl | Zweck |
+| --- | --- |
+| `pnpm db:generate` | Migration aus dem Drizzle-Schema erzeugen |
+| `pnpm db:migrate` | Migrationen von Hand anwenden |
+| `pnpm api:generate` | OpenAPI-Beschreibung und SDK neu erzeugen |
+| `pnpm design:tokens` | `tokens.css` aus `design/tokens.json` erzeugen |
+| `node scripts/build-app-icons.mjs` | App-Icons und Favicon aus der Bildmarke rendern |
 
-Alternativ mit einem Personal Access Token aus „Profil → Tokens“: `--header "Authorization: Bearer <token>"`. Der Agent arbeitet mit den Rechten der Person; seine Änderungen stehen in der Historie als „über MCP“. Verbundene Anwendungen lassen sich im Profil trennen.
+## Betrieb
 
-### Kommandozeile (`lenipo`)
-
-Das Paket `packages/cli` bringt `lenipo` mit (veralteter Kurzname `tl`) (E-117): Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown samt Ordner-Abgleich und eine stdio-MCP-Brücke für Clients, die nur Programme starten.
-
-```bash
-pnpm --filter @toolvibes/cli build && node packages/cli/dist/main.js login http://localhost:5173
-```
-
-`lenipo help` zeigt alle Befehle; `lenipo completion zsh` liefert die Shell-Vervollständigung. In CI ersetzen `LENIPO_URL` und `LENIPO_TOKEN` das Profil.
-
-### Produktion
+### Ein Server mit Docker Compose
 
 ```bash
 cd deploy
 POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --build
 ```
 
-Startet Lenipo (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Anhänge landen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, mit `--profile s3` startet zusätzlich RustFS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
-
-Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Daten und Anhängen im Dateispeicher ab (die letzten drei bleiben), von Hand oder per Cronjob mit `lenipo admin backup create` und `lenipo admin backup download <id>`. Wiederhergestellt wird in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das Backup hochladen.
-
-Betrieb (E-121): Administration → Betrieb schaltet Module ab, setzt den Wartungsmodus und einen Ankündigungsbanner und begrenzt Anfragen je Person, Token und IP. Mit `REDIS_URL` (Valkey) gelten die Grenzen über alle Instanzen; `RATE_LIMITS=false` schaltet sie ab, wenn ein Gateway davor schon begrenzt.
+Startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
 
 ### Kubernetes
 
 ```bash
-helm install lenipo deploy/helm/lenipo --set image.repository=<registry>/lenipo --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' --set ingress.host=lenipo.example.org
+helm install lenipo deploy/helm/lenipo --set image.repository=<registry>/lenipo \
+  --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' \
+  --set ingress.host=lenipo.example.org
 ```
 
-Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen als Job vor jedem Update; PostgreSQL, Valkey und S3 laufen außerhalb (E-123). Updates rollen ohne Ausfall, solange Migrationen die Regel „erst erweitern, dann aufräumen“ einhalten (`pnpm migrations:check`). Metriken: `METRICS_PORT` (im Chart 9464) unter `/metrics`; Traces mit `OTEL_EXPORTER_OTLP_ENDPOINT`.
+Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen als Job vor jedem Update; PostgreSQL, Valkey und S3 laufen außerhalb.
 
-### Aufbau
+Konfiguration, Anmeldung, Rechte, Backups, Updates, Überwachung und Fehlersuche beschreibt das **[Admin-Handbuch](docs/09-admin-handbuch.md)**.
+
+## KI-Assistenten (MCP) und Kommandozeile
+
+Der eingebaute MCP-Server unter `/mcp` bietet Werkzeuge, Ressourcen (`lenipo://issue/WEB-1` …) und Prompts. Clients melden sich per OAuth im Browser an, zum Beispiel in Claude Code:
+
+```bash
+claude mcp add --transport http lenipo http://localhost:5173/mcp
+```
+
+Alternativ mit einem persönlichen Token aus „Profil → Tokens“: `--header "Authorization: Bearer <token>"`. Der Assistent arbeitet mit den Rechten der Person.
+
+Die Kommandozeile liegt in `packages/cli`:
+
+```bash
+pnpm --filter @toolvibes/cli build
+node packages/cli/dist/main.js login http://localhost:5173
+```
+
+`lenipo help` zeigt alle Befehle (Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown, Backups, Importe, stdio-MCP-Brücke). In CI ersetzen `LENIPO_URL` und `LENIPO_TOKEN` das Profil.
+
+## Aufbau
 
 ```
-apps/api      NestJS 12: REST-API, Collab-Server (Hocuspocus), später Worker; Rolle über MODE
-apps/web      React 19 + Vite: Oberfläche, TipTap-Editor
-packages/     geteilter Code (@toolvibes/shared)
-docs/         Projektplan
-design/       Design-Tokens (Quelle für tokens.css), Links zu Design-System und Kernansichten
+apps/api         NestJS: REST-API, Collab-Server (Hocuspocus), Worker; Rolle über MODE
+apps/web         React 19 + Vite: Oberfläche mit TipTap-Editor, PWA
+packages/shared  Schemas und Typen für API und Oberfläche (Zod)
+packages/editor  Editor-Erweiterungen und Markdown-Abgleich
+packages/tql     Parser der Abfragesprache TQL
+packages/sdk     TypeScript-SDK, erzeugt aus der OpenAPI-Beschreibung
+packages/cli     Kommandozeile lenipo
+tools/           Lasttest und Code-Erzeugung
+deploy/          Docker Compose, Caddy und Helm-Chart für den Betrieb
+design/          Design-Tokens
+docs/            Dokumentation (Schnappschuss aus dem eigenen Wiki)
+scripts/         Prüfungen und Generatoren
 ```
+
+## Dokumentation
+
+| # | Dokument | Inhalt |
+| --- | --- | --- |
+| 1 | [Vision & Scope](docs/01-vision-scope.md) | Ziele, Zielgruppen, Leitprinzipien, was wir bewusst nicht machen |
+| 2 | [Features: Tracking](docs/02-features-tracking.md) | Vorgänge, Workflows, Boards, Sprints, Releases, Berichte, Abfragesprache |
+| 3 | [Features: Wiki](docs/03-features-wiki.md) | Bereiche, Seiten, Live-Editor, Makros, Vorlagen, Historie |
+| 4 | [Plattform & Administration](docs/04-plattform-admin.md) | Benutzer, Rechte, Benachrichtigungen, Suche, Admin-Konsole, Betrieb |
+| 5 | [API, MCP & Entwickler-Tools](docs/05-api-mcp-devtools.md) | REST-API, Webhooks, MCP-Server, CLI, SDK, Git-Integration |
+| 6 | [Architektur & Technik](docs/06-architektur.md) | Stack, Module, Datenmodell, Echtzeit, Suche, Sicherheit, Deployment |
+| 7 | [Roadmap](docs/07-roadmap.md) | Phasen, Meilensteine, Definition of Done, Risiken |
+| 8 | [Entscheidungen](docs/08-entscheidungen.md) | Getroffene und offene Entscheidungen |
+| 9 | [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
+| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
+| 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
+| 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
+
+Die Dokumentation lebt im Wiki von Lenipo selbst (Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md). Seit dem MVP wird Lenipo mit Lenipo entwickelt: Der Backlog steht im Projekt `TL`, je Roadmap-Phase ein Epic.
+
+## Mitwirken
+
+- Vor einem Commit `pnpm lint`, `pnpm typecheck` und `pnpm test` ausführen; bei Änderungen an der Oberfläche auch die End-to-End-Tests.
+- Neue Abhängigkeiten brauchen eine permissive Lizenz und sollten mindestens zwei Wochen alt sein.
+- Größere Entscheidungen kommen mit Begründung in die [Entscheidungen](docs/08-entscheidungen.md) (E-Nummer).
+- Commit-Nachrichten auf Deutsch, im Stil `feat: …`, `fix: …`, `perf: …` mit Story-Nummer.
+
+Sicherheitslücken bitte nicht öffentlich als Issue melden, sondern über [SECURITY.md](SECURITY.md).
