@@ -24,6 +24,7 @@ import { FieldEditor } from './CustomFields';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueTypeIcon, PriorityIcon, useMetaName } from './icons';
 import { useDuration } from './TimeTracking';
+import { type TransitionExtras, useTransitionScreen } from './TransitionDialog';
 import { Avatar, UserPicker } from './UserPicker';
 
 type Column = 'key' | 'summary' | ListColumn;
@@ -99,16 +100,38 @@ function useListEdit() {
     onSuccess: (issue) => refresh(issue.key),
   });
   const transition = useMutation({
-    mutationFn: ({ key, transitionId }: { key: string; transitionId: string }) =>
+    mutationFn: ({
+      key,
+      transitionId,
+      extras,
+    }: {
+      key: string;
+      transitionId: string;
+      extras?: TransitionExtras;
+    }) =>
       unwrap(
         client.POST('/api/v1/issues/{key}/transitions', {
           params: { path: { key } },
-          body: { transitionId },
+          body: { transitionId, ...extras },
         }),
       ),
     onSuccess: (issue) => refresh(issue.key),
   });
-  return { update, transition, error: update.error ?? transition.error };
+  const screen = useTransitionScreen((issue, transitionId, extras) =>
+    transition.mutateAsync({ key: issue.key, transitionId, extras }),
+  );
+  const move = async (issue: IssueSummary, transitionId: string) => {
+    if (await screen.ask(issue, (offered) => offered.find((entry) => entry.id === transitionId))) {
+      return;
+    }
+    transition.mutate({ key: issue.key, transitionId });
+  };
+  return {
+    update,
+    move,
+    screen: screen.dialog,
+    error: update.error ?? (screen.dialog ? null : transition.error),
+  };
 }
 
 /** A plain left click; anything else (new tab, copy link) is left to the browser. */
@@ -251,7 +274,7 @@ export function IssueTable({
   const duration = useDuration();
   const me = useQuery(meQuery).data;
   const meta = useQuery(trackingMetaQuery).data;
-  const { update, transition, error } = useListEdit();
+  const { update, move: moveIssue, screen, error } = useListEdit();
   const [assigning, setAssigning] = useState<IssueSummary | null>(null);
   const body = useRef<HTMLTableSectionElement>(null);
   const catalogue = useFieldCatalogue();
@@ -333,7 +356,7 @@ export function IssueTable({
           <StatusMenu
             issue={issue}
             enabled={issue.canTransition}
-            onTransition={(transitionId) => transition.mutate({ key: issue.key, transitionId })}
+            onTransition={(transitionId) => void moveIssue(issue, transitionId)}
           />
         );
       case 'priority':
@@ -448,6 +471,7 @@ export function IssueTable({
   return (
     <div className="flex flex-col gap-2">
       {error && <FormError message={error.message} />}
+      {screen}
       <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
         <table
           onKeyDown={move}

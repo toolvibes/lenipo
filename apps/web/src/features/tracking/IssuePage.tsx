@@ -42,6 +42,7 @@ import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons
 import { MoveIssueDialog } from './MoveIssueDialog';
 import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
+import { type TransitionExtras, useTransitionScreen } from './TransitionDialog';
 import { Avatar, UserPicker } from './UserPicker';
 import { VersionsField } from './VersionsField';
 
@@ -355,15 +356,21 @@ export function IssuePage({
     onSuccess: refresh,
   });
   const transition = useMutation({
-    mutationFn: (transitionId: string) =>
+    mutationFn: ({ transitionId, extras }: { transitionId: string; extras?: TransitionExtras }) =>
       unwrap(
         client.POST('/api/v1/issues/{key}/transitions', {
           params: { path: { key: issueKey } },
-          body: { transitionId },
+          body: { transitionId, ...extras },
         }),
       ),
-    onSuccess: refresh,
+    onSuccess: (updated) => {
+      refresh(updated);
+      void queryClient.invalidateQueries({ queryKey: commentsQuery(issueKey).queryKey });
+    },
   });
+  const screen = useTransitionScreen((_issue, transitionId, extras) =>
+    transition.mutateAsync({ transitionId, extras }),
+  );
   const watch = useMutation({
     mutationFn: async (watching: boolean) => {
       const options = { params: { path: { key: issueKey } } };
@@ -454,7 +461,7 @@ export function IssuePage({
   const sameLevelTypes = (project.data?.issueTypes ?? []).filter(
     (type) => type.hierarchyLevel === data.issueType.hierarchyLevel,
   );
-  const error = update.error ?? transition.error;
+  const error = update.error ?? (screen.dialog ? null : transition.error);
 
   const copyLink = () =>
     void navigator.clipboard.writeText(`${window.location.origin}/issues/${data.key}`).then(() => {
@@ -475,7 +482,10 @@ export function IssuePage({
     <StatusMenu
       issue={data}
       enabled={permissions.has('transition-issues')}
-      onTransition={(id) => transition.mutate(id)}
+      onTransition={async (id) => {
+        if (await screen.ask(data, (offered) => offered.find((entry) => entry.id === id))) return;
+        transition.mutate({ transitionId: id });
+      }}
       block={!panel}
     />
   );
@@ -486,6 +496,7 @@ export function IssuePage({
       className={`flex flex-col ${panel ? 'gap-4 p-4' : 'min-h-full'}`}
     >
       {bar}
+      {screen.dialog}
       {!panel && (
         <TopBar
           crumbs={[

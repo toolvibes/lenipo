@@ -23,7 +23,14 @@ import { DotsSixVertical, DotsThree, GearSix, Plus, Warning } from '@phosphor-ic
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Board, BoardColumn, BoardData, IssueSummary, Me } from '@tasklore/shared';
+import type {
+  Board,
+  BoardColumn,
+  BoardData,
+  IssueSummary,
+  Me,
+  MoveCardRequest,
+} from '@tasklore/shared';
 import { type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -40,6 +47,7 @@ import { FavouriteButton } from '../personal/FavouriteButton';
 import { CreateIssueDialog } from '../tracking/CreateIssueDialog';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
 import { IssueTypeIcon, PriorityIcon } from '../tracking/icons';
+import { useTransitionScreen } from '../tracking/TransitionDialog';
 import { Avatar } from '../tracking/UserPicker';
 import { BoardSettingsDialog } from './BoardSettingsDialog';
 import { BoardTabs } from './BoardTabs';
@@ -348,12 +356,8 @@ export function BoardPage({
     });
 
   const move = useMutation({
-    mutationFn: (body: {
-      issueKey: string;
-      columnId: string;
-      afterKey?: string | null;
-      beforeKey?: string | null;
-    }) => unwrap(client.POST('/api/v1/boards/{id}/move', { params: { path: { id } }, body })),
+    mutationFn: (body: MoveCardRequest) =>
+      unwrap(client.POST('/api/v1/boards/{id}/move', { params: { path: { id } }, body })),
     onMutate: async (body) => {
       // Show the card in its new place at once; the server answer replaces it.
       await queryClient.cancelQueries({ queryKey: query.queryKey });
@@ -386,9 +390,30 @@ export function BoardPage({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['board', id] }),
   });
 
+  // A pending move waits for the transition's dialog (TL-85); the dialog sends it with the fields.
+  const [held, setHeld] = useState<MoveCardRequest | null>(null);
+  const screen = useTransitionScreen((_issue, _transitionId, extras) =>
+    held ? move.mutateAsync({ ...held, ...extras }) : Promise.resolve(),
+  );
+
+  /** Moves at once, or first asks in the dialog when the transition into the column wants it. */
+  async function send(issue: IssueSummary, body: MoveCardRequest) {
+    const column = board?.columns.find((entry) => entry.id === body.columnId);
+    if (column && !column.statusIds.includes(issue.status.id)) {
+      setHeld(body);
+      const asked = await screen.ask(issue, (offered) =>
+        column.statusIds
+          .map((statusId) => offered.find((entry) => entry.to.id === statusId))
+          .find(Boolean),
+      );
+      if (asked) return;
+    }
+    move.mutate(body);
+  }
+
   function moveTo(issue: IssueSummary, columnId: string) {
     setMessage(null);
-    move.mutate({ issueKey: issue.key, columnId });
+    void send(issue, { issueKey: issue.key, columnId });
   }
 
   function onDragStart(event: DragStartEvent) {
@@ -428,7 +453,7 @@ export function BoardPage({
     const neighbours = dragged.canEdit
       ? { afterKey: order[position - 1] ?? null, beforeKey: order[position + 1] ?? null }
       : {};
-    move.mutate({ issueKey: dragged.key, columnId, ...neighbours });
+    void send(dragged, { issueKey: dragged.key, columnId, ...neighbours });
   }
 
   const columnName = (columnId: string) =>
@@ -600,6 +625,7 @@ export function BoardPage({
         </div>
 
         {message && <FormError message={message} />}
+        {screen.dialog}
         {data.data?.truncated && (
           <p className="m-0 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-3 py-2">
             {t('boards.truncated')}

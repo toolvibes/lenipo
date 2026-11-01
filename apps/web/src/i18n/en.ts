@@ -2311,6 +2311,14 @@ export const en: Messages = {
     workflow: 'Workflow',
     readOnly: 'Only project administrators can change the workflow.',
   },
+  transitionScreen: {
+    title: '{{key}} to {{status}}',
+    comment: 'Comment (optional)',
+    commentRequired: 'Comment (required)',
+    keepEmpty: 'Leave empty to change nothing',
+    commaList: 'Separate several with commas',
+    run: 'Move',
+  },
   workflow: {
     rules: 'Transition rules',
     rulesHint:
@@ -2335,6 +2343,13 @@ export const en: Messages = {
     checks: 'Checks',
     dueNotPast: 'Due date set and not passed',
     watch: 'Whoever moves it watches the issue',
+    screen: 'Ask in a dialog first',
+    commentLabel: 'Comment',
+    commentModes: {
+      none: 'No comment',
+      optional: 'Comment possible',
+      required: 'Comment required',
+    },
     fieldActions: 'Change fields afterwards',
     noFieldActions: 'No field changes',
     fieldAction: {

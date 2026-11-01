@@ -655,13 +655,33 @@ export const IssueList = z
   .meta({ id: 'IssueList' });
 export type IssueList = z.infer<typeof IssueList>;
 
+/** Whether moving into a status asks for a comment (TL-85, E-127). */
+export const TRANSITION_COMMENT = ['none', 'optional', 'required'] as const;
+
 export const Transition = z
-  .object({ id: z.string(), name: z.string(), to: StatusInfo, setsResolution: z.boolean() })
+  .object({
+    id: z.string(),
+    name: z.string(),
+    to: StatusInfo,
+    setsResolution: z.boolean(),
+    /** Fields the move needs filled: `TRANSITION_FIELDS` keys or custom field ids (TL-85). */
+    requiredFields: z.array(z.string()),
+    comment: z.enum(TRANSITION_COMMENT),
+    /** Ask in a dialog before moving, even when nothing is missing. */
+    screen: z.boolean(),
+  })
   .meta({ id: 'Transition' });
 export type Transition = z.infer<typeof Transition>;
 
 export const TransitionRequest = z
-  .object({ transitionId: z.string().min(1), resolution: z.string().min(1).optional() })
+  .object({
+    transitionId: z.string().min(1),
+    resolution: z.string().min(1).optional(),
+    /** Field values from the transition screen, set together with the move (TL-85, E-127). */
+    fields: UpdateIssueRequest.optional(),
+    /** A comment written in the transition screen. */
+    comment: RichTextInput.optional(),
+  })
   .meta({ id: 'TransitionRequest' });
 export type TransitionRequest = z.infer<typeof TransitionRequest>;
 
@@ -886,6 +906,10 @@ export const TransitionRules = z
     fieldActions: z.array(TransitionFieldAction).max(20).default([]),
     /** Afterwards the person moving the issue watches it (TL-75). */
     watch: z.boolean().default(false),
+    /** Show a dialog when moving here, with the required fields and the comment (TL-85). */
+    screen: z.boolean().default(false),
+    /** Ask for a comment when moving here: not, as an option, or as a must (TL-85). */
+    comment: z.enum(TRANSITION_COMMENT).default('none'),
   })
   .meta({ id: 'TransitionRules' });
 export type TransitionRules = z.infer<typeof TransitionRules>;

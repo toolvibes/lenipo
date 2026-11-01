@@ -2354,6 +2354,14 @@ export const de = {
     workflow: 'Workflow',
     readOnly: 'Nur die Projektadministration kann den Workflow ändern.',
   },
+  transitionScreen: {
+    title: '{{key}} nach {{status}}',
+    comment: 'Kommentar (optional)',
+    commentRequired: 'Kommentar (Pflicht)',
+    keepEmpty: 'Leer lassen, um nichts zu ändern',
+    commaList: 'Mehrere durch Komma trennen',
+    run: 'Wechseln',
+  },
   workflow: {
     rules: 'Regeln für Übergänge',
     rulesHint:
@@ -2378,6 +2386,13 @@ export const de = {
     checks: 'Prüfungen',
     dueNotPast: 'Fälligkeit gesetzt und nicht überschritten',
     watch: 'Wer wechselt, beobachtet den Vorgang',
+    screen: 'Vorher in einem Dialog fragen',
+    commentLabel: 'Kommentar',
+    commentModes: {
+      none: 'Kein Kommentar',
+      optional: 'Kommentar möglich',
+      required: 'Kommentar Pflicht',
+    },
     fieldActions: 'Felder danach ändern',
     noFieldActions: 'Keine Feldänderungen',
     fieldAction: {

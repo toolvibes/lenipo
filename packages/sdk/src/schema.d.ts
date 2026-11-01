@@ -6104,6 +6104,41 @@ export interface components {
       columnId: string;
       afterKey?: string | null;
       beforeKey?: string | null;
+      fields?: components['schemas']['UpdateIssueRequest'];
+      comment?: components['schemas']['RichTextInput'];
+    };
+    UpdateIssueRequest: {
+      securityLevelId?: string | null;
+      summary?: string;
+      description?: components['schemas']['RichTextInput'] | null;
+      issueType?: string;
+      priority?: string;
+      assigneeId?: string | null;
+      parentKey?: string | null;
+      labels?: string[];
+      storyPoints?: number | null;
+      startDate?: string | null;
+      dueDate?: string | null;
+      components?: string[];
+      fixVersions?: string[];
+      affectsVersions?: string[];
+      originalEstimate?: string | null;
+      remainingEstimate?: string | null;
+      customFields?: {
+        [key: string]: string | number | boolean | string[] | string[] | null;
+      };
+    };
+    RichTextInput:
+      | components['schemas']['RichText']
+      | {
+          markdown: string;
+        };
+    RichText: {
+      /** @constant */
+      type: 'doc';
+      content?: unknown[];
+    } & {
+      [key: string]: unknown;
     };
     Issue: {
       /** Format: uuid */
@@ -6178,13 +6213,6 @@ export interface components {
       links: components['schemas']['IssueLink'][];
     };
     RichTextOutput: components['schemas']['RichText'] | string;
-    RichText: {
-      /** @constant */
-      type: 'doc';
-      content?: unknown[];
-    } & {
-      [key: string]: unknown;
-    };
     IssueLink: {
       /** Format: uuid */
       id: string;
@@ -7092,41 +7120,21 @@ export interface components {
         [key: string]: string | number | boolean | string[] | string[] | null;
       };
     };
-    RichTextInput:
-      | components['schemas']['RichText']
-      | {
-          markdown: string;
-        };
-    UpdateIssueRequest: {
-      securityLevelId?: string | null;
-      summary?: string;
-      description?: components['schemas']['RichTextInput'] | null;
-      issueType?: string;
-      priority?: string;
-      assigneeId?: string | null;
-      parentKey?: string | null;
-      labels?: string[];
-      storyPoints?: number | null;
-      startDate?: string | null;
-      dueDate?: string | null;
-      components?: string[];
-      fixVersions?: string[];
-      affectsVersions?: string[];
-      originalEstimate?: string | null;
-      remainingEstimate?: string | null;
-      customFields?: {
-        [key: string]: string | number | boolean | string[] | string[] | null;
-      };
-    };
     Transition: {
       id: string;
       name: string;
       to: components['schemas']['StatusInfo'];
       setsResolution: boolean;
+      requiredFields: string[];
+      /** @enum {string} */
+      comment: 'none' | 'optional' | 'required';
+      screen: boolean;
     };
     TransitionRequest: {
       transitionId: string;
       resolution?: string;
+      fields?: components['schemas']['UpdateIssueRequest'];
+      comment?: components['schemas']['RichTextInput'];
     };
     RankIssueRequest: {
       afterKey?: string | null;
@@ -9208,6 +9216,13 @@ export interface components {
       fieldActions: components['schemas']['TransitionFieldAction'][];
       /** @default false */
       watch: boolean;
+      /** @default false */
+      screen: boolean;
+      /**
+       * @default none
+       * @enum {string}
+       */
+      comment: 'none' | 'optional' | 'required';
     };
     TransitionFieldAction: {
       field: string;
@@ -9260,6 +9275,13 @@ export interface components {
       fieldActions?: components['schemas']['TransitionFieldActionInput'][];
       /** @default false */
       watch?: boolean;
+      /** @default false */
+      screen?: boolean;
+      /**
+       * @default none
+       * @enum {string}
+       */
+      comment?: 'none' | 'optional' | 'required';
     };
     TransitionFieldActionInput: {
       field: string;

@@ -23,6 +23,7 @@ import {
   type ProjectWorkflow,
   type PublishWorkflowRequest,
   type StatusCategory,
+  TRANSITION_COMMENT,
   TRANSITION_FIELDS,
   type TransitionRules,
   type WorkflowMode,
@@ -69,6 +70,8 @@ const NO_RULES: TransitionRules = {
   assign: 'keep',
   fieldActions: [],
   watch: false,
+  screen: false,
+  comment: 'none',
 };
 const ASSIGN = ['keep', 'caller', 'reporter', 'nobody'] as const;
 
@@ -84,7 +87,9 @@ function ruleCount(rules: TransitionRules | undefined): number {
     Number(rules.dueNotPast) +
     Number(rules.assign !== 'keep') +
     rules.fieldActions.length +
-    Number(rules.watch)
+    Number(rules.watch) +
+    Number(rules.screen) +
+    Number(rules.comment !== 'none')
   );
 }
 
@@ -405,6 +410,28 @@ function TransitionRulesSection({
                       {field.name}
                     </label>
                   ))}
+                  <span className="mt-1 text-xs text-[var(--ink-muted)]">
+                    {t('workflow.commentLabel')}
+                  </span>
+                  {TRANSITION_COMMENT.map((value) => (
+                    <label key={value} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`comment-${row.key}`}
+                        checked={current.comment === value}
+                        onChange={() => set({ comment: value })}
+                      />
+                      {t(`workflow.commentModes.${value}`)}
+                    </label>
+                  ))}
+                  <label className="mt-1 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={current.screen}
+                      onChange={() => set({ screen: !current.screen })}
+                    />
+                    {t('workflow.screen')}
+                  </label>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <strong className="text-xs text-[var(--ink-muted)]">{t('workflow.after')}</strong>

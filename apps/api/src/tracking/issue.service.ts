@@ -1226,13 +1226,45 @@ export class IssueService {
     return offered.flatMap((transition) => {
       const to = meta.status.get(transition.to);
       return to
-        ? [{ id: transition.id, name: transition.name, to, setsResolution: to.category === 'done' }]
+        ? [
+            {
+              id: transition.id,
+              name: transition.name,
+              to,
+              setsResolution: to.category === 'done',
+              // Rules stored before TL-85 lack the screen settings.
+              requiredFields: transition.rules?.requiredFields ?? [],
+              comment: transition.rules?.comment ?? 'none',
+              screen: transition.rules?.screen ?? false,
+            },
+          ]
         : [];
     });
   }
 
-  /** Moves an issue along its workflow. Entering a done status sets a resolution, leaving it clears it. */
+  /**
+   * Moves an issue along its workflow. Values and a comment from the transition screen (TL-85,
+   * E-127) are set in the same transaction: the move sees the new values, and if it fails,
+   * nothing of it stays.
+   */
   async transition(principal: Principal, key: string, request: TransitionRequest): Promise<Issue> {
+    const fields = request.fields && Object.keys(request.fields).length > 0 ? request.fields : null;
+    if (!fields && !request.comment) return this.moveAlong(principal, key, request);
+    return this.database.atomic(async () => {
+      if (fields) await this.update(principal, key, fields);
+      const moved = await this.moveAlong(principal, key, request);
+      if (!request.comment) return moved;
+      await this.addComment(principal, moved.key, { body: request.comment });
+      return this.get(principal, moved.key);
+    });
+  }
+
+  /** Entering a done status sets a resolution, leaving it clears it. */
+  private async moveAlong(
+    principal: Principal,
+    key: string,
+    request: TransitionRequest,
+  ): Promise<Issue> {
     const { issue } = await this.load(principal, key, 'transition-issues');
     const meta = await this.meta.load();
     const definition = await this.projectService.workflow(issue.workflowVersionId);
@@ -1259,6 +1291,9 @@ export class IssueService {
       const missing = await this.missingFields(issue, rules.requiredFields);
       if (missing.length > 0) {
         throw new BadRequestException(`Fill in first: ${missing.join(', ')}`);
+      }
+      if (rules.comment === 'required' && !request.comment) {
+        throw new BadRequestException('This move needs a comment');
       }
       if (rules.dueNotPast && (!issue.dueDate || issue.dueDate < today())) {
         throw new BadRequestException('The due date needs to be set and not in the past');

@@ -1,4 +1,4 @@
-<!-- tasklore page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=1 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- tasklore page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=2 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Tasklore: Vorgänge, Boards, Suche, Lore (das Wiki), Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -13,7 +13,7 @@ Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen,
 
 - **Anlegen:** „Vorgang erstellen“ oder Taste `c`. Pflicht sind Projekt, Typ und Zusammenfassung; Beschreibung, Bearbeiter, Priorität, Fälligkeit, Stichwörter, Story Points und eigene Felder kommen dazu.
 - **Ändern:** Felder auf der Vorgangsseite direkt anklicken; in Listen lassen sich Bearbeiter, Priorität, Fälligkeit, Stichwörter und Story Points in der Zeile ändern.
-- **Status:** über die Schaltflächen des Workflows oben auf der Vorgangsseite. Erledigte Vorgänge bekommen eine Lösung.
+- **Status:** über das Statusmenü oben auf der Vorgangsseite, in Listen oder durch Ziehen auf dem Board. Verlangt der Workflow Angaben (Pflichtfelder, Kommentar), fragt ein kleiner Dialog danach; der Wechsel gilt erst, wenn alles passt. Erledigte Vorgänge bekommen eine Lösung.
 - **Kommentare** mit Formatierung, Erwähnungen (`@Name`) und Anhängen; Erwähnte werden benachrichtigt.
 - **Verknüpfungen** (blockiert, dupliziert, bezieht sich auf …), **Unteraufgaben**, **Komponenten** und **Versionen** ordnen Vorgänge ein.
 - **Zeit erfassen** auf dem Vorgang oder mit dem Timer; „Zeiterfassung“ in der Seitenleiste zeigt die eigene Woche.

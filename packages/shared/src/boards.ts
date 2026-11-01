@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { Id } from './identity.js';
 import { TqlText } from './search.js';
-import { IssueSummary, ProjectKey, SprintState, UserRef } from './tracking.js';
+import {
+  IssueSummary,
+  ProjectKey,
+  RichTextInput,
+  SprintState,
+  UpdateIssueRequest,
+  UserRef,
+} from './tracking.js';
 
 export const BoardType = z.enum(['kanban', 'scrum']);
 export type BoardType = z.infer<typeof BoardType>;
@@ -310,6 +317,9 @@ export const MoveCardRequest = z
     afterKey: z.string().min(1).max(30).nullable().optional(),
     /** The card that will be directly below; null or missing for the bottom. */
     beforeKey: z.string().min(1).max(30).nullable().optional(),
+    /** Set with the status change, as the transition's dialog asks for (TL-85). */
+    fields: UpdateIssueRequest.optional(),
+    comment: RichTextInput.optional(),
   })
   .meta({ id: 'MoveCardRequest' });
 export type MoveCardRequest = z.infer<typeof MoveCardRequest>;

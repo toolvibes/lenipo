@@ -347,7 +347,11 @@ export class BoardService {
           `${issue.key} cannot move to "${column.name}" from its status${reachable.length > 0 ? `; possible: ${reachable.join(', ')}` : ''}`,
         );
       }
-      issue = await this.issueService.transition(principal, issue.key, { transitionId: target.id });
+      issue = await this.issueService.transition(principal, issue.key, {
+        transitionId: target.id,
+        fields: request.fields,
+        comment: request.comment,
+      });
     }
     if (request.afterKey || request.beforeKey) {
       await this.issueService.rank(principal, issue.key, {

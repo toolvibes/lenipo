@@ -477,17 +477,23 @@ export function registerTools(
     {
       title: 'Change the status',
       description:
-        'Moves an issue to another status. Without `to` it lists the transitions allowed now. `to` is a target status name or transition id.',
+        'Moves an issue to another status. Without `to` it lists the transitions allowed now, with the fields and comment each needs. `to` is a target status name or transition id; `comment` (Markdown) is written with the move.',
       inputSchema: {
         key: IssueKey,
         to: z.string().min(1).optional(),
         resolution: TransitionRequest.shape.resolution,
+        comment: MarkdownText.min(1).optional(),
       },
     },
-    async ({ key, to, resolution }) => {
+    async ({ key, to, resolution, comment }) => {
       const available = await issues.transitions(principal, key);
       const list = available
-        .map((entry) => `- ${entry.to.name} (transition ${entry.id}: ${entry.name})`)
+        .map(
+          (entry) =>
+            `- ${entry.to.name} (transition ${entry.id}: ${entry.name})${
+              entry.requiredFields.length > 0 ? `, needs ${entry.requiredFields.join(', ')}` : ''
+            }${entry.comment === 'required' ? ', needs a comment' : ''}`,
+        )
         .join('\n');
       if (!to) return text(list ? `Allowed transitions:\n${list}` : 'No transitions available.');
       // "In Progress", "in-progress" and "in_progress" all mean the same status.
@@ -511,6 +517,7 @@ export function registerTools(
       const moved = await issues.transition(principal, key, {
         transitionId: match.id,
         ...(resolution ? { resolution } : {}),
+        ...(comment ? { comment: { markdown: comment } } : {}),
       });
       await audited('transition_issue', moved.id);
       return showIssue(moved.key);

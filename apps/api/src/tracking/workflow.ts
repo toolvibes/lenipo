@@ -73,7 +73,9 @@ export function hasRules(rules: TransitionRules | undefined): rules is Transitio
       rules.dueNotPast ||
       rules.assign !== 'keep' ||
       rules.fieldActions.length > 0 ||
-      rules.watch)
+      rules.watch ||
+      rules.screen ||
+      rules.comment !== 'none')
   );
 }
 

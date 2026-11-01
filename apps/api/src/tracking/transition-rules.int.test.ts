@@ -160,3 +160,90 @@ describe('transition rules (TL-11)', () => {
     expect((await move(admin, 'WEB-1', doneName)).status).toBe(200);
   });
 });
+
+describe('transition screen (TL-85)', () => {
+  it('asks for fields and a comment, and sets them with the move or not at all', async () => {
+    workflow = (await admin.request<ProjectWorkflow>('GET', '/projects/WEB/workflow')).body;
+    const done = workflow.statuses.find((entry) => entry.category === 'done');
+    if (!done) throw new Error('No done status');
+    const published = await admin.request(
+      'POST',
+      '/projects/WEB/workflow',
+      withRules({
+        [done.name]: { requiredFields: ['dueDate'], comment: 'required', screen: true },
+      }),
+    );
+    expect(published.status).toBe(200);
+    workflow = published.body as ProjectWorkflow;
+    const issue = (
+      await admin.request<Issue>('POST', '/issues', {
+        projectKey: 'WEB',
+        issueType: 'task',
+        summary: 'Mit Maske',
+      })
+    ).body;
+    const transitions = (
+      await admin.request<Transition[]>('GET', `/issues/${issue.key}/transitions`)
+    ).body;
+    expect(transitions.find((entry) => entry.to.id === done.id)).toMatchObject({
+      requiredFields: ['dueDate'],
+      comment: 'required',
+      screen: true,
+    });
+    const transitionId = `to-${done.key}`;
+    // Without the comment nothing changes, not even the field sent along.
+    const refused = await admin.request('POST', `/issues/${issue.key}/transitions`, {
+      transitionId,
+      fields: { dueDate: '2026-12-01' },
+    });
+    expect(refused.status).toBe(400);
+    expect((await admin.request<Issue>('GET', `/issues/${issue.key}`)).body.dueDate).toBeNull();
+
+    const moved = await admin.request<Issue>('POST', `/issues/${issue.key}/transitions`, {
+      transitionId,
+      fields: { dueDate: '2026-12-01' },
+      comment: { markdown: 'Fertig, siehe Protokoll' },
+    });
+    expect(moved.status).toBe(200);
+    expect(moved.body).toMatchObject({ dueDate: '2026-12-01', status: { id: done.id } });
+    const comments = await admin.request<Array<{ body: unknown }>>(
+      'GET',
+      `/issues/${issue.key}/comments`,
+    );
+    expect(JSON.stringify(comments.body)).toContain('Fertig, siehe Protokoll');
+
+    // Dragging on the board sends the same along.
+    const other = (
+      await admin.request<Issue>('POST', '/issues', {
+        projectKey: 'WEB',
+        issueType: 'task',
+        summary: 'Auf dem Board',
+      })
+    ).body;
+    const board = (
+      await admin.request<{ id: string; columns: Array<{ id: string; statusIds: string[] }> }>(
+        'POST',
+        '/boards',
+        { projectKey: 'WEB', name: 'Board', type: 'kanban' },
+      )
+    ).body;
+    const boardId = board.id;
+    const doneColumn = board.columns.find((column) => column.statusIds.includes(done.id));
+    expect(
+      (
+        await admin.request('POST', `/boards/${boardId}/move`, {
+          issueKey: other.key,
+          columnId: doneColumn?.id,
+        })
+      ).status,
+    ).toBe(400);
+    const dragged = await admin.request<Issue>('POST', `/boards/${boardId}/move`, {
+      issueKey: other.key,
+      columnId: doneColumn?.id,
+      fields: { dueDate: '2026-12-02' },
+      comment: { markdown: 'Vom Board' },
+    });
+    expect(dragged.status).toBe(200);
+    expect(dragged.body).toMatchObject({ dueDate: '2026-12-02', status: { id: done.id } });
+  });
+});
