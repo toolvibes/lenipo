@@ -1,7 +1,7 @@
-<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=1 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=2 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 13 · Sprint-Agent
 
-Ein Coding-Agent wie Claude Code arbeitet im Code-Repository eines Teams die Aufgaben des aktiven Sprints eines Lenipo-Projekts selbstständig ab (TL-88, E-132). Fragen und Entscheidungen hält er als Kommentar am Vorgang fest; erst wenn Aufgabe, Kommentare und Entscheidung klar sind, setzt er um – auf einem eigenen Branch mit Pull Request, nie direkt auf `main`.
+Ein Coding-Agent wie Claude Code arbeitet im Code-Repository eines Teams die Aufgaben des aktiven Sprints eines Lenipo-Projekts selbstständig ab. Fragen und Entscheidungen hält er als Kommentar am Vorgang fest; erst wenn Aufgabe, Kommentare und Entscheidung klar sind, setzt er um – auf einem eigenen Branch mit Pull Request, nie direkt auf `main`.
 
 Stand: Prototyp. Er läuft auf dem Rechner einer Entwicklerin oder eines Entwicklers und fragt Lenipo in festen Abständen ab.
 
@@ -57,5 +57,5 @@ Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue vie
 
 ## Später
 
-- **Webhooks statt Abfragen:** Lenipo meldet `issue.updated` und `comment.created` an einen lokalen Runner, der den Agenten anstößt (E-132 sieht das als Option vor).
+- **Webhooks statt Abfragen:** Lenipo meldet `issue.updated` und `comment.created` an einen lokalen Runner, der den Agenten anstößt.
 - Mehrere Agenten auf einem Board, Kostenrahmen in Lenipo, Auswertung der Agenten-Arbeit im Sprintbericht.

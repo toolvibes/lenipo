@@ -1,5 +1,5 @@
 // Fails when a production dependency uses a license outside the permissive allowlist.
-// Keeps every license option open for a later open-source release (see docs/08-entscheidungen.md, E-02).
+// Keeps every license option open for a later open-source release.
 import { execFileSync } from 'node:child_process';
 
 const ALLOWED = new Set([

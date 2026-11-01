@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=4 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -74,7 +74,7 @@ Wer mit Spracheingabe oder Schaltern arbeitet, kann die Einzeltasten-Kürzel im 
 
 ## Barrierefreiheit
 
-Lenipo richtet sich nach WCAG 2.1 AA; die Erklärung dazu steht unter `/accessibility` und in [Kapitel 4](04-plattform-admin.md). Ein Sprunglink („Zum Inhalt springen“) ist der erste Tab-Halt jeder Seite.
+Lenipo richtet sich nach WCAG 2.1 AA; die Erklärung dazu steht unter `/accessibility`. Ein Sprunglink („Zum Inhalt springen“) ist der erste Tab-Halt jeder Seite.
 
 ## Als App installieren
 

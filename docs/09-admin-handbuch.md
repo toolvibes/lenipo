@@ -1,7 +1,7 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=3 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=4 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
-Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche (TL-44, E-125). Die Hintergründe stehen in [Architektur](06-architektur.md) und [Entscheidungen](08-entscheidungen.md).
+Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
 
 ## Installation
 
@@ -14,7 +14,7 @@ POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --b
 
 Das startet Lenipo (API, Collab-Server und Worker in einem Prozess), PostgreSQL 17, Valkey und Caddy mit automatischem HTTPS. Anhänge liegen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, `--profile s3` startet zusätzlich RustFS.
 
-**Kubernetes:** Helm-Chart unter `deploy/helm/lenipo` mit je einem Deployment für api, collab und worker; PostgreSQL, Valkey und S3 laufen außerhalb (E-123). Secrets (`DATABASE_URL`, `REDIS_URL`, S3-Schlüssel, `SMTP_URL` …) als vorhandenes Secret (`existingSecret`) oder über `secrets`.
+**Kubernetes:** Helm-Chart unter `deploy/helm/lenipo` mit je einem Deployment für api, collab und worker; PostgreSQL, Valkey und S3 laufen außerhalb. Secrets (`DATABASE_URL`, `REDIS_URL`, S3-Schlüssel, `SMTP_URL` …) als vorhandenes Secret (`existingSecret`) oder über `secrets`.
 
 **Erster Start:** Im Log steht ein Einrichtungscode (`docker compose logs app | grep setupCode`, im Cluster in den api-Pods). Unter `/setup` legt er den ersten Administrator an – oder spielt stattdessen ein Backup ein (siehe unten).
 
@@ -49,7 +49,7 @@ Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und steh
 - **Lokale Konten** mit Passwort (Argon2id) und optionaler Zwei-Faktor-Anmeldung; Gruppen können sie verpflichtend machen (Administration → Anmeldung).
 - **OIDC** über die Variablen oben; **SAML 2.0** und **LDAP/Active Directory** in der Administration (Verzeichnisse). Die Reihenfolge der Verzeichnisse entscheidet beim Passwort-Login. SAML verknüpft ein vorhandenes Konto nur, wenn es kein eigenes Passwort und keinen zweiten Faktor hat.
 - **Einladungen** per E-Mail, **Selbstregistrierung** für freigegebene Domains (standardmäßig aus).
-- **Externe** (Kunden, Partner): Einladung mit „Als externe Person einladen“ oder in der Benutzerverwaltung „Als extern führen“. Externe sind nicht in der Gruppe „users“, haben keine globalen Rechte und sehen nur die Projekte und Bereiche, in denen sie eine Rolle haben. Beim Zuordnen zu einem Projekt gibt „Auch im verknüpften Wiki-Bereich freigeben“ die passende Stufe im Wiki-Bereich des Projekts (E-131).
+- **Externe** (Kunden, Partner): Einladung mit „Als externe Person einladen“ oder in der Benutzerverwaltung „Als extern führen“. Externe sind nicht in der Gruppe „users“, haben keine globalen Rechte und sehen nur die Projekte und Bereiche, in denen sie eine Rolle haben. Beim Zuordnen zu einem Projekt gibt „Auch im verknüpften Wiki-Bereich freigeben“ die passende Stufe im Wiki-Bereich des Projekts.
 - **Deaktivieren** beendet alle Sitzungen und Tokens; **Anonymisieren** (DSGVO) ersetzt Name und E-Mail überall durch „Ehemalige Person n“ und ist nicht umkehrbar.
 - **API-Tokens** und **OAuth-Apps**: Personen legen Tokens selbst an; Admins registrieren Apps von Drittanbietern (vertraulich mit Secret oder öffentlich mit PKCE) und sehen alle Verbindungen.
 
@@ -81,7 +81,7 @@ Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projek
 - **Logs** als JSON auf der Standardausgabe, ohne Header und Query-Strings; mit Traces enthalten sie `trace_id`.
 - **Module** (Wiki, Boards, Zeiterfassung, Automatisierung, Dashboards) lassen sich abschalten; **Anfragegrenzen** je Person, Token und IP einstellen (Administration → Betrieb).
 - **Skalierung:** mehrere api- und worker-Instanzen jederzeit; mehrere Collab-Server nur mit `REDIS_URL`.
-- **Lasttest** gegen die Qualitätsziele: `pnpm --filter @toolvibes/loadtest loadtest` (siehe [Lasttests](12-lasttests.md)).
+- **Lasttest** gegen die Qualitätsziele: `pnpm --filter @toolvibes/loadtest loadtest`.
 
 ## Fehlersuche
 

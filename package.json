@@ -18,8 +18,6 @@
     "infra:down": "docker compose down",
     "db:generate": "pnpm --filter @toolvibes/api db:generate",
     "db:migrate": "pnpm --filter @toolvibes/api db:migrate",
-    "docs:export": "pnpm --filter @toolvibes/api wiki export ../../docs --space TL",
-    "docs:import": "pnpm --filter @toolvibes/api wiki import ../../docs --space TL --name Lenipo --skip README.md",
     "licenses:check": "node scripts/check-licenses.mjs",
     "migrations:check": "node scripts/check-migrations.mjs",
     "design:tokens": "node scripts/build-design-tokens.mjs",

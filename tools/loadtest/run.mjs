@@ -1,4 +1,4 @@
-// Load test against the quality goals (docs/06-architektur.md, 6.10; TL-44, E-125).
+// Load test against the quality goals for response times and co-editing.
 // Starts the built app (apps/api/dist with the web app) on a fresh database, fills it, measures
 // each goal and writes a Markdown report. `--smoke` uses small numbers, for CI.
 //

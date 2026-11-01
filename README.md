@@ -2,9 +2,9 @@
 
 **Projekte, Aufgaben und Wissen – einfach verbunden.** Lenipo ist eine selbst gehostete Plattform für Vorgänge, Boards und Wiki: eine Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center** mit einer Anwendung, einer Datenbank und einem Login.
 
-Website: <https://lenipo.de> · Früherer Projektname: Tasklore (siehe [E-129](docs/08-entscheidungen.md))
+Website: <https://lenipo.de> · Früherer Projektname: Tasklore
 
-> **Stand:** in Entwicklung, noch vor Version 1.0. Eine Lizenz ist noch nicht festgelegt (E-02); bis dahin gilt für den Code „alle Rechte vorbehalten“.
+> **Stand:** in Entwicklung, noch vor Version 1.0. Eine Lizenz ist noch nicht festgelegt; bis dahin gilt für den Code „alle Rechte vorbehalten“.
 
 ## Was Lenipo kann
 
@@ -45,7 +45,7 @@ Dann <http://localhost:5173> öffnen. Beim allerersten Start gibt es noch keinen
 | Mailpit (alle E-Mails landen hier) | SMTP `localhost:1026`, Postfach <http://localhost:8026> |
 | Keycloak für OIDC, optional | `docker compose --profile oidc up -d keycloak`, siehe [dev/keycloak](dev/keycloak/README.md) |
 
-Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vor der Umbenennung und bleiben, damit vorhandene Entwicklungsdaten erhalten bleiben (E-129). Anhänge liegen standardmäßig in `apps/api/data/files`; für S3 die `S3_*`-Zeilen in `.env` einkommentieren.
+Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vor der Umbenennung und bleiben, damit vorhandene Entwicklungsdaten erhalten bleiben. Anhänge liegen standardmäßig in `apps/api/data/files`; für S3 die `S3_*`-Zeilen in `.env` einkommentieren.
 
 `pnpm infra:down` stoppt die Dienste, die Daten bleiben in Docker-Volumes.
 
@@ -60,7 +60,7 @@ Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vo
 | `pnpm build` | Alle Pakete bauen |
 | `pnpm migrations:check` | Migrationen müssen Updates ohne Ausfall erlauben |
 | `pnpm licenses:check` | Nur permissive Lizenzen in Produktionsabhängigkeiten |
-| `node tools/loadtest/run.mjs --smoke` | Kleiner Lasttest (voll ohne `--smoke`, siehe [Lasttests](docs/12-lasttests.md)) |
+| `node tools/loadtest/run.mjs --smoke` | Kleiner Lasttest; ohne `--smoke` der volle Lauf mit einer Million Vorgängen |
 
 Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://localhost:9010` mit `TEST_S3_ACCESS_KEY_ID=tasklore` und `TEST_S3_SECRET_ACCESS_KEY=tasklore-dev-secret`), die Valkey-Tests nur mit `TEST_REDIS_URL`. Die CI in `.github/workflows/ci.yml` führt alles zusammen aus.
 
@@ -135,29 +135,19 @@ scripts/         Prüfungen und Generatoren
 
 ## Dokumentation
 
-| # | Dokument | Inhalt |
-| --- | --- | --- |
-| 1 | [Vision & Scope](docs/01-vision-scope.md) | Ziele, Zielgruppen, Leitprinzipien, was wir bewusst nicht machen |
-| 2 | [Features: Tracking](docs/02-features-tracking.md) | Vorgänge, Workflows, Boards, Sprints, Releases, Berichte, Abfragesprache |
-| 3 | [Features: Wiki](docs/03-features-wiki.md) | Bereiche, Seiten, Live-Editor, Makros, Vorlagen, Historie |
-| 4 | [Plattform & Administration](docs/04-plattform-admin.md) | Benutzer, Rechte, Benachrichtigungen, Suche, Admin-Konsole, Betrieb |
-| 5 | [API, MCP & Entwickler-Tools](docs/05-api-mcp-devtools.md) | REST-API, Webhooks, MCP-Server, CLI, SDK, Git-Integration |
-| 6 | [Architektur & Technik](docs/06-architektur.md) | Stack, Module, Datenmodell, Echtzeit, Suche, Sicherheit, Deployment |
-| 7 | [Roadmap](docs/07-roadmap.md) | Phasen, Meilensteine, Definition of Done, Risiken |
-| 8 | [Entscheidungen](docs/08-entscheidungen.md) | Getroffene und offene Entscheidungen |
-| 9 | [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
-| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
-| 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
-| 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
-| 13 | [Sprint-Agent](docs/13-sprint-agent.md) | Coding-Agent, der Sprint-Aufgaben selbstständig bearbeitet (Prototyp) |
+| Dokument | Inhalt |
+| --- | --- |
+| [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
+| [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
+| [Sprint-Agent](docs/13-sprint-agent.md) | Coding-Agent, der Sprint-Aufgaben selbstständig bearbeitet (Prototyp) |
 
-Die Dokumentation lebt im Wiki von Lenipo selbst (Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md). Seit dem MVP wird Lenipo mit Lenipo entwickelt: Der Backlog steht im Projekt `TL`, je Roadmap-Phase ein Epic.
+Die API beschreibt jede Instanz selbst unter `/api/docs` (OpenAPI).
 
 ## Mitwirken
 
 - Vor einem Commit `pnpm lint`, `pnpm typecheck` und `pnpm test` ausführen; bei Änderungen an der Oberfläche auch die End-to-End-Tests.
 - Neue Abhängigkeiten brauchen eine permissive Lizenz und sollten mindestens zwei Wochen alt sein.
-- Größere Entscheidungen kommen mit Begründung in die [Entscheidungen](docs/08-entscheidungen.md) (E-Nummer).
+- Größere Änderungen bitte vorher in einem Issue besprechen.
 - Commit-Nachrichten auf Deutsch, im Stil `feat: …`, `fix: …`, `perf: …` mit Story-Nummer.
 
 Sicherheitslücken bitte nicht öffentlich als Issue melden, sondern über [SECURITY.md](SECURITY.md).
