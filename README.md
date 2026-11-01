@@ -114,7 +114,7 @@ pnpm --filter @toolvibes/cli build
 node packages/cli/dist/main.js login http://localhost:5173
 ```
 
-`lenipo help` zeigt alle Befehle (Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown, Backups, Importe, stdio-MCP-Brücke). In CI ersetzen `LENIPO_URL` und `LENIPO_TOKEN` das Profil.
+`lenipo help` zeigt alle Befehle (Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown, Backups, Importe, stdio-MCP-Brücke). Mit `lenipo agent` arbeitet ein Coding-Agent Sprint-Aufgaben ab, siehe [Sprint-Agent](docs/13-sprint-agent.md). In CI ersetzen `LENIPO_URL` und `LENIPO_TOKEN` das Profil.
 
 ## Aufbau
 
@@ -149,6 +149,7 @@ scripts/         Prüfungen und Generatoren
 | 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
 | 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
 | 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
+| 13 | [Sprint-Agent](docs/13-sprint-agent.md) | Coding-Agent, der Sprint-Aufgaben selbstständig bearbeitet (Prototyp) |
 
 Die Dokumentation lebt im Wiki von Lenipo selbst (Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md). Seit dem MVP wird Lenipo mit Lenipo entwickelt: Der Backlog steht im Projekt `TL`, je Roadmap-Phase ein Epic.
 

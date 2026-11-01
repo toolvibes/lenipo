@@ -217,6 +217,80 @@ describe('tl, the command line (TL-37)', () => {
     expect((await tl(['admin', 'backup', 'list'])).code).not.toBe(0);
   });
 
+  it('finds the sprint agent its next issue and waits for answers (TL-88)', async () => {
+    const board = (
+      await admin.request<{ id: string }>('POST', '/boards', {
+        name: 'Agent',
+        projectKey: 'WEB',
+        type: 'scrum',
+      })
+    ).body;
+    const create = async (summary: string, labels: string[]) =>
+      (
+        await admin.request<{ key: string }>('POST', '/issues', {
+          projectKey: 'WEB',
+          issueType: 'task',
+          summary,
+          labels,
+        })
+      ).body.key;
+    const other = await create('Nicht für den Agenten', []);
+    const mine = await create('Für den Agenten', ['agent']);
+    const sprint = (await admin.request<{ id: string }>('POST', `/boards/${board.id}/sprints`, {}))
+      .body;
+    await admin.request('POST', '/sprints/move-issues', {
+      issueKeys: [other, mine],
+      sprintId: sprint.id,
+    });
+    const today = new Date().toISOString().slice(0, 10);
+    await admin.request('POST', `/sprints/${sprint.id}/start`, {
+      startDate: today,
+      endDate: today,
+    });
+
+    const repo = await mkdtemp(join(tmpdir(), 'tl-agent-'));
+    const init = await tl([
+      'agent',
+      'init',
+      '--project',
+      'web',
+      '--board',
+      board.id,
+      '--dir',
+      repo,
+    ]);
+    expect(init.code).toBe(0);
+    expect(JSON.parse(await readFile(join(repo, '.lenipo', 'agent.json'), 'utf8'))).toMatchObject({
+      project: 'WEB',
+      board: board.id,
+      label: 'agent',
+    });
+    expect(await readFile(join(repo, '.lenipo', 'agent-prompt.md'), 'utf8')).toContain(
+      'lenipo agent next',
+    );
+
+    const next = async () =>
+      JSON.parse((await tl(['agent', 'next', '--output', 'json', '--dir', repo])).out).task;
+    expect(await next()).toMatchObject({ key: mine, answered: false });
+
+    // A question parks the issue until a human answers after it.
+    expect((await tl(['agent', 'ask', mine, 'Welche', 'Farbe?', '--dir', repo])).code).toBe(0);
+    expect(await next()).toBeNull();
+    const human = new TestClient(test.baseUrl);
+    await admin.request('POST', '/admin/users', {
+      email: 'mensch@example.org',
+      displayName: 'Mia Mensch',
+      password: 'ein-langes-passwort',
+    });
+    await human.request('POST', '/auth/login', {
+      email: 'mensch@example.org',
+      password: 'ein-langes-passwort',
+    });
+    await human.request('POST', `/issues/${mine}/comments`, { body: { markdown: 'Blau.' } });
+    expect(await next()).toMatchObject({ key: mine, answered: true });
+    await rm(repo, { recursive: true, force: true });
+  });
+
   it('prints completion scripts and explains missing commands', async () => {
     expect((await tl(['completion', 'bash'])).out).toContain('complete -F _tl lenipo tl');
     expect((await tl(['admin', 'restore'])).err).toContain('/setup');

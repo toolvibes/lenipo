@@ -9,6 +9,7 @@ import {
   parseMarkdownFile,
   type WikiPort,
 } from '@toolvibes/editor/folder';
+import { agent } from './agent.js';
 import { COMMANDS, completion } from './completion.js';
 import { loadConfig, saveConfig } from './config.js';
 import { bridge } from './mcp.js';
@@ -50,6 +51,11 @@ Wiki-Seiten als Markdown
   lenipo page push <datei> [--space <KEY>] [--parent <id>]
   lenipo page pull <BEREICH> <ordner>
   lenipo page push-dir <ordner> --space <KEY> [--name <name>] [--skip a.md,b.md]
+
+Sprint-Agent (TL-88)
+  lenipo agent init --project <KEY> [--board <id>] [--label agent]   .lenipo/agent.json und Prompt anlegen
+  lenipo agent next [--output json]   nächster Vorgang für den Agenten im aktiven Sprint
+  lenipo agent ask <KEY> <Frage>      Rückfrage als Kommentar, wartet auf Antwort
 
 Weiteres
   lenipo mcp                      lokaler MCP-Server (stdio) als Brücke zu <adresse>/mcp
@@ -120,6 +126,8 @@ async function dispatch(argv: string[], io: Io): Promise<void> {
     }
     case 'issue':
       return issue(rest, io);
+    case 'agent':
+      return agent(rest, io);
     case 'board':
       return board(rest, io);
     case 'sprint':

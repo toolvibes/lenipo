@@ -8,6 +8,7 @@ export const COMMANDS: Record<string, string[]> = {
   board: ['list', 'view'],
   sprint: ['list'],
   page: ['get', 'push', 'pull', 'push-dir'],
+  agent: ['init', 'next', 'ask'],
   mcp: [],
   admin: ['users', 'import', 'backup', 'archive', 'restore'],
   completion: ['bash', 'zsh', 'fish'],
