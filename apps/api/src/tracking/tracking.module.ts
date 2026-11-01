@@ -6,6 +6,8 @@ import { TrackingBootstrapService } from './bootstrap.service.js';
 import { ComponentService } from './component.service.js';
 import { CustomFieldService } from './custom-field.service.js';
 import { CustomFieldsController } from './custom-fields.controller.js';
+import { EstimationController } from './estimation.controller.js';
+import { EstimationService } from './estimation.service.js';
 import { IssueService } from './issue.service.js';
 import { IssuesController } from './issues.controller.js';
 import { LinkService } from './link.service.js';
@@ -38,9 +40,11 @@ import { WorklogService } from './worklog.service.js';
     CustomFieldsController,
     PermissionSchemesController,
     SecuritySchemesController,
+    EstimationController,
   ],
   providers: [
     TrackingBootstrapService,
+    EstimationService,
     MetaService,
     ProjectAccessService,
     ProjectService,

@@ -2,6 +2,7 @@ export * from './automation.js';
 export * from './boards.js';
 export * from './collab.js';
 export * from './dashboards.js';
+export * from './estimation.js';
 export * from './fields.js';
 export * from './git.js';
 export * from './identity.js';

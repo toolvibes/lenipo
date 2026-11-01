@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=6 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -18,6 +18,7 @@ Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen,
 - **Verknüpfungen** (blockiert, dupliziert, bezieht sich auf …), **Unteraufgaben**, **Komponenten** und **Versionen** ordnen Vorgänge ein.
 - **Zeit erfassen** auf dem Vorgang oder mit dem Timer; „Zeiterfassung“ in der Seitenleiste zeigt die eigene Woche.
 - **Mehrere Vorgänge** auf einmal ändern: in der Vorgangssuche auswählen und „Massenänderung“.
+- **Schätzen mit Planning Poker:** Wer den Vorgang bearbeiten darf, startet in der Seitenspalte eine Schätzrunde. Alle, die den Vorgang sehen, legen verdeckt eine Karte; „Aufdecken“ zeigt alle Karten und den Median, „übernehmen“ setzt ihn als Story Points.
 - **Löschen** braucht das Recht dazu; gelöschte Vorgänge verschwinden aus allen Listen und werden nach der Aufbewahrungsfrist (Standard 30 Tage) endgültig entfernt.
 
 ## Boards, Backlog und Sprints

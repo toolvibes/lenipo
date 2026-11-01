@@ -1671,6 +1671,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/{key}/estimation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The open planning poker round, if any */
+    get: operations['Issues.getEstimation'];
+    put?: never;
+    /**
+     * Start a planning poker round (a fresh one if open)
+     * @description Requires the project permission `edit-issues`.
+     */
+    post: operations['Issues.startEstimation'];
+    /**
+     * End the round
+     * @description Requires `edit-issues`.
+     */
+    delete: operations['Issues.endEstimation'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/estimation/vote': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Lay or change your card */
+    put: operations['Issues.voteEstimate'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/estimation/reveal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Turn all cards over
+     * @description Requires the project permission `edit-issues`.
+     */
+    post: operations['Issues.revealEstimation'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tracking/meta': {
     parameters: {
       query?: never;
@@ -7101,6 +7163,39 @@ export interface components {
       createdAt: string;
       url: string;
       canDelete: boolean;
+    };
+    EstimationState: {
+      round: components['schemas']['Estimation'] | null;
+    };
+    Estimation: {
+      startedBy: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      startedAt: string;
+      revealed: boolean;
+      votes: {
+        user: components['schemas']['UserRef'];
+        value: components['schemas']['EstimateCard'] | null;
+      }[];
+      mine: components['schemas']['EstimateCard'] | null;
+      canManage: boolean;
+    };
+    /** @enum {string} */
+    EstimateCard:
+      | '0'
+      | '1'
+      | '2'
+      | '3'
+      | '5'
+      | '8'
+      | '13'
+      | '20'
+      | '40'
+      | '100'
+      | '0.5'
+      | '?'
+      | 'coffee';
+    EstimateVoteRequest: {
+      value: components['schemas']['EstimateCard'];
     };
     TrackingMeta: {
       issueTypes: components['schemas']['IssueTypeInfo'][];
@@ -12991,6 +13086,163 @@ export interface operations {
         };
         content: {
           'application/octet-stream': string;
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.getEstimation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EstimationState'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.startEstimation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Estimation'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.endEstimation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.voteEstimate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EstimateVoteRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Estimation'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.revealEstimation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Estimation'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

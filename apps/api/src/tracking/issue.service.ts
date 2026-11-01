@@ -181,7 +181,7 @@ export class IssueService {
   }
 
   /** Loads an issue by key and checks the permission; unknown and invisible issues are both 404. */
-  private async load(principal: Principal, key: string, permission: ProjectPermission) {
+  async load(principal: Principal, key: string, permission: ProjectPermission) {
     // The key first; a key from before a move still finds the issue (TL-86, E-99). Two indexed
     // lookups: "key = … OR id IN (aliases)" made PostgreSQL scan every issue (TL-44, E-125).
     const find = (condition: SQL) =>

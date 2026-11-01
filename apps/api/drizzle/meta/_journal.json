@@ -498,6 +498,13 @@
       "when": 1793527271744,
       "tag": "0070_external_collaborators",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793541503339,
+      "tag": "0071_planning_poker",
+      "breakpoints": true
     }
   ]
 }

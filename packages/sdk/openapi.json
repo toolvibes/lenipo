@@ -4597,6 +4597,203 @@
         }
       }
     },
+    "/api/v1/issues/{key}/estimation": {
+      "get": {
+        "operationId": "Issues.getEstimation",
+        "summary": "The open planning poker round, if any",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimationState"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Issues.startEstimation",
+        "summary": "Start a planning poker round (a fresh one if open)",
+        "description": "Requires the project permission `edit-issues`.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estimation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Issues.endEstimation",
+        "summary": "End the round",
+        "description": "Requires `edit-issues`.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/estimation/vote": {
+      "put": {
+        "operationId": "Issues.voteEstimate",
+        "summary": "Lay or change your card",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateVoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estimation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/estimation/reveal": {
+      "post": {
+        "operationId": "Issues.revealEstimation",
+        "summary": "Turn all cards over",
+        "description": "Requires the project permission `edit-issues`.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estimation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tracking/meta": {
       "get": {
         "operationId": "Issues.trackingMeta",
@@ -21559,6 +21756,97 @@
           "canDelete"
         ],
         "additionalProperties": false
+      },
+      "EstimationState": {
+        "type": "object",
+        "properties": {
+          "round": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["round"],
+        "additionalProperties": false
+      },
+      "Estimation": {
+        "type": "object",
+        "properties": {
+          "startedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "revealed": {
+            "type": "boolean"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/components/schemas/UserRef"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/EstimateCard"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["user", "value"],
+              "additionalProperties": false
+            }
+          },
+          "mine": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstimateCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canManage": {
+            "type": "boolean"
+          }
+        },
+        "required": ["startedBy", "startedAt", "revealed", "votes", "mine", "canManage"],
+        "additionalProperties": false
+      },
+      "EstimateCard": {
+        "type": "string",
+        "enum": ["0", "1", "2", "3", "5", "8", "13", "20", "40", "100", "0.5", "?", "coffee"]
+      },
+      "EstimateVoteRequest": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/EstimateCard"
+          }
+        },
+        "required": ["value"]
       },
       "TrackingMeta": {
         "type": "object",

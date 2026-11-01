@@ -40,6 +40,7 @@ import { DeleteIssueButton } from './IssueTrash';
 import { IssueWikiPages } from './IssueWikiPages';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { MoveIssueDialog } from './MoveIssueDialog';
+import { PlanningPoker } from './PlanningPoker';
 import { RichTextEditor, RichTextView, storedDoc } from './RichTextEditor';
 import { LogWorkDialog, TimeTrackingPanel, WorklogList } from './TimeTracking';
 import { type TransitionExtras, useTransitionScreen } from './TransitionDialog';
@@ -877,6 +878,11 @@ export function IssuePage({
             onLogWork={() => setLoggingWork(true)}
           />
           <DevelopmentPanel issueKey={data.key} />
+          <PlanningPoker
+            issueKey={data.key}
+            canEdit={canEdit}
+            onApply={(points) => update.mutate({ storyPoints: points })}
+          />
           <p className="m-0 mt-auto flex flex-col text-xs leading-normal text-[var(--ink-muted)]">
             <span>
               {data.reporter

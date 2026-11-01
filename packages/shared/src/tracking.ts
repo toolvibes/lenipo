@@ -1139,3 +1139,49 @@ export const MoveIssueRequest = z
   })
   .meta({ id: 'MoveIssueRequest' });
 export type MoveIssueRequest = z.infer<typeof MoveIssueRequest>;
+
+/** Planning poker cards (TL-51, E-134): story points, "?" for unsure, "coffee" for a break. */
+export const ESTIMATE_CARDS = [
+  '0',
+  '0.5',
+  '1',
+  '2',
+  '3',
+  '5',
+  '8',
+  '13',
+  '20',
+  '40',
+  '100',
+  '?',
+  'coffee',
+] as const;
+export const EstimateCard = z.enum(ESTIMATE_CARDS).meta({ id: 'EstimateCard' });
+export type EstimateCard = z.infer<typeof EstimateCard>;
+
+/** The open round on an issue: cards stay hidden until the round is revealed. */
+export const Estimation = z
+  .object({
+    startedBy: UserRef.nullable(),
+    startedAt: z.iso.datetime(),
+    revealed: z.boolean(),
+    /** Who has voted; values only once revealed. */
+    votes: z.array(z.object({ user: UserRef, value: EstimateCard.nullable() })),
+    /** The caller's own card, always visible to them. */
+    mine: EstimateCard.nullable(),
+    /** May start, reveal and end the round (edit-issues). */
+    canManage: z.boolean(),
+  })
+  .meta({ id: 'Estimation' });
+export type Estimation = z.infer<typeof Estimation>;
+
+/** GET answer: the open round, or none. */
+export const EstimationState = z
+  .object({ round: Estimation.nullable() })
+  .meta({ id: 'EstimationState' });
+export type EstimationState = z.infer<typeof EstimationState>;
+
+export const EstimateVoteRequest = z
+  .object({ value: EstimateCard })
+  .meta({ id: 'EstimateVoteRequest' });
+export type EstimateVoteRequest = z.infer<typeof EstimateVoteRequest>;

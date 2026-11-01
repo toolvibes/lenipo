@@ -2705,6 +2705,20 @@ export const de = {
     shareSpaceHelp:
       'Benutzer kommentieren, Entwickler bearbeiten, Administratoren verwalten den Bereich.',
   },
+  poker: {
+    title: 'Planning Poker',
+    start: 'Schätzrunde starten',
+    choose: 'Karte wählen',
+    coffee: 'Pause',
+    noVotes: 'Noch keine Karte gelegt.',
+    voted: 'gelegt',
+    reveal: 'Aufdecken',
+    median: 'Median: {{value}} Story Points',
+    noResult: 'Keine Zahl gewählt.',
+    apply: '{{value}} übernehmen',
+    again: 'Neue Runde',
+    end: 'Beenden',
+  },
   wikiHome: {
     title: 'Wiki',
     start: 'Startseite',
