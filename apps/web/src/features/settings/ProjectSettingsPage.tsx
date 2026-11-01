@@ -27,6 +27,7 @@ import { securitySchemesQuery } from '../admin/SecuritySchemes';
 import { InvitationsPanel } from '../auth/InvitePage';
 import { RulesList } from '../automation/RulesList';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
+import { IssueTrash } from '../tracking/IssueTrash';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
 import { RoleMembers } from './RoleMembers';
@@ -309,9 +310,11 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
     | 'security'
     | 'automation'
     | 'wikiPages'
+    | 'trash'
   >('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
+  const mayDelete = project.data?.permissions.includes('delete-issues') ?? false;
   const close = (open: boolean) => !open && setDialog(null);
 
   return (
@@ -401,6 +404,16 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               </button>
             </>
           )}
+          {mayDelete && (
+            <button
+              type="button"
+              aria-current={view === 'trash' ? 'page' : undefined}
+              className={NAV_ITEM}
+              onClick={() => setView('trash')}
+            >
+              {t('trash.title')}
+            </button>
+          )}
         </nav>
         <div className="flex min-w-0 max-w-[820px] flex-1 flex-col gap-3 px-10 py-7">
           {notice && (
@@ -419,6 +432,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'security' && administer && <Security projectKey={projectKey} />}
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
+          {view === 'trash' && mayDelete && <IssueTrash projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

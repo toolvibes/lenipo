@@ -443,6 +443,8 @@ export const issues = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     resolvedAt: timestamp({ withTimezone: true }),
     deletedAt: timestamp({ withTimezone: true }),
+    /** Who moved it to the trash (TL-61, E-126). */
+    deletedById: uuid().references(() => users.id, { onDelete: 'set null' }),
   },
   (table) => [
     uniqueIndex('issues_key_unique').on(table.key),

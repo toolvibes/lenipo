@@ -132,7 +132,8 @@ describe('timesheet (TL-24)', () => {
       await admin.request<TimePivot>('POST', '/reports/time-pivot', {
         query: 'project = WEB',
         from: '2026-10-01',
-        to: '2026-10-31',
+        // The timer minute is logged today; the range must reach it whatever today is.
+        to: new Date().toISOString().slice(0, 10),
         groupBy: 'epic',
         period: 'none',
       })

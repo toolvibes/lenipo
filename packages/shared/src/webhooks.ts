@@ -5,6 +5,7 @@ export const WEBHOOK_EVENT_TYPES = [
   'issue.created',
   'issue.updated',
   'issue.transitioned',
+  'issue.deleted',
   'comment.created',
   'comment.updated',
   'comment.deleted',

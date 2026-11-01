@@ -106,8 +106,21 @@ export class BulkController {
 
   @Endpoint({
     tag: 'Issues',
+    summary: 'Restore an issue from the trash',
+    description: 'Brings back the subtasks deleted with it too. Needs delete-issues.',
+    response: Issue,
+  })
+  @Post(':key/restore')
+  @HttpCode(200)
+  restore(@CurrentPrincipal() principal: Principal, @Param('key') key: string): Promise<Issue> {
+    return this.issues.restore(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
     summary: 'Delete an issue with its subtasks',
-    description: 'Needs the project permission `delete-issues`.',
+    description:
+      'Moves it to the project trash, where it can be restored until retention removes it. Needs the project permission `delete-issues`.',
   })
   @Delete(':key')
   @HttpCode(204)

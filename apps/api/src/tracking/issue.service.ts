@@ -29,6 +29,7 @@ import type {
   Transition,
   TransitionFieldAction,
   TransitionRequest,
+  TrashedIssue,
   UpdateCommentRequest,
   UpdateIssueRequest,
   UserRef,
@@ -42,6 +43,7 @@ import {
   desc,
   eq,
   inArray,
+  isNotNull,
   isNull,
   max,
   min,
@@ -49,7 +51,9 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { v7 as uuidv7 } from 'uuid';
+import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
@@ -166,6 +170,7 @@ export class IssueService {
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
     @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
     @Inject(VersionService) private readonly versions: VersionService,
+    @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
   // ---------------------------------------------------------------- reading
@@ -1850,15 +1855,102 @@ export class IssueService {
     return this.get(principal, newKey);
   }
 
-  /** Moves an issue and its subtasks to the trash (T-ISS-11); needs delete-issues. */
+  /**
+   * Moves an issue and its subtasks to the trash (T-ISS-11, TL-61); needs delete-issues. They
+   * leave every list, webhooks hear `issue.deleted`, and retention deletes them for good later.
+   */
   async deleteIssue(principal: Principal, key: string): Promise<void> {
     const { issue } = await this.load(principal, key, 'delete-issues');
+    await this.database.db.transaction(async (tx) => {
+      const removed = await tx
+        .update(issues)
+        .set({ deletedAt: sql`now()`, deletedById: principal.userId, updatedAt: sql`now()` })
+        .where(
+          and(or(eq(issues.id, issue.id), eq(issues.parentId, issue.id)), isNull(issues.deletedAt)),
+        )
+        .returning({ id: issues.id, key: issues.key });
+      await emitIssueEvent(tx, issue.id, principal.userId, {
+        type: 'issue.deleted',
+        key: issue.key,
+        summary: issue.summary,
+        subtasks: removed.filter((row) => row.id !== issue.id).map((row) => row.key),
+      });
+    });
+    await this.audit.record({
+      action: 'issue.deleted',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'issue',
+      targetId: issue.key,
+    });
+  }
+
+  /** The project's trash, newest first; for people who may delete issues there. */
+  async trash(principal: Principal, projectKey: string): Promise<TrashedIssue[]> {
+    const project = await this.projectService.findBrowsable(principal, projectKey);
+    await this.projectAccess.require(principal, project.id, 'delete-issues');
+    const deleter = alias(users, 'deleter');
+    const rows = await this.database.db
+      .select({
+        id: issues.id,
+        key: issues.key,
+        summary: issues.summary,
+        deletedAt: issues.deletedAt,
+        deleterId: deleter.id,
+        deleterName: deleter.displayName,
+        // Subtasks deleted together with their parent come back with it.
+        subtasks: sql<number>`(select count(*)::int from issues s
+          where s.parent_id = ${issues.id} and s.deleted_at = ${issues.deletedAt})`,
+      })
+      .from(issues)
+      .leftJoin(deleter, eq(deleter.id, issues.deletedById))
+      .where(
+        and(
+          eq(issues.projectId, project.id),
+          isNotNull(issues.deletedAt),
+          // A subtask deleted with its parent is listed under the parent.
+          sql`not exists (select 1 from issues p where p.id = ${issues.parentId}
+            and p.deleted_at = ${issues.deletedAt})`,
+        ),
+      )
+      .orderBy(desc(issues.deletedAt));
+    return rows.map((row) => ({
+      key: row.key,
+      summary: row.summary,
+      deletedAt: (row.deletedAt as Date).toISOString(),
+      deletedBy: row.deleterId ? { id: row.deleterId, displayName: row.deleterName ?? '' } : null,
+      subtasks: row.subtasks,
+    }));
+  }
+
+  /** Takes an issue and the subtasks deleted with it out of the trash. */
+  async restore(principal: Principal, key: string): Promise<Issue> {
+    const [row] = await this.database.db
+      .select({ issue: issues, projectKey: projects.key })
+      .from(issues)
+      .innerJoin(projects, eq(projects.id, issues.projectId))
+      .where(and(eq(issues.key, key.toUpperCase()), isNotNull(issues.deletedAt)));
+    if (!row) throw new NotFoundException('Issue not found in the trash');
+    const project = await this.projectService.findBrowsable(principal, row.projectKey);
+    await this.projectAccess.require(principal, project.id, 'delete-issues');
     await this.database.db
       .update(issues)
-      .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+      .set({ deletedAt: null, deletedById: null, updatedAt: sql`now()` })
       .where(
-        and(or(eq(issues.id, issue.id), eq(issues.parentId, issue.id)), isNull(issues.deletedAt)),
+        and(
+          or(eq(issues.id, row.issue.id), eq(issues.parentId, row.issue.id)),
+          // Compared in SQL: a JavaScript date drops the microseconds PostgreSQL keeps.
+          sql`${issues.deletedAt} = (select d.deleted_at from issues d where d.id = ${row.issue.id})`,
+        ),
       );
+    await this.audit.record({
+      action: 'issue.restored',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'issue',
+      targetId: row.issue.key,
+    });
+    return this.get(principal, row.issue.key);
   }
 
   /**

@@ -1716,7 +1716,7 @@ export interface paths {
     post?: never;
     /**
      * Delete an issue with its subtasks
-     * @description Needs the project permission `delete-issues`.
+     * @description Moves it to the project trash, where it can be restored until retention removes it. Needs the project permission `delete-issues`.
      */
     delete: operations['Issues.remove'];
     options?: never;
@@ -1910,6 +1910,26 @@ export interface paths {
     patch: operations['Issues.updateWorklog'];
     trace?: never;
   };
+  '/api/v1/projects/{key}/trash': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Issues in the project trash
+     * @description Deleted issues until retention removes them for good (30 days by default). Needs delete-issues.
+     */
+    get: operations['Issues.trash'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/issues/{key}/pages': {
     parameters: {
       query?: never;
@@ -2024,6 +2044,26 @@ export interface paths {
      * @description New keys, the old ones keep working. Type and status are kept where the target allows, else mapped (same category, else initial); components and versions by name; security level kept or the target default. Needs edit-issues in the source and create-issues in the target.
      */
     post: operations['Issues.move'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore an issue from the trash
+     * @description Brings back the subtasks deleted with it too. Needs delete-issues.
+     */
+    post: operations['Issues.restore'];
     delete?: never;
     options?: never;
     head?: never;
@@ -7180,6 +7220,14 @@ export interface components {
       started?: string;
       comment?: string;
     };
+    TrashedIssue: {
+      key: string;
+      summary: string;
+      /** Format: date-time */
+      deletedAt: string;
+      deletedBy: components['schemas']['UserRef'] | null;
+      subtasks: number;
+    };
     IssuePageRef: {
       /** Format: uuid */
       id: string;
@@ -8958,6 +9006,7 @@ export interface components {
       | 'issue.created'
       | 'issue.updated'
       | 'issue.transitioned'
+      | 'issue.deleted'
       | 'comment.created'
       | 'comment.updated'
       | 'comment.deleted'
@@ -13583,6 +13632,37 @@ export interface operations {
       };
     };
   };
+  'Issues.trash': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrashedIssue'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Issues.pages': {
     parameters: {
       query?: never;
@@ -13762,6 +13842,37 @@ export interface operations {
         'application/json': components['schemas']['MoveIssueRequest'];
       };
     };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Issues.restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Success */
       200: {

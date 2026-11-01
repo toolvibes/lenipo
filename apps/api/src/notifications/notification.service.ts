@@ -98,7 +98,12 @@ export class NotificationService {
     if (!issue || issue.deletedAt) return;
     const event = issueEvent(row);
     // Deleted comments and logged work are of interest to webhooks only.
-    if (event.type === 'issue.comment_deleted' || event.type === 'issue.worklog') return;
+    if (
+      event.type === 'issue.comment_deleted' ||
+      event.type === 'issue.worklog' ||
+      event.type === 'issue.deleted'
+    )
+      return;
     // Issues moved by a workflow change would flood every watcher (E-70).
     if (event.type === 'issue.updated' && event.migration) return;
     const mentions = new Set(event.mentions);

@@ -36,6 +36,7 @@ import { DevelopmentPanel } from './DevelopmentPanel';
 import { useFieldLabel } from './fieldLabel';
 import { InlineInput, inputClass, StatusMenu } from './fields';
 import { IssueLinks } from './IssueLinks';
+import { DeleteIssueButton } from './IssueTrash';
 import { IssueWikiPages } from './IssueWikiPages';
 import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from './icons';
 import { MoveIssueDialog } from './MoveIssueDialog';
@@ -526,6 +527,13 @@ export function IssuePage({
                 </Button>
               )}
               <MoveIssueDialog issue={data} open={moving} onOpenChange={setMoving} />
+              {permissions.has('delete-issues') && (
+                <DeleteIssueButton
+                  issueKey={data.key}
+                  projectKey={data.project.key}
+                  subtasks={data.children.length}
+                />
+              )}
               {watchButton}
             </>
           }

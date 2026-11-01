@@ -1077,6 +1077,19 @@ export const BulkItemsResult = z
   .meta({ id: 'BulkItemsResult' });
 export type BulkItemsResult = z.infer<typeof BulkItemsResult>;
 
+/** An issue in its project's trash (TL-61, E-126), until retention deletes it for good. */
+export const TrashedIssue = z
+  .object({
+    key: z.string(),
+    summary: z.string(),
+    deletedAt: z.iso.datetime(),
+    deletedBy: UserRef.nullable(),
+    /** Subtasks that went to the trash with it and come back with it. */
+    subtasks: z.number().int(),
+  })
+  .meta({ id: 'TrashedIssue' });
+export type TrashedIssue = z.infer<typeof TrashedIssue>;
+
 /** A copy of an issue (T-ISS-10): fields, security level and a "clones" link to the original. */
 export const CloneIssueRequest = z
   .object({

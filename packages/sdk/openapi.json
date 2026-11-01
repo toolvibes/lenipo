@@ -4778,7 +4778,7 @@
       "delete": {
         "operationId": "Issues.remove",
         "summary": "Delete an issue with its subtasks",
-        "description": "Needs the project permission `delete-issues`.",
+        "description": "Moves it to the project trash, where it can be restored until retention removes it. Needs the project permission `delete-issues`.",
         "tags": ["Issues"],
         "parameters": [
           {
@@ -5542,6 +5542,49 @@
         }
       }
     },
+    "/api/v1/projects/{key}/trash": {
+      "get": {
+        "operationId": "Issues.trash",
+        "summary": "Issues in the project trash",
+        "description": "Deleted issues until retention removes them for good (30 days by default). Needs delete-issues.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrashedIssue"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/issues/{key}/pages": {
       "get": {
         "operationId": "Issues.pages",
@@ -5781,6 +5824,46 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/restore": {
+      "post": {
+        "operationId": "Issues.restore",
+        "summary": "Restore an issue from the trash",
+        "description": "Brings back the subtasks deleted with it too. Needs delete-issues.",
+        "tags": ["Issues"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -22025,6 +22108,39 @@
           }
         }
       },
+      "TrashedIssue": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "deletedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subtasks": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["key", "summary", "deletedAt", "deletedBy", "subtasks"],
+        "additionalProperties": false
+      },
       "IssuePageRef": {
         "type": "object",
         "properties": {
@@ -29004,6 +29120,7 @@
           "issue.created",
           "issue.updated",
           "issue.transitioned",
+          "issue.deleted",
           "comment.created",
           "comment.updated",
           "comment.deleted",

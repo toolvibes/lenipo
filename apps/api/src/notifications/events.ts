@@ -31,6 +31,8 @@ export type IssueEvent =
       edited: boolean;
     }
   | { type: 'issue.comment_deleted'; commentId: string }
+  /** Moved to the trash with its subtasks (TL-61, E-126); the issue is gone from lists. */
+  | { type: 'issue.deleted'; key: string; summary: string; subtasks: string[] }
   | {
       type: 'issue.worklog';
       action: 'created' | 'updated' | 'deleted';

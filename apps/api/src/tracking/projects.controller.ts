@@ -26,6 +26,7 @@ import {
   ReleaseVersionRequest,
   SetProjectPermissionSchemeRequest,
   Timeline,
+  TrashedIssue,
   UpdateComponentRequest,
   UpdateVersionRequest,
   UserRef,
@@ -466,5 +467,20 @@ export class ProjectsController {
     @Param('id', ComponentId) id: string,
   ): Promise<void> {
     return this.components.delete(principal, key, id);
+  }
+
+  @Endpoint({
+    tag: 'Issues',
+    summary: 'Issues in the project trash',
+    description:
+      'Deleted issues until retention removes them for good (30 days by default). Needs delete-issues.',
+    response: z.array(TrashedIssue),
+  })
+  @Get(':key/trash')
+  trash(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<TrashedIssue[]> {
+    return this.issues.trash(principal, key);
   }
 }

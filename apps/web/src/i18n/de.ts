@@ -92,6 +92,26 @@ export const de = {
       'Wenn dich etwas behindert, melde es der Administration deiner Tasklore-Instanz oder als Vorgang im Projekt des Teams, das Tasklore betreut. Bitte nenne die Seite, was du tun wolltest und welche Hilfsmittel du benutzt.',
     back: 'Zu Tasklore',
   },
+  trash: {
+    title: 'Papierkorb',
+    intro:
+      'Gelöschte Vorgänge mit ihren Unteraufgaben. Sie lassen sich wiederherstellen, bis die Aufbewahrungsfrist sie endgültig entfernt (Standard 30 Tage).',
+    empty: 'Der Papierkorb ist leer.',
+    deleted: 'Gelöscht {{when}} von {{who}}',
+    someone: 'jemandem',
+    subtasks_one: '{{count}} Unteraufgabe',
+    subtasks_other: '{{count}} Unteraufgaben',
+    restore: 'Wiederherstellen',
+    open: 'Öffnen',
+    delete: 'Löschen',
+    confirmTitle: '{{key}} löschen?',
+    confirm:
+      'Der Vorgang kommt in den Papierkorb des Projekts und lässt sich dort wiederherstellen.',
+    confirmWithSubtasks_one:
+      'Der Vorgang und seine Unteraufgabe kommen in den Papierkorb des Projekts und lassen sich dort wiederherstellen.',
+    confirmWithSubtasks_other:
+      'Der Vorgang und seine {{count}} Unteraufgaben kommen in den Papierkorb des Projekts und lassen sich dort wiederherstellen.',
+  },
   shell: {
     newVersion: 'Eine neue Version von Tasklore ist da.',
     reload: 'Neu laden',
@@ -540,6 +560,7 @@ export const de = {
     spacesHelp: 'Seitenereignisse nur aus diesen Bereichen; keiner gewählt: alle.',
     eventTypes: {
       'issue.created': 'Vorgang erstellt',
+      'issue.deleted': 'Vorgang gelöscht',
       'issue.updated': 'Vorgang geändert',
       'issue.transitioned': 'Status gewechselt',
       'comment.created': 'Kommentar geschrieben',

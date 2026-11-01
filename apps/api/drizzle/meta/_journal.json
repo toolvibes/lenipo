@@ -484,6 +484,13 @@
       "when": 1793479433475,
       "tag": "0068_issue_order_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1793515924961,
+      "tag": "0069_issue_deleted_by",
+      "breakpoints": true
     }
   ]
 }

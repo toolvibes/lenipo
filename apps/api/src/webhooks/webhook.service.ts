@@ -69,6 +69,8 @@ export function webhookEventType(event: IssueEvent): WebhookEventType {
       return 'comment.deleted';
     case 'issue.worklog':
       return `worklog.${event.action}`;
+    case 'issue.deleted':
+      return 'issue.deleted';
   }
 }
 
@@ -415,7 +417,8 @@ export class WebhookService {
       .select({ id: issues.id, projectId: issues.projectId, deletedAt: issues.deletedAt })
       .from(issues)
       .where(eq(issues.id, row.issueId));
-    if (!issue || issue.deletedAt) return;
+    // A deleted issue still announces its deletion (TL-61, E-126), nothing after it.
+    if (!issue || (issue.deletedAt && event.type !== 'issue.deleted')) return;
     const targets = (await tx.select().from(webhooks).where(eq(webhooks.enabled, true))).filter(
       (webhook) =>
         webhook.events.includes(type) &&
@@ -425,10 +428,15 @@ export class WebhookService {
           webhook.statusIds.includes(statusAfter(event) ?? '')),
     );
     if (targets.length === 0) return;
-    const snapshot = await this.issues.snapshot(issue.id);
+    const snapshot =
+      event.type === 'issue.deleted'
+        ? { id: issue.id, key: event.key, summary: event.summary, subtasks: event.subtasks }
+        : await this.issues.snapshot(issue.id);
     const matching: typeof targets = [];
     for (const webhook of targets) {
-      if (await this.matches(webhook, snapshot.key)) matching.push(webhook);
+      // The filter cannot see a deleted issue; only unfiltered webhooks hear about deletions.
+      if (event.type === 'issue.deleted' ? !webhook.tql : await this.matches(webhook, snapshot.key))
+        matching.push(webhook);
     }
     if (matching.length === 0) return;
 

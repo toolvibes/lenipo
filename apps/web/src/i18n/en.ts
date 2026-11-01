@@ -90,6 +90,25 @@ export const en: Messages = {
       'If something gets in your way, tell the administrators of your Tasklore instance or file an issue in the project of the team running Tasklore. Please name the page, what you wanted to do and which assistive technology you use.',
     back: 'To Tasklore',
   },
+  trash: {
+    title: 'Trash',
+    intro:
+      'Deleted issues with their subtasks. They can be restored until retention removes them for good (30 days by default).',
+    empty: 'The trash is empty.',
+    deleted: 'Deleted {{when}} by {{who}}',
+    someone: 'someone',
+    subtasks_one: '{{count}} subtask',
+    subtasks_other: '{{count}} subtasks',
+    restore: 'Restore',
+    open: 'Open',
+    delete: 'Delete',
+    confirmTitle: 'Delete {{key}}?',
+    confirm: "The issue goes to the project's trash and can be restored there.",
+    confirmWithSubtasks_one:
+      "The issue and its subtask go to the project's trash and can be restored there.",
+    confirmWithSubtasks_other:
+      "The issue and its {{count}} subtasks go to the project's trash and can be restored there.",
+  },
   shell: {
     newVersion: 'A new version of Tasklore is available.',
     reload: 'Reload',
@@ -524,6 +543,7 @@ export const en: Messages = {
     spacesHelp: 'Page events only from these spaces; none chosen: all.',
     eventTypes: {
       'issue.created': 'Issue created',
+      'issue.deleted': 'Issue deleted',
       'issue.updated': 'Issue changed',
       'issue.transitioned': 'Status changed',
       'comment.created': 'Comment written',
