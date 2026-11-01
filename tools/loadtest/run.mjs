@@ -136,6 +136,7 @@ async function http(title, goalMs, cookie, paths, { method = 'GET', body } = {})
     goal: `p95 < ${goalMs} ms`,
     measured: `p97,5 ${p} ms · p50 ${result.latency.p50} ms · ${Math.round(result.requests.average)} req/s`,
     ok: p < goalMs && failed === 0,
+    broken: failed > 0,
     note: failed ? `${failed} Fehler` : '',
   };
 }
@@ -253,7 +254,7 @@ async function main() {
     );
     rows.push(await http('Vorgang öffnen (API)', 150, cookie, keys));
     rows.push(
-      await http('Board mit 500 Karten laden (API)', 1000, cookie, [
+      await http(`Board mit ${SIZE.boardCards} Karten laden (API)`, 1000, cookie, [
         `/api/v1/boards/${boardId}/issues`,
       ]),
     );
@@ -298,6 +299,7 @@ async function main() {
       goal: 'p95 < 100 ms',
       measured: `p95 ${Math.round(percentile(pair.latencies, 95))} ms · ${pair.edits} Änderungen`,
       ok: percentile(pair.latencies, 95) < 100 && pair.lost === 0,
+      broken: pair.lost > 0,
       note: pair.lost ? `${pair.lost} nicht angekommen` : '',
     });
     const crowd = await coEditing(cookie, page.id, SIZE.editors);
@@ -306,6 +308,7 @@ async function main() {
       goal: 'ohne spürbare Verzögerung (p95 < 250 ms)',
       measured: `p95 ${Math.round(percentile(crowd.latencies, 95))} ms · ${crowd.edits} Änderungen`,
       ok: percentile(crowd.latencies, 95) < 250 && crowd.lost === 0,
+      broken: crowd.lost > 0,
       note: crowd.lost ? `${crowd.lost} nicht angekommen` : '',
     });
     void project;
@@ -334,7 +337,13 @@ async function main() {
   const target = process.env.LOADTEST_REPORT ?? join(import.meta.dirname, 'report.md');
   writeFileSync(target, report);
   console.log(report);
-  if (rows.some((row) => !row.ok)) process.exitCode = 1;
+  // The small run in CI checks that everything works; shared CI machines are too slow and too
+  // uneven to hold the time goals, so there only errors and lost changes fail it.
+  const failing = rows.filter((row) => (SMOKE ? row.broken : !row.ok));
+  if (SMOKE && rows.some((row) => !row.ok && !row.broken)) {
+    console.log('Hinweis: Zeitvorgaben verfehlt (im Smoke-Lauf nur zur Information).');
+  }
+  if (failing.length > 0) process.exitCode = 1;
 }
 
 await main();
