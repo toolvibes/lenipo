@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { SprintReport, SprintReportEntry } from '@tasklore/shared';
+import type { SprintReport, SprintReportEntry } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { BoardTabs } from '../boards/BoardTabs';

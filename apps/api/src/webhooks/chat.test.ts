@@ -11,7 +11,7 @@ const transitioned = {
 
 describe('chat messages (P-NTF-05)', () => {
   it('writes Slack mrkdwn with an escaped link', () => {
-    const message = chatMessage('slack', 'de', transitioned, 'https://tasklore.example.org/') as {
+    const message = chatMessage('slack', 'de', transitioned, 'https://lenipo.example.org/') as {
       text: string;
       blocks: Array<{ text: { text: string } }>;
     };
@@ -19,36 +19,31 @@ describe('chat messages (P-NTF-05)', () => {
       'Lena Vogt hat den Status von WEB-1 Login <bauen> [neu] geändert\n→ Erledigt',
     );
     expect(message.blocks[0]?.text.text).toBe(
-      'Lena Vogt hat den Status von <https://tasklore.example.org/issues/WEB-1|WEB-1 Login &lt;bauen&gt; [neu]> geändert\n> → Erledigt',
+      'Lena Vogt hat den Status von <https://lenipo.example.org/issues/WEB-1|WEB-1 Login &lt;bauen&gt; [neu]> geändert\n> → Erledigt',
     );
   });
 
   it('writes Markdown for Mattermost and Rocket.Chat', () => {
-    const message = chatMessage(
-      'mattermost',
-      'en',
-      transitioned,
-      'https://tasklore.example.org',
-    ) as {
+    const message = chatMessage('mattermost', 'en', transitioned, 'https://lenipo.example.org') as {
       text: string;
     };
     expect(message.text).toBe(
-      'Lena Vogt changed the status of [WEB-1 Login <bauen> \\[neu\\]](https://tasklore.example.org/issues/WEB-1)\n> → Erledigt',
+      'Lena Vogt changed the status of [WEB-1 Login <bauen> \\[neu\\]](https://lenipo.example.org/issues/WEB-1)\n> → Erledigt',
     );
   });
 
   it('writes an adaptive card for Teams with a button', () => {
-    const message = chatMessage('teams', 'de', transitioned, 'https://tasklore.example.org') as {
+    const message = chatMessage('teams', 'de', transitioned, 'https://lenipo.example.org') as {
       attachments: Array<{
         content: { body: Array<{ text: string }>; actions: Array<{ url: string }> };
       }>;
     };
     const card = message.attachments[0]?.content;
     expect(card?.body.map((block) => block.text)).toEqual([
-      'Lena Vogt hat den Status von [WEB-1 Login <bauen> \\[neu\\]](https://tasklore.example.org/issues/WEB-1) geändert',
+      'Lena Vogt hat den Status von [WEB-1 Login <bauen> \\[neu\\]](https://lenipo.example.org/issues/WEB-1) geändert',
       '→ Erledigt',
     ]);
-    expect(card?.actions[0]?.url).toBe('https://tasklore.example.org/issues/WEB-1');
+    expect(card?.actions[0]?.url).toBe('https://lenipo.example.org/issues/WEB-1');
   });
 
   it('shortens comments and names the test message', () => {
@@ -75,6 +70,6 @@ describe('chat messages (P-NTF-05)', () => {
     ) as {
       text: string;
     };
-    expect(test.text).toBe('Test message from Tasklore for the webhook “Team”.');
+    expect(test.text).toBe('Test message from Lenipo for the webhook “Team”.');
   });
 });

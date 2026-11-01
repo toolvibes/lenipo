@@ -1,9 +1,9 @@
-import { issueKeysIn } from '@tasklore/editor/refs';
-import type { IssueLookup } from '@tasklore/shared';
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { issueKeysIn } from '@toolvibes/editor/refs';
+import type { IssueLookup } from '@toolvibes/shared';
 import { STATUS_TONE } from '../features/tracking/icons';
 import { client, unwrap } from '../lib/api';
 

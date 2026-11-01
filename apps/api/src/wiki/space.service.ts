@@ -14,7 +14,7 @@ import type {
   SpacePermission,
   SpaceSummary,
   UpdateSpaceRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import type { BoardType } from '@tasklore/shared';
+import type { BoardType } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 
 const TAB =

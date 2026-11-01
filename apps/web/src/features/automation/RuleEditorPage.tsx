@@ -7,7 +7,7 @@ import {
   type AutomationTrigger,
   type AutomationTriggerType,
   GIT_EVENTS,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

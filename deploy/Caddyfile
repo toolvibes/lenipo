@@ -1,4 +1,4 @@
-# Set SITE_ADDRESS to your domain (e.g. tasklore.example.org) for automatic HTTPS.
+# Set SITE_ADDRESS to your domain (e.g. lenipo.example.org) for automatic HTTPS.
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 

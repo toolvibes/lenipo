@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import type { OnboardingRequest, OnboardingResult, RichText } from '@tasklore/shared';
+import type { OnboardingRequest, OnboardingResult, RichText } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
@@ -46,7 +46,7 @@ function templateStatuses(template: 'scrum' | 'kanban') {
 
 /**
  * The welcome steps after the first sign-in (E-71): profile, then per method a project with
- * board and Lore space, or only a space; all in one transaction, then the user counts as
+ * board and wiki space, or only a space; all in one transaction, then the user counts as
  * onboarded. Without `start` it saves the profile (or nothing) and finishes, which is "skip".
  */
 @Injectable()

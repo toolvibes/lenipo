@@ -1,5 +1,5 @@
 {
-  "name": "tasklore",
+  "name": "lenipo",
   "private": true,
   "description": "Self-hosted project tracking and knowledge base",
   "type": "module",
@@ -16,14 +16,14 @@
     "format": "biome check --write .",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
-    "db:generate": "pnpm --filter @tasklore/api db:generate",
-    "db:migrate": "pnpm --filter @tasklore/api db:migrate",
-    "docs:export": "pnpm --filter @tasklore/api lore export ../../docs --space TL",
-    "docs:import": "pnpm --filter @tasklore/api lore import ../../docs --space TL --name Tasklore --skip README.md",
+    "db:generate": "pnpm --filter @toolvibes/api db:generate",
+    "db:migrate": "pnpm --filter @toolvibes/api db:migrate",
+    "docs:export": "pnpm --filter @toolvibes/api wiki export ../../docs --space TL",
+    "docs:import": "pnpm --filter @toolvibes/api wiki import ../../docs --space TL --name Lenipo --skip README.md",
     "licenses:check": "node scripts/check-licenses.mjs",
     "migrations:check": "node scripts/check-migrations.mjs",
     "design:tokens": "node scripts/build-design-tokens.mjs",
-    "api:generate": "pnpm --filter @tasklore/shared build && pnpm --filter @tasklore/api build && pnpm --filter @tasklore/api openapi:export && pnpm --filter @tasklore/codegen generate && biome format --write packages/sdk"
+    "api:generate": "pnpm --filter @toolvibes/shared build && pnpm --filter @toolvibes/api build && pnpm --filter @toolvibes/api openapi:export && pnpm --filter @toolvibes/codegen generate && biome format --write packages/sdk"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

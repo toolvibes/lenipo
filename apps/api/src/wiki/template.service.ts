@@ -5,13 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { imageAttachmentIds, isValidDoc } from '@tasklore/editor';
+import { imageAttachmentIds, isValidDoc } from '@toolvibes/editor';
 import type {
   PageTemplate,
   PageTemplateSummary,
   RichText,
   SavePageTemplateRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { asc, eq, isNull, or } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';

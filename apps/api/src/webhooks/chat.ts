@@ -1,4 +1,4 @@
-import type { WebhookFormat } from '@tasklore/shared';
+import type { WebhookFormat } from '@toolvibes/shared';
 
 type Locale = 'de' | 'en';
 
@@ -24,8 +24,8 @@ const TEXT = {
       'sprint.completed': (a, i) => `${a} hat ${i} abgeschlossen`,
       'version.released': (a, i) => `${a} hat ${i} veröffentlicht`,
     } as Record<string, Sentence>,
-    test: (name: string) => `Testnachricht von Tasklore für den Webhook „${name}“.`,
-    open: 'In Tasklore öffnen',
+    test: (name: string) => `Testnachricht von Lenipo für den Webhook „${name}“.`,
+    open: 'In Lenipo öffnen',
     none: '–',
   },
   en: {
@@ -47,8 +47,8 @@ const TEXT = {
       'sprint.completed': (a, i) => `${a} completed ${i}`,
       'version.released': (a, i) => `${a} released ${i}`,
     } as Record<string, Sentence>,
-    test: (name: string) => `Test message from Tasklore for the webhook “${name}”.`,
-    open: 'Open in Tasklore',
+    test: (name: string) => `Test message from Lenipo for the webhook “${name}”.`,
+    open: 'Open in Lenipo',
     none: '–',
   },
 };

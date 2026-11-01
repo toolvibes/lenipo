@@ -1,4 +1,4 @@
-import type { EstimationField, IssueSummary, Sprint, UserRef } from '@tasklore/shared';
+import type { EstimationField, IssueSummary, Sprint, UserRef } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 
 /** What one issue adds to a sprint, in the board's unit: points, hours or one issue. */

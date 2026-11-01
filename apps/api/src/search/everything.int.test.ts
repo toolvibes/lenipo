@@ -1,4 +1,4 @@
-import type { EverythingResult, Page } from '@tasklore/shared';
+import type { EverythingResult, Page } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -131,7 +131,7 @@ describe('global search', () => {
     expect(result.issues.map((issue) => issue.key)).toEqual(['ATL-1']);
   });
 
-  it('narrows to one project and its Lore', async () => {
+  it('narrows to one project and its Wiki', async () => {
     const response = await admin.request<EverythingResult>(
       'GET',
       '/search/everything?q=Synchronisierung&project=ATL',

@@ -9,7 +9,7 @@ import {
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Page, PageTreeEntry, RichText, TextAnchor } from '@tasklore/shared';
+import type { Page, PageTreeEntry, RichText, TextAnchor } from '@toolvibes/shared';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

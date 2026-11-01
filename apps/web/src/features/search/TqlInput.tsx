@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { QueryError } from '@tasklore/shared';
+import type { QueryError } from '@toolvibes/shared';
 import {
   applySuggestion,
   type CompletionContext,
@@ -8,7 +8,7 @@ import {
   quoteValue,
   type Suggestion,
   staticSuggestions,
-} from '@tasklore/tql';
+} from '@toolvibes/tql';
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { valueSuggestionsQuery } from '../../lib/search';

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ActivityEntry, ActivityPage, ActivityQuery, UserRef } from '@tasklore/shared';
+import type { ActivityEntry, ActivityPage, ActivityQuery, UserRef } from '@toolvibes/shared';
 import { inArray, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

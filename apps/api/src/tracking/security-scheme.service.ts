@@ -11,7 +11,7 @@ import type {
   SecurityScheme,
   SecuritySchemeSummary,
   UpdateSecuritySchemeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, inArray, isNotNull, notInArray } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

@@ -5,7 +5,7 @@ import {
   type AutomationCondition,
   COMPARE_OPERATORS,
   SET_FIELDS,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '../../ui/Select';

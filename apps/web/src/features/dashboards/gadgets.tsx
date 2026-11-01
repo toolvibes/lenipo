@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import type {
   CreatedResolved,
   GadgetConfig,
@@ -8,7 +8,7 @@ import type {
   StatisticField,
   Statistics,
   StatisticValue,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';

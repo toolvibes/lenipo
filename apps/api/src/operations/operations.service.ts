@@ -6,7 +6,7 @@ import {
   MaintenanceMode,
   type ModuleName,
   RateLimitSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { AppConfig } from '../core/config.js';
 import { CONFIG, DATABASE } from '../core/tokens.js';

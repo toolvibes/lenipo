@@ -11,8 +11,8 @@ import {
   SearchRequest,
   TransitionRequest,
   UpdateIssueRequest,
-} from '@tasklore/shared';
-import { parse } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { parse } from '@toolvibes/tql';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AuditService } from '../audit/audit.service.js';
@@ -91,7 +91,7 @@ function failure(error: unknown): CallToolResult {
 }
 
 /**
- * The MCP tools of Tasklore v1 (D-MCP, E-52). They call the services behind the REST API with
+ * The MCP tools of Lenipo v1 (D-MCP, E-52). They call the services behind the REST API with
  * the caller's principal, so rights, history and events are the same.
  */
 export type ToolHandler = (args: Record<string, unknown>) => Promise<CallToolResult>;
@@ -305,10 +305,10 @@ export function registerTools(
     {
       title: 'Create a project',
       description:
-        'Creates a project from a template (scrum, kanban, basic, bugs). Scrum and Kanban projects get their board, so the backlog works at once; with lore: true also a Lore space of the same key, linked to the project. Needs a token with the admin scope and the global permission to create projects.',
+        'Creates a project from a template (scrum, kanban, basic, bugs). Scrum and Kanban projects get their board, so the backlog works at once; with lore: true also a wiki space of the same key, linked to the project. Needs a token with the admin scope and the global permission to create projects.',
       inputSchema: {
         ...CreateProjectRequest.shape,
-        lore: z.boolean().optional().describe('Also create a linked Lore space for its docs'),
+        lore: z.boolean().optional().describe('Also create a linked wiki space for its docs'),
       },
     },
     async ({ lore, ...request }) => {
@@ -329,7 +329,7 @@ export function registerTools(
           description: request.description,
         });
         await services.spaces.update(principal, project.key, { projectKey: project.key });
-        made.push(`Lore space ${project.key}`);
+        made.push(`wiki space ${project.key}`);
       }
       await services.audit.record({
         action: 'mcp.create_project',

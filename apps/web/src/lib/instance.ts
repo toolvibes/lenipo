@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
-import { type FeatureFlags, MODULES } from '@tasklore/shared';
+import { type FeatureFlags, MODULES } from '@toolvibes/shared';
 import { client, unwrap } from './api';
 
 /** Modules, maintenance and the banner (TL-40, E-121); looked at again every minute. */

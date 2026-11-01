@@ -1,6 +1,6 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { ProjectRole, UserRef } from '@tasklore/shared';
-import { PROJECT_PERMISSIONS, type ProjectPermission } from '@tasklore/shared';
+import type { ProjectRole, UserRef } from '@toolvibes/shared';
+import { PROJECT_PERMISSIONS, type ProjectPermission } from '@toolvibes/shared';
 import { and, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';

@@ -1,5 +1,5 @@
-import { createTaskloreClient } from '@tasklore/sdk';
-import type { Problem } from '@tasklore/shared';
+import { createLenipoClient } from '@toolvibes/sdk';
+import type { Problem } from '@toolvibes/shared';
 
 /** A failed API call, carrying the server's problem details (RFC 9457). */
 export class ApiError extends Error {
@@ -13,7 +13,7 @@ export class ApiError extends Error {
 }
 
 /** Typed client generated from the OpenAPI document (E-22); the browser authenticates with the session cookie. */
-export const client = createTaskloreClient();
+export const client = createLenipoClient();
 
 /** Returns the response body or throws an ApiError with the problem details. */
 export async function unwrap<T>(

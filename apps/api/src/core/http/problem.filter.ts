@@ -5,7 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import type { Problem } from '@tasklore/shared';
+import type { Problem } from '@toolvibes/shared';
 import type { Response } from 'express';
 import { ZodError } from 'zod';
 import type { Logger } from '../logger.js';
@@ -38,7 +38,7 @@ function fieldErrors(error: ZodError): Record<string, string[]> {
 export function toProblem(exception: unknown): Problem {
   if (exception instanceof ZodError) {
     return {
-      type: 'urn:tasklore:problem:validation',
+      type: 'urn:lenipo:problem:validation',
       title: 'Validation failed',
       status: HttpStatus.BAD_REQUEST,
       errors: fieldErrors(exception),

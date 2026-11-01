@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { markdownToDoc, reviewMentions } from '@tasklore/editor';
+import { markdownToDoc, reviewMentions } from '@toolvibes/editor';
 import type {
   ChangeGroup,
   CloneIssueRequest,
@@ -34,8 +34,8 @@ import type {
   UpdateIssueRequest,
   UserRef,
   VersionRef,
-} from '@tasklore/shared';
-import { formatDuration } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { formatDuration } from '@toolvibes/tql';
 import {
   and,
   asc,

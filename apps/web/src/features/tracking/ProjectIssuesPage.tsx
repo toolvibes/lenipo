@@ -1,7 +1,7 @@
 import { BookOpenText, GearSix, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Me } from '@tasklore/shared';
+import type { Me } from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatTotal } from '../../lib/format';

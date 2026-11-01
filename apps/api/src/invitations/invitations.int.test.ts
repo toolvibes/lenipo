@@ -1,4 +1,4 @@
-import type { Invitation, InvitationPreview, Me, ProjectMember } from '@tasklore/shared';
+import type { Invitation, InvitationPreview, Me, ProjectMember } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { Mailer, type MailMessage } from '../notifications/mailer.js';
@@ -14,7 +14,7 @@ const tokenIn = (mail: MailMessage | undefined) =>
 beforeAll(async () => {
   test = await startTestApp({
     SMTP_URL: 'smtp://127.0.0.1:1',
-    PUBLIC_URL: 'https://tasklore.example.org',
+    PUBLIC_URL: 'https://lenipo.example.org',
   });
   test.app.get(Mailer).transport = {
     sendMail: async (message) => {
@@ -25,7 +25,7 @@ beforeAll(async () => {
   const code = await test.app.get(SetupService).issueCode();
   await admin.request('POST', '/setup', {
     token: code,
-    instanceName: 'Team-Tasklore',
+    instanceName: 'Team-Lenipo',
     admin: { email: 'lena@example.org', displayName: 'Lena Vogt', password: 'ein-langes-passwort' },
   });
   await admin.request('POST', '/projects', { key: 'WEB', name: 'Web', template: 'scrum' });
@@ -58,7 +58,7 @@ describe('invitations (P-USR-15, TL-67)', () => {
       role: 'developers',
     });
     const mail = sent.at(-1);
-    expect(mail?.subject).toBe('Einladung zu Team-Tasklore');
+    expect(mail?.subject).toBe('Einladung zu Team-Lenipo');
     const token = tokenIn(mail);
     const preview = await new TestClient(test.baseUrl).request<InvitationPreview>(
       'GET',
@@ -122,7 +122,7 @@ describe('invitations (P-USR-15, TL-67)', () => {
       projectKey: 'WEB',
       role: 'users',
     });
-    expect(sent.at(-1)?.subject).toBe('[Team-Tasklore] Neu im Projekt Web');
+    expect(sent.at(-1)?.subject).toBe('[Team-Lenipo] Neu im Projekt Web');
     const members = (await admin.request<ProjectMember[]>('GET', '/projects/WEB/members')).body;
     expect(JSON.stringify(members)).toContain('Mira Kaya');
   });
@@ -145,7 +145,7 @@ describe('self-registration (P-USR-15)', () => {
       (await anonymous.request('POST', '/auth/register', { email: 'neu@firma.example' })).status,
     ).toBe(202);
     const mail = sent.at(-1);
-    expect(mail?.subject).toBe('Registrierung bei Team-Tasklore');
+    expect(mail?.subject).toBe('Registrierung bei Team-Lenipo');
     const preview = (
       await anonymous.request<InvitationPreview>(
         'GET',

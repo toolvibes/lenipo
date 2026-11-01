@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { DashboardScope, StatisticsRequest } from '@tasklore/shared';
+import type { DashboardScope, StatisticsRequest } from '@toolvibes/shared';
 import { client, unwrap } from './api';
 
 export const dashboardsQuery = (scope: DashboardScope = 'visible') =>

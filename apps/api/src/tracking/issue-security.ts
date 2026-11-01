@@ -1,4 +1,4 @@
-import { AUTOMATION_ACTOR_ID } from '@tasklore/shared';
+import { AUTOMATION_ACTOR_ID } from '@toolvibes/shared';
 import { type SQL, sql } from 'drizzle-orm';
 import {
   groupMembers,

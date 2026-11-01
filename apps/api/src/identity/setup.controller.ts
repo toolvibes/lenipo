@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { Me, SetupRequest, SetupStatusResponse } from '@tasklore/shared';
+import { Me, SetupRequest, SetupStatusResponse } from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import type { AppConfig } from '../core/config.js';
 import { Public, ValidBody } from '../core/http/decorators.js';

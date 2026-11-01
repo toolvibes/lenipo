@@ -1,4 +1,4 @@
-import type { AuthProviders, Me, SamlProvider } from '@tasklore/shared';
+import type { AuthProviders, Me, SamlProvider } from '@toolvibes/shared';
 import { generate } from 'selfsigned';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SignedXml } from 'xml-crypto';

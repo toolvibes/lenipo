@@ -1,4 +1,4 @@
-// Generates apps/web/src/styles/tokens.css from design/tokens.json (the Tasklore design system's tokens).
+// Generates apps/web/src/styles/tokens.css from design/tokens.json (the Lenipo design system's tokens).
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const SOURCE = new URL('../design/tokens.json', import.meta.url);
@@ -32,7 +32,7 @@ const fonts = Object.entries(tokens.type.families).map(
 );
 
 const lines = [
-  '/* Tasklore — generated from design/tokens.json by scripts/build-design-tokens.mjs. Do not edit. */',
+  '/* Lenipo — generated from design/tokens.json by scripts/build-design-tokens.mjs. Do not edit. */',
   ':root {',
   ...declarations(themed, primaryTheme),
   ...fixed.map((token) => `  --${token.name}: ${token.value};`),

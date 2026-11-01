@@ -2,7 +2,7 @@ import { Check, Eye, EyeSlash, Plus, Tag, X } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { type Page, PageLabels } from '@tasklore/shared';
+import { type Page, PageLabels } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

@@ -13,7 +13,7 @@ import type { Principal } from '../core/http/principal.js';
 import type { Logger } from '../core/logger.js';
 import { countConnections } from '../core/metrics.js';
 import { CONFIG, LOGGER } from '../core/tokens.js';
-import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
+import { readSessionCookie } from '../identity/secrets.js';
 import { SessionService } from '../identity/session.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
@@ -70,7 +70,7 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
       },
     });
     io.use(async (socket, next) => {
-      const secret = readCookie(socket.handshake.headers.cookie, SESSION_COOKIE);
+      const secret = readSessionCookie(socket.handshake.headers.cookie);
       const session = secret ? await this.sessions.authenticate(secret) : null;
       // A sign-in still waiting for its second factor gets no signals (TL-44).
       if (session?.stage !== 'full') return next(new Error('Authentication required'));

@@ -1,4 +1,4 @@
-import type { Issue, RichText, UserSummary } from '@tasklore/shared';
+import type { Issue, RichText, UserSummary } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DATABASE } from '../core/tokens.js';

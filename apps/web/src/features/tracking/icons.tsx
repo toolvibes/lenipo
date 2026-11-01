@@ -12,7 +12,7 @@ import {
   Question,
   TreeStructure,
 } from '@phosphor-icons/react';
-import type { IssueTypeInfo, PriorityInfo, StatusInfo } from '@tasklore/shared';
+import type { IssueTypeInfo, PriorityInfo, StatusInfo } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 
 const ICONS: Record<string, Icon> = {

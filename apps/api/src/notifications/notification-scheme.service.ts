@@ -12,7 +12,7 @@ import type {
   NotificationScheme,
   NotificationSchemeSummary,
   UpdateNotificationSchemeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

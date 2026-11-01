@@ -1,12 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import type {
   PublishReleaseNotesRequest,
   Release,
   ReleaseNotes,
   ReleaseWarning,
   RichText,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, eq, getTableColumns, inArray, isNull } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

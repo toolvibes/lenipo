@@ -14,7 +14,7 @@ import type {
   Sprint,
   StartSprintRequest,
   UpdateSprintRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, getTableColumns, inArray, isNull, not, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

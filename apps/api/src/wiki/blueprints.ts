@@ -1,4 +1,4 @@
-import type { RichText } from '@tasklore/shared';
+import type { RichText } from '@toolvibes/shared';
 
 /** Shipped page blueprints (W-TPL-03, E-72): built in code, in the reader's language. */
 export const BLUEPRINT_KEYS = [

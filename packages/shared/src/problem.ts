@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** A TQL error with its position, as produced by @tasklore/tql or by the API. */
+/** A TQL error with its position, as produced by @toolvibes/tql or by the API. */
 export const QueryError = z
   .object({
     code: z.string(),
@@ -21,7 +21,7 @@ export const Problem = z
     detail: z.string().optional(),
     /** Field-level validation errors, keyed by dotted path. */
     errors: z.record(z.string(), z.array(z.string())).optional(),
-    /** Errors in a TQL query, with positions (type urn:tasklore:problem:query). */
+    /** Errors in a TQL query, with positions (type urn:lenipo:problem:query). */
     queryErrors: z.array(QueryError).optional(),
   })
   .meta({ id: 'Problem' });

@@ -42,7 +42,7 @@ export function registerResources(
 
   server.registerResource(
     'issue',
-    new ResourceTemplate('tasklore://issue/{key}', {
+    new ResourceTemplate('lenipo://issue/{key}', {
       // The caller's open issues, so clients can offer them without a search.
       list: async () => {
         const result = await search.search(principal, {
@@ -52,7 +52,7 @@ export function registerResources(
         });
         return {
           resources: result.issues.map((issue) => ({
-            uri: `tasklore://issue/${issue.key}`,
+            uri: `lenipo://issue/${issue.key}`,
             name: `${issue.key} ${issue.summary}`,
             mimeType: 'text/markdown',
           })),
@@ -62,7 +62,7 @@ export function registerResources(
     {
       title: 'Issue',
       description:
-        'An issue with fields, links, description and comments, e.g. tasklore://issue/WEB-123.',
+        'An issue with fields, links, description and comments, e.g. lenipo://issue/WEB-123.',
       mimeType: 'text/markdown',
     },
     async (uri, variables) =>
@@ -71,10 +71,10 @@ export function registerResources(
 
   server.registerResource(
     'page',
-    new ResourceTemplate('tasklore://page/{id}', { list: undefined }),
+    new ResourceTemplate('lenipo://page/{id}', { list: undefined }),
     {
       title: 'Wiki page',
-      description: 'The published version of a wiki page as Markdown, e.g. tasklore://page/<uuid>.',
+      description: 'The published version of a wiki page as Markdown, e.g. lenipo://page/<uuid>.',
       mimeType: 'text/markdown',
     },
     async (uri, variables) =>
@@ -83,11 +83,10 @@ export function registerResources(
 
   server.registerResource(
     'board',
-    new ResourceTemplate('tasklore://board/{id}', { list: undefined }),
+    new ResourceTemplate('lenipo://board/{id}', { list: undefined }),
     {
       title: 'Board',
-      description:
-        'A board with its columns and cards in rank order, e.g. tasklore://board/<uuid>.',
+      description: 'A board with its columns and cards in rank order, e.g. lenipo://board/<uuid>.',
       mimeType: 'text/markdown',
     },
     async (uri, variables) =>
@@ -96,11 +95,11 @@ export function registerResources(
 
   server.registerResource(
     'sprint',
-    new ResourceTemplate('tasklore://sprint/{id}', { list: undefined }),
+    new ResourceTemplate('lenipo://sprint/{id}', { list: undefined }),
     {
       title: 'Sprint',
       description:
-        'A sprint report: goal, dates, completed and open issues, scope changes, e.g. tasklore://sprint/<uuid>.',
+        'A sprint report: goal, dates, completed and open issues, scope changes, e.g. lenipo://sprint/<uuid>.',
       mimeType: 'text/markdown',
     },
     async (uri, variables) =>

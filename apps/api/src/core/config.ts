@@ -19,7 +19,7 @@ const configSchema = z.object({
   SHUTDOWN_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(25),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */
   WEB_DIST_DIR: z.string().min(1).optional(),
-  /** Public address of this installation, used in log messages and links (e.g. https://tasklore.example.org). */
+  /** Public address of this installation, used in log messages and links (e.g. https://lenipo.example.org). */
   PUBLIC_URL: z.url().optional(),
   /** Send session cookies only over HTTPS. Defaults to true in production. */
   COOKIE_SECURE: z.stringbool().optional(),
@@ -31,7 +31,7 @@ const configSchema = z.object({
   /** Label of the sign-in button, e.g. "Firmen-Login". */
   OIDC_DISPLAY_NAME: z.string().min(1).default('Single Sign-On'),
   OIDC_SCOPES: z.string().default('openid profile email'),
-  /** Claim with group names; matching Tasklore groups are granted on sign-in. */
+  /** Claim with group names; matching Lenipo groups are granted on sign-in. */
   OIDC_GROUPS_CLAIM: z.string().min(1).optional(),
   /** Create accounts for unknown people on first sign-in. */
   OIDC_AUTO_CREATE_USERS: z.stringbool().default(true),
@@ -57,7 +57,7 @@ const configSchema = z.object({
   ATTACHMENT_MAX_MB: z.coerce.number().positive().max(1024).default(25),
   /** Outgoing mail server, e.g. smtp://user:password@mail.example.org:587; without it no email is sent. */
   SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
-  MAIL_FROM: z.string().min(3).default('Tasklore <tasklore@localhost>'),
+  MAIL_FROM: z.string().min(3).default('Lenipo <lenipo@localhost>'),
   /** Notification emails wait this long after the last change to an issue, bundling a burst into one. */
   NOTIFICATION_EMAIL_DELAY_SECONDS: z.coerce.number().int().min(0).default(120),
   /** Let webhooks reach loopback and private addresses (internal tools); off by default (E-45). */

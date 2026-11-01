@@ -1,4 +1,4 @@
-import type { ProjectTemplate, StatusCategory } from '@tasklore/shared';
+import type { ProjectTemplate, StatusCategory } from '@toolvibes/shared';
 import { v5 as uuidv5 } from 'uuid';
 import type { WorkflowDefinition } from './workflow.js';
 

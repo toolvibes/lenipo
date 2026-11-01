@@ -1,7 +1,7 @@
 import { PencilSimple, Trash } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { PageTemplateSummary, RichText } from '@tasklore/shared';
+import type { PageTemplateSummary, RichText } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

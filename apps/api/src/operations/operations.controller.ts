@@ -15,7 +15,7 @@ import {
   MaintenanceMode,
   RateLimitSettings,
   TokenLimits,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { asc, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
@@ -116,7 +116,7 @@ export class OperationsController {
     tag: 'Operations',
     summary: 'Switch maintenance mode',
     description:
-      'While on, only administrators can sign in and use Tasklore; others see the message.',
+      'While on, only administrators can sign in and use Lenipo; others see the message.',
     response: MaintenanceMode,
   })
   @Put('maintenance-mode')

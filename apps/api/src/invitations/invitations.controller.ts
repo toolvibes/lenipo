@@ -19,7 +19,7 @@ import {
   InvitationPreview,
   RegisterRequest,
   RegistrationSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';

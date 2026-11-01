@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Inject, Post } from '@nestjs/common';
-import { AccessCheckRequest, AccessCheckResult } from '@tasklore/shared';
+import { AccessCheckRequest, AccessCheckResult } from '@toolvibes/shared';
 import { RequireGlobal } from '../access/require-global.js';
 import { ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

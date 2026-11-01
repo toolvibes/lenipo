@@ -49,7 +49,7 @@ export class AttemptLimiter {
       throw new HttpException(
         {
           message: `Too many failed attempts; try again in ${WINDOW_MINUTES} minutes`,
-          type: 'urn:tasklore:problem:too-many-attempts',
+          type: 'urn:lenipo:problem:too-many-attempts',
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );

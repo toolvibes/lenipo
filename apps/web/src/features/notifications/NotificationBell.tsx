@@ -6,7 +6,7 @@ import {
   type Notification,
   type NotificationCategory,
   type NotificationSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { notificationSettingsQuery, unreadCountQuery } from '../../lib/notifications';

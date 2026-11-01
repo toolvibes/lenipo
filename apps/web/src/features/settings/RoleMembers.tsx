@@ -1,6 +1,6 @@
 import { UserCircle, UsersThree, X } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
-import type { UserRef } from '@tasklore/shared';
+import type { UserRef } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { groupsQuery, userSearchQuery } from '../../lib/wiki';
@@ -62,7 +62,7 @@ function MemberLine({
 
 /**
  * Who holds which role, with removing and adding people (searched by name or e-mail) or
- * groups. Used by Lore spaces (E-60) and projects (TL-65).
+ * groups. Used by wiki spaces (E-60) and projects (TL-65).
  */
 export function RoleMembers<Role extends string>({
   roles,

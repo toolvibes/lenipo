@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { Me, OnboardingMethod, OnboardingRequest } from '@tasklore/shared';
+import type { Me, OnboardingMethod, OnboardingRequest } from '@toolvibes/shared';
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { applyLocale } from '../../i18n';
@@ -9,6 +9,7 @@ import { meQuery } from '../../lib/queries';
 import { timeZones } from '../../lib/timeZones';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
+import { LogoMark } from '../../ui/Logo';
 import { TextField } from '../../ui/TextField';
 
 const FIELD =
@@ -84,12 +85,7 @@ export function WelcomePage({ me }: { me: Me }) {
     <div className="grid min-h-screen md:grid-cols-2">
       <main className="flex flex-col px-6 py-10 sm:px-14">
         <span className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="grid size-6 place-items-center rounded-[5px] bg-[var(--ink)] text-[13px] font-bold text-[var(--surface-1)]"
-          >
-            T
-          </span>
+          <LogoMark size={24} />
           <span className="text-base font-bold">{t('common.product')}</span>
         </span>
         <div className="flex max-w-[380px] flex-1 flex-col justify-center gap-4 py-10">

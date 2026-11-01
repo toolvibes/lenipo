@@ -1,5 +1,5 @@
-import { reanchor } from '@tasklore/editor';
-import type { TextAnchor } from '@tasklore/shared';
+import { reanchor } from '@toolvibes/editor';
+import type { TextAnchor } from '@toolvibes/shared';
 import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { Executor } from '../db/client.js';
 import { pageComments } from '../db/schema/index.js';

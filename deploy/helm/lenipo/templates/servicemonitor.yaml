@@ -2,8 +2,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "tasklore.fullname" . }}
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:

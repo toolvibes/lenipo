@@ -1,7 +1,7 @@
 import { Kanban, Plus } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { BoardType } from '@tasklore/shared';
+import type { BoardType } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

@@ -2,8 +2,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "tasklore.fullname" . }}
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations: {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -23,12 +23,12 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "tasklore.fullname" . }}-collab
+                name: {{ include "lenipo.fullname" . }}-collab
                 port: { name: collab }
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ include "tasklore.fullname" . }}-api
+                name: {{ include "lenipo.fullname" . }}-api
                 port: { name: http }
 {{- end }}

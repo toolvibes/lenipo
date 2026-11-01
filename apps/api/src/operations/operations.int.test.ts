@@ -1,4 +1,4 @@
-import type { AdminToken, CreatedToken, InstanceNotice } from '@tasklore/shared';
+import type { AdminToken, CreatedToken, InstanceNotice } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -83,7 +83,7 @@ describe('request limits (TL-40)', () => {
     await admin.request('PUT', `/admin/tokens/${id}/limits`, { perMinute: 1, perDay: null });
     const minute = await bot.request<{ type: string }>('GET', '/projects');
     expect(minute.status).toBe(429);
-    expect(minute.body.type).toBe('urn:tasklore:problem:rate-limit');
+    expect(minute.body.type).toBe('urn:lenipo:problem:rate-limit');
   });
 
   it('counts in memory and, when configured, in Valkey', async () => {
@@ -117,7 +117,7 @@ describe('modules (TL-40)', () => {
     expect(off.status).toBe(200);
     const blocked = await admin.request<{ type: string }>('GET', '/spaces/DOCS');
     expect(blocked.status).toBe(404);
-    expect(blocked.body.type).toBe('urn:tasklore:problem:module-disabled');
+    expect(blocked.body.type).toBe('urn:lenipo:problem:module-disabled');
     expect((await admin.request<InstanceNotice>('GET', '/instance/notice')).body.modules.wiki).toBe(
       false,
     );

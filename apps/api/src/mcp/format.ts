@@ -1,4 +1,4 @@
-import { docToMarkdown } from '@tasklore/editor';
+import { docToMarkdown } from '@toolvibes/editor';
 import type {
   ChangeGroup,
   Comment,
@@ -8,7 +8,7 @@ import type {
   IssueSummary,
   ProjectDetails,
   ProjectSummary,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { plainText } from '../tracking/rich-text.js';
 
 /** Compact Markdown for agents (D-MCP-07, E-52): few tokens, the facts first. */

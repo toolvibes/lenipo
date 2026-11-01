@@ -2,13 +2,14 @@ import { List, MagnifyingGlass, X } from '@phosphor-icons/react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import type { Me } from '@tasklore/shared';
+import type { Me } from '@toolvibes/shared';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
 import { CurrentProjectProvider, ShortcutListener } from '../../lib/shortcuts';
+import { LogoMark } from '../../ui/Logo';
 import { Announcement } from './Announcement';
 import { CommandPalette } from './CommandPalette';
 import { GlobalShortcuts } from './Shortcuts';
@@ -99,7 +100,10 @@ export function AppShell({ me: signedIn }: { me: Me }) {
               </RadixDialog.Content>
             </RadixDialog.Portal>
           </RadixDialog.Root>
-          <span className="flex-1 text-[15px] font-bold">{t('common.product')}</span>
+          <span className="flex flex-1 items-center gap-2 text-[15px] font-bold">
+            <LogoMark size={20} />
+            {t('common.product')}
+          </span>
           <button
             type="button"
             className="grid size-9 place-items-center rounded-[var(--radius-sm)]"

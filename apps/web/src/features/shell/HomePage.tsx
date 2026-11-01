@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { IssueSummary, Me } from '@tasklore/shared';
+import type { IssueSummary, Me } from '@toolvibes/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -147,7 +147,7 @@ function greetingKey(hour: number): 'home.morning' | 'home.day' | 'home.evening'
   return 'home.evening';
 }
 
-/** Personal start page (T-DSH-04) in the 1a layout: tasks and sprint left, Lore and activity right. */
+/** Personal start page (T-DSH-04) in the 1a layout: tasks and sprint left, Wiki and activity right. */
 export function HomePage({ me }: { me: Me }) {
   const { t } = useTranslation();
   const assigned = useQuery(searchQuery(ASSIGNED, 0));

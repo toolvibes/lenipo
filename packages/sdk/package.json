@@ -1,8 +1,8 @@
 {
-  "name": "@tasklore/sdk",
+  "name": "@toolvibes/sdk",
   "version": "0.1.0",
   "private": true,
-  "description": "Typed client for the Tasklore REST API, generated from its OpenAPI document.",
+  "description": "Typed client for the Lenipo REST API, generated from its OpenAPI document.",
   "type": "module",
   "files": [
     "dist",

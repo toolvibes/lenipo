@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Tasklore API",
+    "title": "Lenipo API",
     "version": "0.1.0",
-    "description": "REST API of Tasklore. Browsers authenticate with the session cookie; scripts, the CLI and MCP clients with a personal access token (`Authorization: Bearer tl_pat_…`)."
+    "description": "REST API of Lenipo. Browsers authenticate with the session cookie; scripts, the CLI and MCP clients with a personal access token (`Authorization: Bearer tl_pat_…`)."
   },
   "servers": [
     {
@@ -1836,7 +1836,7 @@
       "post": {
         "operationId": "Automation.hook",
         "summary": "Start a rule with an incoming webhook trigger",
-        "description": "Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{\"issues\": [\"KEY-1\"]}` runs it for those issues; the whole body is available as {{webhookData}}.",
+        "description": "Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Lenipo-Token`), or as `?token=`. Optionally `{\"issues\": [\"KEY-1\"]}` runs it for those issues; the whole body is available as {{webhookData}}.",
         "tags": ["Automation"],
         "parameters": [
           {
@@ -3677,7 +3677,7 @@
       "post": {
         "operationId": "Import.jira",
         "summary": "Import from Jira Server/DC",
-        "description": "Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Tasklore. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.\n\nRequires the global permission `admin`.",
+        "description": "Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Lenipo. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.\n\nRequires the global permission `admin`.",
         "tags": ["Import"],
         "requestBody": {
           "required": true,
@@ -3717,7 +3717,7 @@
       "post": {
         "operationId": "Import.confluence",
         "summary": "Import a Confluence Server/DC space export",
-        "description": "The space XML export as a ZIP (field \"file\"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.\n\nRequires the global permission `admin`.",
+        "description": "The space XML export as a ZIP (field \"file\"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Lenipo macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.\n\nRequires the global permission `admin`.",
         "tags": ["Import"],
         "parameters": [
           {
@@ -3784,7 +3784,7 @@
     "/api/v1/admin/imports/archive": {
       "post": {
         "operationId": "Import.archive",
-        "summary": "Import a project or space archive of another Tasklore",
+        "summary": "Import a project or space archive of another Lenipo",
         "description": "The ZIP from \"Export as archive\" (field \"file\"). Everything gets new ids; people are matched by e-mail or created deactivated, issue types, statuses, priorities and link types by key or name. `targetKey` renames the project or space; dryRun (the default) only reports.\n\nRequires the global permission `admin`.",
         "tags": ["Import"],
         "parameters": [
@@ -6746,7 +6746,7 @@
       "post": {
         "operationId": "Me.finish",
         "summary": "Finish the welcome steps after the first sign-in",
-        "description": "Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked Lore space with a start page; Lore → only the space. Without `start` the steps count as skipped. Web sessions only.",
+        "description": "Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked wiki space with a start page; Wiki → only the space. Without `start` the steps count as skipped. Web sessions only.",
         "tags": ["Me"],
         "requestBody": {
           "required": true,
@@ -7635,7 +7635,7 @@
       "put": {
         "operationId": "Operations.setMaintenance",
         "summary": "Switch maintenance mode",
-        "description": "While on, only administrators can sign in and use Tasklore; others see the message.\n\nRequires the global permission `admin`.",
+        "description": "While on, only administrators can sign in and use Lenipo; others see the message.\n\nRequires the global permission `admin`.",
         "tags": ["Operations"],
         "requestBody": {
           "required": true,
@@ -11255,7 +11255,7 @@
     "/api/v1/search/everything": {
       "get": {
         "operationId": "Search.searchEverything",
-        "summary": "Search issues, Lore pages, projects and spaces",
+        "summary": "Search issues, wiki pages, projects and spaces",
         "description": "Full text in German and English over what the caller may see; the last word also matches as a prefix, quotes, OR and -word work as in web search. Pages are searched in their latest published version, with a snippet whose hits are marked. `counts` always cover every kind.",
         "tags": ["Search"],
         "parameters": [
@@ -11505,7 +11505,7 @@
       "post": {
         "operationId": "Setup.restore",
         "summary": "Restore a backup into this fresh instance",
-        "description": "Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field \"file\") must come from the same Tasklore version. Afterwards people sign in with their accounts from the backup.",
+        "description": "Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field \"file\") must come from the same Lenipo version. Afterwards people sign in with their accounts from the backup.",
         "tags": ["Setup"],
         "security": [],
         "requestBody": {
@@ -30205,12 +30205,12 @@
       "sessionCookie": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "tl_session"
+        "name": "lp_session"
       },
       "bearerToken": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Personal access token (tl_pat_…)"
+        "description": "Personal access token (lp_pat_…)"
       }
     }
   }

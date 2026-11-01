@@ -1,4 +1,4 @@
-import { type ProjectRole, TransitionRules } from '@tasklore/shared';
+import { type ProjectRole, TransitionRules } from '@toolvibes/shared';
 
 /** A published workflow version (decision E-31); stored as JSONB in workflow_versions. */
 export interface WorkflowDefinition {

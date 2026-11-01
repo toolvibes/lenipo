@@ -1,6 +1,6 @@
-import type { Attachment, Problem } from '@tasklore/shared';
 import { type Editor, Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
+import type { Attachment, Problem } from '@toolvibes/shared';
 
 /** Uploads one file to a page as multipart/form-data (the typed client only speaks JSON). */
 export async function uploadPageFile(pageId: string, file: File): Promise<Attachment> {

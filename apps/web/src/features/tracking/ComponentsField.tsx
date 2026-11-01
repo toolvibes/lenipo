@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ComponentRef } from '@tasklore/shared';
+import type { ComponentRef } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { componentsQuery } from '../../lib/tracking';
 import { CheckRow, Popover } from '../../ui/Popover';

@@ -29,7 +29,7 @@ import {
   UpdateIssueRequest,
   UpdateWorklogRequest,
   Worklog,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import type { AppConfig } from '../core/config.js';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';

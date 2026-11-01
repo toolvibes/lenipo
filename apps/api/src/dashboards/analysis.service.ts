@@ -12,7 +12,7 @@ import type {
   TimePivotRequest,
   TimeReport,
   TimeReportRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lt, type SQL, sql } from 'drizzle-orm';
 import { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';

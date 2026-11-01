@@ -4,7 +4,7 @@ import type {
   NotificationSettings,
   RichText,
   UnreadCount,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { users } from '../db/schema/index.js';
@@ -51,7 +51,7 @@ beforeAll(async () => {
   test = await startTestApp({
     SMTP_URL: 'smtp://127.0.0.1:1',
     NOTIFICATION_EMAIL_DELAY_SECONDS: '0',
-    PUBLIC_URL: 'https://tasklore.example.org',
+    PUBLIC_URL: 'https://lenipo.example.org',
   });
   // Record email instead of talking to a mail server.
   test.app.get(Mailer).transport = {
@@ -212,7 +212,7 @@ describe('notification email', () => {
     expect(toJonas[0]?.text).toContain('Lena Vogt hat Ihnen den Vorgang zugewiesen.');
     expect(toJonas[0]?.text).toContain('- Status: Offen → In Arbeit');
     expect(toJonas[0]?.text).toContain('Lena Vogt hat Sie erwähnt:');
-    expect(toJonas[0]?.html).toContain('https://tasklore.example.org/issues/WEB-1');
+    expect(toJonas[0]?.html).toContain('https://lenipo.example.org/issues/WEB-1');
     // Nothing is sent twice.
     expect(await service.sendDueEmails()).toBe(0);
   });
@@ -259,7 +259,7 @@ describe('notification email', () => {
     // Lena watches the issue and gets her own (German) email in the same round.
     const toMira = sent.filter((mail) => mail.to === 'mira@example.org').at(-1);
     expect(toMira?.text).toContain('Jonas Schulz mentioned you:');
-    expect(toMira?.text).toContain('Open issue: https://tasklore.example.org/issues/WEB-1');
+    expect(toMira?.text).toContain('Open issue: https://lenipo.example.org/issues/WEB-1');
   });
 });
 
@@ -344,7 +344,7 @@ describe('page comment notifications (E-63)', () => {
     expect(toLena[0]?.text).toContain('Jonas Schulz hat auf der Seite kommentiert:');
     expect(toLena[0]?.text).toContain('zu „zwei Wochen“');
     expect(toLena[0]?.text).toContain(
-      `Seite öffnen: https://tasklore.example.org/spaces/DOCS/pages/${pageId}`,
+      `Seite öffnen: https://lenipo.example.org/spaces/DOCS/pages/${pageId}`,
     );
   });
 });

@@ -1,20 +1,20 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "tasklore.fullname" . }}-api
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}-api
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
 spec:
-  selector: {{- include "tasklore.selector" (dict "root" . "role" "api") | nindent 4 }}
+  selector: {{- include "lenipo.selector" (dict "root" . "role" "api") | nindent 4 }}
   ports:
     - { name: http, port: 80, targetPort: http }
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "tasklore.fullname" . }}-collab
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}-collab
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
 spec:
-  selector: {{- include "tasklore.selector" (dict "root" . "role" "collab") | nindent 4 }}
+  selector: {{- include "lenipo.selector" (dict "root" . "role" "collab") | nindent 4 }}
   ports:
     - { name: collab, port: 80, targetPort: collab }
 ---
@@ -22,9 +22,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "tasklore.fullname" . }}-metrics
+  name: {{ include "lenipo.fullname" . }}-metrics
   labels:
-    {{- include "tasklore.labels" . | nindent 4 }}
+    {{- include "lenipo.labels" . | nindent 4 }}
     app.kubernetes.io/component: metrics
 spec:
   clusterIP: None

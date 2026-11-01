@@ -21,7 +21,7 @@ import {
   RestoreResult,
   RetentionResult,
   RetentionSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
@@ -181,7 +181,7 @@ export class RestoreController {
     tag: 'Setup',
     summary: 'Restore a backup into this fresh instance',
     description:
-      'Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field "file") must come from the same Tasklore version. Afterwards people sign in with their accounts from the backup.',
+      'Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field "file") must come from the same Lenipo version. Afterwards people sign in with their accounts from the backup.',
     upload: 'file',
     response: RestoreResult,
   })

@@ -7,7 +7,7 @@ import type {
   Issue,
   ProjectFieldConfig,
   UserRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { meQuery } from '../../lib/queries';

@@ -1,4 +1,4 @@
-# Tasklore application image: API, collaboration server and worker in one process (role via MODE),
+# Lenipo application image: API, collaboration server and worker in one process (role via MODE),
 # serving the built web app.
 
 FROM node:24-alpine AS base
@@ -18,7 +18,7 @@ COPY tools/codegen/package.json tools/codegen/
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build \
- && pnpm --filter @tasklore/api deploy --prod --legacy /out/api
+ && pnpm --filter @toolvibes/api deploy --prod --legacy /out/api
 
 FROM node:24-alpine AS runtime
 ENV NODE_ENV=production \
@@ -26,10 +26,10 @@ ENV NODE_ENV=production \
     API_PORT=4000 \
     COLLAB_PORT=4001 \
     WEB_DIST_DIR=/app/web \
-    STORAGE_LOCAL_DIR=/var/lib/tasklore/files
+    STORAGE_LOCAL_DIR=/var/lib/lenipo/files
 WORKDIR /app
 # Attachments with STORAGE_DRIVER=local; mount a volume here.
-RUN mkdir -p /var/lib/tasklore/files && chown -R node:node /var/lib/tasklore
+RUN mkdir -p /var/lib/lenipo/files && chown -R node:node /var/lib/lenipo
 COPY --from=build --chown=node:node /out/api ./api
 COPY --from=build --chown=node:node /repo/apps/web/dist ./web
 USER node

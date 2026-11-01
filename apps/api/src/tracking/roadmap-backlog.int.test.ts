@@ -1,4 +1,4 @@
-import type { BoardSummary, Issue, Space } from '@tasklore/shared';
+import type { BoardSummary, Issue, Space } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';
@@ -51,7 +51,7 @@ beforeAll(async () => {
     search: test.app.get(SearchService),
     spaces: test.app.get(SpaceService),
   };
-  await admin.request('POST', '/spaces', { key: 'TL', name: 'Tasklore' });
+  await admin.request('POST', '/spaces', { key: 'TL', name: 'Lenipo' });
 }, 60_000);
 
 afterAll(async () => {
@@ -62,7 +62,7 @@ describe('backlog from the roadmap', () => {
   it('create the project, version, epics and stories, and link the space', async () => {
     const result = await importBacklog(services, principal, epics, {
       projectKey: 'tl',
-      projectName: 'Tasklore',
+      projectName: 'Lenipo',
     });
     expect(result).toEqual({ created: ['TL-1', 'TL-2', 'TL-3'], existing: 0 });
     const story = (await admin.request<Issue>('GET', '/issues/TL-2')).body;
@@ -73,7 +73,7 @@ describe('backlog from the roadmap', () => {
     const space = (await admin.request<Space>('GET', '/spaces/TL')).body;
     expect(space.project?.key).toBe('TL');
     const boards = (await admin.request<BoardSummary[]>('GET', '/boards?project=TL')).body;
-    expect(boards.map((board) => [board.name, board.type])).toEqual([['Tasklore', 'scrum']]);
+    expect(boards.map((board) => [board.name, board.type])).toEqual([['Lenipo', 'scrum']]);
   });
 
   it('add only what is missing on a rerun', async () => {
@@ -84,7 +84,7 @@ describe('backlog from the roadmap', () => {
     ];
     const result = await importBacklog(services, principal, more, {
       projectKey: 'TL',
-      projectName: 'Tasklore',
+      projectName: 'Lenipo',
     });
     expect(result).toEqual({ created: ['TL-4'], existing: 3 });
     expect((await admin.request<Issue>('GET', '/issues/TL-2')).body.storyPoints).toBe(5);

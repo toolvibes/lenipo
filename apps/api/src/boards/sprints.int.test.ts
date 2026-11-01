@@ -7,7 +7,7 @@ import type {
   ProjectDetails,
   SearchResult,
   Sprint,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

@@ -1,7 +1,7 @@
 import { Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { Me } from '@tasklore/shared';
+import type { Me } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { presenceColor } from '../../lib/presence';

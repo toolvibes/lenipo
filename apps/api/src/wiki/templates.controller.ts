@@ -1,5 +1,5 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Put } from '@nestjs/common';
-import { PageTemplate, PageTemplateSummary, SavePageTemplateRequest } from '@tasklore/shared';
+import { PageTemplate, PageTemplateSummary, SavePageTemplateRequest } from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

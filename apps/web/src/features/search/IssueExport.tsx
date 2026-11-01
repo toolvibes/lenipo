@@ -7,7 +7,7 @@ import {
   type IssueExportFormat,
   type IssueSummary,
   type ListColumn,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';

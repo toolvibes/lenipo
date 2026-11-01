@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Directory, LdapConfig } from '@tasklore/shared';
+import type { Directory, LdapConfig } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

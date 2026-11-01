@@ -153,7 +153,7 @@ export const personalAccessTokens = pgTable(
   ],
 );
 
-/** Links an external identity (OIDC issuer + subject) to a Tasklore user. */
+/** Links an external identity (OIDC issuer + subject) to a Lenipo user. */
 export const userIdentities = pgTable(
   'user_identities',
   {

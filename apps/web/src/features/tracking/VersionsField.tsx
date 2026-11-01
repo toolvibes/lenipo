@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { VersionRef } from '@tasklore/shared';
+import type { VersionRef } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { versionsQuery } from '../../lib/tracking';
 import { CheckRow, Popover } from '../../ui/Popover';

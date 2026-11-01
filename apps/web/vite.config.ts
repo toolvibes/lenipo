@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       manifest: {
-        name: 'Tasklore',
-        short_name: 'Tasklore',
+        name: 'Lenipo',
+        short_name: 'Lenipo',
         description: 'Vorgänge, Boards und Wiki',
         lang: 'de',
         start_url: '/',

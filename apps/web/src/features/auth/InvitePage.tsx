@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { PROJECT_ROLES, type ProjectRole } from '@tasklore/shared';
+import { PROJECT_ROLES, type ProjectRole } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

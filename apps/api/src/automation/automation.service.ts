@@ -14,7 +14,7 @@ import type {
   AutomationRunLine,
   AutomationRunStatus,
   AutomationTrigger,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';

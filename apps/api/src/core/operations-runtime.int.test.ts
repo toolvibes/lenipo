@@ -72,11 +72,11 @@ describe('metrics (TL-42)', () => {
     const text = await (await fetch(metricsUrl)).text();
     expect(text).toContain('process_cpu_user_seconds_total');
     expect(text).toMatch(
-      /tasklore_http_request_duration_seconds_count\{method="GET",route="\/api\/v1\/projects",status="200"\} [1-9]/,
+      /lenipo_http_request_duration_seconds_count\{method="GET",route="\/api\/v1\/projects",status="200"\} [1-9]/,
     );
-    expect(text).toContain('tasklore_database_up 1');
-    expect(text).toMatch(/tasklore_backlog\{queue="events"\} \d+/);
-    expect(text).toContain('tasklore_connections{kind="realtime"}');
+    expect(text).toContain('lenipo_database_up 1');
+    expect(text).toMatch(/lenipo_backlog\{queue="events"\} \d+/);
+    expect(text).toContain('lenipo_connections{kind="realtime"}');
     expect((await fetch(metricsUrl.replace('/metrics', '/other'))).status).toBe(404);
   });
 });

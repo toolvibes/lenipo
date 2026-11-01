@@ -1,7 +1,7 @@
 import { BookOpenText, FileText, FolderSimple, Plus } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { CreateSpaceRequest, type Me } from '@tasklore/shared';
+import { CreateSpaceRequest, type Me } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

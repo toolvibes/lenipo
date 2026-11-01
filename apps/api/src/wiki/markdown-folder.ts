@@ -4,8 +4,8 @@ import {
   FolderConflict,
   importFolder as importWith,
   type WikiPort,
-} from '@tasklore/editor/folder';
-import type { RichText } from '@tasklore/shared';
+} from '@toolvibes/editor/folder';
+import type { RichText } from '@toolvibes/shared';
 import type { Principal } from '../core/http/principal.js';
 import type { PageService } from './page.service.js';
 import type { SpaceService } from './space.service.js';
@@ -17,7 +17,7 @@ export {
   parseMarkdownFile,
   rewriteLinks,
   slug,
-} from '@tasklore/editor/folder';
+} from '@toolvibes/editor/folder';
 
 export interface FolderServices {
   spaces: SpaceService;

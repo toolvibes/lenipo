@@ -1,14 +1,14 @@
 import { posix } from 'node:path';
 import { PassThrough, type Readable } from 'node:stream';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { docToHtml, docToMarkdown, escapeHtml, type HtmlNode } from '@tasklore/editor';
+import { docToHtml, docToMarkdown, escapeHtml, type HtmlNode } from '@toolvibes/editor';
 import type {
   Attachment,
   Page,
   PageExportFormat,
   PageTreeEntry,
   SpaceExportFormat,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { strToU8, Zip, ZipDeflate, ZipPassThrough } from 'fflate';
 import type { AppConfig } from '../core/config.js';
 import type { Principal } from '../core/http/principal.js';
@@ -37,7 +37,7 @@ const WORDS = {
     issues: ['Schlüssel', 'Zusammenfassung', 'Status', 'Bearbeitung'],
     count: (count: number) => `${count} Vorgänge`,
     meta: (version: number, name: string, date: string) => `Version ${version} · ${name} · ${date}`,
-    macro: (name: string) => `[${name} – in Tasklore ansehen]`,
+    macro: (name: string) => `[${name} – in Lenipo ansehen]`,
     macros: {
       report: 'Bericht',
       childPages: 'Unterseiten',
@@ -60,7 +60,7 @@ const WORDS = {
     issues: ['Key', 'Summary', 'Status', 'Assignee'],
     count: (count: number) => `${count} issues`,
     meta: (version: number, name: string, date: string) => `Version ${version} · ${name} · ${date}`,
-    macro: (name: string) => `[${name} – view in Tasklore]`,
+    macro: (name: string) => `[${name} – view in Lenipo]`,
     macros: {
       report: 'Report',
       childPages: 'Child pages',
@@ -335,7 +335,7 @@ export class PageExportService {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="Tasklore">
+<meta name="generator" content="Lenipo">
 <title>${escapeHtml(options.title)}</title>
 <style>${EXPORT_CSS}</style>
 </head>

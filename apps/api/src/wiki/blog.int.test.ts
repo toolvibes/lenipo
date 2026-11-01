@@ -1,4 +1,4 @@
-import type { Blog, FeedToken, Page, PageTreeEntry, Space } from '@tasklore/shared';
+import type { Blog, FeedToken, Page, PageTreeEntry, Space } from '@toolvibes/shared';
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DATABASE } from '../core/tokens.js';

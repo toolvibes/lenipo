@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { hostname } from 'node:os';
-import { createTaskloreClient, type TaskloreClient } from '@tasklore/sdk';
+import { createLenipoClient, type LenipoClient } from '@toolvibes/sdk';
 import { type Auth, type Config, loadConfig, type Profile, saveConfig } from './config.js';
 
 export interface Io {
@@ -13,7 +13,7 @@ export interface Io {
   openUrl(url: string): void;
   /** Width of the terminal for tables, if any. */
   columns?: number;
-  /** Raw stdin/stdout for `tl mcp`. */
+  /** Raw stdin/stdout for `lenipo mcp`. */
   stdin?: NodeJS.ReadableStream;
   stdout?: NodeJS.WritableStream;
 }
@@ -49,26 +49,22 @@ export async function unwrap<T>(
 
 const normalize = (url: string) => url.replace(/\/+$/, '');
 
-/** The profile to use: TASKLORE_URL/TASKLORE_TOKEN first (CI), then --profile, then the current one. */
+/** The profile to use: LENIPO_URL/LENIPO_TOKEN first (CI), then --profile, then the current one. */
 export async function resolveProfile(
   io: Io,
   name: string | undefined,
 ): Promise<{ name: string | null; profile: Profile; config: Config }> {
   const config = await loadConfig(io.configFile);
-  if (io.env.TASKLORE_URL && io.env.TASKLORE_TOKEN) {
-    return {
-      name: null,
-      config,
-      profile: {
-        url: normalize(io.env.TASKLORE_URL),
-        auth: { type: 'token', token: io.env.TASKLORE_TOKEN },
-      },
-    };
+  // TASKLORE_URL/TASKLORE_TOKEN are the names before the rename (E-129).
+  const url = io.env.LENIPO_URL ?? io.env.TASKLORE_URL;
+  const token = io.env.LENIPO_TOKEN ?? io.env.TASKLORE_TOKEN;
+  if (url && token) {
+    return { name: null, config, profile: { url: normalize(url), auth: { type: 'token', token } } };
   }
   const chosen = name ?? config.current;
   const profile = chosen ? config.profiles[chosen] : undefined;
   if (!chosen || !profile) {
-    throw new CliError('Nicht angemeldet. Erst `tl login <adresse>` ausführen.', 2);
+    throw new CliError('Nicht angemeldet. Erst `lenipo login <adresse>` ausführen.', 2);
   }
   return { name: chosen, profile, config };
 }
@@ -107,7 +103,7 @@ export async function accessToken(io: Io, name: string | null, profile: Profile,
     client_id: auth.clientId,
   }).catch((error: unknown) => {
     throw new CliError(
-      `${error instanceof Error ? error.message : String(error)}. Bitte neu anmelden: tl login ${profile.url}`,
+      `${error instanceof Error ? error.message : String(error)}. Bitte neu anmelden: lenipo login ${profile.url}`,
       2,
     );
   });
@@ -127,7 +123,7 @@ export async function accessToken(io: Io, name: string | null, profile: Profile,
 
 export interface Session {
   url: string;
-  client: TaskloreClient;
+  client: LenipoClient;
   /** Fetch with a current token, e.g. for the MCP bridge. */
   authorizedFetch: typeof fetch;
 }
@@ -137,7 +133,7 @@ export async function openSession(io: Io, profileName: string | undefined): Prom
   const token = await accessToken(io, name, profile, config);
   return {
     url: profile.url,
-    client: createTaskloreClient({ baseUrl: profile.url, token }),
+    client: createLenipoClient({ baseUrl: profile.url, token }),
     authorizedFetch: async (input, init) => {
       const fresh = await accessToken(io, name, profile, config);
       const headers = new Headers(init?.headers);
@@ -166,7 +162,7 @@ export async function oauthLogin(io: Io, url: string): Promise<Auth> {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      client_name: `Tasklore CLI (${hostname()})`,
+      client_name: `Lenipo CLI (${hostname()})`,
       redirect_uris: ['http://127.0.0.1/callback'],
       token_endpoint_auth_method: 'none',
     }),

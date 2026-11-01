@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Attachment, ChangeGroup, CreatedToken, TrackingMeta } from '@tasklore/shared';
+import type { Attachment, ChangeGroup, CreatedToken, TrackingMeta } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FILE_STORE } from '../core/tokens.js';
 import { SetupService } from '../identity/setup.service.js';
@@ -237,7 +237,7 @@ describe.runIf(process.env.TEST_S3_ENDPOINT)('attachments on S3 storage', () => 
     setup = await setUp({
       STORAGE_DRIVER: 's3',
       S3_ENDPOINT: process.env.TEST_S3_ENDPOINT ?? '',
-      S3_BUCKET: `tasklore-test-${Date.now()}`,
+      S3_BUCKET: `lenipo-test-${Date.now()}`,
       S3_ACCESS_KEY_ID: process.env.TEST_S3_ACCESS_KEY_ID ?? 'tasklore',
       S3_SECRET_ACCESS_KEY: process.env.TEST_S3_SECRET_ACCESS_KEY ?? 'tasklore-dev-secret',
     });

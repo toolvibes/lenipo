@@ -7,14 +7,14 @@ import type { DatabaseHandle } from '../db/client.js';
 import { API_VERSION } from '../openapi/version.js';
 import type { FileStore } from '../storage/file-store.js';
 
-export const ARCHIVE_FORMAT = 'tasklore-archive';
+export const ARCHIVE_FORMAT = 'lenipo-archive';
 export const ARCHIVE_VERSION = 1;
 
 // biome-ignore lint/suspicious/noExplicitAny: rows as PostgreSQL writes them with to_jsonb
 export type ArchiveRow = Record<string, any>;
 
 /**
- * One project or space with everything in it, for another Tasklore instance (TL-39, E-120).
+ * One project or space with everything in it, for another Lenipo instance (TL-39, E-120).
  * Rows keep their ids and snake_case columns; people and shared settings such as issue types
  * travel as lookups, matched by e-mail, key or name on import.
  */
@@ -117,7 +117,7 @@ export class ArchiveService {
     };
     return {
       stream: this.zip({ kind: 'project', root, tables }, tables.issue_attachments ?? []),
-      fileName: `tasklore-project-${root.key}.zip`,
+      fileName: `lenipo-project-${root.key}.zip`,
     };
   }
 
@@ -150,7 +150,7 @@ export class ArchiveService {
     };
     return {
       stream: this.zip({ kind: 'space', root, tables }, tables.page_attachments ?? []),
-      fileName: `tasklore-space-${root.key}.zip`,
+      fileName: `lenipo-space-${root.key}.zip`,
     };
   }
 

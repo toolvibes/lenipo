@@ -5,7 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PRODUCT_NAME, type TwoFactorSetup, type TwoFactorStatus } from '@tasklore/shared';
+import { PRODUCT_NAME, type TwoFactorSetup, type TwoFactorStatus } from '@toolvibes/shared';
 import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

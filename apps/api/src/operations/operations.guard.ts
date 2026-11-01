@@ -9,15 +9,15 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { ModuleName } from '@tasklore/shared';
+import type { ModuleName } from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { AccessService } from '../access/access.service.js';
 import { IS_PUBLIC } from '../core/http/decorators.js';
 import { OperationsService } from './operations.service.js';
 
-const MODULE = 'tasklore:module';
-const SKIP_LIMITS = 'tasklore:skip-rate-limit';
-const DURING_MAINTENANCE = 'tasklore:during-maintenance';
+const MODULE = 'lenipo:module';
+const SKIP_LIMITS = 'lenipo:skip-rate-limit';
+const DURING_MAINTENANCE = 'lenipo:during-maintenance';
 
 /** Routes of a module that administrators can switch off (TL-40, E-121). */
 export const RequireModule = (name: ModuleName) => SetMetadata(MODULE, name);
@@ -77,7 +77,7 @@ export class OperationsGuard implements CanActivate {
         throw new HttpException(
           {
             message: `Too many requests; at most ${limit} per minute`,
-            type: 'urn:tasklore:problem:rate-limit',
+            type: 'urn:lenipo:problem:rate-limit',
           },
           HttpStatus.TOO_MANY_REQUESTS,
         );
@@ -93,7 +93,7 @@ export class OperationsGuard implements CanActivate {
           throw new HttpException(
             {
               message: `This token's daily quota of ${perDay} requests is used up`,
-              type: 'urn:tasklore:problem:quota',
+              type: 'urn:lenipo:problem:quota',
             },
             HttpStatus.TOO_MANY_REQUESTS,
           );
@@ -110,8 +110,8 @@ export class OperationsGuard implements CanActivate {
     ) {
       throw new HttpException(
         {
-          message: snapshot.maintenance.message || 'Tasklore is being maintained',
-          type: 'urn:tasklore:problem:maintenance',
+          message: snapshot.maintenance.message || 'Lenipo is being maintained',
+          type: 'urn:lenipo:problem:maintenance',
         },
         HttpStatus.SERVICE_UNAVAILABLE,
       );
@@ -121,7 +121,7 @@ export class OperationsGuard implements CanActivate {
     if (module && !snapshot.modules[module]) {
       throw new NotFoundException({
         message: `The module "${module}" is switched off`,
-        type: 'urn:tasklore:problem:module-disabled',
+        type: 'urn:lenipo:problem:module-disabled',
       });
     }
     return true;

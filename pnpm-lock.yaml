@@ -63,18 +63,18 @@ importers:
       '@opentelemetry/sdk-node':
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)(supports-color@10.2.2)
-      '@tasklore/editor':
-        specifier: workspace:*
-        version: link:../../packages/editor
-      '@tasklore/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@tasklore/tql':
-        specifier: workspace:*
-        version: link:../../packages/tql
       '@tiptap/y-tiptap':
         specifier: 3.0.10
         version: 3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.8)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
+      '@toolvibes/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
+      '@toolvibes/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@toolvibes/tql':
+        specifier: workspace:*
+        version: link:../../packages/tql
       aws4fetch:
         specifier: 1.0.20
         version: 1.0.20
@@ -148,7 +148,7 @@ importers:
       '@hocuspocus/provider':
         specifier: 4.7.1
         version: 4.7.1(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
-      '@tasklore/cli':
+      '@toolvibes/cli':
         specifier: workspace:*
         version: link:../../packages/cli
       '@types/busboy':
@@ -238,18 +238,6 @@ importers:
       '@tanstack/react-router':
         specifier: 1.170.44
         version: 1.170.44(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@tasklore/editor':
-        specifier: workspace:*
-        version: link:../../packages/editor
-      '@tasklore/sdk':
-        specifier: workspace:*
-        version: link:../../packages/sdk
-      '@tasklore/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@tasklore/tql':
-        specifier: workspace:*
-        version: link:../../packages/tql
       '@tiptap/core':
         specifier: 3.32.0
         version: 3.32.0(@tiptap/pm@3.32.0)
@@ -280,6 +268,18 @@ importers:
       '@tiptap/y-tiptap':
         specifier: ^3.0.7
         version: 3.0.10(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.8)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
+      '@toolvibes/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
+      '@toolvibes/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@toolvibes/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@toolvibes/tql':
+        specifier: workspace:*
+        version: link:../../packages/tql
       cmdk:
         specifier: 1.1.1
         version: 1.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -356,10 +356,10 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 1.32.2
         version: 1.32.2(supports-color@10.2.2)(zod@4.6.7)
-      '@tasklore/editor':
+      '@toolvibes/editor':
         specifier: workspace:*
         version: link:../editor
-      '@tasklore/sdk':
+      '@toolvibes/sdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:

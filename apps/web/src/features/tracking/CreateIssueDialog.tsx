@@ -6,7 +6,7 @@ import {
   type CustomFieldValue,
   type ProjectDetails,
   type RichText,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

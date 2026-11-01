@@ -28,7 +28,7 @@ function setupCode(server: ChildProcess): Promise<string> {
 export default async function globalSetup() {
   const serverUrl = process.env.DATABASE_URL;
   if (!serverUrl) throw new Error('DATABASE_URL is needed to create the test database');
-  const name = `tasklore_e2e_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
+  const name = `lenipo_e2e_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
   const admin = postgres(serverUrl, { max: 1, onnotice: () => {} });
   await admin.unsafe(`create database ${name}`);
   await admin.end();
@@ -47,7 +47,7 @@ export default async function globalSetup() {
       COLLAB_PORT: String(PORT + 1),
       WEB_DIST_DIR: resolve('dist'),
       STORAGE_DRIVER: 'local',
-      STORAGE_LOCAL_DIR: mkdtempSync(join(tmpdir(), 'tasklore-e2e-')),
+      STORAGE_LOCAL_DIR: mkdtempSync(join(tmpdir(), 'lenipo-e2e-')),
       RATE_LIMITS: 'false',
       LOG_LEVEL: 'warn',
     },
@@ -82,7 +82,7 @@ export default async function globalSetup() {
     if (!response.ok) throw new Error(`${path}: ${response.status} ${await response.text()}`);
     return response;
   };
-  // The welcome steps create project, board and Lore space in one go.
+  // The welcome steps create project, board and wiki space in one go.
   const started = (await (
     await call('/me/onboarding', { start: { method: 'scrum', name: 'Web-Relaunch', key: 'WEB' } })
   ).json()) as { boardId: string | null };

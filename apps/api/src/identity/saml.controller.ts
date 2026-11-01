@@ -12,7 +12,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { SamlProvider, SaveSamlProviderRequest, safeRedirectPath } from '@tasklore/shared';
+import { SamlProvider, SaveSamlProviderRequest, safeRedirectPath } from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';

@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { type Io, run } from '@tasklore/cli';
-import type { CreatedToken, OAuthConsentResult } from '@tasklore/shared';
+import { type Io, run } from '@toolvibes/cli';
+import type { CreatedToken, OAuthConsentResult } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -25,8 +25,8 @@ async function tl(
   const io: Io = {
     out: (text) => out.push(text),
     err: (text) => err.push(text),
-    env: Object.keys(env).length ? env : { TASKLORE_URL: origin, TASKLORE_TOKEN: token },
-    configFile: join(dir, 'config', 'tasklore.json'),
+    env: Object.keys(env).length ? env : { LENIPO_URL: origin, LENIPO_TOKEN: token },
+    configFile: join(dir, 'config', 'lenipo.json'),
     openUrl: openUrl ?? (() => undefined),
     columns: 200,
   };
@@ -140,7 +140,7 @@ describe('tl, the command line (TL-37)', () => {
     });
     await fetch(consent.body.redirect);
     expect((await login).out).toContain('Angemeldet als Lena Vogt');
-    const configFile = join(dir, 'config', 'tasklore.json');
+    const configFile = join(dir, 'config', 'lenipo.json');
     const config = JSON.parse(await readFile(configFile, 'utf8'));
     expect(config.profiles.test.auth.type).toBe('oauth');
     // An expired access token is refreshed on the next command.
@@ -166,7 +166,7 @@ describe('tl, the command line (TL-37)', () => {
     const bridged = run(['mcp'], {
       out: () => undefined,
       err: (text) => problems.push(text),
-      env: { TASKLORE_URL: origin, TASKLORE_TOKEN: token },
+      env: { LENIPO_URL: origin, LENIPO_TOKEN: token },
       configFile: join(dir, 'unused.json'),
       openUrl: () => undefined,
       stdin,
@@ -202,7 +202,7 @@ describe('tl, the command line (TL-37)', () => {
         expiresInDays: 1,
       })
     ).body.secret;
-    const env = { TASKLORE_URL: origin, TASKLORE_TOKEN: adminToken };
+    const env = { LENIPO_URL: origin, LENIPO_TOKEN: adminToken };
     const created = await tl(['admin', 'backup', 'create', '--output', 'json'], env);
     expect(created.code).toBe(0);
     const [backup] = JSON.parse(created.out) as Array<{ id: string; state: string }>;
@@ -218,7 +218,7 @@ describe('tl, the command line (TL-37)', () => {
   });
 
   it('prints completion scripts and explains missing commands', async () => {
-    expect((await tl(['completion', 'bash'])).out).toContain('complete -F _tl tl tasklore');
+    expect((await tl(['completion', 'bash'])).out).toContain('complete -F _tl lenipo tl');
     expect((await tl(['admin', 'restore'])).err).toContain('/setup');
     expect((await tl(['admin', 'backup'])).code).toBe(2);
     expect((await tl(['admin', 'import', 'jira'])).code).toBe(2);

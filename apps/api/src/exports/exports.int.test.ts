@@ -1,5 +1,5 @@
-import { markdownToDoc } from '@tasklore/editor';
-import type { Attachment, Page, Space } from '@tasklore/shared';
+import { markdownToDoc } from '@toolvibes/editor';
+import type { Attachment, Page, Space } from '@toolvibes/shared';
 import { strFromU8, unzipSync } from 'fflate';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';

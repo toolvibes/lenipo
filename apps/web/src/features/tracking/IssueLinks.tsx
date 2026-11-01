@@ -1,7 +1,7 @@
 import { LinkSimple, X } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { Issue, IssueLink, IssueLinkTypeInfo } from '@tasklore/shared';
+import type { Issue, IssueLink, IssueLinkTypeInfo } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

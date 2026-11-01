@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
-import { FieldCatalogue } from '@tasklore/tql';
+import { FieldCatalogue } from '@toolvibes/tql';
 import { useMemo } from 'react';
 import { client, unwrap } from './api';
 

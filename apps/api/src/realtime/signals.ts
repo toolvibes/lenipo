@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { Executor } from '../db/client.js';
 
 /** The NOTIFY channel of realtime signals (E-58). */
-export const CHANGES_CHANNEL = 'tasklore_changes';
+export const CHANGES_CHANNEL = 'lenipo_changes';
 
 /**
  * A realtime signal: only ids, the client refetches through the normal API (E-58).

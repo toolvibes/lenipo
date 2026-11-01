@@ -1,4 +1,4 @@
-import type { Attachment, Backup, Issue, Page, RetentionResult } from '@tasklore/shared';
+import type { Attachment, Backup, Issue, Page, RetentionResult } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DATABASE } from '../core/tokens.js';
@@ -121,7 +121,7 @@ describe('backup and restore (TL-39)', () => {
       headers: { cookie: admin.cookie ?? '' },
     });
     expect(response.status).toBe(200);
-    expect(response.headers.get('content-disposition')).toContain('tasklore-backup-');
+    expect(response.headers.get('content-disposition')).toContain('lenipo-backup-');
     backupZip = Buffer.from(await response.arrayBuffer());
     expect(backupZip.subarray(0, 2).toString()).toBe('PK');
   });

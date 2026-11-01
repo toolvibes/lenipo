@@ -5,7 +5,7 @@ import {
   type SavedFilter,
   SUBSCRIPTION_SCHEDULES,
   type SubscriptionSchedule,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

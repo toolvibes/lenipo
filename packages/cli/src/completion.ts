@@ -25,7 +25,7 @@ export function completion(shell: string): string {
           `    ${command}) COMPREPLY=( $(compgen -W "${subs.join(' ')}" -- "$cur") ) ;;`,
       )
       .join('\n');
-    return `# bash completion for tl and tasklore
+    return `# bash completion for lenipo and tl
 _tl() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
   if [ "$COMP_CWORD" -eq 1 ]; then
@@ -36,7 +36,7 @@ _tl() {
 ${cases}
   esac
 }
-complete -F _tl tl tasklore
+complete -F _tl lenipo tl
 `;
   }
   if (shell === 'zsh') {
@@ -44,7 +44,7 @@ complete -F _tl tl tasklore
       .filter(([, subs]) => subs.length > 0)
       .map(([command, subs]) => `    ${command}) compadd ${subs.join(' ')} ;;`)
       .join('\n');
-    return `#compdef tl tasklore
+    return `#compdef lenipo tl
 _tl() {
   if (( CURRENT == 2 )); then
     compadd ${top}
@@ -54,7 +54,7 @@ _tl() {
 ${cases}
   esac
 }
-compdef _tl tl tasklore
+compdef _tl lenipo tl
 `;
   }
   if (shell === 'fish') {
@@ -65,7 +65,7 @@ compdef _tl tl tasklore
         `complete -c tl -f -n "__fish_seen_subcommand_from ${command}" -a "${subs.join(' ')}"`,
       );
     }
-    return `${[...lines, ...lines.map((line) => line.replace('-c tl ', '-c tasklore '))].join('\n')}\n`;
+    return `${[...lines, ...lines.map((line) => line.replace('-c tl ', '-c lenipo '))].join('\n')}\n`;
   }
   throw new Error('Shell: bash, zsh or fish');
 }

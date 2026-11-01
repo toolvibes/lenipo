@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { type AddProjectMemberRequest, PROJECT_ROLES } from '@tasklore/shared';
+import { type AddProjectMemberRequest, PROJECT_ROLES } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

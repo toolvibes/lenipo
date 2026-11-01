@@ -687,7 +687,7 @@ export interface paths {
     put?: never;
     /**
      * Start a rule with an incoming webhook trigger
-     * @description Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.
+     * @description Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Lenipo-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.
      */
     post: operations['Automation.hook'];
     delete?: never;
@@ -1268,7 +1268,7 @@ export interface paths {
     put?: never;
     /**
      * Import from Jira Server/DC
-     * @description Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Tasklore. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.
+     * @description Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Lenipo. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.
      *
      *     Requires the global permission `admin`.
      */
@@ -1290,7 +1290,7 @@ export interface paths {
     put?: never;
     /**
      * Import a Confluence Server/DC space export
-     * @description The space XML export as a ZIP (field "file"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.
+     * @description The space XML export as a ZIP (field "file"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Lenipo macros where one exists. `spaceKey` names the new space (the export's key by default); dryRun (the default) only reports.
      *
      *     Requires the global permission `admin`.
      */
@@ -1311,7 +1311,7 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Import a project or space archive of another Tasklore
+     * Import a project or space archive of another Lenipo
      * @description The ZIP from "Export as archive" (field "file"). Everything gets new ids; people are matched by e-mail or created deactivated, issue types, statuses, priorities and link types by key or name. `targetKey` renames the project or space; dryRun (the default) only reports.
      *
      *     Requires the global permission `admin`.
@@ -2432,7 +2432,7 @@ export interface paths {
     put?: never;
     /**
      * Finish the welcome steps after the first sign-in
-     * @description Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked Lore space with a start page; Lore → only the space. Without `start` the steps count as skipped. Web sessions only.
+     * @description Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked wiki space with a start page; Wiki → only the space. Without `start` the steps count as skipped. Web sessions only.
      */
     post: operations['Me.finish'];
     delete?: never;
@@ -2787,7 +2787,7 @@ export interface paths {
     get: operations['Operations.maintenance'];
     /**
      * Switch maintenance mode
-     * @description While on, only administrators can sign in and use Tasklore; others see the message.
+     * @description While on, only administrators can sign in and use Lenipo; others see the message.
      *
      *     Requires the global permission `admin`.
      */
@@ -3961,7 +3961,7 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Search issues, Lore pages, projects and spaces
+     * Search issues, wiki pages, projects and spaces
      * @description Full text in German and English over what the caller may see; the last word also matches as a prefix, quotes, OR and -word work as in web search. Pages are searched in their latest published version, with a snippet whose hits are marked. `counts` always cover every kind.
      */
     get: operations['Search.searchEverything'];
@@ -4058,7 +4058,7 @@ export interface paths {
     put?: never;
     /**
      * Restore a backup into this fresh instance
-     * @description Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field "file") must come from the same Tasklore version. Afterwards people sign in with their accounts from the backup.
+     * @description Only while setup is still required, with the setup code in the X-Setup-Code header. The ZIP (field "file") must come from the same Lenipo version. Afterwards people sign in with their accounts from the backup.
      */
     post: operations['Setup.restore'];
     delete?: never;

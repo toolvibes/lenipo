@@ -8,7 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { CreateFilterSubscription, FilterSubscription } from '@tasklore/shared';
+import { CreateFilterSubscription, FilterSubscription } from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

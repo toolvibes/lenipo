@@ -1,4 +1,4 @@
-import { type Issue, SEARCH_TOTAL_CAP, type SearchResult } from '@tasklore/shared';
+import { type Issue, SEARCH_TOTAL_CAP, type SearchResult } from '@toolvibes/shared';
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';

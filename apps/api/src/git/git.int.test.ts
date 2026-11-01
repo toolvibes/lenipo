@@ -7,7 +7,7 @@ import type {
   IssueDevelopment,
   Transition,
   Version,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AutomationEngine } from '../automation/automation.engine.js';
 import { EventProcessor } from '../events/event-processor.js';

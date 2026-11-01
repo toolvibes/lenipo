@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param } from '@nestjs/common';
-import { IssuePageRef } from '@tasklore/shared';
+import { IssuePageRef } from '@toolvibes/shared';
 import { and, desc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';

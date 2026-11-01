@@ -7,7 +7,7 @@ import type {
   TimelineEpic,
   TimelineRow,
   TimelineSpan,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

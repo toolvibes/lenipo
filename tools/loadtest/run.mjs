@@ -2,7 +2,7 @@
 // Starts the built app (apps/api/dist with the web app) on a fresh database, fills it, measures
 // each goal and writes a Markdown report. `--smoke` uses small numbers, for CI.
 //
-//   DATABASE_URL=postgres://… pnpm --filter @tasklore/loadtest loadtest
+//   DATABASE_URL=postgres://… pnpm --filter @toolvibes/loadtest loadtest
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -39,7 +39,7 @@ const percentile = (values, p) => {
 async function start() {
   const serverUrl = process.env.DATABASE_URL;
   if (!serverUrl) throw new Error('DATABASE_URL is needed');
-  const name = `tasklore_load_${randomUUID().replaceAll('-', '').slice(0, 10)}`;
+  const name = `lenipo_load_${randomUUID().replaceAll('-', '').slice(0, 10)}`;
   const admin = postgres(serverUrl, { max: 1, onnotice: () => {} });
   await admin.unsafe(`create database ${name}`);
   await admin.end();
@@ -57,7 +57,7 @@ async function start() {
       COLLAB_PORT: String(PORT + 1),
       WEB_DIST_DIR: join(ROOT, 'apps/web/dist'),
       STORAGE_DRIVER: 'local',
-      STORAGE_LOCAL_DIR: mkdtempSync(join(os.tmpdir(), 'tasklore-load-')),
+      STORAGE_LOCAL_DIR: mkdtempSync(join(os.tmpdir(), 'lenipo-load-')),
       RATE_LIMITS: 'false',
       LOG_LEVEL: 'warn',
     },

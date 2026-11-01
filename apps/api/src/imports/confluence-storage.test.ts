@@ -1,4 +1,4 @@
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import { describe, expect, it } from 'vitest';
 import { storageToMarkdown } from './confluence-storage.js';
 
@@ -28,7 +28,7 @@ describe('Confluence storage format (P-ADM-11)', () => {
     expect(markdown).toContain('| Feld | Wert |\n| --- | --- |\n| a | b |');
   });
 
-  it('maps macros onto Tasklore macros and notes unknown ones', () => {
+  it('maps macros onto Lenipo macros and notes unknown ones', () => {
     const markdown = storageToMarkdown(
       '<ac:structured-macro ac:name="info"><ac:rich-text-body><p>Wichtig</p></ac:rich-text-body></ac:structured-macro>' +
         '<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">java</ac:parameter><ac:plain-text-body><![CDATA[int a = 1;]]></ac:plain-text-body></ac:structured-macro>' +

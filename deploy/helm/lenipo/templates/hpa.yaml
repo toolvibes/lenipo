@@ -2,13 +2,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "tasklore.fullname" . }}-api
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}-api
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "tasklore.fullname" . }}-api
+    name: {{ include "lenipo.fullname" . }}-api
   minReplicas: {{ .Values.api.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.api.autoscaling.maxReplicas }}
   metrics:

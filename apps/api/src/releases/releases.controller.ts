@@ -4,7 +4,7 @@ import {
   PublishReleaseNotesRequest,
   Release,
   ReleaseNotes,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';

@@ -128,7 +128,7 @@ export class UserLifecycleService {
     const drafts: Array<{ name: string; content: unknown }> = [];
     const label = await this.database.db.transaction(async (tx) => {
       // Serialises numbering when two accounts are anonymised at once.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('tasklore.anonymize'))`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('lenipo.anonymize'))`);
       const [count] = await tx
         .select({ n: sql<number>`count(*)::int` })
         .from(users)
@@ -294,7 +294,7 @@ export class UserLifecycleService {
           id: writeId,
           document: draft.name,
           content: draft.content,
-          actorName: 'Tasklore',
+          actorName: 'Lenipo',
         });
         await tx.execute(sql`select pg_notify(${DRAFT_WRITE_CHANNEL}, ${writeId})`);
       }

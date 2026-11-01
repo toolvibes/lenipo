@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param } from '@nestjs/common';
-import { SpaceSummary } from '@tasklore/shared';
+import { SpaceSummary } from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

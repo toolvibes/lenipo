@@ -1,6 +1,6 @@
 import { ChatCircle, CheckCircle, PencilSimple, Trash } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PageComment, RichText, TextAnchor } from '@tasklore/shared';
+import type { PageComment, RichText, TextAnchor } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

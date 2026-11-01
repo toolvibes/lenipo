@@ -27,7 +27,7 @@ import {
   TRANSITION_FIELDS,
   type TransitionRules,
   type WorkflowMode,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

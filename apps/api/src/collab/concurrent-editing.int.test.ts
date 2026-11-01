@@ -1,7 +1,7 @@
 import { createServer } from 'node:net';
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider';
-import { isValidDoc } from '@tasklore/editor';
 import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
+import { isValidDoc } from '@toolvibes/editor';
 import { eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

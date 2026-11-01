@@ -7,7 +7,7 @@ import type {
   WebhookDelivery,
   WebhookEventType,
   WebhookFormat,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
@@ -638,7 +638,7 @@ export class WebhookService {
         webhook.url,
         {
           'content-type': 'application/json',
-          'user-agent': 'Tasklore-Webhooks/1.0',
+          'user-agent': 'Lenipo-Webhooks/1.0',
           'webhook-id': delivery.id,
           'webhook-timestamp': String(timestamp),
           'webhook-signature': sign(webhook.secret, delivery.id, timestamp, body),

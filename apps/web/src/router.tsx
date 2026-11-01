@@ -6,8 +6,8 @@ import {
   Outlet,
   redirect,
 } from '@tanstack/react-router';
-import { REPORT_KINDS, type ReportKind, safeRedirectPath } from '@tasklore/shared';
-import { ISSUE_KEY } from '@tasklore/tql';
+import { REPORT_KINDS, type ReportKind, safeRedirectPath } from '@toolvibes/shared';
+import { ISSUE_KEY } from '@toolvibes/tql';
 import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';

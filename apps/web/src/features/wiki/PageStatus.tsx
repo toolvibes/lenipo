@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { PAGE_STATUSES, type Page, type PageStatus } from '@tasklore/shared';
+import { PAGE_STATUSES, type Page, type PageStatus } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatRelative } from '../../lib/format';

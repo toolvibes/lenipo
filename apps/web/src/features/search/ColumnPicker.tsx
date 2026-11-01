@@ -1,6 +1,6 @@
 import { Columns } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
-import { DEFAULT_ISSUE_COLUMNS, type ListColumn } from '@tasklore/shared';
+import { DEFAULT_ISSUE_COLUMNS, type ListColumn } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { useColumnCatalogue, useSetIssueColumns } from '../../lib/personal';
 import { trackingMetaQuery } from '../../lib/tracking';

@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { ForbiddenException } from '@nestjs/common';
-import { docToMarkdown, headingsOf, markdownToDoc } from '@tasklore/editor';
-import type { RichText } from '@tasklore/shared';
+import { docToMarkdown, headingsOf, markdownToDoc } from '@toolvibes/editor';
+import type { RichText } from '@toolvibes/shared';
 import { z } from 'zod';
 import type { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';
@@ -72,7 +72,7 @@ export function registerWikiTools(tool: Tool, principal: Principal, services: Wi
     'list_spaces',
     {
       title: 'List wiki spaces',
-      description: 'Lore spaces you can read, with key, name and linked project.',
+      description: 'wiki spaces you can read, with key, name and linked project.',
       inputSchema: {},
       readOnly: true,
     },

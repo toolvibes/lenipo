@@ -2,8 +2,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "tasklore.fullname" . }}-migrate-{{ .Release.Revision }}
-  labels: {{- include "tasklore.labels" . | nindent 4 }}
+  name: {{ include "lenipo.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels: {{- include "lenipo.labels" . | nindent 4 }}
   annotations:
     # Before the new pods start; the old ones keep running (expand/contract migrations, E-123).
     helm.sh/hook: pre-install,pre-upgrade
@@ -25,11 +25,11 @@ spec:
       {{- end }}
       containers:
         - name: migrate
-          image: {{ include "tasklore.image" . }}
+          image: {{ include "lenipo.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
           command: ["node", "api/dist/db/migrate-cli.js"]
           envFrom:
             - secretRef:
-                name: {{ include "tasklore.secretName" . }}
+                name: {{ include "lenipo.secretName" . }}
 {{- end }}

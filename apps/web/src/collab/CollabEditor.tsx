@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { Placeholder } from '@tiptap/extensions';
 import { type Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { blockExtensions, starterKitOptions } from '@toolvibes/editor/schema';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mentionExtension } from '../features/tracking/mention';

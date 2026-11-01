@@ -54,7 +54,7 @@ export class ValkeyCounter implements Counter {
     if (this.client.status !== 'ready') return this.fallback.hit(key, windowSeconds);
     try {
       const window = Math.floor(Date.now() / 1000 / windowSeconds);
-      const name = `tasklore:rl:${key}:${window}`;
+      const name = `lenipo:rl:${key}:${window}`;
       const [[, hits]] = (await this.client
         .multi()
         .incr(name)

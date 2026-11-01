@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { docToHtml, markdownToDoc } from '@tasklore/editor';
+import { docToHtml, markdownToDoc } from '@toolvibes/editor';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { noticeQuery } from '../../lib/instance';
 
-const DISMISSED = 'tasklore.announcement.dismissed';
+const DISMISSED = 'lenipo.announcement.dismissed';
 
 function dismissedVersion(): string | null {
   try {

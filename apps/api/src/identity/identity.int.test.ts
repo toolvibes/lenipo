@@ -5,7 +5,7 @@ import type {
   Problem,
   SessionInfo,
   UserSummary,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../db/schema/index.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -49,7 +49,7 @@ describe('first-run setup', () => {
       admin: ADMIN,
     });
     expect(response.status).toBe(403);
-    expect(response.body.type).toBe('urn:tasklore:problem:setup-code');
+    expect(response.body.type).toBe('urn:lenipo:problem:setup-code');
   });
 
   it('validates the request body', async () => {
@@ -66,13 +66,13 @@ describe('first-run setup', () => {
   it('creates the first administrator and signs them in', async () => {
     const response = await admin.request<Me>('POST', '/setup', {
       token: setupCode.toLowerCase().replaceAll('-', ' '),
-      instanceName: 'Tasklore Test',
+      instanceName: 'Lenipo Test',
       admin: ADMIN,
     });
     expect(response.status).toBe(201);
     expect(response.body.email).toBe('lena.vogt@example.org');
     expect(response.body.globalPermissions).toContain('system-admin');
-    expect(admin.cookie).toMatch(/^tl_session=/);
+    expect(admin.cookie).toMatch(/^lp_session=/);
     expect(response.headers.get('set-cookie')).toMatch(/HttpOnly/i);
   });
 
@@ -168,7 +168,7 @@ describe('personal access tokens', () => {
     });
     expect(response.status).toBe(201);
     token = response.body;
-    expect(token.secret).toMatch(/^tl_pat_[A-Za-z0-9_-]{43}$/);
+    expect(token.secret).toMatch(/^lp_pat_[A-Za-z0-9_-]{43}$/);
     expect(token.prefix).toBe(token.secret.slice(0, 11));
 
     const list = await admin.request<Array<Record<string, unknown>>>('GET', '/me/tokens');
@@ -384,7 +384,7 @@ describe('password change and attempt limits (TL-59)', () => {
       newPassword: 'neues-langes-passwort',
     });
     expect(change.status).toBe(429);
-    expect(change.body.type).toBe('urn:tasklore:problem:too-many-attempts');
+    expect(change.body.type).toBe('urn:lenipo:problem:too-many-attempts');
     // Other people are not affected.
     expect((await signIn('ayse@example.org', 'zweites-langes-passwort')).status).toBe(200);
   });

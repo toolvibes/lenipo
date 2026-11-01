@@ -1,4 +1,4 @@
-import type { Board, Me, OnboardingResult, Page, ProjectDetails, Space } from '@tasklore/shared';
+import type { Board, Me, OnboardingResult, Page, ProjectDetails, Space } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -68,7 +68,7 @@ describe('welcome steps', () => {
     expect((await mira.request<Me>('GET', '/me')).body.onboarded).toBe(false);
   });
 
-  it('create a Scrum project with board, Lore space and start page in one go', async () => {
+  it('create a Scrum project with board, wiki space and start page in one go', async () => {
     const result = await admin.request<OnboardingResult>('POST', '/me/onboarding', {
       profile: { displayName: 'Lena V.', timeZone: 'Europe/Vienna' },
       start: { method: 'scrum', name: 'Atlas', key: 'ATL' },
@@ -112,7 +112,7 @@ describe('welcome steps', () => {
     expect(spaces.map((space) => space.key)).toEqual(['ATL']);
   });
 
-  it('can create only a Lore space', async () => {
+  it('can create only a wiki space', async () => {
     const result = await admin.request<OnboardingResult>('POST', '/me/onboarding', {
       start: { method: 'lore', name: 'Handbuch', key: 'HB' },
     });

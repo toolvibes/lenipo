@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { CreatedToken, CreateTokenRequest, TokenInfo, TokenScope } from '@tasklore/shared';
+import type { CreatedToken, CreateTokenRequest, TokenInfo, TokenScope } from '@toolvibes/shared';
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { personalAccessTokens, users } from '../db/schema/index.js';
-import { randomSecret, sha256, TOKEN_PREFIX } from './secrets.js';
+import { hasPrefix, randomSecret, sha256, TOKEN_PREFIX } from './secrets.js';
 
 const TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -27,7 +27,7 @@ function toInfo(row: typeof personalAccessTokens.$inferSelect): TokenInfo {
   };
 }
 
-/** Personal access tokens (`tl_pat_…`) for the API, CLI and MCP clients. */
+/** Personal access tokens (`lp_pat_…`) for the API, CLI and MCP clients. */
 @Injectable()
 export class TokenService {
   constructor(@Inject(DATABASE) private readonly database: DatabaseHandle) {}
@@ -51,7 +51,7 @@ export class TokenService {
   }
 
   async authenticate(secret: string): Promise<AuthenticatedToken | null> {
-    if (!secret.startsWith(TOKEN_PREFIX)) return null;
+    if (!hasPrefix(secret, TOKEN_PREFIX)) return null;
     const now = new Date();
     const [row] = await this.database.db
       .select({

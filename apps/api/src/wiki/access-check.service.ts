@@ -5,7 +5,7 @@ import type {
   AccessCheckStep,
   ProjectPermission,
   SpacePermission,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';

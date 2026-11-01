@@ -12,7 +12,7 @@ const endpoint =
 
 export const telemetry = endpoint
   ? new NodeSDK({
-      serviceName: process.env.OTEL_SERVICE_NAME ?? 'tasklore',
+      serviceName: process.env.OTEL_SERVICE_NAME ?? 'lenipo',
       instrumentations: [
         new HttpInstrumentation({
           // Probes and scrapes would drown the interesting traces.

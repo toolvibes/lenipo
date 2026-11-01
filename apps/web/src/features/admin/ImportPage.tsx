@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ImportJob } from '@tasklore/shared';
+import type { ImportJob } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
@@ -115,7 +115,7 @@ function ConfluenceForm() {
   );
 }
 
-/** Project and space archives between Tasklore instances (TL-39, E-120). */
+/** Project and space archives between Lenipo instances (TL-39, E-120). */
 function ArchiveForms() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

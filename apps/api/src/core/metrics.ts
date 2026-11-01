@@ -13,7 +13,7 @@ export const registry = new client.Registry();
 client.collectDefaultMetrics({ register: registry });
 
 const httpDuration = new client.Histogram({
-  name: 'tasklore_http_request_duration_seconds',
+  name: 'lenipo_http_request_duration_seconds',
   help: 'Duration of HTTP requests by method, route template and status',
   labelNames: ['method', 'route', 'status'],
   buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
@@ -42,7 +42,7 @@ export function countConnections(kind: string, count: () => number): void {
 }
 
 new client.Gauge({
-  name: 'tasklore_connections',
+  name: 'lenipo_connections',
   help: 'Open WebSocket connections by kind (realtime, collab)',
   labelNames: ['kind'],
   registers: [registry],
@@ -77,7 +77,7 @@ export function databaseMetrics(database: DatabaseHandle): void {
     return cached.value;
   };
   new client.Gauge({
-    name: 'tasklore_backlog',
+    name: 'lenipo_backlog',
     help: 'Work waiting in the database by queue',
     labelNames: ['queue'],
     registers: [registry],
@@ -89,7 +89,7 @@ export function databaseMetrics(database: DatabaseHandle): void {
     },
   });
   new client.Gauge({
-    name: 'tasklore_outbox_lag_seconds',
+    name: 'lenipo_outbox_lag_seconds',
     help: 'Age of the oldest unprocessed domain event',
     registers: [registry],
     async collect() {
@@ -98,7 +98,7 @@ export function databaseMetrics(database: DatabaseHandle): void {
     },
   });
   new client.Gauge({
-    name: 'tasklore_database_up',
+    name: 'lenipo_database_up',
     help: '1 if PostgreSQL answered the last scrape',
     registers: [registry],
     async collect() {

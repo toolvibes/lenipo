@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { AUTOMATION_ACTOR_ID, SystemInfo } from '@tasklore/shared';
+import { AUTOMATION_ACTOR_ID, SystemInfo } from '@toolvibes/shared';
 import { count, ne } from 'drizzle-orm';
 import { RequireGlobal } from '../access/require-global.js';
 import { type AppConfig, oidcEnabled } from '../core/config.js';

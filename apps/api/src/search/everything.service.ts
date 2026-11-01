@@ -5,7 +5,7 @@ import type {
   PageHit,
   SearchMatch,
   Snippet,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, count, desc, eq, gt, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { Principal } from '../core/http/principal.js';
@@ -62,7 +62,7 @@ export function snippet(headline: string): Snippet {
 }
 
 /**
- * Search across issues, Lore pages, projects and spaces (T-QRY, W-SRC, E-69), limited in SQL
+ * Search across issues, wiki pages, projects and spaces (T-QRY, W-SRC, E-69), limited in SQL
  * to what the caller may see. Pages are searched in their latest published version only.
  */
 @Injectable()

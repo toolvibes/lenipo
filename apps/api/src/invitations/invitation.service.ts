@@ -14,7 +14,7 @@ import type {
   InvitationPreview,
   ProjectRole,
   RegistrationSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
@@ -70,7 +70,7 @@ export class InvitationService {
       .select()
       .from(systemSettings)
       .where(eq(systemSettings.key, 'instance'));
-    return (row?.value as { name?: string } | undefined)?.name ?? 'Tasklore';
+    return (row?.value as { name?: string } | undefined)?.name ?? 'Lenipo';
   }
 
   private async present(rows: Row[]): Promise<Invitation[]> {

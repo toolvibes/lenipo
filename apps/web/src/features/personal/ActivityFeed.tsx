@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import type { ActivityEntry } from '@tasklore/shared';
+import type { ActivityEntry } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime, formatRelative } from '../../lib/format';
 import { useFieldLabel } from '../tracking/fieldLabel';

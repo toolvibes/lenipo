@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { Me } from '@tasklore/shared';
+import type { Me } from '@toolvibes/shared';
 import { ApiError, client, unwrap } from './api';
 
 /** The signed-in user, or null when nobody is signed in. */

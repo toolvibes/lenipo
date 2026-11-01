@@ -1,12 +1,12 @@
 {
   "realm": "tasklore",
-  "displayName": "Tasklore (Entwicklung)",
+  "displayName": "Lenipo (Entwicklung)",
   "enabled": true,
   "registrationAllowed": false,
   "clients": [
     {
       "clientId": "tasklore",
-      "name": "Tasklore",
+      "name": "Lenipo",
       "enabled": true,
       "publicClient": false,
       "secret": "tasklore-dev-secret",

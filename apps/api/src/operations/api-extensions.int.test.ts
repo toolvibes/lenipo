@@ -8,7 +8,7 @@ import type {
   OAuthClientInfo,
   OAuthConsentResult,
   Page,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AutomationEngine } from '../automation/automation.engine.js';
@@ -135,7 +135,7 @@ describe('OAuth apps registered by admins (TL-41)', () => {
     expect(created.status).toBe(201);
     const { app, clientSecret } = created.body;
     expect(app.confidential).toBe(true);
-    expect(clientSecret).toMatch(/^tl_ocs_/);
+    expect(clientSecret).toMatch(/^lp_ocs_/);
     const info = await admin.request<OAuthClientInfo>(
       'GET',
       `/oauth/client?client_id=${app.id}&redirect_uri=${encodeURIComponent(redirect)}`,
@@ -181,7 +181,7 @@ describe('OAuth apps registered by admins (TL-41)', () => {
     const basic = Buffer.from(`${app.id}:${clientSecret}`).toString('base64');
     const ok = await exchange(code, { authorization: `Basic ${basic}` });
     expect(ok.status).toBe(200);
-    expect(ok.body.access_token).toMatch(/^tl_oat_/);
+    expect(ok.body.access_token).toMatch(/^lp_oat_/);
 
     const rotated = await admin.request<OAuthAppCreated>(
       'POST',
@@ -283,7 +283,7 @@ describe('incoming webhooks (TL-41)', () => {
         },
       )
     ).body;
-    const url = new URL(rule.webhookUrl ?? '', 'http://tasklore.test');
+    const url = new URL(rule.webhookUrl ?? '', 'http://lenipo.test');
     const secret = url.searchParams.get('token') ?? '';
     const call = (headers: Record<string, string>) =>
       fetch(`${test.baseUrl}/automation/hooks/${rule.id}`, {
@@ -292,13 +292,13 @@ describe('incoming webhooks (TL-41)', () => {
         body: JSON.stringify({ issues: ['WEB-1'] }),
       });
     expect((await call({ authorization: `Bearer ${secret}` })).status).toBe(202);
-    expect((await call({ 'x-tasklore-token': secret })).status).toBe(202);
+    expect((await call({ 'x-lenipo-token': secret })).status).toBe(202);
     const rotated = await admin.request<{ webhookUrl: string }>(
       'POST',
       `/automation/rules/${rule.id}/webhook-token`,
     );
     expect(rotated.body.webhookUrl).not.toContain(secret);
-    expect((await call({ 'x-tasklore-token': secret })).status).not.toBe(202);
+    expect((await call({ 'x-lenipo-token': secret })).status).not.toBe(202);
     await test.app.get(AutomationEngine).runDue();
   });
 });

@@ -10,7 +10,7 @@ import {
   GLOBAL_PERMISSIONS,
   type GlobalPermission,
   type GroupSummary,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, count, eq, inArray } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';

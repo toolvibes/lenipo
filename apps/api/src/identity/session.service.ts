@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { SessionInfo } from '@tasklore/shared';
+import type { SessionInfo } from '@toolvibes/shared';
 import { and, desc, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';

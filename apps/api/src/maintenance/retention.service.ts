@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RetentionResult, RetentionSettings } from '@tasklore/shared';
+import { RetentionResult, RetentionSettings } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import type { Logger } from '../core/logger.js';
 import { DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';

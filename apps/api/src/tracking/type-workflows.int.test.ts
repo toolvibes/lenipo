@@ -6,7 +6,7 @@ import type {
   PublishWorkflowRequest,
   StatusInfo,
   Transition,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';

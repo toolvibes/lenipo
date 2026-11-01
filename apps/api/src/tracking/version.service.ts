@@ -11,7 +11,7 @@ import type {
   UpdateVersionRequest,
   Version,
   VersionRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

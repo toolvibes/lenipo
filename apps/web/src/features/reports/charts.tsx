@@ -1,4 +1,4 @@
-import type { Burndown, EstimationField, Velocity } from '@tasklore/shared';
+import type { Burndown, EstimationField, Velocity } from '@toolvibes/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../lib/format';

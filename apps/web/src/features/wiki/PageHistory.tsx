@@ -6,7 +6,7 @@ import type {
   DiffBlockContent as DiffContent,
   PageVersionSummary,
   RichText,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

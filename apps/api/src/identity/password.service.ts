@@ -20,7 +20,7 @@ export class PasswordService {
 
   async verify(passwordHash: string | null | undefined, password: string): Promise<boolean> {
     if (!passwordHash) {
-      this.dummyHash ??= hash('tasklore-dummy-password', OPTIONS);
+      this.dummyHash ??= hash('lenipo-dummy-password', OPTIONS);
       await verify(await this.dummyHash, password);
       return false;
     }

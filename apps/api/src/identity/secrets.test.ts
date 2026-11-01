@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { constantTimeEquals, randomSecret, readCookie, setupCode, sha256 } from './secrets.js';
+import {
+  constantTimeEquals,
+  hasPrefix,
+  randomSecret,
+  readCookie,
+  readSessionCookie,
+  setupCode,
+  sha256,
+} from './secrets.js';
 
 describe('secrets', () => {
   it('creates distinct url-safe secrets', () => {
@@ -22,6 +30,14 @@ describe('secrets', () => {
     expect(readCookie('a=1; tl_session=x%2By; b=2', 'tl_session')).toBe('x+y');
     expect(readCookie('a=1', 'tl_session')).toBeUndefined();
     expect(readCookie(undefined, 'tl_session')).toBeUndefined();
+  });
+
+  it('accepts cookies and token prefixes from the old name Tasklore (E-129)', () => {
+    expect(readSessionCookie('lp_session=neu; tl_session=alt')).toBe('neu');
+    expect(readSessionCookie('tl_session=alt')).toBe('alt');
+    expect(hasPrefix('lp_pat_abc', 'lp_pat_')).toBe(true);
+    expect(hasPrefix('tl_pat_abc', 'lp_pat_')).toBe(true);
+    expect(hasPrefix('tl_oat_abc', 'lp_pat_')).toBe(false);
   });
 
   it('formats setup codes in groups of four without ambiguous characters', () => {

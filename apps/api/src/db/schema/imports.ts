@@ -28,7 +28,7 @@ export const importJobs = pgTable('import_jobs', {
   finishedAt: timestamp({ withTimezone: true }),
 });
 
-/** Which Tasklore object came from which source object, so a second run only adds new ones. */
+/** Which Lenipo object came from which source object, so a second run only adds new ones. */
 export const importMappings = pgTable(
   'import_mappings',
   {

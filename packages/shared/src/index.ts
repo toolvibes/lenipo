@@ -1,4 +1,4 @@
-export const PRODUCT_NAME = 'Tasklore';
+export const PRODUCT_NAME = 'Lenipo';
 
 export * from './access-check.js';
 export * from './automation.js';

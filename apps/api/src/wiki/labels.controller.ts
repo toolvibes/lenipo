@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param } from '@nestjs/common';
-import { LabelledPage } from '@tasklore/shared';
+import { LabelledPage } from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

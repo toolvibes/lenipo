@@ -10,7 +10,7 @@ import {
   type NotificationSettings,
   type UpdateNotificationSettings,
   type UserRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
 import type { AppConfig } from '../core/config.js';
 import type { Logger } from '../core/logger.js';

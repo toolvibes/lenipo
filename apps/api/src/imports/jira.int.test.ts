@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import type { Attachment, BoardData, Comment, ImportJob, Issue, Worklog } from '@tasklore/shared';
+import type { Attachment, BoardData, Comment, ImportJob, Issue, Worklog } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -261,6 +261,6 @@ describe('import from Jira Server/DC (TL-35)', () => {
     await test.app.get(ImportService).runPending();
     const done = (await admin.request<ImportJob>('GET', `/admin/imports/${job.id}`)).body;
     expect(done.state).toBe('failed');
-    expect(done.log.join()).toContain('TAKEN gibt es in Tasklore schon');
+    expect(done.log.join()).toContain('TAKEN gibt es in Lenipo schon');
   });
 });

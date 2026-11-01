@@ -1,4 +1,4 @@
-import type { CreatedToken, ImportJob } from '@tasklore/shared';
+import type { CreatedToken, ImportJob } from '@toolvibes/shared';
 import { strToU8, zipSync } from 'fflate';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AutomationEngine } from '../automation/automation.engine.js';
@@ -98,7 +98,7 @@ describe('security review fixes (TL-44)', () => {
 
   it('never builds a file path from an archive id', async () => {
     const archive = {
-      format: 'tasklore-archive',
+      format: 'lenipo-archive',
       formatVersion: 1,
       kind: 'project',
       exportedAt: new Date().toISOString(),

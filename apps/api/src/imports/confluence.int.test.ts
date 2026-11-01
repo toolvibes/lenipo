@@ -6,7 +6,7 @@ import type {
   PageComment,
   PageTreeEntry,
   PageVersionSummary,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { strToU8, zipSync } from 'fflate';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';

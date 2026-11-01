@@ -39,7 +39,7 @@ export const OnboardingRequest = z
       .object({
         method: OnboardingMethod,
         name: z.string().trim().min(1).max(80),
-        /** Key of the project, and of its Lore space. */
+        /** Key of the project, and of its wiki space. */
         key: ProjectKey,
       })
       .optional(),

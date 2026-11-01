@@ -10,7 +10,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { CreatePageCommentRequest, PageComment, UpdatePageCommentRequest } from '@tasklore/shared';
+import { CreatePageCommentRequest, PageComment, UpdatePageCommentRequest } from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

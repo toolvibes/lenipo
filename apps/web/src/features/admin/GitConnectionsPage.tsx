@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type CreatedGitConnection, GIT_PROVIDERS, type GitProvider } from '@tasklore/shared';
+import { type CreatedGitConnection, GIT_PROVIDERS, type GitProvider } from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

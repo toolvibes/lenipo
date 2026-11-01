@@ -1,21 +1,21 @@
-# Tasklore on Kubernetes (P-OPS-02, TL-42, E-123). One image, one Deployment per role:
+# Lenipo on Kubernetes (P-OPS-02, TL-42, E-123). One image, one Deployment per role:
 # api (HTTP and realtime), collab (collaborative editing) and worker (background jobs).
 # PostgreSQL, Valkey and S3 are run outside the chart and named here.
 
 image:
-  repository: tasklore/tasklore
+  repository: lenipo/lenipo
   tag: ""          # defaults to the chart's appVersion
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
-# Public address, e.g. https://tasklore.example.org (links in e-mails, OAuth, SAML).
+# Public address, e.g. https://lenipo.example.org (links in e-mails, OAuth, SAML).
 publicUrl: ""
 
 # Settings passed as environment variables (see apps/api/src/core/config.ts).
 env:
   LOG_LEVEL: info
   STORAGE_DRIVER: s3
-  S3_BUCKET: tasklore
+  S3_BUCKET: lenipo
   S3_REGION: us-east-1
   # S3_ENDPOINT: https://s3.example.org
 
@@ -24,7 +24,7 @@ env:
 # here and the chart creates one.
 existingSecret: ""
 secrets: {}
-#  DATABASE_URL: postgres://tasklore:...@postgres:5432/tasklore
+#  DATABASE_URL: postgres://lenipo:...@postgres:5432/lenipo
 #  REDIS_URL: redis://valkey:6379
 
 # Prometheus metrics on this port of every pod at /metrics; never exposed by the Ingress.
@@ -71,16 +71,16 @@ migrations:
 persistence:
   enabled: false
   existingClaim: ""
-  mountPath: /var/lib/tasklore/files
+  mountPath: /var/lib/lenipo/files
 
 ingress:
   enabled: true
   className: ""
   annotations: {}
-  host: tasklore.example.org
+  host: lenipo.example.org
   tls: []
-  #  - secretName: tasklore-tls
-  #    hosts: [tasklore.example.org]
+  #  - secretName: lenipo-tls
+  #    hosts: [lenipo.example.org]
 
 # Seconds a stopping pod has: the load balancer notices (preStop), then requests and jobs finish.
 shutdown:

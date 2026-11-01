@@ -1,9 +1,9 @@
-# Production setup: Tasklore, PostgreSQL, Valkey and Caddy (HTTPS).
-#   cd deploy && POSTGRES_PASSWORD=... SITE_ADDRESS=tasklore.example.org docker compose up -d
+# Production setup: Lenipo, PostgreSQL, Valkey and Caddy (HTTPS).
+#   cd deploy && POSTGRES_PASSWORD=... SITE_ADDRESS=lenipo.example.org docker compose up -d
 # Attachments are stored in the volume app-files. For S3 instead, set STORAGE_DRIVER=s3 and the
 # S3_* variables (any S3-compatible service), or start the bundled RustFS:
 #   STORAGE_DRIVER=s3 S3_SECRET_ACCESS_KEY=... docker compose --profile s3 up -d
-name: tasklore-prod
+name: lenipo-prod
 
 services:
   app:
@@ -11,17 +11,17 @@ services:
       context: ..
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://tasklore:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/tasklore
+      DATABASE_URL: postgres://lenipo:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/lenipo
       REDIS_URL: redis://valkey:6379
       LOG_LEVEL: ${LOG_LEVEL:-info}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
       S3_ENDPOINT: ${S3_ENDPOINT:-http://rustfs:9000}
-      S3_BUCKET: ${S3_BUCKET:-tasklore}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-tasklore}
+      S3_BUCKET: ${S3_BUCKET:-lenipo}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-lenipo}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       ATTACHMENT_MAX_MB: ${ATTACHMENT_MAX_MB:-25}
     volumes:
-      - app-files:/var/lib/tasklore/files
+      - app-files:/var/lib/lenipo/files
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,13 +32,13 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tasklore
+      POSTGRES_USER: lenipo
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
-      POSTGRES_DB: tasklore
+      POSTGRES_DB: lenipo
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tasklore -d tasklore"]
+      test: ["CMD-SHELL", "pg_isready -U lenipo -d lenipo"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -62,7 +62,7 @@ services:
     environment:
       RUSTFS_VOLUMES: /data
       RUSTFS_ADDRESS: 0.0.0.0:9000
-      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID:-tasklore}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID:-lenipo}
       # Not published to the host; the app refuses to start with STORAGE_DRIVER=s3 but no secret.
       RUSTFS_SECRET_KEY: ${S3_SECRET_ACCESS_KEY:-}
     volumes:
@@ -74,8 +74,8 @@ services:
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     ports:
-      - "${TASKLORE_HTTP_PORT:-80}:80"
-      - "${TASKLORE_HTTPS_PORT:-443}:443"
+      - "${LENIPO_HTTP_PORT:-80}:80"
+      - "${LENIPO_HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

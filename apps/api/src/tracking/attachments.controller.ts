@@ -12,7 +12,7 @@ import {
   Res,
   StreamableFile,
 } from '@nestjs/common';
-import { Attachment } from '@tasklore/shared';
+import { Attachment } from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { CurrentPrincipal } from '../core/http/decorators.js';

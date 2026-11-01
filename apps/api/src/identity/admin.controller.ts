@@ -19,7 +19,7 @@ import {
   GroupSummary,
   SecuritySettings,
   UserSummary,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';

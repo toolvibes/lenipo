@@ -8,7 +8,7 @@ import type {
   TimelineMilestone,
   TimelineRow,
   TimelineSpan,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import {
   type FormEvent,
   type PointerEvent as ReactPointerEvent,

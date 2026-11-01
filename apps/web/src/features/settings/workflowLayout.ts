@@ -1,4 +1,4 @@
-import type { StatusCategory } from '@tasklore/shared';
+import type { StatusCategory } from '@toolvibes/shared';
 
 /** Layered layout for the read-only workflow diagram (TL-74, E-85); small workflows, no library. */
 

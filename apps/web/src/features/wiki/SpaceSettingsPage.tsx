@@ -4,7 +4,7 @@ import {
   type Space,
   SpaceRole,
   type UpdateSpaceRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

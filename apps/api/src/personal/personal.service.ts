@@ -8,7 +8,7 @@ import {
   IssueColumns,
   type RecentItem,
   type RecentKind,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { BoardService } from '../boards/board.service.js';
 import type { Principal } from '../core/http/principal.js';

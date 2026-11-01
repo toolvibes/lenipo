@@ -17,7 +17,7 @@ import {
   Me,
   safeRedirectPath,
   TwoFactorCodeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppConfig } from '../core/config.js';
@@ -95,7 +95,7 @@ export class AuthController {
       });
       throw new UnauthorizedException({
         message: 'The code does not match',
-        type: 'urn:tasklore:problem:invalid-credentials',
+        type: 'urn:lenipo:problem:invalid-credentials',
       });
     }
     await this.sessions.setStage(principal.sessionId, 'full');

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import {
   AUTOMATION_ACTOR_ID,
   type ProjectWikiPages,
   type RichText,
   type SprintReport,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { ReportService } from '../boards/report.service.js';
 import type { Principal } from '../core/http/principal.js';

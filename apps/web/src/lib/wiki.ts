@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { PageTreeEntry } from '@tasklore/shared';
+import type { PageTreeEntry } from '@toolvibes/shared';
 import { client, unwrap } from './api';
 
 export const spacesQuery = queryOptions({

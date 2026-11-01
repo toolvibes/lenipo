@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { FilterShareInput, SavedFilter } from '@tasklore/shared';
+import type { FilterShareInput, SavedFilter } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

@@ -10,7 +10,7 @@ import {
   PROJECT_ROLES,
   type ProjectPermission,
   type ProjectRole,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

@@ -5,7 +5,7 @@ import {
   DirectorySyncResult,
   LdapConfig,
   SaveDirectoryRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { ValidBody } from '../core/http/decorators.js';

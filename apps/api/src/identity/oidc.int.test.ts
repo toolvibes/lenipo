@@ -7,7 +7,7 @@ import { OidcService } from './oidc.service.js';
 import { PasswordService } from './password.service.js';
 import { UserService } from './user.service.js';
 
-const ISSUER = 'https://login.example.org/realms/tasklore';
+const ISSUER = 'https://login.example.org/realms/lenipo';
 
 let test: TestApp;
 let oidc: OidcService;

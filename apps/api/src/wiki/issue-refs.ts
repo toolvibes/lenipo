@@ -1,4 +1,4 @@
-import { issueRefs } from '@tasklore/editor';
+import { issueRefs } from '@toolvibes/editor';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Executor } from '../db/client.js';
 import { issues, pageIssueRefs } from '../db/schema/index.js';

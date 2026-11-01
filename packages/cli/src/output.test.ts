@@ -24,7 +24,7 @@ describe('output (D-CLI-06)', () => {
 
   it('completes commands and subcommands in every shell', () => {
     expect(completion('zsh')).toContain('issue) compadd list view create edit move comment assign');
-    expect(completion('fish')).toContain('complete -c tasklore');
+    expect(completion('fish')).toContain('complete -c lenipo');
     expect(() => completion('cmd')).toThrow();
   });
 });

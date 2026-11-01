@@ -1,14 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import { parseArgs } from 'node:util';
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import {
   exportFolder,
   type FolderPage,
   importFolder,
   parseMarkdownFile,
   type WikiPort,
-} from '@tasklore/editor/folder';
+} from '@toolvibes/editor/folder';
 import { COMMANDS, completion } from './completion.js';
 import { loadConfig, saveConfig } from './config.js';
 import { bridge } from './mcp.js';
@@ -26,44 +26,44 @@ import {
 
 export type { Io } from './session.js';
 
-const HELP = `tl – Tasklore auf der Kommandozeile (auch: tasklore)
+const HELP = `lenipo – Lenipo auf der Kommandozeile (veralteter Kurzname: tl)
 
 Anmelden
-  tl login <adresse> [--token <tl_pat_…>] [--profile <name>]
-  tl logout | tl whoami | tl profile list | tl profile use <name>
+  lenipo login <adresse> [--token <lp_pat_…>] [--profile <name>]
+  lenipo logout | lenipo whoami | lenipo profile list | lenipo profile use <name>
 
 Vorgänge
-  tl issue list [-q <TQL>] [--project <KEY>] [--mine] [--limit <n>]
-  tl issue view <KEY> [--comments]
-  tl issue create --project <KEY> --summary <text> [--type story] [--description <md>] [--assignee me|<e-mail>]
-  tl issue edit <KEY> [--summary <text>] [--description <md>] [--labels a,b]
-  tl issue move <KEY> <status oder übergang>
-  tl issue comment <KEY> <text…>
-  tl issue assign <KEY> me|none|<e-mail>
+  lenipo issue list [-q <TQL>] [--project <KEY>] [--mine] [--limit <n>]
+  lenipo issue view <KEY> [--comments]
+  lenipo issue create --project <KEY> --summary <text> [--type story] [--description <md>] [--assignee me|<e-mail>]
+  lenipo issue edit <KEY> [--summary <text>] [--description <md>] [--labels a,b]
+  lenipo issue move <KEY> <status oder übergang>
+  lenipo issue comment <KEY> <text…>
+  lenipo issue assign <KEY> me|none|<e-mail>
 
 Boards und Sprints
-  tl board list [--project <KEY>] | tl board view <id> [--mine]
-  tl sprint list --board <id>
+  lenipo board list [--project <KEY>] | lenipo board view <id> [--mine]
+  lenipo sprint list --board <id>
 
 Wiki-Seiten als Markdown
-  tl page get <id>
-  tl page push <datei> [--space <KEY>] [--parent <id>]
-  tl page pull <BEREICH> <ordner>
-  tl page push-dir <ordner> --space <KEY> [--name <name>] [--skip a.md,b.md]
+  lenipo page get <id>
+  lenipo page push <datei> [--space <KEY>] [--parent <id>]
+  lenipo page pull <BEREICH> <ordner>
+  lenipo page push-dir <ordner> --space <KEY> [--name <name>] [--skip a.md,b.md]
 
 Weiteres
-  tl mcp                      lokaler MCP-Server (stdio) als Brücke zu <adresse>/mcp
-  tl admin users              Personen der Instanz (Administration)
-  tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]
-  tl admin import confluence <export.zip> [--space KEY] [--run]
-  tl admin import archive <archiv.zip> [--key KEY] [--run]
-  tl admin archive project|space <KEY> [datei]   Projekt oder Bereich als Archiv
-  tl admin backup create|list                    Backup anlegen (wartet) oder auflisten
-  tl admin backup download <id> [datei]
-  tl completion bash|zsh|fish
+  lenipo mcp                      lokaler MCP-Server (stdio) als Brücke zu <adresse>/mcp
+  lenipo admin users              Personen der Instanz (Administration)
+  lenipo admin import jira --url <adresse> --token <token> --projects WEB,API [--run]
+  lenipo admin import confluence <export.zip> [--space KEY] [--run]
+  lenipo admin import archive <archiv.zip> [--key KEY] [--run]
+  lenipo admin archive project|space <KEY> [datei]   Projekt oder Bereich als Archiv
+  lenipo admin backup create|list                    Backup anlegen (wartet) oder auflisten
+  lenipo admin backup download <id> [datei]
+  lenipo completion bash|zsh|fish
 
 Optionen überall: --profile <name>, --output table|json|md
-In CI: TASKLORE_URL und TASKLORE_TOKEN statt eines Profils.`;
+In CI: LENIPO_URL und LENIPO_TOKEN statt eines Profils.`;
 
 /** Runs one command; returns the exit code (D-CLI, E-117). */
 export async function run(argv: string[], io: Io): Promise<number> {
@@ -103,7 +103,7 @@ async function dispatch(argv: string[], io: Io): Promise<void> {
     return;
   }
   if (!(command in COMMANDS))
-    throw new CliError(`Unbekannter Befehl „${command}“. Hilfe: tl help`, 2);
+    throw new CliError(`Unbekannter Befehl „${command}“. Hilfe: lenipo help`, 2);
   switch (command) {
     case 'login':
       return login(rest, io);
@@ -147,7 +147,7 @@ async function login(args: string[], io: Io) {
     options: { ...COMMON, token: { type: 'string' } },
   });
   const raw = positionals[0];
-  if (!raw) throw new CliError('Adresse fehlt: tl login https://tasklore.example.org', 2);
+  if (!raw) throw new CliError('Adresse fehlt: lenipo login https://lenipo.example.org', 2);
   const url = normalizeUrl(/^https?:\/\//.test(raw) ? raw : `https://${raw}`);
   const auth = values.token
     ? ({ type: 'token', token: values.token } as const)
@@ -169,7 +169,7 @@ async function login(args: string[], io: Io) {
 async function logout(args: string[], io: Io) {
   const { values } = parseArgs({ args, options: COMMON });
   const { name, profile, config } = await resolveProfile(io, values.profile);
-  if (!name) throw new CliError('Mit TASKLORE_TOKEN gibt es nichts abzumelden.', 2);
+  if (!name) throw new CliError('Mit LENIPO_TOKEN gibt es nichts abzumelden.', 2);
   if (profile.auth.type === 'oauth' && profile.auth.revocationEndpoint) {
     await fetch(profile.auth.revocationEndpoint, {
       method: 'POST',
@@ -202,7 +202,7 @@ async function profiles(args: string[], io: Io) {
   io.out(
     rows.length
       ? render('table', ['PROFIL', 'ADRESSE', 'ANMELDUNG', 'PERSON'], rows, null, io.columns)
-      : 'Keine Profile. tl login <adresse>',
+      : 'Keine Profile. lenipo login <adresse>',
   );
 }
 
@@ -368,7 +368,7 @@ async function issue(args: string[], io: Io) {
     }
     case 'move': {
       const target = positionals.slice(1).join(' ').trim().toLowerCase();
-      if (!target) throw new CliError('Ziel fehlt, z. B. tl issue move WEB-12 "In Arbeit"', 2);
+      if (!target) throw new CliError('Ziel fehlt, z. B. lenipo issue move WEB-12 "In Arbeit"', 2);
       const transitions = await unwrap(
         client.GET('/api/v1/issues/{key}/transitions', { params: { path: { key: needKey() } } }),
       );
@@ -427,7 +427,7 @@ async function issue(args: string[], io: Io) {
       return;
     }
     default:
-      throw new CliError(`tl issue ${COMMANDS.issue?.join('|')}`, 2);
+      throw new CliError(`lenipo issue ${COMMANDS.issue?.join('|')}`, 2);
   }
 }
 
@@ -471,7 +471,7 @@ async function board(args: string[], io: Io) {
   }
   if (sub === 'view') {
     const id = positionals[0];
-    if (!id) throw new CliError('Board-ID fehlt (tl board list)', 2);
+    if (!id) throw new CliError('Board-ID fehlt (lenipo board list)', 2);
     const data = await unwrap(
       client.GET('/api/v1/boards/{id}/issues', {
         params: { path: { id }, query: values.mine ? { filters: 'mine' } : {} },
@@ -493,13 +493,13 @@ async function board(args: string[], io: Io) {
     io.out(lines.join('\n'));
     return;
   }
-  throw new CliError('tl board list|view', 2);
+  throw new CliError('lenipo board list|view', 2);
 }
 
 async function sprint(args: string[], io: Io) {
   const [sub, ...rest] = args;
   const { values } = parseArgs({ args: rest, options: { ...COMMON, board: { type: 'string' } } });
-  if (sub !== 'list' || !values.board) throw new CliError('tl sprint list --board <id>', 2);
+  if (sub !== 'list' || !values.board) throw new CliError('lenipo sprint list --board <id>', 2);
   const format = formatOf(values.output);
   const { client } = await openSession(io, values.profile);
   const backlog = await unwrap(
@@ -559,7 +559,7 @@ function wikiPort(session: Session): WikiPort {
 }
 
 const MARKER_LINE = (page: FolderPage) =>
-  `<!-- tasklore page=${page.id} version=${page.version} · Schnappschuss aus dem Wiki, Änderungen bitte dort -->\n`;
+  `<!-- lenipo page=${page.id} version=${page.version} · Schnappschuss aus dem Wiki, Änderungen bitte dort -->\n`;
 
 async function page(args: string[], io: Io) {
   const [sub, ...rest] = args;
@@ -600,7 +600,7 @@ async function page(args: string[], io: Io) {
         if (!target) throw new CliError(`Seite ${file.page.id} gibt es nicht (mehr)`);
         if (target.version !== file.page.version) {
           throw new CliError(
-            `Die Seite hat sich seit Version ${file.page.version} geändert (jetzt ${target.version}); erst tl page get ${target.id}`,
+            `Die Seite hat sich seit Version ${file.page.version} geändert (jetzt ${target.version}); erst lenipo page get ${target.id}`,
           );
         }
       } else {
@@ -627,7 +627,7 @@ async function page(args: string[], io: Io) {
     }
     case 'pull': {
       const [space, folder] = positionals;
-      if (!space || !folder) throw new CliError('tl page pull <BEREICH> <ordner>', 2);
+      if (!space || !folder) throw new CliError('lenipo page pull <BEREICH> <ordner>', 2);
       const result = await exportFolder(wiki, folder, { spaceKey: space });
       io.out(
         `${result.written.length} geschrieben, ${result.removed.length} entfernt${result.drafts.length ? `, ${result.drafts.length} Entwürfe übersprungen` : ''}.`,
@@ -637,7 +637,7 @@ async function page(args: string[], io: Io) {
     case 'push-dir': {
       const folder = positionals[0];
       if (!folder || !values.space)
-        throw new CliError('tl page push-dir <ordner> --space <KEY>', 2);
+        throw new CliError('lenipo page push-dir <ordner> --space <KEY>', 2);
       const result = await importFolder(wiki, folder, {
         spaceKey: values.space,
         ...(values.name ? { spaceName: values.name } : {}),
@@ -650,7 +650,7 @@ async function page(args: string[], io: Io) {
       return;
     }
     default:
-      throw new CliError('tl page get|push|pull|push-dir', 2);
+      throw new CliError('lenipo page get|push|pull|push-dir', 2);
   }
 }
 
@@ -667,7 +667,7 @@ async function admin(args: string[], io: Io) {
   if (sub === 'import') return adminImport(rest, io);
   if (sub === 'backup') return adminBackup(rest, io);
   if (sub === 'archive') return adminArchive(rest, io);
-  if (sub !== 'users') throw new CliError('tl admin users', 2);
+  if (sub !== 'users') throw new CliError('lenipo admin users', 2);
   const { values } = parseArgs({ args: rest, options: COMMON });
   const format = formatOf(values.output);
   const { client } = await openSession(io, values.profile);
@@ -687,7 +687,7 @@ async function admin(args: string[], io: Io) {
   io.out(render(format, ['E-MAIL', 'ZUSTAND', 'GRUPPEN', 'NAME'], rows, users, io.columns));
 }
 
-/** `tl admin import jira …` starts an import and follows it until it ends (TL-35, E-118). */
+/** `lenipo admin import jira …` starts an import and follows it until it ends (TL-35, E-118). */
 async function adminImport(args: string[], io: Io) {
   const [source, ...rest] = args;
   const { values, positionals } = parseArgs({
@@ -709,12 +709,12 @@ async function adminImport(args: string[], io: Io) {
   let job: { id: string; state: string; progress: string; log: string[]; report: unknown };
   if (source === 'status') {
     const id = positionals[0];
-    if (!id) throw new CliError('tl admin import status <id>', 2);
+    if (!id) throw new CliError('lenipo admin import status <id>', 2);
     job = await unwrap(client.GET('/api/v1/admin/imports/{id}', { params: { path: { id } } }));
   } else if (source === 'jira') {
     if (!values.url || !values.token || !values.projects) {
       throw new CliError(
-        'tl admin import jira --url <adresse> --token <token> --projects WEB,API [--run]',
+        'lenipo admin import jira --url <adresse> --token <token> --projects WEB,API [--run]',
         2,
       );
     }
@@ -732,7 +732,7 @@ async function adminImport(args: string[], io: Io) {
   } else if (source === 'confluence') {
     const file = positionals[0];
     if (!file)
-      throw new CliError('tl admin import confluence <export.zip> [--space KEY] [--run]', 2);
+      throw new CliError('lenipo admin import confluence <export.zip> [--space KEY] [--run]', 2);
     const form = new FormData();
     form.append(
       'file',
@@ -753,7 +753,8 @@ async function adminImport(args: string[], io: Io) {
     if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
   } else if (source === 'archive') {
     const file = positionals[0];
-    if (!file) throw new CliError('tl admin import archive <archiv.zip> [--key KEY] [--run]', 2);
+    if (!file)
+      throw new CliError('lenipo admin import archive <archiv.zip> [--key KEY] [--run]', 2);
     const form = new FormData();
     form.append(
       'file',
@@ -770,7 +771,7 @@ async function adminImport(args: string[], io: Io) {
     job = (await response.json()) as typeof job;
     if (!values.run) io.err('Probelauf – nichts wird geschrieben. Mit --run wirklich importieren.');
   } else {
-    throw new CliError('tl admin import jira|confluence|archive|status', 2);
+    throw new CliError('lenipo admin import jira|confluence|archive|status', 2);
   }
   let shown = '';
   while (job.state === 'pending' || job.state === 'running') {
@@ -820,7 +821,7 @@ async function saveDownload(
   io.out(`${file} (${Math.round(body.length / 1024)} KB)`);
 }
 
-/** `tl admin backup create|list|download` (TL-39, E-120). */
+/** `lenipo admin backup create|list|download` (TL-39, E-120). */
 async function adminBackup(args: string[], io: Io) {
   const [action, ...rest] = args;
   const { values, positionals } = parseArgs({
@@ -874,14 +875,14 @@ async function adminBackup(args: string[], io: Io) {
   }
   if (action === 'download') {
     const id = positionals[0];
-    if (!id) throw new CliError('tl admin backup download <id> [datei]', 2);
+    if (!id) throw new CliError('lenipo admin backup download <id> [datei]', 2);
     await saveDownload(session, `/api/v1/admin/backups/${id}/download`, positionals[1], io);
     return;
   }
-  throw new CliError('tl admin backup create|list|download', 2);
+  throw new CliError('lenipo admin backup create|list|download', 2);
 }
 
-/** `tl admin archive project|space <KEY> [datei]` (TL-39, E-120). */
+/** `lenipo admin archive project|space <KEY> [datei]` (TL-39, E-120). */
 async function adminArchive(args: string[], io: Io) {
   const [kind, ...rest] = args;
   const { values, positionals } = parseArgs({
@@ -891,7 +892,7 @@ async function adminArchive(args: string[], io: Io) {
   });
   const key = positionals[0];
   if ((kind !== 'project' && kind !== 'space') || !key)
-    throw new CliError('tl admin archive project|space <KEY> [datei]', 2);
+    throw new CliError('lenipo admin archive project|space <KEY> [datei]', 2);
   const session = await openSession(io, values.profile);
   await saveDownload(
     session,

@@ -1,5 +1,5 @@
-import type { AutomationRule, AutomationRun, ChangeGroup, Comment, Issue } from '@tasklore/shared';
-import { AUTOMATION_ACTOR_ID } from '@tasklore/shared';
+import type { AutomationRule, AutomationRun, ChangeGroup, Comment, Issue } from '@toolvibes/shared';
+import { AUTOMATION_ACTOR_ID } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';

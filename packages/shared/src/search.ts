@@ -132,7 +132,7 @@ export const EverythingQuery = z
     q: z.string().trim().min(1).max(200),
     /** Only this kind of result; counts always cover all kinds. */
     type: EverythingType.optional(),
-    /** Only this project and the Lore spaces linked to it. */
+    /** Only this project and the wiki spaces linked to it. */
     project: z.string().trim().min(1).max(10).optional(),
     limit: z.coerce.number().int().min(1).max(50).default(10),
   })

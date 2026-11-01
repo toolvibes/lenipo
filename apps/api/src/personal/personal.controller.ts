@@ -7,7 +7,7 @@ import {
   IssueColumns,
   RecentItem,
   RecordRecentRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import { registerBodySchema, registerQuerySchema } from './endpoint.js';
 import type { Principal } from './principal.js';
 
-export const IS_PUBLIC = 'tasklore:public';
+export const IS_PUBLIC = 'lenipo:public';
 
 /** Marks a route as reachable without authentication. */
 export const Public = () => SetMetadata(IS_PUBLIC, true);

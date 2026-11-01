@@ -1,7 +1,7 @@
 import { rm } from 'node:fs/promises';
 import type { Readable } from 'node:stream';
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Attachment, ProjectPermission, UserRef } from '@tasklore/shared';
+import type { Attachment, ProjectPermission, UserRef } from '@toolvibes/shared';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import type { Request } from 'express';
 import { v7 as uuidv7 } from 'uuid';

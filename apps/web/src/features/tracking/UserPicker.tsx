@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { UserRef } from '@tasklore/shared';
+import type { UserRef } from '@toolvibes/shared';
 import { Command } from 'cmdk';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,4 +1,4 @@
-import type { HtmlNode } from '@tasklore/editor';
+import type { HtmlNode } from '@toolvibes/editor';
 import {
   AlignmentType,
   BorderStyle,

@@ -5,7 +5,7 @@ import type {
   BulkRequest,
   BulkResult,
   BulkUpdateRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';

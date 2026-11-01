@@ -6,7 +6,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { ChangePasswordRequest, LoginRequest, PasswordChanged } from '@tasklore/shared';
+import type { ChangePasswordRequest, LoginRequest, PasswordChanged } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -58,15 +58,15 @@ export class AuthService {
       });
       throw new UnauthorizedException({
         message: 'Invalid email or password',
-        type: 'urn:tasklore:problem:invalid-credentials',
+        type: 'urn:lenipo:problem:invalid-credentials',
       });
     }
     // In maintenance mode only administrators get in (TL-40, E-121).
     const { maintenance } = await this.operations.snapshot();
     if (maintenance.enabled && !(await this.access.hasGlobal(user.id, 'admin'))) {
       throw new ServiceUnavailableException({
-        message: maintenance.message || 'Tasklore is being maintained',
-        type: 'urn:tasklore:problem:maintenance',
+        message: maintenance.message || 'Lenipo is being maintained',
+        type: 'urn:lenipo:problem:maintenance',
       });
     }
     // A second factor follows the password where it is on, or must be set up first (E-100).
@@ -113,7 +113,7 @@ export class AuthService {
       });
       throw new ForbiddenException({
         message: 'The current password is wrong',
-        type: 'urn:tasklore:problem:invalid-credentials',
+        type: 'urn:lenipo:problem:invalid-credentials',
       });
     }
     if (await this.passwords.verify(user.passwordHash, request.newPassword)) {

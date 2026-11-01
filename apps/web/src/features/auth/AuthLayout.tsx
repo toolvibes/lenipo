@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LogoMark } from '../../ui/Logo';
 
 const PITCH = ['issues', 'lore', 'linked'] as const;
 
-/** Sign-in and setup (1a S1): the form on the left, what TaskLore offers on the right. */
+/** Sign-in and setup (1a S1): the form on the left, what Lenipo offers on the right. */
 export function AuthLayout({
   title,
   subtitle,
@@ -18,12 +19,7 @@ export function AuthLayout({
     <div className="grid min-h-screen md:grid-cols-2">
       <main className="flex flex-col px-6 py-10 sm:px-14">
         <span className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="grid size-6 place-items-center rounded-[5px] bg-[var(--ink)] text-[13px] font-bold text-[var(--surface-1)]"
-          >
-            T
-          </span>
+          <LogoMark size={24} />
           <span className="text-base font-bold">{t('common.product')}</span>
         </span>
         <div className="flex w-full max-w-[360px] flex-1 flex-col justify-center gap-6 py-10">

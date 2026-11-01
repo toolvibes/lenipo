@@ -23,7 +23,7 @@ import {
   OAuthGrant,
   OAuthSettings,
   SaveOAuthAppRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
@@ -36,7 +36,7 @@ import { CONFIG } from '../core/tokens.js';
 import { OAUTH_SCOPES, OAuthError, OAuthService } from './oauth.service.js';
 
 /** OAuth endpoints are called by other programs without cookies; cross-site posts are fine. */
-export const ALLOW_CROSS_SITE = 'tasklore:allow-cross-site';
+export const ALLOW_CROSS_SITE = 'lenipo:allow-cross-site';
 export const AllowCrossSite = () => SetMetadata(ALLOW_CROSS_SITE, true);
 
 const Uuid = new ParseUUIDPipe({ errorHttpStatusCode: 404 });
@@ -67,7 +67,7 @@ export class OAuthController {
       authorization_servers: [issuer],
       scopes_supported: OAUTH_SCOPES,
       bearer_methods_supported: ['header'],
-      resource_name: 'Tasklore',
+      resource_name: 'Lenipo',
     };
   }
 

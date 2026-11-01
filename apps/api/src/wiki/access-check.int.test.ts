@@ -1,4 +1,4 @@
-import type { AccessCheckResult, Issue, Page, SecurityScheme } from '@tasklore/shared';
+import type { AccessCheckResult, Issue, Page, SecurityScheme } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';

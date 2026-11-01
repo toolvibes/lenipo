@@ -1,4 +1,4 @@
-import type { Directory, DirectorySyncResult, GroupSummary } from '@tasklore/shared';
+import type { Directory, DirectorySyncResult, GroupSummary } from '@toolvibes/shared';
 import ldap from 'ldapjs';
 
 // biome-ignore lint/suspicious/noExplicitAny: the ldapjs typings do not describe its server API
@@ -110,7 +110,7 @@ describe('LDAP directories (P-USR-04/07)', () => {
       })
     ).body;
     expect(list.map((entry) => [entry.type, entry.name])).toEqual([
-      ['internal', 'Tasklore (intern)'],
+      ['internal', 'Lenipo (intern)'],
       ['ldap', 'Firmen-LDAP'],
     ]);
     expect(list[1]?.config).toMatchObject({ hasPassword: true });

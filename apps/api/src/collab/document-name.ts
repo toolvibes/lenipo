@@ -10,10 +10,10 @@ export function pageIdOf(name: string): string | null {
 export const DRAFT_FIELD = 'default';
 
 /** The NOTIFY channel that asks the collab service to replace a draft (E-62). */
-export const DRAFT_RESET_CHANNEL = 'tasklore_draft_reset';
+export const DRAFT_RESET_CHANNEL = 'lenipo_draft_reset';
 
 /** The NOTIFY channel announcing a queued agent change to a draft (E-74). */
-export const DRAFT_WRITE_CHANNEL = 'tasklore_draft_write';
+export const DRAFT_WRITE_CHANNEL = 'lenipo_draft_write';
 
 /** The collab document name of a page's draft. */
 export const draftName = (pageId: string) => `page:${pageId}`;

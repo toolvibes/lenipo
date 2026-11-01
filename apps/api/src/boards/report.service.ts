@@ -8,7 +8,7 @@ import type {
   SprintReport,
   SprintReportEntry,
   Velocity,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, desc, eq, getTableColumns, inArray, isNull } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

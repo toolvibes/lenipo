@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Tasklore</title><rect width="64" height="64" rx="14" fill="#1b1c1e"/><path fill="#fff" d="M16 17.3h32v8.3H34.8v23H29.2v-23H16z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 208" width="192" height="208">
+  <title>Lenipo</title>
+  <defs>
+    <linearGradient id="lp-stem" x1="62" y1="0" x2="28" y2="208" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9064F7"/>
+      <stop offset="0.42" stop-color="#7160F4"/>
+      <stop offset="0.78" stop-color="#4B5DF0"/>
+      <stop offset="1" stop-color="#2A56EC"/>
+    </linearGradient>
+    <radialGradient id="lp-stem-shade" cx="90" cy="134" r="52" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 134) scale(0.75 1.15) translate(-90 -134)">
+      <stop offset="0" stop-color="#14135E" stop-opacity="0.7"/>
+      <stop offset="0.45" stop-color="#1B1A78" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#1B1A78" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lp-fold" x1="34" y1="178" x2="58" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A1250"/>
+      <stop offset="0.6" stop-color="#16288A"/>
+      <stop offset="1" stop-color="#2742C2"/>
+    </linearGradient>
+    <linearGradient id="lp-foot" x1="24" y1="206" x2="184" y2="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2358EE"/>
+      <stop offset="0.3" stop-color="#3684F7"/>
+      <stop offset="0.66" stop-color="#3FB0F8"/>
+      <stop offset="1" stop-color="#80D8FD"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#lp-stem)" d="M0 66C0 42 11 26 32 17L66 2.5C77 -2.2 88 4.5 88 16.5V176L52 208H46C20 208 0 189 0 163Z"/>
+  <path fill="url(#lp-stem-shade)" d="M88 70V176L52 208H46C20 208 0 189 0 163V70Z"/>
+  <path fill="url(#lp-fold)" d="M17.5 190C21 161 47 134 87 130L88 162Z"/>
+  <path fill="url(#lp-foot)" d="M17.5 190L71 137.5C77 132 83 130 92 130H162C178 130 191 138 188 152C186 162 176 176 163 189C152 200 140 208 124 208H46C33 208 23 201 17.5 190Z"/>
+</svg>

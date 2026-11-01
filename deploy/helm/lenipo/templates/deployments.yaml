@@ -7,16 +7,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "tasklore.fullname" $ }}-{{ $role }}
+  name: {{ include "lenipo.fullname" $ }}-{{ $role }}
   labels:
-    {{- include "tasklore.labels" $ | nindent 4 }}
+    {{- include "lenipo.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $role }}
 spec:
   {{- if not (and (eq $role "api") $.Values.api.autoscaling.enabled) }}
   replicas: {{ $values.replicas }}
   {{- end }}
   selector:
-    matchLabels: {{- include "tasklore.selector" (dict "root" $ "role" $role) | nindent 6 }}
+    matchLabels: {{- include "lenipo.selector" (dict "root" $ "role" $role) | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -24,17 +24,17 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   template:
-    {{- include "tasklore.pod" (dict "root" $ "role" $role) | nindent 4 }}
+    {{- include "lenipo.pod" (dict "root" $ "role" $role) | nindent 4 }}
 {{- if gt (int $values.replicas) 1 }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "tasklore.fullname" $ }}-{{ $role }}
-  labels: {{- include "tasklore.labels" $ | nindent 4 }}
+  name: {{ include "lenipo.fullname" $ }}-{{ $role }}
+  labels: {{- include "lenipo.labels" $ | nindent 4 }}
 spec:
   maxUnavailable: 1
   selector:
-    matchLabels: {{- include "tasklore.selector" (dict "root" $ "role" $role) | nindent 6 }}
+    matchLabels: {{- include "lenipo.selector" (dict "root" $ "role" $role) | nindent 6 }}
 {{- end }}
 {{- end }}

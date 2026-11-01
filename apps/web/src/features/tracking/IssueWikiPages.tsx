@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatRelative } from '../../lib/format';
 import { issuePagesQuery } from '../../lib/wiki';
 
-/** "Wiki-Seiten": Lore pages that name or embed this issue (W-INT-03, E-73). */
+/** "Wiki-Seiten": wiki pages that name or embed this issue (W-INT-03, E-73). */
 export function IssueWikiPages({ issueKey }: { issueKey: string }) {
   const { t } = useTranslation();
   const pages = useQuery(issuePagesQuery(issueKey));

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { ImportJob, ImportReport, ImportSource, JiraImportRequest } from '@tasklore/shared';
+import type { ImportJob, ImportReport, ImportSource, JiraImportRequest } from '@toolvibes/shared';
 import { desc, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
@@ -128,14 +128,14 @@ export class ImportService {
     return this.get(id);
   }
 
-  /** A project or space archive of another Tasklore instance (TL-39, E-120). */
+  /** A project or space archive of another Lenipo instance (TL-39, E-120). */
   async archive(
     principal: Principal,
     upload: SpooledUpload,
     options: { targetKey?: string; dryRun: boolean },
   ): Promise<ImportJob> {
     if (!upload.fileName.toLowerCase().endsWith('.zip')) {
-      throw new BadRequestException('Erwartet wird ein Tasklore-Archiv als ZIP');
+      throw new BadRequestException('Erwartet wird ein Lenipo-Archiv als ZIP');
     }
     const id = uuidv7();
     const storageKey = `imports/${id}`;
@@ -144,7 +144,7 @@ export class ImportService {
       id,
       source: 'archive',
       dryRun: options.dryRun,
-      label: `Tasklore-Archiv ${upload.fileName}${options.targetKey ? ` → ${options.targetKey}` : ''}`,
+      label: `Lenipo-Archiv ${upload.fileName}${options.targetKey ? ` → ${options.targetKey}` : ''}`,
       params: { storageKey, fileName: upload.fileName, targetKey: options.targetKey ?? null },
       createdById: principal.userId,
     });

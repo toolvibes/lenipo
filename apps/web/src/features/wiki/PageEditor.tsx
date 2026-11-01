@@ -1,8 +1,8 @@
 import { ChatCircleText } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Me, RichText } from '@tasklore/shared';
 import type { Editor } from '@tiptap/react';
+import type { Me, RichText } from '@toolvibes/shared';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CollabEditor } from '../../collab/CollabEditor';

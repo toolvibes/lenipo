@@ -1,7 +1,7 @@
 import { Printer } from '@phosphor-icons/react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Page, PageTreeEntry, RichText } from '@tasklore/shared';
+import type { Page, PageTreeEntry, RichText } from '@toolvibes/shared';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../lib/format';

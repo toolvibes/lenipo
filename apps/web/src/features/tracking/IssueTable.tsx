@@ -10,8 +10,8 @@ import {
   type ListColumn,
   type UpdateIssueRequest,
   type UserRef,
-} from '@tasklore/shared';
-import type { SortKey } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import type { SortKey } from '@toolvibes/tql';
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

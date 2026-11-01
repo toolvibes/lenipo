@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CustomFieldValue, ProjectDetails, ProjectFieldSetting } from '@tasklore/shared';
+import type { CustomFieldValue, ProjectDetails, ProjectFieldSetting } from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

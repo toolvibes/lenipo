@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import type { BoardSummary, CreatedToken, Sprint } from '@tasklore/shared';
+import type { BoardSummary, CreatedToken, Sprint } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -71,28 +71,28 @@ describe('MCP resources and prompts (D-MCP-08/09)', () => {
   it('offers resource templates and lists the caller’s open issues', async () => {
     const { resourceTemplates } = await client.listResourceTemplates();
     expect(resourceTemplates.map((entry) => entry.uriTemplate).sort()).toEqual([
-      'tasklore://board/{id}',
-      'tasklore://issue/{key}',
-      'tasklore://page/{id}',
-      'tasklore://sprint/{id}',
+      'lenipo://board/{id}',
+      'lenipo://issue/{key}',
+      'lenipo://page/{id}',
+      'lenipo://sprint/{id}',
     ]);
     const { resources } = await client.listResources();
     expect(resources).toEqual([
-      expect.objectContaining({ uri: 'tasklore://issue/WEB-1', name: 'WEB-1 Login mit Passkey' }),
+      expect.objectContaining({ uri: 'lenipo://issue/WEB-1', name: 'WEB-1 Login mit Passkey' }),
     ]);
   });
 
   it('reads issues, boards and sprints as Markdown', async () => {
-    const issue = await client.readResource({ uri: 'tasklore://issue/WEB-1' });
+    const issue = await client.readResource({ uri: 'lenipo://issue/WEB-1' });
     expect(issue.contents[0]?.mimeType).toBe('text/markdown');
     expect(textOf(issue)).toContain('Login mit Passkey');
-    expect(textOf(await client.readResource({ uri: `tasklore://board/${board.id}` }))).toContain(
+    expect(textOf(await client.readResource({ uri: `lenipo://board/${board.id}` }))).toContain(
       '# Team',
     );
-    expect(textOf(await client.readResource({ uri: `tasklore://sprint/${sprint.id}` }))).toContain(
+    expect(textOf(await client.readResource({ uri: `lenipo://sprint/${sprint.id}` }))).toContain(
       'WEB-1',
     );
-    await expect(client.readResource({ uri: 'tasklore://issue/WEB-99' })).rejects.toThrow(/404/);
+    await expect(client.readResource({ uri: 'lenipo://issue/WEB-99' })).rejects.toThrow(/404/);
   });
 
   it('offers prompts that bring their data along', async () => {

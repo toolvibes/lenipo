@@ -10,7 +10,7 @@ import {
   type FilterSubscription,
   SUBSCRIPTION_ISSUE_LIMIT,
   type SubscriptionSchedule,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, eq, inArray, or } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { AppConfig } from '../core/config.js';

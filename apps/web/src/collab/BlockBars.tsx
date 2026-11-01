@@ -11,8 +11,8 @@ import {
   Trash,
   Warning,
 } from '@phosphor-icons/react';
-import type { ImageAlignment, PanelKind } from '@tasklore/editor/schema';
 import { type Editor, useEditorState } from '@tiptap/react';
+import type { ImageAlignment, PanelKind } from '@toolvibes/editor/schema';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Separator, ToolbarButton } from './Toolbar';

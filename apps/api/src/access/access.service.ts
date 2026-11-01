@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AUTOMATION_ACTOR_ID, type GlobalPermission } from '@tasklore/shared';
+import { AUTOMATION_ACTOR_ID, type GlobalPermission } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

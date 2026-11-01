@@ -1,12 +1,12 @@
 import { ChatCircleText } from '@phosphor-icons/react';
-import { anchorFromSelection, anchorRange } from '@tasklore/editor/anchors';
-import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
-import type { PageComment, RichText, TextAnchor } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { anchorFromSelection, anchorRange } from '@toolvibes/editor/anchors';
+import { blockExtensions, starterKitOptions } from '@toolvibes/editor/schema';
+import type { PageComment, RichText, TextAnchor } from '@toolvibes/shared';
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInAppLinks } from '../../lib/links';

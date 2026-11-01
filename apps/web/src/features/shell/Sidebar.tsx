@@ -1,7 +1,7 @@
 import { SignOut } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import type { Favourite, Me } from '@tasklore/shared';
+import type { Favourite, Me } from '@toolvibes/shared';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { boardsQuery } from '../../lib/boards';
@@ -11,6 +11,7 @@ import { initials, presenceColor } from '../../lib/presence';
 import { useCurrentProjectKey } from '../../lib/shortcuts';
 import { projectsQuery } from '../../lib/tracking';
 import { projectSpacesQuery } from '../../lib/wiki';
+import { LogoMark } from '../../ui/Logo';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { TimerBar } from '../time/TimerBar';
 
@@ -54,7 +55,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
   return <div className="tl-label px-2.5 pb-1.5 text-[var(--ink-muted)]">{children}</div>;
 }
 
-/** The sub-pages of the project being worked on: its issues, backlog, board and Lore. */
+/** The sub-pages of the project being worked on: its issues, backlog, board and Wiki. */
 function ProjectPages({ projectKey, path }: { projectKey: string; path: string }) {
   const { t } = useTranslation();
   const modules = useModules();
@@ -242,12 +243,7 @@ export function Sidebar({
       className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-[18px] border-r border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-3.5 md:sticky md:top-0 md:h-screen md:max-w-[var(--sidebar-width)] md:overflow-y-auto"
     >
       <Link to="/" className="flex items-center gap-2 px-2 py-0.5 text-[var(--ink)] no-underline">
-        <span
-          aria-hidden
-          className="grid size-[22px] place-items-center rounded-[5px] bg-[var(--ink)] text-[12px] font-bold text-[var(--surface-1)]"
-        >
-          T
-        </span>
+        <LogoMark size={22} />
         <span className="text-[15px] font-bold tracking-[-0.01em]">{t('common.product')}</span>
       </Link>
 

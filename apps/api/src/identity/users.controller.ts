@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { GroupRef, UserLookup } from '@tasklore/shared';
+import { GroupRef, UserLookup } from '@toolvibes/shared';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { ValidQuery } from '../core/http/decorators.js';

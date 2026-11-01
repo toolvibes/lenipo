@@ -1,4 +1,4 @@
-import type { IssueLookup, IssuePageRef, Page, Space } from '@tasklore/shared';
+import type { IssueLookup, IssuePageRef, Page, Space } from '@toolvibes/shared';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spaceRoleMembers } from '../db/schema/index.js';

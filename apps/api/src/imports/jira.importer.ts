@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { markdownToDoc } from '@tasklore/editor';
-import type { ImportReport } from '@tasklore/shared';
+import { markdownToDoc } from '@toolvibes/editor';
+import type { ImportReport } from '@toolvibes/shared';
 import { and, eq, max, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { BoardService } from '../boards/board.service.js';
@@ -158,7 +158,7 @@ export class JiraImporter {
       .onConflictDoNothing();
   }
 
-  /** A Jira person as a Tasklore person: by e-mail, else a deactivated account (E-118). */
+  /** A Jira person as a Lenipo person: by e-mail, else a deactivated account (E-118). */
   private async user(person: Json): Promise<string | null> {
     if (!person) return null;
     const sourceId = String(person.key ?? person.name ?? person.accountId ?? '');
@@ -224,7 +224,7 @@ export class JiraImporter {
     const [existing] = await db.select().from(projects).where(eq(projects.key, key));
     if (!projectId && existing) {
       throw new Error(
-        `Den Projektschlüssel ${key} gibt es in Tasklore schon; erst umbenennen oder einen anderen Schlüssel wählen`,
+        `Den Projektschlüssel ${key} gibt es in Lenipo schon; erst umbenennen oder einen anderen Schlüssel wählen`,
       );
     }
     if (!projectId) {
@@ -368,7 +368,7 @@ export class JiraImporter {
       ) ??
       meta.issueTypes.find((entry) => entry.hierarchyLevel === 0) ??
       meta.issueTypes[0];
-    if (!type) throw new Error('Keine Vorgangstypen in Tasklore');
+    if (!type) throw new Error('Keine Vorgangstypen in Lenipo');
     if (type && lower(type.name) !== typeName)
       this.note('mappings', `Typ ${f.issuetype?.name} → ${type.name}`);
     const priority =

@@ -1,4 +1,4 @@
-import type { CreatedWebhook, Issue, TrashedIssue } from '@tasklore/shared';
+import type { CreatedWebhook, Issue, TrashedIssue } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DATABASE } from '../core/tokens.js';

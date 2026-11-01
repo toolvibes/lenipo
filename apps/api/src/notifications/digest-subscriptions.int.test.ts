@@ -1,4 +1,4 @@
-import type { FilterSubscription, NotificationSettings, SavedFilter } from '@tasklore/shared';
+import type { FilterSubscription, NotificationSettings, SavedFilter } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';
@@ -24,7 +24,7 @@ beforeAll(async () => {
   test = await startTestApp({
     SMTP_URL: 'smtp://127.0.0.1:1',
     NOTIFICATION_EMAIL_DELAY_SECONDS: '0',
-    PUBLIC_URL: 'https://tasklore.example.org',
+    PUBLIC_URL: 'https://lenipo.example.org',
   });
   test.app.get(Mailer).transport = {
     sendMail: async (message) => {
@@ -88,9 +88,9 @@ describe('personal e-mail settings (P-NTF-04)', () => {
     expect(await service.sendDigests(MONDAY_EIGHT)).toBe(1);
     expect(await service.sendDigests(MONDAY_EIGHT)).toBe(0);
     const digest = sent.find((mail) => mail.to === 'lena@example.org');
-    expect(digest?.subject).toBe('Tasklore: 2 Neuigkeiten');
+    expect(digest?.subject).toBe('Lenipo: 2 Neuigkeiten');
     expect(digest?.text).toContain('WEB-1 Login mit Passkey bauen');
-    expect(digest?.html).toContain('https://tasklore.example.org/issues/WEB-1');
+    expect(digest?.html).toContain('https://lenipo.example.org/issues/WEB-1');
   });
 
   it('leaves out own changes by default', async () => {
@@ -174,9 +174,9 @@ describe('filter subscriptions (T-QRY-07)', () => {
     const mails = sent.slice(before);
     expect(mails.map((mail) => mail.to).sort()).toEqual(['lena@example.org', 'mira@example.org']);
     const toLena = mails.find((mail) => mail.to === 'lena@example.org');
-    expect(toLena?.subject).toBe('[Tasklore] Offene Stories: 1 Vorgang');
+    expect(toLena?.subject).toBe('[Lenipo] Offene Stories: 1 Vorgang');
     expect(toLena?.html).toContain('WEB-1');
-    expect(toLena?.text).toContain(`https://tasklore.example.org/issues?filter=${filter.id}`);
+    expect(toLena?.text).toContain(`https://lenipo.example.org/issues?filter=${filter.id}`);
     // Tuesday: both.
     expect(await service.sendDue(TUESDAY_EIGHT)).toBe(3);
   });

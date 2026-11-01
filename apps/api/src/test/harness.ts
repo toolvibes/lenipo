@@ -24,14 +24,14 @@ export interface TestApp {
 /** `env` overrides configuration, e.g. to enable optional features. */
 export async function startTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const serverUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? DEFAULT_URL;
-  const name = `tasklore_test_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
+  const name = `lenipo_test_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
   const admin = postgres(serverUrl, { max: 1, onnotice: () => {} });
   await admin.unsafe(`create database ${name}`);
   const url = new URL(serverUrl);
   url.pathname = `/${name}`;
 
   // Attachments of this run go to a throwaway directory.
-  const files = await mkdtemp(join(tmpdir(), 'tasklore-files-'));
+  const files = await mkdtemp(join(tmpdir(), 'lenipo-files-'));
   const config = loadConfig({
     DATABASE_URL: url.toString(),
     NODE_ENV: 'test',

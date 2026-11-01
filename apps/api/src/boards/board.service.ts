@@ -14,8 +14,8 @@ import type {
   Issue,
   MoveCardRequest,
   UpdateBoardRequest,
-} from '@tasklore/shared';
-import { parse } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { parse } from '@toolvibes/tql';
 import { and, asc, eq, getTableColumns, inArray, isNull, not, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

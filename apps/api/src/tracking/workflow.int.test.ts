@@ -6,7 +6,7 @@ import type {
   ProjectWorkflow,
   PublishWorkflowRequest,
   Transition,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { projectRoleMembers } from '../db/schema/index.js';

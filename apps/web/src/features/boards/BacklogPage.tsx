@@ -22,7 +22,7 @@ import { DotsSixVertical, DotsThree, Plus } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { BacklogData, IssueSummary, Me, Sprint } from '@tasklore/shared';
+import type { BacklogData, IssueSummary, Me, Sprint } from '@toolvibes/shared';
 import { type FormEvent, type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

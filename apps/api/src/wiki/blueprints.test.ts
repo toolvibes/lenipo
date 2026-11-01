@@ -1,4 +1,4 @@
-import { isValidDoc } from '@tasklore/editor';
+import { isValidDoc } from '@toolvibes/editor';
 import { describe, expect, it } from 'vitest';
 import { BLUEPRINT_KEYS, blueprint } from './blueprints.js';
 import { fillDocument } from './template-variables.js';

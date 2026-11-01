@@ -1,8 +1,8 @@
 {
-  "name": "@tasklore/loadtest",
+  "name": "@toolvibes/loadtest",
   "version": "0.0.0",
   "private": true,
-  "description": "Measures Tasklore against its quality goals (docs/06, section 6.10; TL-44, E-125).",
+  "description": "Measures Lenipo against its quality goals (docs/06, section 6.10; TL-44, E-125).",
   "type": "module",
   "scripts": {
     "loadtest": "node run.mjs",

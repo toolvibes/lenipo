@@ -13,7 +13,7 @@ import type {
   FilterShareInput,
   SavedFilter,
   UpdateFilterRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, eq, exists, inArray, ne, or, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';

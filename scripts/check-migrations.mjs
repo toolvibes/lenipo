@@ -1,6 +1,6 @@
 // Every migration must work with the app version before it, so instances can be updated one by
 // one (zero-downtime updates, TL-42, E-123): expand first, contract one release later.
-// Statements that break the previous version need the marker line "-- tasklore:contract",
+// Statements that break the previous version need the marker line "-- lenipo:contract",
 // which says the previous release no longer uses what is removed.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,7 +8,8 @@ import { join } from 'node:path';
 const DIR = 'apps/api/drizzle';
 /** Migrations up to here were written before the rule and only ran with downtime. */
 const BASELINE = 65;
-const MARKER = /^--\s*tasklore:contract\b/m;
+// Migrations written under the old name Tasklore carry its marker (E-129).
+const MARKER = /^--\s*(?:lenipo|tasklore):contract\b/m;
 
 const RULES = [
   [/\bDROP\s+(TABLE|COLUMN|TYPE|SCHEMA)\b/i, 'drops something the previous version may use'],
@@ -43,7 +44,7 @@ for (const file of readdirSync(DIR)
 
 if (problems.length > 0) {
   console.error(
-    `Migrations that would break a rolling update (expand/contract, E-123):\n\n${problems.join('\n\n')}\n\nSplit the change: add first, remove in a later release with "-- tasklore:contract".`,
+    `Migrations that would break a rolling update (expand/contract, E-123):\n\n${problems.join('\n\n')}\n\nSplit the change: add first, remove in a later release with "-- lenipo:contract".`,
   );
   process.exit(1);
 }

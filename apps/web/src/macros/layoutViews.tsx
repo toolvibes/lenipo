@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { LabelledPage, RichText } from '@tasklore/shared';
 import type { Editor } from '@tiptap/core';
 import {
   NodeViewContent,
@@ -8,6 +7,7 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
 } from '@tiptap/react';
+import type { LabelledPage, RichText } from '@toolvibes/shared';
 import { createContext, type FormEvent, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeriesChart } from '../features/reports/analysis';

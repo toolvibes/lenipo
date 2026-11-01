@@ -11,7 +11,7 @@ import type {
   ProjectFieldSetting,
   ProjectSummary,
   ProjectTemplate,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';

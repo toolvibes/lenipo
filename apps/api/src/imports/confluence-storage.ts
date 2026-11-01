@@ -4,9 +4,9 @@ import { parseDocument } from 'htmlparser2';
 /** What the converter needs to know about the imported space. */
 export interface StorageContext {
   spaceKey: string;
-  /** Tasklore page id for a Confluence page title, if imported. */
+  /** Lenipo page id for a Confluence page title, if imported. */
   pageId(title: string): string | null;
-  /** Tasklore attachment id of a file on the current page. */
+  /** Lenipo attachment id of a file on the current page. */
   attachmentId(fileName: string): string | null;
   /** Display name for a Confluence user key. */
   userName(key: string): string | null;
@@ -50,7 +50,7 @@ const escapeInline = (text: string) => text.replace(/([\\`*_[\]])/g, '\\$1');
 const quote = (text: string) => text.replace(/"/g, "'");
 
 /**
- * Confluence storage format (XHTML with ac:/ri: elements) as Markdown with Tasklore's
+ * Confluence storage format (XHTML with ac:/ri: elements) as Markdown with Lenipo's
  * directives (P-ADM-11, E-118): callouts, expand, toc, child pages, issue macros, status,
  * excerpts, includes, columns. Unknown macros become a visible note.
  */

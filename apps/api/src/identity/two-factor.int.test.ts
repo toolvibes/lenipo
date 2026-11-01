@@ -1,4 +1,4 @@
-import type { Me, RecoveryCodes, SecuritySettings, TwoFactorSetup } from '@tasklore/shared';
+import type { Me, RecoveryCodes, SecuritySettings, TwoFactorSetup } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 import { SetupService } from './setup.service.js';

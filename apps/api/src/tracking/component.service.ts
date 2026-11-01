@@ -11,7 +11,7 @@ import type {
   CreateComponentRequest,
   UpdateComponentRequest,
   UserRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

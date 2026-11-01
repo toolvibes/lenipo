@@ -70,7 +70,7 @@ export function receiveUpload(request: Request, maxBytes: number): Promise<Spool
       return;
     }
 
-    const path = join(tmpdir(), `tasklore-upload-${randomUUID()}`);
+    const path = join(tmpdir(), `lenipo-upload-${randomUUID()}`);
     let upload: SpooledUpload | null = null;
     let written: Promise<void> | null = null;
     let tooLarge = false;

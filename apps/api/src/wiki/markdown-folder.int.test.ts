@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { Page, PageTreeEntry } from '@tasklore/shared';
+import type { Page, PageTreeEntry } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Principal } from '../core/http/principal.js';
 import { SetupService } from '../identity/setup.service.js';
@@ -16,7 +16,7 @@ let principal: Principal;
 let services: FolderServices;
 let folder: string;
 
-const options = { spaceKey: 'tl', spaceName: 'Tasklore', skip: ['README.md'] };
+const options = { spaceKey: 'tl', spaceName: 'Lenipo', skip: ['README.md'] };
 
 async function tree(): Promise<PageTreeEntry[]> {
   return (await admin.request<PageTreeEntry[]>('GET', '/spaces/TL/pages')).body;
@@ -34,7 +34,7 @@ beforeAll(async () => {
   const me = (await admin.request<{ id: string }>('GET', '/me')).body;
   principal = { userId: me.id, via: 'session', sessionId: 'test' };
   services = { spaces: test.app.get(SpaceService), pages: test.app.get(PageService) };
-  folder = await mkdtemp(join(tmpdir(), 'tasklore-docs-'));
+  folder = await mkdtemp(join(tmpdir(), 'lenipo-docs-'));
   await writeFile(join(folder, 'README.md'), '# Bitte im Wiki ändern\n');
   await writeFile(
     join(folder, '01-vision.md'),
@@ -60,7 +60,7 @@ describe('Markdown folder as a snapshot of a space', () => {
     const entries = await tree();
     const [home, vision, decisions] = entries;
     expect(entries.map((entry) => [entry.title, entry.parentId === home?.id])).toEqual([
-      ['Tasklore', false],
+      ['Lenipo', false],
       ['Vision & Scope', true],
       ['Entscheidungen', true],
     ]);
@@ -72,7 +72,7 @@ describe('Markdown folder as a snapshot of a space', () => {
 
   it('mark imported files with page and version', async () => {
     expect(await readFile(join(folder, '01-vision.md'), 'utf8')).toMatch(
-      /^<!-- tasklore page=[0-9a-f-]{36} version=1 .*-->\n# Vision & Scope\n/,
+      /^<!-- lenipo page=[0-9a-f-]{36} version=1 .*-->\n# Vision & Scope\n/,
     );
   });
 
@@ -86,7 +86,7 @@ describe('Markdown folder as a snapshot of a space', () => {
       'README.md',
     ]);
     const vision = await readFile(join(folder, '01-vision.md'), 'utf8');
-    expect(vision).toMatch(/^<!-- tasklore page=[0-9a-f-]{36} version=1 /);
+    expect(vision).toMatch(/^<!-- lenipo page=[0-9a-f-]{36} version=1 /);
     expect(vision).toContain(
       '# Vision & Scope\n\nSiehe [Entscheidungen](02-entscheidungen.md#e-1)',
     );

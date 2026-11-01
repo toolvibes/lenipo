@@ -1,5 +1,5 @@
-import { docToMarkdown } from '@tasklore/editor';
-import type { Comment, ContentFormat, Issue, RichTextOutput } from '@tasklore/shared';
+import { docToMarkdown } from '@toolvibes/editor';
+import type { Comment, ContentFormat, Issue, RichTextOutput } from '@toolvibes/shared';
 import { plainText } from './rich-text.js';
 
 /** Markdown of a stored document; content the converter does not know falls back to text. */

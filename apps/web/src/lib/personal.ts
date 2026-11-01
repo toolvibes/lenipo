@@ -11,7 +11,7 @@ import {
   IssueColumn,
   type ListColumn,
   type RecentKind,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useEffect, useMemo } from 'react';
 import { client, unwrap } from './api';
 import { trackingMetaQuery } from './tracking';

@@ -6,7 +6,7 @@ import {
   type OnApplicationBootstrap,
   UnauthorizedException,
 } from '@nestjs/common';
-import { markdownToDoc } from '@tasklore/editor';
+import { markdownToDoc } from '@toolvibes/editor';
 import {
   AUTOMATION_ACTOR_ID,
   type AutomationAction,
@@ -19,8 +19,8 @@ import {
   type Issue,
   type RichText,
   type UpdateIssueRequest,
-} from '@tasklore/shared';
-import { parse as parseTql } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { parse as parseTql } from '@toolvibes/tql';
 import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { AppConfig } from '../core/config.js';
@@ -174,7 +174,7 @@ export class AutomationEngine implements OnApplicationBootstrap {
       .insert(users)
       .values({
         id: AUTOMATION_ACTOR_ID,
-        email: 'automation@tasklore.invalid',
+        email: 'automation@lenipo.invalid',
         displayName: 'Automatisierung',
         status: 'deactivated',
         onboardedAt: new Date(),
@@ -895,7 +895,7 @@ export class AutomationEngine implements OnApplicationBootstrap {
             });
         const result = await postJson(
           action.url,
-          { 'content-type': 'application/json', 'user-agent': 'Tasklore-Automation' },
+          { 'content-type': 'application/json', 'user-agent': 'Lenipo-Automation' },
           body,
           { allowPrivate: this.config.WEBHOOK_ALLOW_PRIVATE_NETWORKS, timeoutMs: 10_000 },
         );

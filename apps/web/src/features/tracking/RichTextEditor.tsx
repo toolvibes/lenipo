@@ -1,9 +1,9 @@
-import { blockExtensions, starterKitOptions } from '@tasklore/editor/schema';
-import type { RichText, RichTextOutput } from '@tasklore/shared';
 import { type Content, Extension } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { blockExtensions, starterKitOptions } from '@toolvibes/editor/schema';
+import type { RichText, RichTextOutput } from '@toolvibes/shared';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { matchItems, SlashCommands, slashItems } from '../../collab/SlashMenu';
@@ -42,7 +42,7 @@ interface RichTextEditorProps {
   mentionProjectKey?: string;
   /** Enables @-mentions of the people who can see this wiki space. */
   mentionSpaceKey?: string;
-  /** Slash menu and Lore typography, as for wiki page templates (E-72). */
+  /** Slash menu and Wiki typography, as for wiki page templates (E-72). */
   lore?: boolean;
 }
 

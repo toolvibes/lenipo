@@ -1,4 +1,4 @@
-import type { CustomField, Issue, ProjectDetails } from '@tasklore/shared';
+import type { CustomField, Issue, ProjectDetails } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';

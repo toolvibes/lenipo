@@ -1,11 +1,11 @@
 {
-  "name": "@tasklore/cli",
+  "name": "@toolvibes/cli",
   "version": "0.1.0",
   "private": true,
-  "description": "Command line for Tasklore: issues, boards, wiki pages as Markdown and a local MCP bridge.",
+  "description": "Command line for Lenipo: issues, boards, wiki pages as Markdown and a local MCP bridge.",
   "type": "module",
   "bin": {
-    "tasklore": "./dist/main.js",
+    "lenipo": "./dist/main.js",
     "tl": "./dist/main.js"
   },
   "files": [
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@tasklore/editor": "workspace:*",
-    "@tasklore/sdk": "workspace:*"
+    "@toolvibes/editor": "workspace:*",
+    "@toolvibes/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

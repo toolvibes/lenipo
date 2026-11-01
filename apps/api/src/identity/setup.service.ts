@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import type { SetupRequest } from '@tasklore/shared';
+import type { SetupRequest } from '@toolvibes/shared';
 import { count, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
@@ -87,7 +87,7 @@ export class SetupService {
     if (!valid) {
       throw new ForbiddenException({
         message: 'Invalid or expired setup code',
-        type: 'urn:tasklore:problem:setup-code',
+        type: 'urn:lenipo:problem:setup-code',
       });
     }
   }

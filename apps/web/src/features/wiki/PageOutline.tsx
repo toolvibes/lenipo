@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { RichText } from '@tasklore/shared';
+import type { RichText } from '@toolvibes/shared';
 import { type RefObject, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { issueQuery } from '../../lib/tracking';
@@ -77,7 +77,7 @@ function LinkedIssue({ issueKey }: { issueKey: string }) {
 }
 
 /**
- * The narrow column beside a Lore page (1a S8): its headings, the current one marked while
+ * The narrow column beside a wiki page (1a S8): its headings, the current one marked while
  * reading, and the issues the page embeds. `article` is where the rendered headings live.
  */
 export function PageOutline({

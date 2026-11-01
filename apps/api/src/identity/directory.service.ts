@@ -5,7 +5,7 @@ import type {
   DirectorySyncResult,
   LdapConfig,
   SaveDirectoryRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, count, eq, isNull, notInArray, sql } from 'drizzle-orm';
 import { Client, type Entry } from 'ldapts';
 import { v7 as uuidv7 } from 'uuid';
@@ -38,7 +38,7 @@ function all(value: Entry[string] | undefined): string[] {
   );
 }
 
-/** An LDAP person as Tasklore needs it. */
+/** An LDAP person as Lenipo needs it. */
 interface Person {
   dn: string;
   login: string;
@@ -65,7 +65,7 @@ export class DirectoryService {
     if (!rows.some((row) => row.type === 'internal')) {
       await db
         .insert(directories)
-        .values({ id: uuidv7(), name: 'Tasklore (intern)', type: 'internal', position: 0 });
+        .values({ id: uuidv7(), name: 'Lenipo (intern)', type: 'internal', position: 0 });
       rows = await db.select().from(directories).orderBy(asc(directories.position));
     }
     return rows;
@@ -204,7 +204,7 @@ export class DirectoryService {
     }
   }
 
-  /** Creates or updates the Tasklore account of an LDAP person; null if a local account has the e-mail. */
+  /** Creates or updates the Lenipo account of an LDAP person; null if a local account has the e-mail. */
   private async upsert(
     directoryId: string,
     person: Person,
@@ -372,7 +372,7 @@ export class DirectoryService {
             if (!name) continue;
             const [existing] = await db.select().from(groups).where(eq(groups.name, name));
             if (existing && existing.directoryId !== row.id) {
-              result.problems.push(`Gruppe ${name}: gibt es schon in Tasklore, nicht übernommen`);
+              result.problems.push(`Gruppe ${name}: gibt es schon in Lenipo, nicht übernommen`);
               continue;
             }
             const groupId = existing?.id ?? uuidv7();

@@ -1,13 +1,13 @@
-<!-- tasklore page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=2 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=3 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
-Dieses Handbuch erklärt die tägliche Arbeit mit Tasklore: Vorgänge, Boards, Suche, Lore (das Wiki), Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
+Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
 
 ## Erste Schritte
 
-Nach der ersten Anmeldung führen drei kurze Schritte durch Profil, Sprache und einen Start: ein Scrum- oder Kanban-Projekt mit Board und eigenem Lore-Bereich, oder nur ein Lore-Bereich. Alles lässt sich später ändern; „Überspringen“ führt direkt zur Startseite.
+Nach der ersten Anmeldung führen drei kurze Schritte durch Profil, Sprache und einen Start: ein Scrum- oder Kanban-Projekt mit Board und eigenem Wiki-Bereich, oder nur ein Wiki-Bereich. Alles lässt sich später ändern; „Überspringen“ führt direkt zur Startseite.
 
-Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen, die Projekte (das aktuelle mit Backlog, Board, Timeline, Berichten, Kalender, Releases und Lore) und Favoriten. Auf dem Handy öffnet das Menüsymbol oben links die Seitenleiste.
+Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen, die Projekte (das aktuelle mit Backlog, Board, Timeline, Berichten, Kalender, Releases und Wiki) und Favoriten. Auf dem Handy öffnet das Menüsymbol oben links die Seitenleiste.
 
 ## Vorgänge
 
@@ -39,7 +39,7 @@ fixVersion = "2.0" AND statusCategory != done
 
 Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Filter** lassen sich teilen, abonnieren (Ergebnisse per E-Mail zu einer festen Zeit) und als Dashboard-Gadget nutzen. Die globale Suche oben (`/` oder `Strg+K`/`⌘K`) findet Vorgänge, Seiten, Projekte und Bereiche.
 
-## Lore (Wiki)
+## Wiki
 
 - **Bereiche** enthalten Seiten in einem Baum; jedes Projekt kann einen eigenen Bereich haben.
 - **Bearbeiten** geschieht gemeinsam in Echtzeit: Mehrere Personen schreiben gleichzeitig, jede sieht die anderen. „Veröffentlichen“ macht den Entwurf zur neuen Version.
@@ -73,8 +73,8 @@ Wer mit Spracheingabe oder Schaltern arbeitet, kann die Einzeltasten-Kürzel im 
 
 ## Barrierefreiheit
 
-Tasklore richtet sich nach WCAG 2.1 AA; die Erklärung dazu steht unter `/accessibility` und in [Kapitel 4](04-plattform-admin.md). Ein Sprunglink („Zum Inhalt springen“) ist der erste Tab-Halt jeder Seite.
+Lenipo richtet sich nach WCAG 2.1 AA; die Erklärung dazu steht unter `/accessibility` und in [Kapitel 4](04-plattform-admin.md). Ein Sprunglink („Zum Inhalt springen“) ist der erste Tab-Halt jeder Seite.
 
 ## Als App installieren
 
-Im Browser (Chrome, Edge, Safari auf iOS „Zum Home-Bildschirm“) lässt sich Tasklore installieren. Die App lädt dann schneller; Daten kommen immer frisch vom Server. Gibt es eine neue Version, erscheint unten rechts „Neu laden“.
+Im Browser (Chrome, Edge, Safari auf iOS „Zum Home-Bildschirm“) lässt sich Lenipo installieren. Die App lädt dann schneller; Daten kommen immer frisch vom Server. Gibt es eine neue Version, erscheint unten rechts „Neu laden“.

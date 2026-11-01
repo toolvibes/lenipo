@@ -5,7 +5,7 @@ import type {
   SavedFilter,
   SearchResult,
   ValueSuggestion,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -203,7 +203,7 @@ describe('TQL search', () => {
 
   it('reports invalid queries with codes and positions', async () => {
     const unknown = await problem('project = WEB AND status = Fertig');
-    expect(unknown.type).toBe('urn:tasklore:problem:query');
+    expect(unknown.type).toBe('urn:lenipo:problem:query');
     expect(unknown.queryErrors).toEqual([
       expect.objectContaining({ code: 'value-not-found', start: 27, end: 33 }),
     ]);

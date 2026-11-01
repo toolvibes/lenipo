@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { AUTOMATION_TEMPLATES, type AutomationRule } from '@tasklore/shared';
+import { AUTOMATION_TEMPLATES, type AutomationRule } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { formatRelative } from '../../lib/format';

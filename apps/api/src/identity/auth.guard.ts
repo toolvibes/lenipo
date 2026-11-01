@@ -14,7 +14,7 @@ import type { Principal } from '../core/http/principal.js';
 import { ALLOW_CROSS_SITE } from './oauth.controller.js';
 import { ACCESS_PREFIX, OAuthService } from './oauth.service.js';
 import { isCrossSiteWrite } from './request-guards.js';
-import { readCookie, SESSION_COOKIE } from './secrets.js';
+import { hasPrefix, readSessionCookie } from './secrets.js';
 import { SessionService } from './session.service.js';
 import { TokenService } from './token.service.js';
 
@@ -50,12 +50,12 @@ export class AuthGuard implements CanActivate {
           `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/mcp"${error ? `, error="${error}"` : ''}`,
         );
     };
-    // On public routes, credentials that are not Tasklore tokens belong to the route itself:
+    // On public routes, credentials that are not Lenipo tokens belong to the route itself:
     // Basic for OAuth clients (RFC 6749), a hook secret as Bearer (TL-41). They sign no one in.
     const authorization = request.get('authorization') ?? '';
     const foreignOnPublic =
       authorization !== '' &&
-      !/^bearer\s+tl_/i.test(authorization) &&
+      !/^bearer\s+(lp|tl)_/i.test(authorization) &&
       this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
         context.getHandler(),
         context.getClass(),
@@ -93,7 +93,7 @@ export class AuthGuard implements CanActivate {
             principal.stage === 'second-factor'
               ? 'Enter the code from your authenticator app first'
               : 'Set up two-factor sign-in first',
-          type: 'urn:tasklore:problem:two-factor',
+          type: 'urn:lenipo:problem:two-factor',
         });
       }
     }
@@ -107,7 +107,7 @@ export class AuthGuard implements CanActivate {
       if (scheme?.toLowerCase() !== 'bearer' || !secret) {
         throw new UnauthorizedException('Unsupported authorization scheme');
       }
-      if (secret.startsWith(ACCESS_PREFIX)) {
+      if (hasPrefix(secret, ACCESS_PREFIX)) {
         const access = await this.oauth.authenticate(secret);
         if (!access) throw new UnauthorizedException('Invalid or expired token');
         return {
@@ -121,7 +121,7 @@ export class AuthGuard implements CanActivate {
       if (!token) throw new UnauthorizedException('Invalid or expired token');
       return { userId: token.userId, via: 'token', tokenId: token.tokenId, scopes: token.scopes };
     }
-    const secret = readCookie(request.get('cookie'), SESSION_COOKIE);
+    const secret = readSessionCookie(request.get('cookie'));
     if (!secret) return undefined;
     const session = await this.sessions.authenticate(secret);
     return session
@@ -136,6 +136,6 @@ export class AuthGuard implements CanActivate {
 }
 
 /** Session stages, besides a full one, that may use a route (TL-18, E-100). */
-export const PARTIAL_SESSION = 'tasklore:partial-session';
+export const PARTIAL_SESSION = 'lenipo:partial-session';
 export const AllowPartialSession = (...stages: Array<'second-factor' | 'setup-2fa'>) =>
   SetMetadata(PARTIAL_SESSION, stages);

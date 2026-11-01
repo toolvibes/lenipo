@@ -1,4 +1,4 @@
-import type { Comment, Issue, ProjectDetails } from '@tasklore/shared';
+import type { Comment, Issue, ProjectDetails } from '@toolvibes/shared';
 import { and, eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

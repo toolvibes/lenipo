@@ -14,7 +14,7 @@ import type {
   SpaceMember,
   SpaceSummary,
   TrashedPage,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { groups, projectRoleMembers, projects } from '../db/schema/index.js';

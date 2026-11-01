@@ -7,7 +7,7 @@ import type {
   GitEvent,
   GitProvider,
   IssueDevelopment,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
@@ -338,7 +338,7 @@ export class GitService {
           .where(eq(users.email, change.authorEmail.toLowerCase()))
       : [];
     if (person?.status !== 'active') {
-      notes.push('Smart Commit übersprungen: Autor ist keine Person in Tasklore');
+      notes.push('Smart Commit übersprungen: Autor ist keine Person in Lenipo');
     } else {
       const principal: Principal = { userId: person.id, via: 'session', sessionId: 'git' };
       for (const command of commands) {

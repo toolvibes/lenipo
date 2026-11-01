@@ -21,7 +21,7 @@ import {
   UpdateFilterRequest,
   ValueSuggestion,
   ValueSuggestionQuery,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
@@ -59,7 +59,7 @@ export class SearchController {
 
   @Endpoint({
     tag: 'Search',
-    summary: 'Search issues, Lore pages, projects and spaces',
+    summary: 'Search issues, wiki pages, projects and spaces',
     description:
       'Full text in German and English over what the caller may see; the last word also matches as a prefix, quotes, OR and -word work as in web search. Pages are searched in their latest published version, with a snippet whose hits are marked. `counts` always cover every kind.',
     response: EverythingResult,

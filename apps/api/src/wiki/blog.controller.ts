@@ -21,7 +21,7 @@ import {
   SetPageStatusRequest,
   Space,
   WikiSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
 import type { AppConfig } from '../core/config.js';
@@ -135,14 +135,14 @@ export class BlogController {
       '<?xml version="1.0" encoding="utf-8"?>',
       '<feed xmlns="http://www.w3.org/2005/Atom">',
       `<title>${escapeXml(space)} – Blog</title>`,
-      `<id>urn:tasklore:blog:${escapeXml(space)}</id>`,
+      `<id>urn:lenipo:blog:${escapeXml(space)}</id>`,
       `<link href="${escapeXml(`${base}/spaces/${space}/blog`)}"/>`,
       `<updated>${updated}</updated>`,
       ...blog.posts.map((post) =>
         [
           '<entry>',
           `<title>${escapeXml(post.title)}</title>`,
-          `<id>urn:tasklore:page:${post.id}</id>`,
+          `<id>urn:lenipo:page:${post.id}</id>`,
           `<link href="${escapeXml(`${base}/spaces/${space}/pages/${post.id}`)}"/>`,
           `<updated>${post.publishedAt}</updated>`,
           post.author ? `<author><name>${escapeXml(post.author.displayName)}</name></author>` : '',

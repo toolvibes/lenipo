@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { locateAnchor, markdownToDoc, reanchor, reviewMentions } from '@tasklore/editor';
+import { locateAnchor, markdownToDoc, reanchor, reviewMentions } from '@toolvibes/editor';
 import type {
   CreatePageCommentRequest,
   PageComment,
@@ -15,7 +15,7 @@ import type {
   TextAnchor,
   UpdatePageCommentRequest,
   UserRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

@@ -1,7 +1,7 @@
 import { ChatCircleText, MagnifyingGlass, Paperclip } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { EverythingResult, SearchMatch, Snippet } from '@tasklore/shared';
+import type { EverythingResult, SearchMatch, Snippet } from '@toolvibes/shared';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../lib/format';

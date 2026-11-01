@@ -1,4 +1,4 @@
-import type { ChangeGroup, Issue, ProjectDetails, SearchResult, Version } from '@tasklore/shared';
+import type { ChangeGroup, Issue, ProjectDetails, SearchResult, Version } from '@toolvibes/shared';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { projectRoleMembers } from '../db/schema/index.js';

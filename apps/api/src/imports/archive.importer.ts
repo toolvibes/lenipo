@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { ImportReport } from '@tasklore/shared';
+import type { ImportReport } from '@toolvibes/shared';
 import { eq, max, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
@@ -55,7 +55,7 @@ const lower = (text: unknown) =>
 const dateOf = (value: unknown) => (typeof value === 'string' && value ? new Date(value) : null);
 
 /**
- * Imports a project or space archive of another Tasklore instance (TL-39, E-120). Everything
+ * Imports a project or space archive of another Lenipo instance (TL-39, E-120). Everything
  * gets new ids; ids inside documents (mentions, links, images) follow. People are matched by
  * e-mail or created deactivated, issue types, statuses and the like by key or name.
  */
@@ -108,11 +108,12 @@ export class ArchiveImporter {
       await readFile(join(this.folder, 'archive.json'), 'utf8').catch(() => '{}'),
     ) as Archive;
     if (
-      this.archive.format !== ARCHIVE_FORMAT ||
+      // Archives written under the old name Tasklore still import (E-129).
+      ![ARCHIVE_FORMAT, 'tasklore-archive'].includes(this.archive.format) ||
       this.archive.formatVersion !== ARCHIVE_VERSION ||
       !this.archive.root
     ) {
-      throw new Error('Das ist kein Tasklore-Archiv (archive.json fehlt oder passt nicht)');
+      throw new Error('Das ist kein Lenipo-Archiv (archive.json fehlt oder passt nicht)');
     }
     const sourceKey = String(this.archive.root.key);
     const key = (targetKey || sourceKey).toUpperCase();

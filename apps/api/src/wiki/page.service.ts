@@ -6,13 +6,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { prosemirrorJSONToYDoc, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
 import {
   diffDocs,
   imageAttachmentIds,
   isValidDoc,
   richTextSchema,
   withoutPlaceholders,
-} from '@tasklore/editor';
+} from '@toolvibes/editor';
 import type {
   Blog,
   BlogQuery,
@@ -38,9 +39,8 @@ import type {
   SpacePermission,
   TrashedPage,
   UserRef,
-} from '@tasklore/shared';
-import { AUTOMATION_ACTOR_ID } from '@tasklore/shared';
-import { prosemirrorJSONToYDoc, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
+} from '@toolvibes/shared';
+import { AUTOMATION_ACTOR_ID } from '@toolvibes/shared';
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, ne, not, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';

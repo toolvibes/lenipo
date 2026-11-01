@@ -10,7 +10,7 @@ import {
   type SaveOAuthAppRequest,
   TOKEN_SCOPES,
   type TokenScope,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
@@ -22,12 +22,12 @@ import {
   systemSettings,
   users,
 } from '../db/schema/index.js';
-import { constantTimeEquals, randomSecret, sha256 } from './secrets.js';
+import { constantTimeEquals, hasPrefix, randomSecret, sha256 } from './secrets.js';
 
-export const ACCESS_PREFIX = 'tl_oat_';
-const REFRESH_PREFIX = 'tl_ort_';
-const CODE_PREFIX = 'tl_oac_';
-const CLIENT_SECRET_PREFIX = 'tl_ocs_';
+export const ACCESS_PREFIX = 'lp_oat_';
+const REFRESH_PREFIX = 'lp_ort_';
+const CODE_PREFIX = 'lp_oac_';
+const CLIENT_SECRET_PREFIX = 'lp_ocs_';
 const ACCESS_SECONDS = 3600;
 const REFRESH_DAYS = 30;
 const CODE_SECONDS = 600;
@@ -367,7 +367,7 @@ export class OAuthService {
   async authenticate(
     secret: string,
   ): Promise<{ userId: string; grantId: string; scopes: TokenScope[] } | null> {
-    if (!secret.startsWith(ACCESS_PREFIX)) return null;
+    if (!hasPrefix(secret, ACCESS_PREFIX)) return null;
     const [row] = await this.database.db
       .select({ grant: oauthGrants, expiresAt: oauthTokens.expiresAt, status: users.status })
       .from(oauthTokens)

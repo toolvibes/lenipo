@@ -1,6 +1,6 @@
 import { Plus, Trash } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type CustomField, CustomFieldType } from '@tasklore/shared';
+import { type CustomField, CustomFieldType } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

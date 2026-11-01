@@ -1,7 +1,7 @@
 import { CaretDown } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
-import type { IssueSummary } from '@tasklore/shared';
+import type { IssueSummary } from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { transitionsQuery } from '../../lib/tracking';

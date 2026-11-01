@@ -3,7 +3,7 @@ import type {
   NotificationScheme,
   NotificationSchemeSummary,
   ProjectDetails,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';

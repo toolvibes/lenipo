@@ -1,8 +1,8 @@
-{{- define "tasklore.fullname" -}}
+{{- define "lenipo.fullname" -}}
 {{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "tasklore.labels" -}}
+{{- define "lenipo.labels" -}}
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -10,22 +10,22 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
 {{- end -}}
 
-{{- define "tasklore.selector" -}}
+{{- define "lenipo.selector" -}}
 app.kubernetes.io/name: {{ .root.Chart.Name }}
 app.kubernetes.io/instance: {{ .root.Release.Name }}
 app.kubernetes.io/component: {{ .role }}
 {{- end -}}
 
-{{- define "tasklore.image" -}}
+{{- define "lenipo.image" -}}
 {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
 {{- end -}}
 
-{{- define "tasklore.secretName" -}}
-{{ .Values.existingSecret | default (include "tasklore.fullname" .) }}
+{{- define "lenipo.secretName" -}}
+{{ .Values.existingSecret | default (include "lenipo.fullname" .) }}
 {{- end -}}
 
 {{/* Environment shared by every role. */}}
-{{- define "tasklore.env" -}}
+{{- define "lenipo.env" -}}
 - name: METRICS_PORT
   value: {{ .Values.metrics.port | quote }}
 - name: SHUTDOWN_TIMEOUT_SECONDS
@@ -41,11 +41,11 @@ app.kubernetes.io/component: {{ .role }}
 {{- end -}}
 
 {{/* The pod spec of one role: .root is the chart context, .role the MODE. */}}
-{{- define "tasklore.pod" -}}
+{{- define "lenipo.pod" -}}
 {{- $root := .root -}}
 metadata:
   labels:
-    {{- include "tasklore.selector" . | nindent 4 }}
+    {{- include "lenipo.selector" . | nindent 4 }}
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: {{ $root.Values.metrics.port | quote }}
@@ -58,16 +58,16 @@ spec:
   terminationGracePeriodSeconds: {{ add $root.Values.shutdown.preStopSeconds $root.Values.shutdown.timeoutSeconds 10 }}
   containers:
     - name: {{ .role }}
-      image: {{ include "tasklore.image" $root }}
+      image: {{ include "lenipo.image" $root }}
       imagePullPolicy: {{ $root.Values.image.pullPolicy }}
       securityContext: {{- toYaml $root.Values.securityContext | nindent 8 }}
       env:
         - name: MODE
           value: {{ .role }}
-        {{- include "tasklore.env" $root | nindent 8 }}
+        {{- include "lenipo.env" $root | nindent 8 }}
       envFrom:
         - secretRef:
-            name: {{ include "tasklore.secretName" $root }}
+            name: {{ include "lenipo.secretName" $root }}
       ports:
         {{- if eq .role "api" }}
         - { name: http, containerPort: 4000 }

@@ -53,7 +53,7 @@ body {
   font-size: 14px;
   line-height: 22px;
 }
-/* Lore pages read like a document: Newsreader in the prose sizes of the type scale. */
+/* wiki pages read like a document: Newsreader in the prose sizes of the type scale. */
 .tl-prose.tl-lore {
   font-family: var(--font-prose);
   font-size: 17px;
@@ -715,7 +715,7 @@ body {
   white-space: nowrap;
 }
 
-/* Print view (W-EXP-04, E-75): A4, page text in the Lore serif, no breaks inside blocks. */
+/* Print view (W-EXP-04, E-75): A4, page text in the Wiki serif, no breaks inside blocks. */
 @page {
   size: A4;
   margin: 18mm 16mm;

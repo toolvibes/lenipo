@@ -1,7 +1,7 @@
-import type { UserRef } from '@tasklore/shared';
 import Mention from '@tiptap/extension-mention';
 import { ReactRenderer } from '@tiptap/react';
 import type { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
+import type { UserRef } from '@toolvibes/shared';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

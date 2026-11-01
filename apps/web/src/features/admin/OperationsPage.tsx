@@ -5,7 +5,7 @@ import {
   type MaintenanceMode,
   MODULES,
   type RateLimitSettings,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

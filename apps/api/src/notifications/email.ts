@@ -1,4 +1,4 @@
-import type { NotificationCategory, NotificationDetails } from '@tasklore/shared';
+import type { NotificationCategory, NotificationDetails } from '@toolvibes/shared';
 import type { MailMessage } from './mailer.js';
 
 type Locale = 'de' | 'en';
@@ -21,9 +21,9 @@ const TEXT = {
         : `${actor} hat Version ${version} veröffentlicht.`,
     onText: 'zu',
     footer:
-      'Sie erhalten diese E-Mail, weil Sie den Vorgang beobachten oder erwähnt wurden. Welche E-Mails Sie bekommen, stellen Sie in Tasklore unter der Glocke ein.',
+      'Sie erhalten diese E-Mail, weil Sie den Vorgang beobachten oder erwähnt wurden. Welche E-Mails Sie bekommen, stellen Sie in Lenipo unter der Glocke ein.',
     footerPage:
-      'Sie erhalten diese E-Mail, weil Sie die Seite beobachten, erwähnt wurden oder an der Diskussion beteiligt sind. Welche E-Mails Sie bekommen, stellen Sie in Tasklore unter der Glocke ein.',
+      'Sie erhalten diese E-Mail, weil Sie die Seite beobachten, erwähnt wurden oder an der Diskussion beteiligt sind. Welche E-Mails Sie bekommen, stellen Sie in Lenipo unter der Glocke ein.',
     someone: 'Jemand',
     fields: {
       summary: 'Zusammenfassung',
@@ -58,9 +58,9 @@ const TEXT = {
       version === 1 ? `${actor} published the page.` : `${actor} published version ${version}.`,
     onText: 'on',
     footer:
-      'You receive this email because you watch the issue or were mentioned. Choose which emails you get under the bell in Tasklore.',
+      'You receive this email because you watch the issue or were mentioned. Choose which emails you get under the bell in Lenipo.',
     footerPage:
-      'You receive this email because you watch the page, were mentioned or took part in the discussion. Choose which emails you get under the bell in Tasklore.',
+      'You receive this email because you watch the page, were mentioned or took part in the discussion. Choose which emails you get under the bell in Lenipo.',
     someone: 'Someone',
     fields: {
       summary: 'Summary',
@@ -187,7 +187,7 @@ export function notificationEmail(
   ].join('\n');
   const html = `<!doctype html><html lang="${locale}"><body style="margin:0;padding:24px;background:#f5f5f6;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:22px;color:#18181b">
 <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dcdce0;border-radius:8px;padding:24px">
-<p style="margin:0 0 16px;font-size:13px;color:#55555e">Tasklore</p>
+<p style="margin:0 0 16px;font-size:13px;color:#55555e">Lenipo</p>
 <h1 style="margin:0 0 20px;font-size:20px;line-height:28px">${escapeHtml(title)}</h1>
 ${blocks.map((entry) => entry.html).join('\n')}
 ${link ? `<p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#1f5fbf;color:#ffffff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:6px">${escapeHtml(open)}</a></p>` : ''}
@@ -200,10 +200,10 @@ ${link ? `<p style="margin:24px 0 0"><a href="${escapeHtml(link)}" style="displa
 const MORE = {
   de: {
     digestSubject: (count: number) =>
-      count === 1 ? 'Tasklore: 1 Neuigkeit' : `Tasklore: ${count} Neuigkeiten`,
+      count === 1 ? 'Lenipo: 1 Neuigkeit' : `Lenipo: ${count} Neuigkeiten`,
     digestTitle: 'Ihre Zusammenfassung',
     footerDigest:
-      'Sie erhalten diese Zusammenfassung statt einzelner E-Mails. Häufigkeit und Uhrzeit stellen Sie in Tasklore unter der Glocke ein.',
+      'Sie erhalten diese Zusammenfassung statt einzelner E-Mails. Häufigkeit und Uhrzeit stellen Sie in Lenipo unter der Glocke ein.',
     filterTotal: (shown: number, total: number) =>
       shown < total
         ? `${shown} von ${total} Vorgängen`
@@ -213,22 +213,22 @@ const MORE = {
     filterEmpty: 'Der Filter hat zurzeit keine Treffer.',
     filterOpen: 'Filter öffnen',
     filterFooter:
-      'Sie erhalten diese E-Mail, weil Sie oder eine Ihrer Gruppen den Filter abonniert haben. Abonnements verwalten Sie am Filter in Tasklore.',
+      'Sie erhalten diese E-Mail, weil Sie oder eine Ihrer Gruppen den Filter abonniert haben. Abonnements verwalten Sie am Filter in Lenipo.',
     status: 'Status',
     assignee: 'Bearbeitung',
   },
   en: {
     digestSubject: (count: number) =>
-      count === 1 ? 'Tasklore: 1 update' : `Tasklore: ${count} updates`,
+      count === 1 ? 'Lenipo: 1 update' : `Lenipo: ${count} updates`,
     digestTitle: 'Your summary',
     footerDigest:
-      'You receive this summary instead of single e-mails. Set how often and when in Tasklore under the bell.',
+      'You receive this summary instead of single e-mails. Set how often and when in Lenipo under the bell.',
     filterTotal: (shown: number, total: number) =>
       shown < total ? `${shown} of ${total} issues` : total === 1 ? '1 issue' : `${total} issues`,
     filterEmpty: 'The filter has no results at the moment.',
     filterOpen: 'Open filter',
     filterFooter:
-      'You receive this e-mail because you or one of your groups subscribed to the filter. Manage subscriptions at the filter in Tasklore.',
+      'You receive this e-mail because you or one of your groups subscribed to the filter. Manage subscriptions at the filter in Lenipo.',
     status: 'Status',
     assignee: 'Assignee',
   },
@@ -237,7 +237,7 @@ const MORE = {
 function frame(locale: Locale, title: string, body: string, footer: string): string {
   return `<!doctype html><html lang="${locale}"><body style="margin:0;padding:24px;background:#f5f5f6;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:22px;color:#18181b">
 <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dcdce0;border-radius:8px;padding:24px">
-<p style="margin:0 0 16px;font-size:13px;color:#55555e">Tasklore</p>
+<p style="margin:0 0 16px;font-size:13px;color:#55555e">Lenipo</p>
 <h1 style="margin:0 0 20px;font-size:20px;line-height:28px">${escapeHtml(title)}</h1>
 ${body}
 </div>
@@ -334,7 +334,7 @@ export function filterEmail(options: {
     : '';
   return {
     to: options.to,
-    subject: `[Tasklore] ${options.filter.name}: ${summary}`,
+    subject: `[Lenipo] ${options.filter.name}: ${summary}`,
     text: [
       options.filter.name,
       summary,

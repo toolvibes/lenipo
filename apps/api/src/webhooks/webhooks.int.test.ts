@@ -1,6 +1,6 @@
 import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import type { CreatedWebhook, Webhook, WebhookDelivery, WebhookSecret } from '@tasklore/shared';
+import type { CreatedWebhook, Webhook, WebhookDelivery, WebhookSecret } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { webhookDeliveries, webhooks } from '../db/schema/index.js';

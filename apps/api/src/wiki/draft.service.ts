@@ -4,9 +4,9 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { isValidDoc } from '@tasklore/editor';
-import type { RichText } from '@tasklore/shared';
 import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
+import { isValidDoc } from '@toolvibes/editor';
+import type { RichText } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import * as Y from 'yjs';

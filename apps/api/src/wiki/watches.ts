@@ -1,4 +1,4 @@
-import type { PageWatchState } from '@tasklore/shared';
+import type { PageWatchState } from '@toolvibes/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Executor } from '../db/client.js';

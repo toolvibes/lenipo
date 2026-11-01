@@ -70,7 +70,7 @@ export const ConfluenceImportQuery = z.object({
 });
 export type ConfluenceImportQuery = z.infer<typeof ConfluenceImportQuery>;
 
-/** A project or space archive of another Tasklore instance (TL-39, E-120). */
+/** A project or space archive of another Lenipo instance (TL-39, E-120). */
 export const ArchiveImportQuery = z.object({
   /** Key of the new project or space; the archive's key if empty. */
   targetKey: z

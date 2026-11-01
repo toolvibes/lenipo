@@ -3,7 +3,7 @@ import {
   type CustomField,
   TRANSITION_CLEARABLE,
   type TransitionFieldAction,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

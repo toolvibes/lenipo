@@ -26,9 +26,9 @@ import { PageService } from './page.service.js';
 import { SpaceService } from './space.service.js';
 
 const usage = `Usage:
-  lore export <folder> --space KEY --as EMAIL
-  lore import <folder> --space KEY --as EMAIL [--name "Space name"] [--skip README.md]
-  lore backlog <folder> --project KEY --as EMAIL [--name "Project name"] [--roadmap 07-roadmap.md]
+  wiki export <folder> --space KEY --as EMAIL
+  wiki import <folder> --space KEY --as EMAIL [--name "Space name"] [--skip README.md]
+  wiki backlog <folder> --project KEY --as EMAIL [--name "Project name"] [--roadmap 07-roadmap.md]
 
 The wiki is the master (E-76): export writes its published pages as Markdown files, import
 brings files back as new versions as long as nobody changed the page in between. backlog
@@ -66,7 +66,7 @@ try {
     .where(eq(sql`lower(${users.email})`, values.as.toLowerCase()));
   if (!user) throw new Error(`No user with the email ${values.as}`);
   // Acts like the user in the browser, with the user's rights.
-  const principal: Principal = { userId: user.id, via: 'session', sessionId: 'lore-cli' };
+  const principal: Principal = { userId: user.id, via: 'session', sessionId: 'wiki-cli' };
   const services = { spaces: context.get(SpaceService), pages: context.get(PageService) };
   if (command === 'backlog') {
     const files = (await readdir(folder)).filter((name) => name.endsWith('.md'));

@@ -7,7 +7,7 @@ import {
   TOKEN_SCOPES,
   type TokenScope,
   type UpdateMeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { applyLocale } from '../../i18n';
@@ -296,7 +296,7 @@ function Tokens({ me }: { me: Me }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tokensQuery.queryKey }),
   });
   const mcpCommand = created
-    ? `claude mcp add --transport http tasklore ${window.location.origin}/mcp --header "Authorization: Bearer ${created.secret}"`
+    ? `claude mcp add --transport http lenipo ${window.location.origin}/mcp --header "Authorization: Bearer ${created.secret}"`
     : '';
 
   return (
@@ -470,7 +470,7 @@ function ConnectedApps() {
       unwrap(client.DELETE('/api/v1/me/oauth-grants/{id}', { params: { path: { id } } })),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['oauth-grants'] }),
   });
-  const command = `claude mcp add --transport http tasklore ${window.location.origin}/mcp`;
+  const command = `claude mcp add --transport http lenipo ${window.location.origin}/mcp`;
   return (
     <div className="flex flex-col gap-3">
       <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('oauth.connectedIntro')}</p>

@@ -17,7 +17,7 @@ import {
   AutomationRuleQuery,
   AutomationRun,
   IncomingWebhookRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import { CurrentPrincipal, Public, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
@@ -117,7 +117,7 @@ export class AutomationController {
     tag: 'Automation',
     summary: 'Start a rule with an incoming webhook trigger',
     description:
-      'Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Tasklore-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.',
+      'Called by other systems with the secret from the rule: preferably in a header (`Authorization: Bearer <secret>` or `X-Lenipo-Token`), or as `?token=`. Optionally `{"issues": ["KEY-1"]}` runs it for those issues; the whole body is available as {{webhookData}}.',
     response: z.object({ queued: z.number().int() }),
   })
   @Public()
@@ -127,11 +127,15 @@ export class AutomationController {
     @Param('id', RuleId) id: string,
     @Query('token') token: string | undefined,
     @Headers('authorization') authorization: string | undefined,
-    @Headers('x-tasklore-token') header: string | undefined,
+    @Headers('x-lenipo-token') header: string | undefined,
+    /** The header's name before the rename (E-129). */
+    @Headers('x-tasklore-token') oldHeader: string | undefined,
     @ValidBody(IncomingWebhookRequest) body: IncomingWebhookRequest,
   ): Promise<{ queued: number }> {
     // A header keeps the secret out of access logs (TL-41); ?token= stays for older senders.
     const bearer = /^Bearer\s+(.+)$/i.exec(authorization ?? '')?.[1];
-    return { queued: await this.engine.incoming(id, header ?? bearer ?? token ?? '', body) };
+    return {
+      queued: await this.engine.incoming(id, header ?? oldHeader ?? bearer ?? token ?? '', body),
+    };
   }
 }

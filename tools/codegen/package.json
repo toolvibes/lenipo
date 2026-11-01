@@ -1,5 +1,5 @@
 {
-  "name": "@tasklore/codegen",
+  "name": "@toolvibes/codegen",
   "version": "0.0.0",
   "private": true,
   "description": "Generates SDK types from the OpenAPI document. Pinned to TypeScript 5: openapi-typescript needs the TypeScript JS API, which TypeScript 7 no longer ships.",

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { EstimationField, IssueSummary, Sprint } from '@tasklore/shared';
+import type { EstimationField, IssueSummary, Sprint } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

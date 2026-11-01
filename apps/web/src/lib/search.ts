@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { FilterScope } from '@tasklore/shared';
+import type { FilterScope } from '@toolvibes/shared';
 import { client, unwrap } from './api';
 
 export const SEARCH_PAGE_SIZE = 50;
@@ -45,7 +45,7 @@ export const filterQuery = (id: string) =>
 
 export type EverythingType = 'issue' | 'page' | 'project' | 'space';
 
-/** Global search over issues, Lore pages, projects and spaces (E-69). */
+/** Global search over issues, wiki pages, projects and spaces (E-69). */
 export const everythingQuery = (q: string, type?: EverythingType, project?: string) =>
   queryOptions({
     queryKey: ['search-everything', q, type, project],

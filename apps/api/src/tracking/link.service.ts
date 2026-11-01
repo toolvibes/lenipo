@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { CreateIssueLinkRequest, IssueLink, IssueLinkTypeInfo } from '@tasklore/shared';
+import type { CreateIssueLinkRequest, IssueLink, IssueLinkTypeInfo } from '@toolvibes/shared';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

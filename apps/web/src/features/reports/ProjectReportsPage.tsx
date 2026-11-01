@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { ReportConfig, ReportKind } from '@tasklore/shared';
+import type { ReportConfig, ReportKind } from '@toolvibes/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { projectQuery } from '../../lib/tracking';

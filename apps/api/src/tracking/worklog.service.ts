@@ -6,8 +6,8 @@ import type {
   UserRef,
   WorkingTime,
   Worklog,
-} from '@tasklore/shared';
-import { formatDuration } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { formatDuration } from '@toolvibes/tql';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

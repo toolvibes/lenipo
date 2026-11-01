@@ -1,6 +1,6 @@
-import { richTextSchema } from '@tasklore/editor';
-import type { Page, PageTemplate, PageTemplateSummary } from '@tasklore/shared';
 import { yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
+import { richTextSchema } from '@toolvibes/editor';
+import type { Page, PageTemplate, PageTemplateSummary } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';

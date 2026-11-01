@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Plus, Trash, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { Board, EstimationField, SwimlaneMode } from '@tasklore/shared';
+import type { Board, EstimationField, SwimlaneMode } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

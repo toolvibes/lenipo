@@ -1,7 +1,20 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
-export const SESSION_COOKIE = 'tl_session';
-export const TOKEN_PREFIX = 'tl_pat_';
+export const SESSION_COOKIE = 'lp_session';
+export const TOKEN_PREFIX = 'lp_pat_';
+
+/**
+ * Whether a secret carries a prefix, in its Lenipo form (`lp_…`) or as issued under the old
+ * name Tasklore (`tl_…`); those keep working (E-129).
+ */
+export function hasPrefix(secret: string, prefix: string): boolean {
+  return secret.startsWith(prefix) || secret.startsWith(`tl_${prefix.slice(3)}`);
+}
+
+/** The session secret from a Cookie header; sessions begun under the old name stay valid. */
+export function readSessionCookie(header: string | undefined): string | undefined {
+  return readCookie(header, SESSION_COOKIE) ?? readCookie(header, 'tl_session');
+}
 
 /** URL-safe random secret with 256 bits of entropy. */
 export function randomSecret(bytes = 32): string {

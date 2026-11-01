@@ -8,7 +8,7 @@ import {
   TRANSITION_CLEARABLE,
   TRANSITION_FIELDS,
   type WorkflowDraft,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, count, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';

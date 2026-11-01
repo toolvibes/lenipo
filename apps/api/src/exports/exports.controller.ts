@@ -18,7 +18,7 @@ import {
   SPACE_EXPORT_FORMATS,
   type SpaceExportFormat,
   SpaceExportQuery,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Response } from 'express';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

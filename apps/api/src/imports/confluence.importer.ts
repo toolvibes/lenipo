@@ -3,8 +3,8 @@ import { createReadStream } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { markdownToDoc } from '@tasklore/editor';
-import type { ImportReport } from '@tasklore/shared';
+import { markdownToDoc } from '@toolvibes/editor';
+import type { ImportReport } from '@toolvibes/shared';
 import { and, eq } from 'drizzle-orm';
 import { Unzip, UnzipInflate, UnzipPassThrough } from 'fflate';
 import { Parser } from 'htmlparser2';
@@ -294,7 +294,7 @@ export class ConfluenceImporter {
       const [taken] = await db.select({ id: spaces.id }).from(spaces).where(eq(spaces.key, key));
       if (taken)
         throw new Error(
-          `Den Bereichsschlüssel ${key} gibt es in Tasklore schon; einen anderen Zielschlüssel wählen`,
+          `Den Bereichsschlüssel ${key} gibt es in Lenipo schon; einen anderen Zielschlüssel wählen`,
         );
       const created = await this.context.spaces.create(this.context.principal, {
         key,

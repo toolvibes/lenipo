@@ -361,7 +361,7 @@ export const TrackingMeta = z
   .meta({ id: 'TrackingMeta' });
 export type TrackingMeta = z.infer<typeof TrackingMeta>;
 
-/** A ProseMirror document as produced by the Tasklore editor. Structure is validated by the editor schema. */
+/** A ProseMirror document as produced by the Lenipo editor. Structure is validated by the editor schema. */
 export const RichText = z
   .looseObject({ type: z.literal('doc'), content: z.array(z.unknown()).optional() })
   .meta({ id: 'RichText' });

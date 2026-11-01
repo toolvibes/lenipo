@@ -1,4 +1,4 @@
-import type { ProjectDetails } from '@tasklore/shared';
+import type { ProjectDetails } from '@toolvibes/shared';
 import { and, eq } from 'drizzle-orm';
 import { io, type Socket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

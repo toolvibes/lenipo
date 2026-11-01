@@ -2,7 +2,7 @@ import { useRouter } from '@tanstack/react-router';
 import type { MouseEvent } from 'react';
 
 /**
- * A click handler for rich text: links within Tasklore (other pages, issues) open in the app
+ * A click handler for rich text: links within Lenipo (other pages, issues) open in the app
  * instead of a new tab. Clicks with a modifier key keep the browser's behaviour.
  */
 export function useInAppLinks(): (event: MouseEvent) => void {

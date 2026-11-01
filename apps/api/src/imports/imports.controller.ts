@@ -16,7 +16,7 @@ import {
   ConfluenceImportQuery,
   ImportJob,
   JiraImportRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
@@ -50,7 +50,7 @@ export class ImportsController {
     tag: 'Import',
     summary: 'Import from Jira Server/DC',
     description:
-      'Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Tasklore. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.',
+      'Starts a job in the worker. With dryRun (the default) it reads everything and reports what it would create, map and skip, without writing. Project keys must be free in Lenipo. Objects imported before are skipped, so a second run adds only new ones. The token is kept only while the job runs.',
     response: ImportJob,
   })
   @Post('jira')
@@ -65,7 +65,7 @@ export class ImportsController {
     tag: 'Import',
     summary: 'Import a Confluence Server/DC space export',
     description:
-      'The space XML export as a ZIP (field "file"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Tasklore macros where one exists. `spaceKey` names the new space (the export\'s key by default); dryRun (the default) only reports.',
+      'The space XML export as a ZIP (field "file"). Pages with their versions, blog posts, comments, attachments and labels; Confluence macros become Lenipo macros where one exists. `spaceKey` names the new space (the export\'s key by default); dryRun (the default) only reports.',
     upload: 'file',
     response: ImportJob,
   })
@@ -86,7 +86,7 @@ export class ImportsController {
 
   @Endpoint({
     tag: 'Import',
-    summary: 'Import a project or space archive of another Tasklore',
+    summary: 'Import a project or space archive of another Lenipo',
     description:
       'The ZIP from "Export as archive" (field "file"). Everything gets new ids; people are matched by e-mail or created deactivated, issue types, statuses, priorities and link types by key or name. `targetKey` renames the project or space; dryRun (the default) only reports.',
     upload: 'file',
@@ -135,7 +135,7 @@ export class ImportsController {
   }
 }
 
-/** Project and space archives for another Tasklore instance (TL-39, E-120). */
+/** Project and space archives for another Lenipo instance (TL-39, E-120). */
 @RequireGlobal('admin')
 @Controller('admin/archives')
 export class ArchivesController {

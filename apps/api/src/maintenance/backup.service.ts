@@ -6,7 +6,7 @@ import { join, relative } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { type Backup, BackupSettings, type RestoreResult } from '@tasklore/shared';
+import { type Backup, BackupSettings, type RestoreResult } from '@toolvibes/shared';
 import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { strToU8, Zip, ZipDeflate } from 'fflate';
 import type { TransactionSql } from 'postgres';
@@ -21,7 +21,7 @@ import type { FileStore } from '../storage/file-store.js';
 import { type TableInfo, tableOrder } from './table-order.js';
 
 const SETTINGS_KEY = 'backups';
-export const BACKUP_FORMAT = 'tasklore-backup';
+export const BACKUP_FORMAT = 'lenipo-backup';
 const FORMAT_VERSION = 1;
 /** Not worth keeping or harmful to bring back: the backup list itself and sign-in state. */
 const SKIPPED_TABLES = ['backups', 'sessions', 'oidc_login_attempts', 'collab_writes'];
@@ -134,7 +134,7 @@ export class BackupService {
     const day = backup.createdAt.slice(0, 16).replace(/[T:]/g, '-');
     return {
       stream: await this.store.get(`backups/${id}`),
-      fileName: `tasklore-backup-${day}.zip`,
+      fileName: `lenipo-backup-${day}.zip`,
       size: backup.sizeBytes ?? 0,
     };
   }
@@ -182,7 +182,7 @@ export class BackupService {
   }
 
   private async write(id: string): Promise<void> {
-    const directory = await mkdtemp(join(tmpdir(), 'tasklore-backup-'));
+    const directory = await mkdtemp(join(tmpdir(), 'lenipo-backup-'));
     const path = join(directory, 'backup.zip');
     try {
       const { rows, files } = await this.writeZip(path);
@@ -287,7 +287,7 @@ export class BackupService {
    * transaction. Only for a fresh instance; the caller checks that.
    */
   async restore(zipPath: string): Promise<RestoreResult> {
-    const directory = await mkdtemp(join(tmpdir(), 'tasklore-restore-'));
+    const directory = await mkdtemp(join(tmpdir(), 'lenipo-restore-'));
     try {
       await extractZip(
         zipPath,
@@ -302,12 +302,17 @@ export class BackupService {
       const manifest = JSON.parse(
         await readFile(join(directory, 'manifest.json'), 'utf8').catch(() => '{}'),
       ) as Partial<Manifest>;
-      if (manifest.format !== BACKUP_FORMAT || manifest.formatVersion !== FORMAT_VERSION)
-        throw new RestoreError('This is not a Tasklore backup');
+      // Backups made under the old name Tasklore still restore (E-129).
+      const format = manifest.format as string | undefined;
+      if (
+        (format !== BACKUP_FORMAT && format !== 'tasklore-backup') ||
+        manifest.formatVersion !== FORMAT_VERSION
+      )
+        throw new RestoreError('This is not a Lenipo backup');
       const migrations = await this.migrations();
       if (manifest.migrations !== migrations)
         throw new RestoreError(
-          `The backup is from Tasklore ${manifest.apiVersion} with ${manifest.migrations} database migrations; this instance has ${migrations}. Restore it with the same version.`,
+          `The backup is from Lenipo ${manifest.apiVersion} with ${manifest.migrations} database migrations; this instance has ${migrations}. Restore it with the same version.`,
         );
 
       let files = 0;

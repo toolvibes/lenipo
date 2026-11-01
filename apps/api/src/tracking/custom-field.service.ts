@@ -13,8 +13,8 @@ import type {
   ProjectFieldConfig,
   ProjectFieldSetting,
   UpdateCustomFieldRequest,
-} from '@tasklore/shared';
-import { customFieldNameClash, FieldCatalogue } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { customFieldNameClash, FieldCatalogue } from '@toolvibes/tql';
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';

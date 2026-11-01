@@ -1,8 +1,8 @@
 import { CalendarBlank, CaretLeft, CaretRight, EnvelopeSimple, Star } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { type Me, type QueryError, type SavedFilter } from '@tasklore/shared';
-import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@tasklore/tql';
+import { type Me, type QueryError, type SavedFilter } from '@toolvibes/shared';
+import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@toolvibes/tql';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
@@ -33,7 +33,7 @@ const PRESETS = {
 } as const;
 
 type Mode = 'basic' | 'advanced';
-const MODE_KEY = 'tasklore.search.mode';
+const MODE_KEY = 'lenipo.search.mode';
 
 /** The last chosen search mode of this browser; a convenience, so failures are ignored. */
 function useMode(): [Mode, (mode: Mode) => void] {

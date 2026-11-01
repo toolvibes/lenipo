@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { nodeText } from '@tasklore/editor';
+import { nodeText } from '@toolvibes/editor';
 import {
   type CustomField,
   ISSUE_EXPORT_LIMIT,
   type IssueExportRequest,
   type IssueSummary,
   type ListColumn,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Principal } from '../core/http/principal.js';
 import { SearchService } from '../search/search.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';

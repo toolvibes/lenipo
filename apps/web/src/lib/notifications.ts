@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { NotificationCategory } from '@tasklore/shared';
+import type { NotificationCategory } from '@toolvibes/shared';
 import { client, unwrap } from './api';
 
 /** Live through realtime signals (E-58); polling every 5 minutes and on focus is the fallback. */

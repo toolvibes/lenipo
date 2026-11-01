@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Put } from '@nestjs/common';
-import { WorkingTime } from '@tasklore/shared';
+import { WorkingTime } from '@toolvibes/shared';
 import { RequireGlobal } from '../access/require-global.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';

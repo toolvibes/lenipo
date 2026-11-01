@@ -11,7 +11,7 @@ import type {
   TimesheetCellRequest,
   TimesheetQuery,
   Worklog,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';

@@ -1,4 +1,4 @@
-import type { Me } from '@tasklore/shared';
+import type { Me } from '@toolvibes/shared';
 import { type ReactNode, useEffect, useState } from 'react';
 import { IssuePage } from './IssuePage';
 

@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import type { OAuthClientInfo, OAuthConsentResult, OAuthGrant } from '@tasklore/shared';
+import type { OAuthClientInfo, OAuthConsentResult, OAuthGrant } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 import { SetupService } from './setup.service.js';

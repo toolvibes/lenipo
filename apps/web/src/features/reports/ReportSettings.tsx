@@ -9,7 +9,7 @@ import {
   type StatisticField,
   TIME_GROUPS,
   TIME_PERIODS,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { boardsQuery } from '../../lib/boards';
 import { Select } from '../../ui/Select';

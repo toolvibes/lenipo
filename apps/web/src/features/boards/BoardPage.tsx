@@ -30,7 +30,7 @@ import type {
   IssueSummary,
   Me,
   MoveCardRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type MouseEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

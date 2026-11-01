@@ -4,9 +4,9 @@ import type {
   SearchResult,
   ValueSuggestion,
   ValueSuggestionQuery,
-} from '@tasklore/shared';
-import { SEARCH_TOTAL_CAP } from '@tasklore/shared';
-import { parse, STATUS_CATEGORY_NAMES } from '@tasklore/tql';
+} from '@toolvibes/shared';
+import { SEARCH_TOTAL_CAP } from '@toolvibes/shared';
+import { parse, STATUS_CATEGORY_NAMES } from '@toolvibes/tql';
 import {
   and,
   count,

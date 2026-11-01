@@ -24,7 +24,7 @@ import {
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, Outlet, useNavigate, useParams } from '@tanstack/react-router';
-import type { MovePageRequest, PageTemplateSummary, PageTreeEntry } from '@tasklore/shared';
+import type { MovePageRequest, PageTemplateSummary, PageTreeEntry } from '@toolvibes/shared';
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';

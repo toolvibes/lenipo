@@ -1,5 +1,5 @@
 {
-  "name": "@tasklore/api",
+  "name": "@toolvibes/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=../../.env dist/db/migrate-cli.js",
-    "lore": "node --env-file-if-exists=../../.env dist/wiki/lore-cli.js",
+    "wiki": "node --env-file-if-exists=../../.env dist/wiki/wiki-cli.js",
     "openapi:export": "node dist/openapi/export.js ../../packages/sdk/openapi.json"
   },
   "dependencies": {
@@ -32,9 +32,9 @@
     "@opentelemetry/instrumentation-express": "0.71.1",
     "@opentelemetry/instrumentation-http": "0.223.0",
     "@opentelemetry/sdk-node": "0.223.0",
-    "@tasklore/editor": "workspace:*",
-    "@tasklore/shared": "workspace:*",
-    "@tasklore/tql": "workspace:*",
+    "@toolvibes/editor": "workspace:*",
+    "@toolvibes/shared": "workspace:*",
+    "@toolvibes/tql": "workspace:*",
     "@tiptap/y-tiptap": "3.0.10",
     "aws4fetch": "1.0.20",
     "busboy": "1.6.0",
@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@hocuspocus/provider": "4.7.1",
-    "@tasklore/cli": "workspace:*",
+    "@toolvibes/cli": "workspace:*",
     "@types/busboy": "1.5.4",
     "@types/express": "*",
     "@types/ldapjs": "3.0.6",

@@ -51,7 +51,7 @@ export function blockExtensions({
 export const starterKitOptions = { codeBlock: false } as const;
 
 /**
- * The extensions that define Tasklore's rich text, the same in the browser editor and in the
+ * The extensions that define Lenipo's rich text, the same in the browser editor and in the
  * converters (E-51). The web app adds only behaviour (placeholder, suggestions) on top.
  */
 export const richTextExtensions = [

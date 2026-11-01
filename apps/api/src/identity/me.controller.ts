@@ -24,7 +24,7 @@ import {
   TwoFactorCodeRequest,
   TwoFactorSetup,
   UpdateMeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { AuditService } from '../audit/audit.service.js';

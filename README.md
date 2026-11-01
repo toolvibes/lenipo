@@ -1,8 +1,8 @@
-# Tasklore: Projektplan
+# Lenipo: Projektplan
 
-> **Tasklore**: Tasks + Lore (Wissen). Eine selbst gehostete Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center**: eine Plattform, eine Datenbank, ein Login.
+> **Lenipo** (früher Tasklore, E-129). Eine selbst gehostete Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center**: eine Plattform, eine Datenbank, ein Login.
 
-Repository: https://github.com/davidk85/TaskLore (privat)
+Repository: https://github.com/toolvibes/lenipo (privat)
 
 ## Worum es geht
 
@@ -15,7 +15,7 @@ Atlassian hat die Server-Produkte eingestellt. Was bleibt, sind die Cloud-Versio
 
 ## Dokumente
 
-Die Dokumentation lebt im eigenen Wiki (Lore-Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md).
+Die Dokumentation lebt im eigenen Wiki (Wiki-Bereich `TL`); `docs/` ist ein Schnappschuss daraus, siehe [docs/README.md](docs/README.md).
 
 | # | Dokument | Inhalt |
 |---|----------|--------|
@@ -28,7 +28,7 @@ Die Dokumentation lebt im eigenen Wiki (Lore-Bereich `TL`); `docs/` ist ein Schn
 | 7 | [Roadmap](docs/07-roadmap.md) | Phasen, Meilensteine, MVP, Definition of Done, Risiken |
 | 8 | [Entscheidungen](docs/08-entscheidungen.md) | Offene und getroffene Architekturentscheidungen |
 | 9 | [Admin-Handbuch](docs/09-admin-handbuch.md) | Installation, Konfiguration, Sicherung, Updates, Betrieb, Fehlersuche |
-| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Lore, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
+| 10 | [Benutzerhandbuch](docs/10-benutzerhandbuch.md) | Vorgänge, Boards, TQL, Wiki, Benachrichtigungen, Tastatur (auch in der App unter „Hilfe“) |
 | 11 | [Sicherheitsreview](docs/11-sicherheitsreview.md) | Review nach OWASP ASVS L2, Befunde und Behebung |
 | 12 | [Lasttests](docs/12-lasttests.md) | Messung gegen die Qualitätsziele |
 
@@ -69,41 +69,41 @@ Dann <http://localhost:5173> in zwei Tabs öffnen: Beide bearbeiten dasselbe Dok
 
 ### KI-Agenten (MCP)
 
-Tasklore hat einen eingebauten MCP-Server unter `/mcp` (E-52) mit Werkzeugen, Ressourcen (`tasklore://issue/WEB-1` …) und Prompts (E-114). Clients melden sich per OAuth im Browser an (E-115), zum Beispiel in Claude Code:
+Lenipo hat einen eingebauten MCP-Server unter `/mcp` (E-52) mit Werkzeugen, Ressourcen (`lenipo://issue/WEB-1` …) und Prompts (E-114). Clients melden sich per OAuth im Browser an (E-115), zum Beispiel in Claude Code:
 
 ```bash
-claude mcp add --transport http tasklore http://localhost:5173/mcp
+claude mcp add --transport http lenipo http://localhost:5173/mcp
 ```
 
 Alternativ mit einem Personal Access Token aus „Profil → Tokens“: `--header "Authorization: Bearer <token>"`. Der Agent arbeitet mit den Rechten der Person; seine Änderungen stehen in der Historie als „über MCP“. Verbundene Anwendungen lassen sich im Profil trennen.
 
-### Kommandozeile (`tl`)
+### Kommandozeile (`lenipo`)
 
-Das Paket `packages/cli` bringt `tl` (auch `tasklore`) mit (E-117): Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown samt Ordner-Abgleich und eine stdio-MCP-Brücke für Clients, die nur Programme starten.
+Das Paket `packages/cli` bringt `lenipo` mit (veralteter Kurzname `tl`) (E-117): Vorgänge, Boards, Sprints, Wiki-Seiten als Markdown samt Ordner-Abgleich und eine stdio-MCP-Brücke für Clients, die nur Programme starten.
 
 ```bash
-pnpm --filter @tasklore/cli build && node packages/cli/dist/main.js login http://localhost:5173
+pnpm --filter @toolvibes/cli build && node packages/cli/dist/main.js login http://localhost:5173
 ```
 
-`tl help` zeigt alle Befehle; `tl completion zsh` liefert die Shell-Vervollständigung. In CI ersetzen `TASKLORE_URL` und `TASKLORE_TOKEN` das Profil.
+`lenipo help` zeigt alle Befehle; `lenipo completion zsh` liefert die Shell-Vervollständigung. In CI ersetzen `LENIPO_URL` und `LENIPO_TOKEN` das Profil.
 
 ### Produktion
 
 ```bash
 cd deploy
-POSTGRES_PASSWORD='…' SITE_ADDRESS=tasklore.example.org docker compose up -d --build
+POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --build
 ```
 
-Startet Tasklore (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Anhänge landen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, mit `--profile s3` startet zusätzlich RustFS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
+Startet Lenipo (ein Image, API und Collab-Server in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Anhänge landen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, mit `--profile s3` startet zusätzlich RustFS. Migrationen laufen beim Start. Beim ersten Start steht im Log (`docker compose logs app`) ein Einrichtungscode; damit legt der Setup-Assistent unter `/setup` den ersten Administrator an. API-Dokumentation: `/api/docs`.
 
-Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Daten und Anhängen im Dateispeicher ab (die letzten drei bleiben), von Hand oder per Cronjob mit `tl admin backup create` und `tl admin backup download <id>`. Wiederhergestellt wird in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das Backup hochladen.
+Backups (E-120): Administration → Wartung legt täglich ein ZIP mit allen Daten und Anhängen im Dateispeicher ab (die letzten drei bleiben), von Hand oder per Cronjob mit `lenipo admin backup create` und `lenipo admin backup download <id>`. Wiederhergestellt wird in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das Backup hochladen.
 
 Betrieb (E-121): Administration → Betrieb schaltet Module ab, setzt den Wartungsmodus und einen Ankündigungsbanner und begrenzt Anfragen je Person, Token und IP. Mit `REDIS_URL` (Valkey) gelten die Grenzen über alle Instanzen; `RATE_LIMITS=false` schaltet sie ab, wenn ein Gateway davor schon begrenzt.
 
 ### Kubernetes
 
 ```bash
-helm install tasklore deploy/helm/tasklore --set image.repository=<registry>/tasklore --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' --set ingress.host=tasklore.example.org
+helm install lenipo deploy/helm/lenipo --set image.repository=<registry>/lenipo --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' --set ingress.host=lenipo.example.org
 ```
 
 Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen als Job vor jedem Update; PostgreSQL, Valkey und S3 laufen außerhalb (E-123). Updates rollen ohne Ausfall, solange Migrationen die Regel „erst erweitern, dann aufräumen“ einhalten (`pnpm migrations:check`). Metriken: `METRICS_PORT` (im Chart 9464) unter `/metrics`; Traces mit `OTEL_EXPORTER_OTLP_ENDPOINT`.
@@ -113,7 +113,7 @@ Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen a
 ```
 apps/api      NestJS 12: REST-API, Collab-Server (Hocuspocus), später Worker; Rolle über MODE
 apps/web      React 19 + Vite: Oberfläche, TipTap-Editor
-packages/     geteilter Code (@tasklore/shared)
+packages/     geteilter Code (@toolvibes/shared)
 docs/         Projektplan
 design/       Design-Tokens (Quelle für tokens.css), Links zu Design-System und Kernansichten
 ```

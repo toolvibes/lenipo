@@ -1,4 +1,4 @@
-import type { Board, BoardData, ProjectDetails, TrackingMeta } from '@tasklore/shared';
+import type { Board, BoardData, ProjectDetails, TrackingMeta } from '@toolvibes/shared';
 import { and, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

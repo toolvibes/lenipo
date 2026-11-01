@@ -8,7 +8,7 @@ import {
   Trash,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Attachment, Problem } from '@tasklore/shared';
+import type { Attachment, Problem } from '@toolvibes/shared';
 import { type DragEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

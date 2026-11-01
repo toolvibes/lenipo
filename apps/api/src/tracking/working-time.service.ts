@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { WorkingTime } from '@tasklore/shared';
-import { DEFAULT_WORKING_TIME } from '@tasklore/tql';
+import type { WorkingTime } from '@toolvibes/shared';
+import { DEFAULT_WORKING_TIME } from '@toolvibes/tql';
 import { eq, sql } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { Principal } from '../core/http/principal.js';

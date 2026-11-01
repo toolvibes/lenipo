@@ -96,7 +96,7 @@ export class McpController {
     if (principal.via === 'session' || principal.via === 'automation') {
       throw new UnauthorizedException('MCP clients sign in with a Personal Access Token');
     }
-    const server = new McpServer({ name: 'tasklore', version: '1.0.0' });
+    const server = new McpServer({ name: 'lenipo', version: '1.0.0' });
     const caller: Principal = { ...principal, via: 'mcp' };
     const { modules } = await this.operations.snapshot();
     const handlers = registerTools(server, caller, this.services, modules);

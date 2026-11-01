@@ -9,7 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Dashboard, DashboardLayout, Gadget, Me } from '@tasklore/shared';
+import type { Dashboard, DashboardLayout, Gadget, Me } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

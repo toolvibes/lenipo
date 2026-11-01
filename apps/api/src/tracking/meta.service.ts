@@ -6,7 +6,7 @@ import type {
   ResolutionInfo,
   StatusInfo,
   TrackingMeta,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { desc } from 'drizzle-orm';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';

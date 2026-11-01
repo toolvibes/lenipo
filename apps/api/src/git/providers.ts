@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import type { GitProvider } from '@tasklore/shared';
+import type { GitProvider } from '@toolvibes/shared';
 import { constantTimeEquals } from '../identity/secrets.js';
 
 /** What a webhook reported, the same for every provider (E-116). */

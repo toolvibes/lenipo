@@ -7,7 +7,7 @@ import {
   type GadgetType,
   STATISTIC_FIELDS,
   type StatisticField,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

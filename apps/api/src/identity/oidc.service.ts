@@ -18,7 +18,7 @@ import { sha256 } from './secrets.js';
 
 const ATTEMPT_LIFETIME_MS = 10 * 60 * 1000;
 
-/** The claims Tasklore uses from an ID token. */
+/** The claims Lenipo uses from an ID token. */
 export interface OidcClaims {
   sub: string;
   email?: string;
@@ -136,7 +136,7 @@ export class OidcService {
   }
 
   /**
-   * Maps an external identity to a Tasklore user: an existing link first, then an account with the
+   * Maps an external identity to a Lenipo user: an existing link first, then an account with the
    * same verified email, otherwise a new account. Unverified emails never take over an account.
    */
   async resolveUser(issuer: string, claims: OidcClaims, ip: string | null): Promise<string> {
@@ -169,7 +169,7 @@ export class OidcService {
       }
       if (!userId) {
         if (!this.config.OIDC_AUTO_CREATE_USERS) {
-          throw new ForbiddenException('No Tasklore account exists for this identity');
+          throw new ForbiddenException('No Lenipo account exists for this identity');
         }
         if (!email) throw new OidcSignInError('The identity provider sent no email address');
         const [taken] = await tx.select({ id: users.id }).from(users).where(eq(users.email, email));
@@ -232,7 +232,7 @@ export class OidcService {
     if (!this.config.OIDC_GROUPS_CLAIM) return [];
     const value = claims[this.config.OIDC_GROUPS_CLAIM];
     const names = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
-    // Keycloak sends full paths like "/team-plattform"; Tasklore group names have no slashes.
+    // Keycloak sends full paths like "/team-plattform"; Lenipo group names have no slashes.
     return names
       .filter((name): name is string => typeof name === 'string')
       .map((name) => name.replace(/^.*\//, ''));

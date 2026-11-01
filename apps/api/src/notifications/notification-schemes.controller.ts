@@ -16,7 +16,7 @@ import {
   NotificationSchemeSummary,
   SetProjectPermissionSchemeRequest,
   UpdateNotificationSchemeRequest,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';

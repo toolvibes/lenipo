@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import type { SecuritySettings } from '@tasklore/shared';
+import type { SecuritySettings } from '@toolvibes/shared';
 import { eq, sql } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppConfig } from '../core/config.js';

@@ -1,7 +1,7 @@
 import { Timer } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Issue, UpdateIssueRequest, Worklog } from '@tasklore/shared';
-import { DEFAULT_WORKING_TIME, formatDuration, parseDuration } from '@tasklore/tql';
+import type { Issue, UpdateIssueRequest, Worklog } from '@toolvibes/shared';
+import { DEFAULT_WORKING_TIME, formatDuration, parseDuration } from '@toolvibes/tql';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

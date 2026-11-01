@@ -1,8 +1,8 @@
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Timesheet } from '@tasklore/shared';
-import { formatDuration, parseDuration } from '@tasklore/tql';
+import type { Timesheet } from '@toolvibes/shared';
+import { formatDuration, parseDuration } from '@toolvibes/tql';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';

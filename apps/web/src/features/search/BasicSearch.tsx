@@ -8,7 +8,7 @@ import {
   emptyBasicQuery,
   findField,
   NO_VALUE,
-} from '@tasklore/tql';
+} from '@toolvibes/tql';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { valueSuggestionsQuery } from '../../lib/search';

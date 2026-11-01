@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { BackupSettings, RetentionResult, RetentionSettings } from '@tasklore/shared';
+import type { BackupSettings, RetentionResult, RetentionSettings } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';

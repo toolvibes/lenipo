@@ -1,5 +1,5 @@
 import { HTTP_CODE_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants.js';
-import { Problem } from '@tasklore/shared';
+import { Problem } from '@toolvibes/shared';
 import { z } from 'zod';
 import { REQUIRED_GLOBAL } from '../access/require-global.js';
 import { IS_PUBLIC } from '../core/http/decorators.js';
@@ -190,10 +190,10 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Tasklore API',
+      title: 'Lenipo API',
       version,
       description:
-        'REST API of Tasklore. Browsers authenticate with the session cookie; scripts, the CLI and MCP clients with a personal access token (`Authorization: Bearer tl_pat_…`).',
+        'REST API of Lenipo. Browsers authenticate with the session cookie; scripts, the CLI and MCP clients with a personal access token (`Authorization: Bearer tl_pat_…`).',
     },
     servers: [{ url: '/' }],
     security: [{ sessionCookie: [] }, { bearerToken: [] }],
@@ -201,11 +201,11 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
     components: {
       schemas: components.schemas,
       securitySchemes: {
-        sessionCookie: { type: 'apiKey', in: 'cookie', name: 'tl_session' },
+        sessionCookie: { type: 'apiKey', in: 'cookie', name: 'lp_session' },
         bearerToken: {
           type: 'http',
           scheme: 'bearer',
-          description: 'Personal access token (tl_pat_…)',
+          description: 'Personal access token (lp_pat_…)',
         },
       },
     },

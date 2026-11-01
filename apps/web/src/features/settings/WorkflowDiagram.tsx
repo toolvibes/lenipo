@@ -1,4 +1,4 @@
-import type { StatusCategory } from '@tasklore/shared';
+import type { StatusCategory } from '@toolvibes/shared';
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type LayoutInput, layoutWorkflow, NODE_H, NODE_W } from './workflowLayout';

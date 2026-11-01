@@ -1,11 +1,11 @@
 import { Redis } from '@hocuspocus/extension-redis';
 import { Server } from '@hocuspocus/server';
-import { replaceSection, richTextSchema } from '@tasklore/editor';
 import {
   prosemirrorJSONToYDoc,
   updateYFragment,
   yXmlFragmentToProsemirrorJSON,
 } from '@tiptap/y-tiptap';
+import { replaceSection, richTextSchema } from '@toolvibes/editor';
 import { and, eq } from 'drizzle-orm';
 import { Redis as IORedis } from 'ioredis';
 import postgres from 'postgres';
@@ -16,7 +16,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { countConnections } from '../core/metrics.js';
 import { collabWrites } from '../db/schema/index.js';
 import { isForeignOrigin } from '../identity/request-guards.js';
-import { readCookie, SESSION_COOKIE } from '../identity/secrets.js';
+import { readSessionCookie } from '../identity/secrets.js';
 import { SecuritySettingsService } from '../identity/security-settings.service.js';
 import { SessionService } from '../identity/session.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
@@ -57,12 +57,12 @@ export function createCollabServer(
   let listener: postgres.Sql | undefined;
 
   const server: Server<CollabContext> = new Server<CollabContext>({
-    name: 'tasklore-collab',
+    name: 'lenipo-collab',
     port: config.COLLAB_PORT,
     // Several collab instances share updates and presence through Valkey (TL-42, E-123);
     // without it, run one.
     extensions: config.REDIS_URL
-      ? [new Redis({ redis: new IORedis(config.REDIS_URL), prefix: 'tasklore:collab' })]
+      ? [new Redis({ redis: new IORedis(config.REDIS_URL), prefix: 'lenipo:collab' })]
       : [],
     quiet: true,
     stopOnSignals: false,
@@ -79,7 +79,7 @@ export function createCollabServer(
       if (isForeignOrigin(requestHeaders)) {
         throw new Error('Cross-site connection rejected');
       }
-      const secret = readCookie(requestHeaders.get('cookie') ?? undefined, SESSION_COOKIE);
+      const secret = readSessionCookie(requestHeaders.get('cookie') ?? undefined);
       const session = secret ? await sessions.authenticate(secret) : null;
       // A sign-in still waiting for its second factor does not edit pages.
       if (session?.stage !== 'full') {

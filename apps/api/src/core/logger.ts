@@ -7,12 +7,13 @@ export type Logger = pino.Logger;
 export function createLogger(config: AppConfig): Logger {
   return pino({
     level: config.LOG_LEVEL,
-    base: { app: 'tasklore' },
+    base: { app: 'lenipo' },
     // Defence in depth: secrets in logged objects never reach the log (TL-44).
     redact: {
       paths: [
         'req.headers.authorization',
         'req.headers.cookie',
+        'req.headers["x-lenipo-token"]',
         'req.headers["x-tasklore-token"]',
         'req.headers["x-setup-code"]',
         'res.headers["set-cookie"]',

@@ -1,5 +1,5 @@
 import { Star } from '@phosphor-icons/react';
-import type { FavouriteKind } from '@tasklore/shared';
+import type { FavouriteKind } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { useFavourite } from '../../lib/personal';
 

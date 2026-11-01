@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { DashboardSummary, Me } from '@tasklore/shared';
+import type { DashboardSummary, Me } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dashboardsQuery } from '../../lib/dashboards';

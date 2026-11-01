@@ -5,7 +5,7 @@ import type {
   Transition,
   UpdateIssueRequest,
   UserRef,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { meQuery } from '../../lib/queries';

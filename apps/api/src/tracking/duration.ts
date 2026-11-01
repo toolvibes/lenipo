@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import type { WorkingTime } from '@tasklore/shared';
-import { parseDuration } from '@tasklore/tql';
+import type { WorkingTime } from '@toolvibes/shared';
+import { parseDuration } from '@toolvibes/tql';
 
 /** Parses a duration with the instance's working time or answers 400. */
 export function durationSeconds(text: string, time: WorkingTime, field: string): number {

@@ -1,4 +1,4 @@
-import type { WorkingTime } from '@tasklore/shared';
+import type { WorkingTime } from '@toolvibes/shared';
 import {
   type Clause,
   type DateValue,
@@ -19,7 +19,7 @@ import {
   type TqlError,
   tqlError,
   type ValueOperand,
-} from '@tasklore/tql';
+} from '@toolvibes/tql';
 import {
   and,
   asc,

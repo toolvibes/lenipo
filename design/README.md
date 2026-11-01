@@ -1,6 +1,6 @@
 # Design
 
-Gestaltung nach dem Claude-Design-Projekt **„TaskLore UI Design“, Richtung 1a** (siehe [E-67](../docs/08-entscheidungen.md)): https://claude.ai/design/p/60308882-ddf4-4939-b2f5-4cce911db3b1 – feste Seitenleiste, warmes Neutralgrau, ein blauer Akzent, Instrument Sans, Newsreader für Lore, JetBrains Mono. Sie löst „Zink & Kobalt“ (E-64) und „Feldbuch“ (E-25) ab.
+Gestaltung nach dem Claude-Design-Projekt **„Lenipo UI Design“, Richtung 1a** (siehe [E-67](../docs/08-entscheidungen.md)): https://claude.ai/design/p/60308882-ddf4-4939-b2f5-4cce911db3b1 – feste Seitenleiste, warmes Neutralgrau, ein blauer Akzent, Instrument Sans, Newsreader für Wiki, JetBrains Mono. Sie löst „Zink & Kobalt“ (E-64) und „Feldbuch“ (E-25) ab.
 
 - **Design-System (Claude Design):** https://claude.ai/artifact/VLRKCV9QrfEDmG6FAYDPJ8 – Gestaltungsrichtlinie, Tokens, Komponenten mit Live-Vorschau
 - **Kernansichten (Design-Canvas):** https://claude.ai/artifact/N59hUxGE2HQzUvWi5Psz5i – Sprint-Board, Vorgang, Wiki-Seite im dunklen Theme

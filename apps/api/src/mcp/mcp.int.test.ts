@@ -1,7 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { ChangeGroup, CreatedToken, Issue } from '@tasklore/shared';
+import type { ChangeGroup, CreatedToken, Issue } from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { auditLog } from '../db/schema/index.js';
@@ -216,7 +216,7 @@ describe('MCP', () => {
     expect(noToken.status).toBe(401);
   });
 
-  it('creates a project with board and Lore space, only with the admin scope', async () => {
+  it('creates a project with board and wiki space, only with the admin scope', async () => {
     const denied = await call(client, 'create_project', {
       key: 'APP',
       name: 'App',

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Id } from './identity.js';
 
-/** Custom field types of Phase 1 (T-FLD-01, E-50); the same names as in `@tasklore/tql`. */
+/** Custom field types of Phase 1 (T-FLD-01, E-50); the same names as in `@toolvibes/tql`. */
 export const CustomFieldType = z.enum([
   'text',
   'textarea',

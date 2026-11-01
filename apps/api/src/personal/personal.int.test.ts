@@ -10,7 +10,7 @@ import type {
   RecentItem,
   SavedFilter,
   SearchResult,
-} from '@tasklore/shared';
+} from '@toolvibes/shared';
 import { and, count, eq } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

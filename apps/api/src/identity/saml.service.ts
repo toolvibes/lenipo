@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { SAML } from '@node-saml/node-saml';
-import type { SamlProvider, SaveSamlProviderRequest } from '@tasklore/shared';
+import type { SamlProvider, SaveSamlProviderRequest } from '@toolvibes/shared';
 import { and, asc, eq, lt, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
@@ -185,7 +185,7 @@ export class SamlService {
     return this.saml(row, base).getAuthorizeUrlAsync(relayState, undefined, {});
   }
 
-  /** Checks the IdP's answer and returns the Tasklore account, creating it where allowed. */
+  /** Checks the IdP's answer and returns the Lenipo account, creating it where allowed. */
   async acs(id: string, base: string, body: Record<string, string>): Promise<string> {
     const row = await this.row(id);
     const { profile } = await this.saml(row, base).validatePostResponseAsync(body);
@@ -257,7 +257,7 @@ export class SamlService {
       .from(users)
       .where(eq(users.id, userId));
     if (account?.status !== 'active') throw new BadRequestException('This account is deactivated');
-    // Groups named by the IdP join the person to existing Tasklore groups of that name.
+    // Groups named by the IdP join the person to existing Lenipo groups of that name.
     for (const groupName of value(row.groupsAttribute)) {
       const [group] = await db
         .select({ id: groups.id })

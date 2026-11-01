@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { AddProjectMemberRequest, ProjectMember } from '@tasklore/shared';
+import type { AddProjectMemberRequest, ProjectMember } from '@toolvibes/shared';
 import { and, asc, count, eq, isNull } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
@@ -18,7 +18,7 @@ import { ProjectAccessService } from './project-access.service.js';
 
 /**
  * Who holds which role in a project (T-PRJ-07, TL-65): people or whole groups, managed by the
- * project's administration like the roles of a Lore space (E-60).
+ * project's administration like the roles of a wiki space (E-60).
  */
 @Injectable()
 export class ProjectMemberService {

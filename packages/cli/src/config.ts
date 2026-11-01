@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -17,7 +18,7 @@ export type Auth =
 export interface Profile {
   url: string;
   auth: Auth;
-  /** Who signed in, for `tl profile list`. */
+  /** Who signed in, for `lenipo profile list`. */
   user?: string;
 }
 
@@ -26,10 +27,15 @@ export interface Config {
   profiles: Record<string, Profile>;
 }
 
-/** Where profiles live: $XDG_CONFIG_HOME/tasklore or ~/.config/tasklore (E-117). */
+/**
+ * Where profiles live: $XDG_CONFIG_HOME/lenipo or ~/.config/lenipo (E-117). Profiles saved
+ * under the old name Tasklore are used as long as there are no new ones (E-129).
+ */
 export function configPath(env: Record<string, string | undefined>, home: string): string {
   const base = env.XDG_CONFIG_HOME || join(home, '.config');
-  return join(base, 'tasklore', 'config.json');
+  const path = join(base, 'lenipo', 'config.json');
+  const old = join(base, 'tasklore', 'config.json');
+  return !existsSync(path) && existsSync(old) ? old : path;
 }
 
 export async function loadConfig(path: string): Promise<Config> {

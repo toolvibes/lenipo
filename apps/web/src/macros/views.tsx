@@ -1,7 +1,14 @@
 import { CaretDown, CaretRight, FileText, ListNumbers, TreeStructure } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { STATUS_COLORS } from '@tasklore/editor/schema';
+import type { Editor } from '@tiptap/core';
+import {
+  NodeViewContent,
+  type NodeViewProps,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+} from '@tiptap/react';
+import { STATUS_COLORS } from '@toolvibes/editor/schema';
 import {
   REPORT_KINDS,
   type ReportConfig,
@@ -10,14 +17,7 @@ import {
   type SeriesField,
   STATISTIC_FIELDS,
   type StatisticField,
-} from '@tasklore/shared';
-import type { Editor } from '@tiptap/core';
-import {
-  NodeViewContent,
-  type NodeViewProps,
-  NodeViewWrapper,
-  ReactNodeViewRenderer,
-} from '@tiptap/react';
+} from '@toolvibes/shared';
 import { createContext, type FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReportView } from '../features/reports/analysis';

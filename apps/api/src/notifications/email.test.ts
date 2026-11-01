@@ -9,7 +9,7 @@ describe('notificationEmail', () => {
       to: 'jonas@example.org',
       locale: 'de',
       issue,
-      publicUrl: 'https://tasklore.example.org/',
+      publicUrl: 'https://lenipo.example.org/',
       entries: [
         { actor: 'Lena Vogt', category: 'assigned', details: { kind: 'created', items: [] } },
         {
@@ -35,7 +35,7 @@ describe('notificationEmail', () => {
     expect(mail.text).toContain('- Status: Offen → In Arbeit');
     expect(mail.text).toContain('- Beschreibung geändert');
     expect(mail.text).toContain('Jemand hat Sie erwähnt:\n> Bitte @Jonas ansehen\n> Danke');
-    expect(mail.text).toContain('Vorgang öffnen: https://tasklore.example.org/issues/WEB-1');
+    expect(mail.text).toContain('Vorgang öffnen: https://lenipo.example.org/issues/WEB-1');
     // Everything from users is escaped in the HTML part.
     expect(mail.html).toContain('Login &#60;schlägt&#62; fehl');
     expect(mail.html).not.toContain('<schlägt>');

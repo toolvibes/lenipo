@@ -1,4 +1,4 @@
-import { docToHtml, markdownToDoc } from '@tasklore/editor';
+import { docToHtml, markdownToDoc } from '@toolvibes/editor';
 import { useMemo } from 'react';
 import handbook from '../../../../../docs/10-benutzerhandbuch.md?raw';
 

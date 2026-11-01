@@ -1,6 +1,6 @@
 import { Export } from '@phosphor-icons/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import type { PageExportFormat } from '@tasklore/shared';
+import type { PageExportFormat } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buttonClass } from '../../ui/Button';

@@ -1,6 +1,6 @@
 export type ThemePreference = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'tasklore.theme';
+const STORAGE_KEY = 'lenipo.theme';
 
 /** Per-browser preference; "system" follows the operating system via prefers-color-scheme. */
 export function readTheme(): ThemePreference {

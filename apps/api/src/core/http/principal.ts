@@ -1,4 +1,4 @@
-import type { TokenScope } from '@tasklore/shared';
+import type { TokenScope } from '@toolvibes/shared';
 
 /**
  * Who is making a request, resolved by the AuthGuard from a session cookie or a bearer token.

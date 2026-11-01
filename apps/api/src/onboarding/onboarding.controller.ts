@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Inject, Post } from '@nestjs/common';
-import { OnboardingRequest, OnboardingResult } from '@tasklore/shared';
+import { OnboardingRequest, OnboardingResult } from '@toolvibes/shared';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
@@ -13,7 +13,7 @@ export class OnboardingController {
     tag: 'Me',
     summary: 'Finish the welcome steps after the first sign-in',
     description:
-      'Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked Lore space with a start page; Lore → only the space. Without `start` the steps count as skipped. Web sessions only.',
+      'Saves the profile and, with `start`, creates in one go: Scrum or Kanban → project, board and a linked wiki space with a start page; Wiki → only the space. Without `start` the steps count as skipped. Web sessions only.',
     response: OnboardingResult,
   })
   @Post('onboarding')
