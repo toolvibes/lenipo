@@ -3,8 +3,10 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { securitySettingsQuery } from '../../lib/admin';
 import { client, unwrap } from '../../lib/api';
+import { meQuery } from '../../lib/queries';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
+import { ExternalBadge } from '../../ui/ExternalBadge';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 import { InvitationsPanel } from '../auth/InvitePage';
@@ -14,6 +16,7 @@ import { InvitationsPanel } from '../auth/InvitePage';
  * sign-in, and help for a single person after a lost phone or device.
  */
 export function SignInSettingsPage() {
+  const me = useQuery(meQuery).data;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const settings = useQuery(securitySettingsQuery);
@@ -57,9 +60,17 @@ export function SignInSettingsPage() {
       action,
     }: {
       id: string;
-      action: 'sessions' | '2fa' | 'deactivate' | 'reactivate';
+      action: 'sessions' | '2fa' | 'deactivate' | 'reactivate' | 'external' | 'internal';
     }) => {
-      if (action === 'deactivate' || action === 'reactivate') {
+      if (action === 'external' || action === 'internal') {
+        await unwrap(
+          client.POST('/api/v1/admin/users/{id}/external', {
+            params: { path: { id } },
+            body: { external: action === 'external' },
+          }),
+        );
+        await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      } else if (action === 'deactivate' || action === 'reactivate') {
         await unwrap(
           client.POST(`/api/v1/admin/users/{id}/${action}`, { params: { path: { id } } }),
         );
@@ -199,6 +210,7 @@ export function SignInSettingsPage() {
                       {t('signIn.deactivated')}
                     </span>
                   )}
+                  {user.external && <ExternalBadge />}
                 </span>
                 <span className="text-xs text-[var(--ink-muted)]">{user.email}</span>
               </span>
@@ -227,6 +239,21 @@ export function SignInSettingsPage() {
               >
                 {t('signIn.reset')}
               </Button>
+              {user.id !== me?.id && !user.email.endsWith('@anonymized.invalid') && (
+                <Button
+                  size="sm"
+                  disabled={userAction.isPending}
+                  onClick={() => {
+                    setDone(null);
+                    userAction.mutate({
+                      id: user.id,
+                      action: user.external ? 'internal' : 'external',
+                    });
+                  }}
+                >
+                  {user.external ? t('external.makeInternal') : t('external.makeExternal')}
+                </Button>
+              )}
               {user.status === 'active' ? (
                 <Button
                   size="sm"

@@ -142,6 +142,8 @@ export const UserSummary = z
     displayName: z.string(),
     status: z.enum(['active', 'deactivated']),
     groups: z.array(z.string()),
+    /** External collaborator (TL-66, E-131). */
+    external: z.boolean(),
   })
   .meta({ id: 'UserSummary' });
 export type UserSummary = z.infer<typeof UserSummary>;
@@ -152,9 +154,16 @@ export const CreateUserRequest = z
     displayName: DisplayName,
     password: Password,
     groups: z.array(z.string().trim().min(1)).default([]),
+    /** An external collaborator: not in the group "users" (TL-66, E-131). */
+    external: z.boolean().default(false),
   })
   .meta({ id: 'CreateUserRequest' });
 export type CreateUserRequest = z.infer<typeof CreateUserRequest>;
+
+export const SetExternalRequest = z
+  .object({ external: z.boolean() })
+  .meta({ id: 'SetExternalRequest' });
+export type SetExternalRequest = z.infer<typeof SetExternalRequest>;
 
 /** Anonymising an account is confirmed by typing the person's current name (TL-39). */
 export const AnonymizeUserRequest = z

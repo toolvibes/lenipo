@@ -167,11 +167,18 @@ export function InvitationsPanel({ projectKey }: { projectKey?: string }) {
   });
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<ProjectRole>('developers');
+  // External collaborators and the linked wiki space (TL-66, TL-68, E-131).
+  const [external, setExternal] = useState(false);
+  const [shareSpace, setShareSpace] = useState(true);
   const invite = useMutation({
     mutationFn: () =>
       unwrap(
         client.POST('/api/v1/invitations', {
-          body: { email: email.trim(), ...(projectKey ? { projectKey, role } : {}) },
+          body: {
+            email: email.trim(),
+            external,
+            ...(projectKey ? { projectKey, role, shareSpace } : {}),
+          },
         }),
       ),
     onSuccess: () => {
@@ -223,6 +230,38 @@ export function InvitationsPanel({ projectKey }: { projectKey?: string }) {
         <Button type="submit" variant="primary" disabled={invite.isPending}>
           {t('invite.send')}
         </Button>
+        <div className="flex w-full flex-col gap-1.5 text-[13px]">
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={external}
+              onChange={(event) => setExternal(event.target.checked)}
+            />
+            <span>
+              {t('external.invite')}
+              <span className="block text-xs text-[var(--ink-muted)]">
+                {t('external.inviteHelp')}
+              </span>
+            </span>
+          </label>
+          {projectKey && (
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={shareSpace}
+                onChange={(event) => setShareSpace(event.target.checked)}
+              />
+              <span>
+                {t('external.shareSpace')}
+                <span className="block text-xs text-[var(--ink-muted)]">
+                  {t('external.shareSpaceHelp')}
+                </span>
+              </span>
+            </label>
+          )}
+        </div>
       </form>
       {(invite.error || revoke.error) && (
         <FormError message={(invite.error ?? revoke.error)?.message ?? ''} />

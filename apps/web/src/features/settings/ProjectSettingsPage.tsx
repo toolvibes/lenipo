@@ -42,6 +42,8 @@ function Members({ projectKey }: { projectKey: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const members = useQuery(projectMembersQuery(projectKey));
+  // People added here also get the linked wiki spaces (TL-68, E-131).
+  const [shareSpace, setShareSpace] = useState(true);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['project', projectKey] });
   const remove = useMutation({
     mutationFn: (id: string) =>
@@ -80,8 +82,22 @@ function Members({ projectKey }: { projectKey: string }) {
         error={remove.error ?? add.error}
         busy={remove.isPending || add.isPending}
         onRemove={(id) => remove.mutate(id)}
-        onAdd={(grant) => add.mutateAsync(grant)}
+        onAdd={(grant) => add.mutateAsync({ ...grant, shareSpace })}
       />
+      <label className="flex items-start gap-2 text-[13px]">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={shareSpace}
+          onChange={(event) => setShareSpace(event.target.checked)}
+        />
+        <span>
+          {t('external.shareSpace')}
+          <span className="block text-xs text-[var(--ink-muted)]">
+            {t('external.shareSpaceHelp')}
+          </span>
+        </span>
+      </label>
     </section>
   );
 }

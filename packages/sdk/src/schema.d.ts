@@ -112,6 +112,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/users/{id}/external': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Make a user an external collaborator, or a regular one again
+     * @description External collaborators leave the group "users", hold no global permissions and only see the projects and spaces they are given (TL-66).
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Admin.setExternal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/users/{id}/reactivate': {
     parameters: {
       query?: never;
@@ -5047,8 +5069,8 @@ export interface components {
       sessionMaxDays: number;
       twoFactorGroupIds: string[];
     };
-    AnonymizeUserRequest: {
-      confirmation: string;
+    SetExternalRequest: {
+      external: boolean;
     };
     UserSummary: {
       /** Format: uuid */
@@ -5058,6 +5080,10 @@ export interface components {
       /** @enum {string} */
       status: 'active' | 'deactivated';
       groups: string[];
+      external: boolean;
+    };
+    AnonymizeUserRequest: {
+      confirmation: string;
     };
     CreateUserRequest: {
       /** Format: email */
@@ -5066,6 +5092,8 @@ export interface components {
       password: string;
       /** @default [] */
       groups?: string[];
+      /** @default false */
+      external?: boolean;
     };
     GroupSummary: {
       /** Format: uuid */
@@ -7008,6 +7036,10 @@ export interface components {
       projectKey?: string;
       /** @default developers */
       role?: components['schemas']['ProjectRole'];
+      /** @default false */
+      external?: boolean;
+      /** @default false */
+      shareSpace?: boolean;
     };
     Invitation: {
       /** Format: uuid */
@@ -8046,17 +8078,20 @@ export interface components {
         id: string;
         name: string;
       } | null;
+      external: boolean;
     };
     AddProjectMemberRequest:
       | {
           role: components['schemas']['ProjectRole'];
           /** Format: uuid */
           userId: string;
+          shareSpace?: boolean;
         }
       | {
           role: components['schemas']['ProjectRole'];
           /** Format: uuid */
           groupId: string;
+          shareSpace?: boolean;
         };
     ProjectSummary: {
       /** Format: uuid */
@@ -9465,6 +9500,41 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.setExternal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetExternalRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserSummary'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

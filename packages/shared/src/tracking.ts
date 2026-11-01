@@ -40,6 +40,8 @@ export const ProjectMember = z
     role: ProjectRole,
     user: UserRef.nullable(),
     group: z.object({ id: Id, name: z.string() }).nullable(),
+    /** The person is an external collaborator (TL-66). */
+    external: z.boolean(),
   })
   .meta({ id: 'ProjectMember' });
 export type ProjectMember = z.infer<typeof ProjectMember>;
@@ -289,8 +291,9 @@ export type SetProjectSecuritySchemeRequest = z.infer<typeof SetProjectSecurityS
 
 export const AddProjectMemberRequest = z
   .union([
-    z.strictObject({ role: ProjectRole, userId: Id }),
-    z.strictObject({ role: ProjectRole, groupId: Id }),
+    // shareSpace: the same level in the spaces linked to the project (TL-68, E-131).
+    z.strictObject({ role: ProjectRole, userId: Id, shareSpace: z.boolean().optional() }),
+    z.strictObject({ role: ProjectRole, groupId: Id, shareSpace: z.boolean().optional() }),
   ])
   .meta({ id: 'AddProjectMemberRequest' });
 export type AddProjectMemberRequest = z.infer<typeof AddProjectMemberRequest>;

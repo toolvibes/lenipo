@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
-import { globalPermissionGrants, groupMembers } from '../db/schema/index.js';
+import { globalPermissionGrants, groupMembers, users } from '../db/schema/index.js';
 
 /**
  * The single place that answers "may this user do that?". UI, API, MCP, search and
@@ -18,6 +18,12 @@ export class AccessService {
     userId: string,
     db: Executor = this.database.db,
   ): Promise<GlobalPermission[]> {
+    // External collaborators hold no global permission, whatever their groups (TL-66, E-131).
+    const [account] = await db
+      .select({ external: users.external })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (account?.external) return [];
     const rows = await db
       .selectDistinct({ permission: globalPermissionGrants.permission })
       .from(globalPermissionGrants)

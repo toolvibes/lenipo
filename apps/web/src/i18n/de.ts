@@ -2095,6 +2095,8 @@ export const de = {
       sessions: 'Alle Sitzungen wurden beendet.',
       '2fa': 'Die Zwei-Faktor-Anmeldung wurde zurückgesetzt.',
       deactivate: 'Die Person wurde deaktiviert.',
+      external: 'Die Person ist jetzt extern.',
+      internal: 'Die Person ist jetzt intern.',
       reactivate: 'Die Person kann sich wieder anmelden.',
       anonymize: 'Die Person wurde anonymisiert.',
     },
@@ -2691,6 +2693,17 @@ export const de = {
     collapse: 'Einklappen',
     expandLines_one: '{{count}} Zeile anzeigen',
     expandLines_other: '{{count}} Zeilen anzeigen',
+  },
+  external: {
+    badge: 'Extern',
+    makeExternal: 'Als extern führen',
+    makeInternal: 'Als intern führen',
+    invite: 'Als externe Person einladen',
+    inviteHelp:
+      'Externe sehen nur die Projekte und Bereiche, die sie bekommen, kein Personenverzeichnis und legen nichts Neues an.',
+    shareSpace: 'Auch im verknüpften Wiki-Bereich freigeben',
+    shareSpaceHelp:
+      'Benutzer kommentieren, Entwickler bearbeiten, Administratoren verwalten den Bereich.',
   },
   wikiHome: {
     title: 'Wiki',

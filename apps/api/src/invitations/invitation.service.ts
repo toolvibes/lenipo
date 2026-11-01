@@ -115,7 +115,11 @@ export class InvitationService {
     const existing = await this.users.findForLogin(email);
     if (existing && project) {
       // People who already have an account join the project right away.
-      await this.members.add(principal, project.key, { userId: existing.id, role: request.role });
+      await this.members.add(principal, project.key, {
+        userId: existing.id,
+        role: request.role,
+        shareSpace: request.shareSpace,
+      });
     } else if (existing) {
       throw new ConflictException('A user with this email already exists');
     }
@@ -130,6 +134,8 @@ export class InvitationService {
         tokenHash: sha256(token),
         projectId: project?.id ?? null,
         role: project ? request.role : null,
+        external: request.external,
+        shareSpace: request.shareSpace,
         invitedById: principal.userId,
         expiresAt: new Date(Date.now() + DAYS * 86_400_000),
         acceptedAt: existing ? new Date() : null,
@@ -158,7 +164,12 @@ export class InvitationService {
       via: principal.via,
       targetType: 'invitation',
       targetId: id,
-      details: { email, project: project?.key ?? null, role: project ? request.role : null },
+      details: {
+        email,
+        project: project?.key ?? null,
+        role: project ? request.role : null,
+        ...(request.external ? { external: true } : {}),
+      },
     });
     const [presented] = await this.present([row as Row]);
     return presented as Invitation;
@@ -234,7 +245,9 @@ export class InvitationService {
       email: row.email,
       displayName: request.displayName,
       passwordHash: await this.passwords.hash(request.password),
-      groupNames: [USERS_GROUP],
+      // External collaborators only get the project they were invited to (TL-66).
+      groupNames: row.external ? [] : [USERS_GROUP],
+      external: row.external,
     } as never);
     const [claimed] = await this.database.db
       .update(invitations)
@@ -254,6 +267,7 @@ export class InvitationService {
           {
             userId,
             role: row.role as ProjectRole,
+            shareSpace: row.shareSpace,
           },
         );
       }

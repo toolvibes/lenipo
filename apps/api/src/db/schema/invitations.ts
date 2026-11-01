@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 import { projects } from './tracking.js';
 
@@ -16,6 +16,9 @@ export const invitations = pgTable(
     tokenHash: text().notNull(),
     projectId: uuid().references(() => projects.id, { onDelete: 'cascade' }),
     role: text(),
+    /** The account becomes external (TL-66) and gets the linked spaces too (TL-68). */
+    external: boolean().notNull().default(false),
+    shareSpace: boolean().notNull().default(false),
     invitedById: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp({ withTimezone: true }).notNull(),

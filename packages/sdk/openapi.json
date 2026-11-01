@@ -216,6 +216,56 @@
         }
       }
     },
+    "/api/v1/admin/users/{id}/external": {
+      "post": {
+        "operationId": "Admin.setExternal",
+        "summary": "Make a user an external collaborator, or a regular one again",
+        "description": "External collaborators leave the group \"users\", hold no global permissions and only see the projects and spaces they are given (TL-66).\n\nRequires the global permission `admin`.",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetExternalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users/{id}/reactivate": {
       "post": {
         "operationId": "Admin.reactivateUser",
@@ -14563,15 +14613,14 @@
         },
         "required": ["sessionIdleHours", "sessionMaxDays", "twoFactorGroupIds"]
       },
-      "AnonymizeUserRequest": {
+      "SetExternalRequest": {
         "type": "object",
         "properties": {
-          "confirmation": {
-            "type": "string",
-            "maxLength": 200
+          "external": {
+            "type": "boolean"
           }
         },
-        "required": ["confirmation"]
+        "required": ["external"]
       },
       "UserSummary": {
         "type": "object",
@@ -14596,10 +14645,23 @@
             "items": {
               "type": "string"
             }
+          },
+          "external": {
+            "type": "boolean"
           }
         },
-        "required": ["id", "email", "displayName", "status", "groups"],
+        "required": ["id", "email", "displayName", "status", "groups", "external"],
         "additionalProperties": false
+      },
+      "AnonymizeUserRequest": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": ["confirmation"]
       },
       "CreateUserRequest": {
         "type": "object",
@@ -14627,6 +14689,10 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "external": {
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": ["email", "displayName", "password"]
@@ -21207,6 +21273,14 @@
           "role": {
             "default": "developers",
             "$ref": "#/components/schemas/ProjectRole"
+          },
+          "external": {
+            "default": false,
+            "type": "boolean"
+          },
+          "shareSpace": {
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": ["email"]
@@ -25158,9 +25232,12 @@
                 "type": "null"
               }
             ]
+          },
+          "external": {
+            "type": "boolean"
           }
         },
-        "required": ["id", "role", "user", "group"],
+        "required": ["id", "role", "user", "group", "external"],
         "additionalProperties": false
       },
       "AddProjectMemberRequest": {
@@ -25175,6 +25252,9 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "shareSpace": {
+                "type": "boolean"
               }
             },
             "required": ["role", "userId"],
@@ -25190,6 +25270,9 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "shareSpace": {
+                "type": "boolean"
               }
             },
             "required": ["role", "groupId"],

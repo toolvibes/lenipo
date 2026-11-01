@@ -24,6 +24,10 @@ export const CreateInvitationRequest = z
     /** Project invitations name a role; admins may invite without a project. */
     projectKey: z.string().trim().toUpperCase().optional(),
     role: ProjectRole.default('developers'),
+    /** The new account is an external collaborator (TL-66, E-131). */
+    external: z.boolean().default(false),
+    /** Also into the spaces linked to the project (TL-68, E-131). */
+    shareSpace: z.boolean().default(false),
   })
   .meta({ id: 'CreateInvitationRequest' });
 export type CreateInvitationRequest = z.infer<typeof CreateInvitationRequest>;

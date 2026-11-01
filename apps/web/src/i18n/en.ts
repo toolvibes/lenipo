@@ -2059,6 +2059,8 @@ export const en: Messages = {
       sessions: 'All sessions were ended.',
       '2fa': 'Two-factor sign-in was reset.',
       deactivate: 'The person was deactivated.',
+      external: 'The person is now external.',
+      internal: 'The person is now internal.',
       reactivate: 'The person can sign in again.',
       anonymize: 'The person was anonymised.',
     },
@@ -2645,6 +2647,16 @@ export const en: Messages = {
     collapse: 'Collapse',
     expandLines_one: 'Show {{count}} line',
     expandLines_other: 'Show {{count}} lines',
+  },
+  external: {
+    badge: 'External',
+    makeExternal: 'Make external',
+    makeInternal: 'Make internal',
+    invite: 'Invite as an external collaborator',
+    inviteHelp:
+      'External people only see the projects and spaces they are given, no people directory, and cannot create anything new.',
+    shareSpace: 'Also share the linked wiki space',
+    shareSpaceHelp: 'Users comment, developers edit, administrators manage the space.',
   },
   wikiHome: {
     title: 'Wiki',

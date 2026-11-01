@@ -28,6 +28,8 @@ export const users = pgTable(
     /** Null for accounts that only sign in through an external identity provider. */
     passwordHash: text(),
     status: userStatus().notNull().default('active'),
+    /** External collaborators (TL-66, E-131): not in "users", see only their own projects. */
+    external: boolean().notNull().default(false),
     locale: text().notNull().default('de'),
     timeZone: text().notNull().default('Europe/Berlin'),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

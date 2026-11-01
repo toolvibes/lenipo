@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -18,6 +19,7 @@ import {
   CreateUserRequest,
   GroupSummary,
   SecuritySettings,
+  SetExternalRequest,
   UserSummary,
 } from '@toolvibes/shared';
 import type { Request } from 'express';
@@ -133,6 +135,34 @@ export class AdminController {
     });
   }
 
+  @Endpoint({
+    tag: 'Admin',
+    summary: 'Make a user an external collaborator, or a regular one again',
+    description:
+      'External collaborators leave the group "users", hold no global permissions and only see the projects and spaces they are given (TL-66).',
+    response: UserSummary,
+  })
+  @Post('users/:id/external')
+  async setExternal(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(SetExternalRequest) body: SetExternalRequest,
+  ): Promise<UserSummary> {
+    if (id === principal.userId)
+      throw new BadRequestException('You cannot change your own account');
+    await this.users.setExternal(id, body.external);
+    await this.audit.record({
+      action: body.external ? 'user.made-external' : 'user.made-internal',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+    });
+    const changed = (await this.users.list()).find((user) => user.id === id);
+    if (!changed) throw new NotFoundException('User not found');
+    return changed;
+  }
+
   @Endpoint({ tag: 'Admin', summary: 'Reactivate a deactivated user' })
   @Post('users/:id/reactivate')
   @HttpCode(204)
@@ -192,7 +222,9 @@ export class AdminController {
       email: body.email,
       displayName: body.displayName,
       passwordHash: await this.passwords.hash(body.password),
-      groupNames: [...new Set(['users', ...body.groups])],
+      // External collaborators stay out of "users" and get projects one by one (TL-66).
+      groupNames: [...new Set([...(body.external ? [] : ['users']), ...body.groups])],
+      external: body.external,
     });
     await this.audit.record({
       action: 'user.created',
@@ -201,7 +233,7 @@ export class AdminController {
       targetType: 'user',
       targetId: id,
       ip: clientOf(request).ip,
-      details: { email: body.email },
+      details: { email: body.email, ...(body.external ? { external: true } : {}) },
     });
     const created = (await this.users.list()).find((user) => user.id === id);
     if (!created) throw new NotFoundException('User not found after creation');

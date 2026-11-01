@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { groupsQuery, userSearchQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
+import { ExternalBadge } from '../../ui/ExternalBadge';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
@@ -15,6 +16,8 @@ export interface RoleMember<Role extends string> {
   role: Role;
   user: UserRef | null;
   group: { id: string; name: string } | null;
+  /** An external collaborator (TL-66); only projects say so. */
+  external?: boolean;
 }
 
 export type RoleGrant<Role extends string> =
@@ -45,6 +48,7 @@ function MemberLine({
         {member.group && (
           <span className="ml-1.5 text-xs text-[var(--ink-muted)]">{t('wiki.settings.group')}</span>
         )}
+        {member.external && <ExternalBadge />}
       </span>
       <button
         type="button"

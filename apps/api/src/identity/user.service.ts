@@ -12,7 +12,7 @@ import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import { groupMembers, groups, users } from '../db/schema/index.js';
-import { GroupService } from './group.service.js';
+import { GroupService, USERS_GROUP } from './group.service.js';
 import { TwoFactorService } from './two-factor.service.js';
 
 export interface NewUser {
@@ -20,6 +20,8 @@ export interface NewUser {
   displayName: string;
   passwordHash: string | null;
   groupNames: string[];
+  /** External collaborator (TL-66). */
+  external?: boolean;
 }
 
 @Injectable()
@@ -62,6 +64,7 @@ export class UserService {
         email: user.email,
         displayName: user.displayName,
         passwordHash: user.passwordHash,
+        external: user.external ?? false,
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -120,6 +123,7 @@ export class UserService {
         email: users.email,
         displayName: users.displayName,
         status: users.status,
+        external: users.external,
         groups: sql<
           string[]
         >`coalesce(array_agg(${groups.name} order by ${groups.name}) filter (where ${groups.name} is not null), '{}')`,
@@ -132,6 +136,34 @@ export class UserService {
       .groupBy(users.id)
       .orderBy(users.displayName);
     return rows;
+  }
+
+  /**
+   * External collaborators leave the group "users", which would show them every project and the
+   * directory; regular ones join it again (TL-66, E-131).
+   */
+  async setExternal(id: string, external: boolean): Promise<void> {
+    await this.database.atomic(async () => {
+      const db = this.database.db;
+      const [changed] = await db
+        .update(users)
+        .set({ external, updatedAt: new Date() })
+        .where(and(eq(users.id, id), ne(users.id, AUTOMATION_ACTOR_ID)))
+        .returning({ id: users.id });
+      if (!changed) throw new NotFoundException('User not found');
+      const [everyone] = await this.groupService.idsByName([USERS_GROUP], db);
+      if (!everyone) return;
+      if (external) {
+        await db
+          .delete(groupMembers)
+          .where(and(eq(groupMembers.groupId, everyone), eq(groupMembers.userId, id)));
+      } else {
+        await db
+          .insert(groupMembers)
+          .values({ groupId: everyone, userId: id })
+          .onConflictDoNothing();
+      }
+    });
   }
 
   /** Active users matching a name or email fragment, for pickers. */
