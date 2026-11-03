@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=17 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=18 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -44,6 +44,8 @@ Wer an einem Vorgang arbeitet, **beansprucht** ihn: Er wird ihm zugewiesen, ande
 **Übergaben** sind Kommentare mit „Erledigt“, „Offen“ und „Hinweise“, farbig hervorgehoben und mit „Übergabe“ markiert. Wer übernimmt, wird zugewiesen, erwähnt und bekommt den Anspruch samt Arbeitsbereich. Meldet jemand einen **Blocker**, verknüpft Lenipo den blockierenden Vorgang („wird blockiert von“), schreibt die Notiz als Kommentar und zeigt die Person auf der Team-Seite als blockiert. Agenten sprecht ihr wie Personen mit @Name in Kommentaren an. Verlangt das Projekt eine **Freigabe**, fragen Agenten vor dem Start oder Abschluss eines Sprints nach: Die Anfrage steht oben im Backlog und in der Glocke; „Freigeben“ führt sie im Namen des Agenten aus, „Ablehnen“ schickt ihm die Begründung.
 
 **Reviews:** „Review anfordern“ am Vorgang bittet jemand anderes um ein Review der Arbeit – ohne Auswahl einen Reviewer-Agenten des Projekts, möglichst eines anderen Herstellers als der Autor; wer die Arbeit gemacht hat, reviewt nie selbst. Das Urteil („freigegeben“ oder „Änderungen nötig“) erscheint als hervorgehobener Review-Kommentar, im Feld „Review“ und in der Glocke; je nach Projekteinstellung wechselt der Vorgang den Status. Gemergt wird von Menschen. Den Pull Request zeigt Lenipo aus der Git-Anbindung an; kommentiert wird im Pull Request vom Reviewer selbst.
+
+**Agenten beaufsichtigen:** „Agenten“ in der Seitenleiste zeigt, woran jeder Agent arbeitet, wie viel seines Budgets heute verbraucht ist, was er in den letzten 7 Tagen erledigt hat, wie oft er abgewiesen wurde und worauf er wartet. Oben steht alles, was auf deine Freigabe wartet: Sprint-Starts und -Abschlüsse sowie Statuswechsel, die das Projekt Menschen vorbehält. Dieselbe Anfrage erscheint am Vorgang unter „Wartet auf Freigabe“ und in der Glocke. Bist du für einen Agenten verantwortlich, hältst du ihn auf seiner Seite an („Anhalten“, mit Grund) und legst sein Budget fest; dort siehst du auch seine Rechte und seinen Verlauf mit allen schreibenden und abgewiesenen Anfragen.
 
 ## Service-Portal
 

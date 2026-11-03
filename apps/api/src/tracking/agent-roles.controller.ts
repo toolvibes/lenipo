@@ -1,9 +1,11 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Param, ParseUUIDPipe, Put } from '@nestjs/common';
 import {
+  PauseRequest,
   ProjectAgentSettings,
   SetAgentRolesRequest,
   UpdateProjectAgentSettings,
 } from '@toolvibes/shared';
+import { AuditService } from '../audit/audit.service.js';
 import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
@@ -12,7 +14,10 @@ import { AgentRoleService } from './agent-roles.service.js';
 /** Agent roles and the sprint approval setting of a project (TL-96, E-148). */
 @Controller('projects/:key/agent-settings')
 export class AgentRolesController {
-  constructor(@Inject(AgentRoleService) private readonly roles: AgentRoleService) {}
+  constructor(
+    @Inject(AgentRoleService) private readonly roles: AgentRoleService,
+    @Inject(AuditService) private readonly audit: AuditService,
+  ) {}
 
   @Endpoint({
     tag: 'Agents',
@@ -31,8 +36,9 @@ export class AgentRolesController {
 
   @Endpoint({
     tag: 'Agents',
-    summary: 'Change whether agents need approval for sprints',
-    description: 'Requires the project permission `administer`.',
+    summary: 'Change the agent settings of a project',
+    description:
+      'Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.',
     response: ProjectAgentSettings,
   })
   @Put()
@@ -59,5 +65,51 @@ export class AgentRolesController {
     @ValidBody(SetAgentRolesRequest) body: SetAgentRolesRequest,
   ): Promise<ProjectAgentSettings> {
     return this.roles.setRoles(principal, key, userId, body);
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Pause all agents in the project (Not-Aus)',
+    description:
+      'They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.',
+    response: ProjectAgentSettings,
+  })
+  @Put('pause')
+  async pauseAgents(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(PauseRequest) body: PauseRequest,
+  ): Promise<ProjectAgentSettings> {
+    const settings = await this.roles.pause(principal, key, body.reason);
+    await this.audit.record({
+      action: 'project.agents-paused',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'project',
+      targetId: key,
+      details: { reason: body.reason },
+    });
+    return settings;
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Let the agents of the project work again',
+    response: ProjectAgentSettings,
+  })
+  @Delete('pause')
+  async resumeAgents(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<ProjectAgentSettings> {
+    const settings = await this.roles.pause(principal, key, null);
+    await this.audit.record({
+      action: 'project.agents-resumed',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'project',
+      targetId: key,
+    });
+    return settings;
   }
 }

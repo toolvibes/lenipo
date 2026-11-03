@@ -11,13 +11,16 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Req,
 } from '@nestjs/common';
 import {
   Agent,
+  AgentBudget,
   CreateAgentRequest,
   CreatedToken,
   CreateTokenRequest,
+  PauseRequest,
   TokenInfo,
   UpdateAgentRequest,
 } from '@toolvibes/shared';
@@ -173,6 +176,80 @@ export class AgentsController {
       ip: clientOf(request).ip,
       details: { agentId: id },
     });
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Pause an AI agent (Not-Aus)',
+    description:
+      'For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.',
+    response: Agent,
+  })
+  @Put(':id/pause')
+  async pause(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(PauseRequest) body: PauseRequest,
+    @Req() request: Request,
+  ): Promise<Agent> {
+    await this.requireManager(principal, id);
+    await this.agents.pause(id, principal.userId, body.reason);
+    await this.audit.record({
+      action: 'agent.paused',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+      ip: clientOf(request).ip,
+      details: { reason: body.reason },
+    });
+    return this.agents.get(id);
+  }
+
+  @Endpoint({ tag: 'Agents', summary: 'Let a paused AI agent work again', response: Agent })
+  @Delete(':id/pause')
+  async resume(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: Request,
+  ): Promise<Agent> {
+    await this.requireManager(principal, id);
+    await this.agents.resume(id);
+    await this.audit.record({
+      action: 'agent.resumed',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+      ip: clientOf(request).ip,
+    });
+    return this.agents.get(id);
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Set the budget of an AI agent',
+    description:
+      'Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.',
+    response: Agent,
+  })
+  @Put(':id/budget')
+  async setBudget(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(AgentBudget) body: AgentBudget,
+  ): Promise<Agent> {
+    await this.requireManager(principal, id);
+    await this.agents.update(id, { budget: body });
+    await this.audit.record({
+      action: 'agent.budget-set',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'user',
+      targetId: id,
+      details: body,
+    });
+    return this.agents.get(id);
   }
 
   /** The responsible person or an administrator; minting and revoking only in the browser. */

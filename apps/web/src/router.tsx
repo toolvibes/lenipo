@@ -31,6 +31,8 @@ import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/Secu
 import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
 import { WebhookPage, WebhooksPage } from './features/admin/WebhooksPage';
+import { AgentDetailPage } from './features/agents/AgentDetailPage';
+import { AgentsOverviewPage } from './features/agents/AgentsOverviewPage';
 import { AccessibilityPage } from './features/auth/AccessibilityPage';
 import { InvitePage, RegisterPage } from './features/auth/InvitePage';
 import { type LoginError, LoginPage } from './features/auth/LoginPage';
@@ -619,6 +621,21 @@ const dashboardRoute = createRoute({
   },
 });
 
+const agentsOverviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/agents',
+  component: AgentsOverviewPage,
+});
+
+const agentDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/agents/$id',
+  component: function AgentDetail() {
+    const { id } = agentDetailRoute.useParams();
+    return <AgentDetailPage key={id} agentId={id} />;
+  },
+});
+
 const plansRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/plans',
@@ -1016,6 +1033,8 @@ const routeTree = rootRoute.addChildren([
     helpRoute,
     dashboardsRoute,
     dashboardRoute,
+    agentsOverviewRoute,
+    agentDetailRoute,
     plansRoute,
     planRoute,
     queueRoute,

@@ -143,6 +143,72 @@ function ReviewsField({ issueKey, canAsk }: { issueKey: string; canAsk: boolean 
   );
 }
 
+/**
+ * A move an agent asked for into a status the project keeps for people (TL-98, E-150); whoever
+ * may move issues decides here.
+ */
+function ApprovalField({ issueKey, canDecide }: { issueKey: string; canDecide: boolean }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const queryKey = ['issue', issueKey, 'approvals'];
+  const approvals = useQuery({
+    queryKey,
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/approvals', { params: { path: { key: issueKey } } })),
+  });
+  const decide = useMutation({
+    mutationFn: (decision: { id: string; approve: boolean; reason: string }) =>
+      unwrap(
+        client.POST('/api/v1/issue-approvals/{id}/decision', {
+          params: { path: { id: decision.id } },
+          body: { approve: decision.approve, reason: decision.reason },
+        }),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ['issue', issueKey] });
+      await queryClient.invalidateQueries({ queryKey: ['approvals'] });
+    },
+  });
+  const waiting = (approvals.data ?? []).find((entry) => entry.status === 'pending');
+  if (!waiting) return null;
+  return (
+    <Field label={t('guard.approvals')}>
+      <span className="flex flex-col gap-1.5 rounded-[var(--radius-md)] bg-[var(--warning-soft)] px-2 py-1.5 text-[13px]">
+        {t('guard.waitingMove', {
+          agent: waiting.requestedBy.displayName,
+          status: waiting.toStatus.name,
+        })}
+        {decide.error && (
+          <span className="text-xs text-[var(--danger)]">{decide.error.message}</span>
+        )}
+        {canDecide && (
+          <span className="flex gap-2">
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ id: waiting.id, approve: true, reason: '' })}
+            >
+              {t('approvals.approve')}
+            </Button>
+            <Button
+              size="sm"
+              disabled={decide.isPending}
+              onClick={() => {
+                const reason = window.prompt(t('approvals.reasonPrompt'))?.trim();
+                if (reason) decide.mutate({ id: waiting.id, approve: false, reason });
+              }}
+            >
+              {t('approvals.reject')}
+            </Button>
+          </span>
+        )}
+      </span>
+    </Field>
+  );
+}
+
 /** One comment; own comments can be edited and deleted, administrators delete any (E-42). */
 function CommentItem({
   comment,
@@ -480,6 +546,11 @@ export function IssuePage({
         }),
       ),
     onSuccess: (updated) => {
+      // An agent's move into a status kept for people waits for approval (TL-98).
+      if ('toStatus' in updated) {
+        void queryClient.invalidateQueries({ queryKey: ['issue', issueKey, 'approvals'] });
+        return;
+      }
       refresh(updated);
       void queryClient.invalidateQueries({ queryKey: commentsQuery(issueKey).queryKey });
     },
@@ -836,6 +907,7 @@ export function IssuePage({
             </Field>
             <ClaimField issueKey={data.key} />
             <ReviewsField issueKey={data.key} canAsk={permissions.has('comment')} />
+            <ApprovalField issueKey={data.key} canDecide={permissions.has('transition-issues')} />
             <Field label={t('issues.reporter')}>
               <span className="flex h-[var(--control-sm)] items-center gap-2 px-1.5">
                 {data.reporter && <Avatar user={data.reporter} size={20} />}

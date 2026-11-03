@@ -1283,6 +1283,14 @@ export class IssueService {
     );
     if (!transition)
       throw new BadRequestException('This transition is not available from the current status');
+    // Statuses the project keeps for people need an approval request (TL-98, E-150).
+    if (await this.projectAccess.needsApproval(principal, issue.projectId, transition.to)) {
+      throw new ForbiddenException({
+        type: 'urn:lenipo:problem:approval-required',
+        message:
+          'A person approves moves of agents into this status; ask through the transitions endpoint',
+      });
+    }
     const rules = transition.rules;
     if (rules) {
       const viewer = await this.projectAccess.ruleViewer(principal.userId, issue.projectId);

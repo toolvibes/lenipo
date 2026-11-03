@@ -774,6 +774,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/agents/{id}/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Pause an AI agent (Not-Aus)
+     * @description For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+     */
+    put: operations['Agents.pause'];
+    post?: never;
+    /** Let a paused AI agent work again */
+    delete: operations['Agents.resume'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/budget': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the budget of an AI agent
+     * @description Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+     */
+    put: operations['Agents.setBudget'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/agent-settings': {
     parameters: {
       query?: never;
@@ -787,8 +828,8 @@ export interface paths {
      */
     get: operations['Agents.getAgentSettings'];
     /**
-     * Change whether agents need approval for sprints
-     * @description Requires the project permission `administer`.
+     * Change the agent settings of a project
+     * @description Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
      */
     put: operations['Agents.updateAgentSettings'];
     post?: never;
@@ -813,6 +854,27 @@ export interface paths {
     put: operations['Agents.setAgentRoles'];
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/agent-settings/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Pause all agents in the project (Not-Aus)
+     * @description They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+     */
+    put: operations['Agents.pauseAgents'];
+    post?: never;
+    /** Let the agents of the project work again */
+    delete: operations['Agents.resumeAgents'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1014,6 +1076,169 @@ export interface paths {
     post?: never;
     /** Withdraw a waiting review request */
     delete: operations['Agents.cancelReview'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/approvals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the transition approval requests of an issue */
+    get: operations['Agents.listIssueApprovals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issue-approvals/{id}/decision': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve or reject a transition an agent asked for
+     * @description For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+     */
+    post: operations['Agents.decideIssueApproval'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/approvals/pending': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List what waits for the caller’s approval
+     * @description Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.
+     */
+    get: operations['Agents.pendingApprovals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The agents dashboard
+     * @description Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.
+     *
+     *     Requires the global permission `browse-users`.
+     */
+    get: operations['Agents.overview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/usage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the budget use of an AI agent
+     * @description For the agent, its responsible person and administrators.
+     */
+    get: operations['Agents.agentUsage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/activity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the history of an AI agent
+     * @description Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.
+     */
+    get: operations['Agents.agentActivity'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/rights': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get what an AI agent may do
+     * @description Its groups, the projects it sees with permissions and roles, and its live tokens.
+     */
+    get: operations['Agents.agentRights'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/usage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the caller’s own budget use
+     * @description For agents: what counts against their budget today and this month.
+     */
+    get: operations['Agents.myUsage'];
+    put?: never;
+    /**
+     * Report the cost of a run
+     * @description Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+     */
+    post: operations['Agents.reportUsage'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -2448,7 +2673,10 @@ export interface paths {
     /** List the workflow transitions available from the current status */
     get: operations['Issues.transitions'];
     put?: never;
-    /** Move an issue to another status */
+    /**
+     * Move an issue to another status
+     * @description Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
+     */
     post: operations['Issues.transition'];
     delete?: never;
     options?: never;
@@ -6892,8 +7120,42 @@ export interface components {
       webhookUrl: string | null;
       /** @enum {string} */
       status: 'active' | 'deactivated';
+      paused: components['schemas']['AgentPause'] | null;
+      budget: components['schemas']['AgentBudget'];
       /** Format: date-time */
       createdAt: string;
+    };
+    AgentPause: {
+      /** Format: date-time */
+      at: string;
+      by: components['schemas']['UserRef'] | null;
+      reason: string;
+    };
+    AgentBudget: {
+      /**
+       * @default {
+       *       "issues": null,
+       *       "minutes": null,
+       *       "cost": null
+       *     }
+       */
+      day: components['schemas']['BudgetLimits'];
+      /**
+       * @default {
+       *       "issues": null,
+       *       "minutes": null,
+       *       "cost": null
+       *     }
+       */
+      month: components['schemas']['BudgetLimits'];
+    };
+    BudgetLimits: {
+      /** @default null */
+      issues: number | null;
+      /** @default null */
+      minutes: number | null;
+      /** @default null */
+      cost: number | null;
     };
     CreateAgentRequest: {
       displayName: string;
@@ -6913,6 +7175,33 @@ export interface components {
       model?: string;
       taskFilter?: string;
       ownerId?: string | null;
+      budget?: components['schemas']['AgentBudgetInput'];
+    };
+    AgentBudgetInput: {
+      /**
+       * @default {
+       *       "issues": null,
+       *       "minutes": null,
+       *       "cost": null
+       *     }
+       */
+      day?: components['schemas']['BudgetLimitsInput'];
+      /**
+       * @default {
+       *       "issues": null,
+       *       "minutes": null,
+       *       "cost": null
+       *     }
+       */
+      month?: components['schemas']['BudgetLimitsInput'];
+    };
+    BudgetLimitsInput: {
+      /** @default null */
+      issues?: number | null;
+      /** @default null */
+      minutes?: number | null;
+      /** @default null */
+      cost?: number | null;
     };
     TokenInfo: {
       /** Format: uuid */
@@ -6946,8 +7235,14 @@ export interface components {
       lastUsedAt: string | null;
       secret: string;
     };
+    PauseRequest: {
+      /** @default  */
+      reason?: string;
+    };
     ProjectAgentSettings: {
       sprintApproval: boolean;
+      approvalStatuses: string[];
+      paused: components['schemas']['AgentPause'] | null;
       reviewStatuses: {
         approved: string | null;
         changesRequested: string | null;
@@ -6963,6 +7258,7 @@ export interface components {
     AgentRole: 'planner' | 'implementer' | 'reviewer' | 'tester' | 'coordinator';
     UpdateProjectAgentSettings: {
       sprintApproval?: boolean;
+      approvalStatuses?: string[];
       reviewStatuses?: {
         approved: string | null;
         changesRequested: string | null;
@@ -7078,14 +7374,77 @@ export interface components {
       verdict: 'approved' | 'changes_requested';
       body: string;
     };
-    UpdatePresenceRequest: {
-      state: components['schemas']['PresenceState'];
-      issueKey?: string | null;
-      branch?: string | null;
-      note?: string;
+    IssueApproval: {
+      /** Format: uuid */
+      id: string;
+      issue: {
+        key: string;
+        summary: string;
+      };
+      projectKey: string;
+      toStatus: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      };
+      requestedBy: components['schemas']['UserRef'];
+      /** @enum {string} */
+      status: 'pending' | 'approved' | 'rejected';
+      decidedBy: components['schemas']['UserRef'] | null;
+      reason: string;
+      /** Format: date-time */
+      createdAt: string;
+      decidedAt: string | null;
     };
-    /** @enum {string} */
-    PresenceState: 'active' | 'waiting' | 'blocked' | 'offline';
+    DecideApprovalRequest: {
+      approve: boolean;
+      /** @default  */
+      reason?: string;
+    };
+    PendingApprovals: {
+      sprints: components['schemas']['SprintApproval'][];
+      issues: components['schemas']['IssueApproval'][];
+    };
+    SprintApproval: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      action: 'start' | 'complete';
+      sprint: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+        /** Format: uuid */
+        boardId: string;
+      };
+      projectKey: string;
+      requestedBy: components['schemas']['UserRef'];
+      /** @enum {string} */
+      status: 'pending' | 'approved' | 'rejected';
+      decidedBy: components['schemas']['UserRef'] | null;
+      reason: string;
+      /** Format: date-time */
+      createdAt: string;
+      decidedAt: string | null;
+    };
+    AgentOverview: {
+      agent: components['schemas']['Agent'];
+      presence: components['schemas']['Presence'];
+      usage: components['schemas']['AgentUsage'];
+      throughput: number;
+      failures: number;
+      question: {
+        /** @enum {string} */
+        state: 'waiting' | 'blocked';
+        issue: {
+          key: string;
+          summary: string;
+        } | null;
+        note: string;
+        /** Format: date-time */
+        since: string;
+      } | null;
+    };
     Presence: {
       state: components['schemas']['PresenceState'];
       issue: {
@@ -7095,6 +7454,63 @@ export interface components {
       branch: string | null;
       note: string;
       heartbeatAt: string | null;
+    };
+    /** @enum {string} */
+    PresenceState: 'active' | 'waiting' | 'blocked' | 'offline';
+    AgentUsage: {
+      day: components['schemas']['BudgetUsage'];
+      month: components['schemas']['BudgetUsage'];
+      budget: components['schemas']['AgentBudget'];
+      paused: components['schemas']['AgentPause'] | null;
+      exceeded: string[];
+    };
+    BudgetUsage: {
+      issues: number;
+      minutes: number;
+      cost: number;
+    };
+    AgentActivityPage: {
+      entries: components['schemas']['AgentActivity'][];
+      next: string | null;
+    };
+    AgentActivity: {
+      /** Format: date-time */
+      at: string;
+      /** @enum {string} */
+      kind: 'request' | 'change' | 'comment' | 'review' | 'approval';
+      issue: {
+        key: string;
+        summary: string;
+      } | null;
+      title: string;
+      status: number | null;
+      ok: boolean;
+      detail: string;
+    };
+    AgentRights: {
+      groups: string[];
+      projects: {
+        key: string;
+        name: string;
+        permissions: components['schemas']['ProjectPermission'][];
+        roles: components['schemas']['AgentRole'][];
+        paused: boolean;
+      }[];
+      tokens: {
+        name: string;
+        scopes: string[];
+        expiresAt: string | null;
+        lastUsedAt: string | null;
+      }[];
+    };
+    ReportUsageRequest: {
+      cost: number;
+    };
+    UpdatePresenceRequest: {
+      state: components['schemas']['PresenceState'];
+      issueKey?: string | null;
+      branch?: string | null;
+      note?: string;
     };
     TeamMember: {
       state: components['schemas']['PresenceState'];
@@ -8951,12 +9367,6 @@ export interface components {
       comment: 'none' | 'optional' | 'required';
       screen: boolean;
     };
-    TransitionRequest: {
-      transitionId: string;
-      resolution?: string;
-      fields?: components['schemas']['UpdateIssueRequest'];
-      comment?: components['schemas']['RichTextInput'];
-    };
     RankIssueRequest: {
       afterKey?: string | null;
       beforeKey?: string | null;
@@ -9143,6 +9553,12 @@ export interface components {
       /** Format: uuid */
       statusId?: string;
     };
+    TransitionRequest: {
+      transitionId: string;
+      resolution?: string;
+      fields?: components['schemas']['UpdateIssueRequest'];
+      comment?: components['schemas']['RichTextInput'];
+    };
     RetentionSettings: {
       /** @default 30 */
       trashDays: number;
@@ -9290,6 +9706,7 @@ export interface components {
         name: string;
         boardId: string;
       } | null;
+      agent: components['schemas']['UserRef'] | null;
       actor: components['schemas']['UserRef'] | null;
       category: components['schemas']['NotificationCategory'];
       details: components['schemas']['NotificationDetails'];
@@ -9299,7 +9716,7 @@ export interface components {
     };
     NotificationDetails: {
       /** @enum {string} */
-      kind: 'created' | 'updated' | 'commented' | 'published' | 'approval' | 'review';
+      kind: 'created' | 'updated' | 'commented' | 'published' | 'approval' | 'review' | 'budget';
       items: {
         field: string;
         from: string | null;
@@ -10983,36 +11400,9 @@ export interface components {
       endDate: string;
       goal?: string;
     };
-    SprintApproval: {
-      /** Format: uuid */
-      id: string;
-      /** @enum {string} */
-      action: 'start' | 'complete';
-      sprint: {
-        /** Format: uuid */
-        id: string;
-        name: string;
-        /** Format: uuid */
-        boardId: string;
-      };
-      projectKey: string;
-      requestedBy: components['schemas']['UserRef'];
-      /** @enum {string} */
-      status: 'pending' | 'approved' | 'rejected';
-      decidedBy: components['schemas']['UserRef'] | null;
-      reason: string;
-      /** Format: date-time */
-      createdAt: string;
-      decidedAt: string | null;
-    };
     CompleteSprintRequest: {
       /** @default backlog */
       moveTo?: 'backlog' | 'new' | string;
-    };
-    DecideApprovalRequest: {
-      approve: boolean;
-      /** @default  */
-      reason?: string;
     };
     MoveToSprintRequest: {
       issueKeys: string[];
@@ -13167,6 +13557,107 @@ export interface operations {
       };
     };
   };
+  'Agents.pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PauseRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.resume': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.setBudget': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AgentBudgetInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Agents.getAgentSettings': {
     parameters: {
       query?: never;
@@ -13248,6 +13739,72 @@ export interface operations {
         'application/json': components['schemas']['SetAgentRolesRequest'];
       };
     };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectAgentSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.pauseAgents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PauseRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectAgentSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.resumeAgents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Success */
       200: {
@@ -13713,6 +14270,289 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.listIssueApprovals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueApproval'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.decideIssueApproval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecideApprovalRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueApproval'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.pendingApprovals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PendingApprovals'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentOverview'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.agentUsage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentUsage'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.agentActivity': {
+    parameters: {
+      query?: {
+        before?: string;
+        limit?: number;
+        failures?: string;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentActivityPage'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.agentRights': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentRights'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.myUsage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentUsage'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.reportUsage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReportUsageRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentUsage'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -16930,6 +17770,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Issue'];
+        };
+      };
+      /** @description Waiting for a person’s approval */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IssueApproval'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

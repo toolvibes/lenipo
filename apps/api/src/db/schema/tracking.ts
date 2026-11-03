@@ -138,6 +138,12 @@ export const projects = pgTable(
     /** Where an issue moves after a review verdict; null: it stays (TL-97, E-149). */
     reviewApprovedStatusId: uuid(),
     reviewChangesStatusId: uuid(),
+    /** Not-Aus for all agents in the project (TL-98, E-150): while set, they only read. */
+    agentsPausedAt: timestamp({ withTimezone: true }),
+    agentsPausedById: uuid(),
+    agentsPauseReason: text().notNull().default(''),
+    /** Statuses agents do not set themselves; a person approves the transition (TL-98). */
+    agentApprovalStatusIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
   },
   (table) => [uniqueIndex('projects_key_unique').on(table.key)],
 );
@@ -810,4 +816,95 @@ export const reviewRequests = pgTable(
     index('review_requests_issue_idx').on(table.issueId),
     index('review_requests_reviewer_idx').on(table.reviewerId, table.status),
   ],
+);
+
+/**
+ * A transition an agent asked for into a status the project keeps for people (TL-98, E-150):
+ * approving runs it in the agent's name.
+ */
+export const issueApprovals = pgTable(
+  'issue_approvals',
+  {
+    id: uuid().primaryKey(),
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    toStatusId: uuid().notNull(),
+    /** The body of the transition call. */
+    request: jsonb().notNull(),
+    requestedById: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** pending, approved or rejected. */
+    status: text().notNull().default('pending'),
+    decidedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    reason: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('issue_approvals_pending')
+      .on(table.issueId)
+      .where(sql`${table.status} = 'pending'`),
+    index('issue_approvals_project_idx').on(table.projectId, table.status),
+  ],
+);
+
+/** What an agent used per day (TL-98, E-150): claims and claimed time counted, cost reported. */
+export const agentUsage = pgTable(
+  'agent_usage',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    day: date().notNull(),
+    issues: integer().notNull().default(0),
+    seconds: integer().notNull().default(0),
+    /** Millionths of the currency unit the runner reports in. */
+    costMicros: bigint({ mode: 'number' }).notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.day] })],
+);
+
+/** Budget warnings already sent, so each goes out once per period, metric and level. */
+export const agentBudgetAlerts = pgTable(
+  'agent_budget_alerts',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** `2026-11-03` for a day, `2026-11` for a month. */
+    period: text().notNull(),
+    metric: text().notNull(),
+    /** 80 or 100 (percent). */
+    level: integer().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.period, table.metric, table.level] })],
+);
+
+/** Writing and rejected requests of agents, kept 90 days (TL-98, E-150). */
+export const agentRequests = pgTable(
+  'agent_requests',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    at: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /** rest or mcp. */
+    via: text().notNull(),
+    /** The HTTP method, or the MCP tool. */
+    method: text().notNull(),
+    path: text().notNull(),
+    status: integer().notNull(),
+    durationMs: integer().notNull(),
+    issueKey: text(),
+    /** Why it was rejected. */
+    problem: text().notNull().default(''),
+  },
+  (table) => [index('agent_requests_user_idx').on(table.userId, table.at)],
 );

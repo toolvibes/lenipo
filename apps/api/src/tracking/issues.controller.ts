@@ -24,7 +24,6 @@ import {
   RankIssueRequest,
   TrackingMeta,
   Transition,
-  TransitionRequest,
   UpdateCommentRequest,
   UpdateIssueRequest,
   UpdateWorklogRequest,
@@ -141,20 +140,6 @@ export class IssuesController {
     @Param('key') key: string,
   ): Promise<Transition[]> {
     return this.issues.transitions(principal, key);
-  }
-
-  @Endpoint({ tag: 'Issues', summary: 'Move an issue to another status', response: Issue })
-  @Post('issues/:key/transitions')
-  @HttpCode(200)
-  transition(
-    @CurrentPrincipal() principal: Principal,
-    @Param('key') key: string,
-    @ValidBody(TransitionRequest) body: TransitionRequest,
-    @ValidQuery(FormatQuery) query: FormatQuery,
-  ): Promise<Issue> {
-    return this.issues
-      .transition(principal, key, body)
-      .then((issue) => issueIn(query.format, issue));
   }
 
   @Endpoint({

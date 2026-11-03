@@ -1,4 +1,4 @@
-<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=7 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=8 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 13 · Sprint-Agent
 
 Ein Coding-Agent wie Claude Code arbeitet im Code-Repository eines Teams die Aufgaben des aktiven Sprints eines Lenipo-Projekts selbstständig ab. Fragen und Entscheidungen hält er als Kommentar am Vorgang fest; erst wenn Aufgabe, Kommentare und Entscheidung klar sind, setzt er um – auf einem eigenen Branch mit Pull Request, nie direkt auf `main`.
@@ -35,7 +35,7 @@ Ein Vorgang mit dem Label `agent-question` wartet auf eine Antwort. Er kommt ers
 | Befehl | Wirkung |
 | --- | --- |
 | `lenipo agent init --project <KEY> [--board <id>] [--label agent] [--question-label agent-question]` | Einrichtung im aktuellen Ordner |
-| `lenipo agent next [--output json]` | Nennt den nächsten Vorgang (`task`), oder nichts |
+| `lenipo agent next [--output json]` | Nennt den nächsten Vorgang (`task`), oder nichts; ist der Agent angehalten oder das Budget verbraucht, steht in `stop` der Grund (`paused`, `budget`) |
 | `lenipo agent ask <KEY> <Frage>` | Rückfrage als Kommentar, setzt `agent-question` und meldet den Agenten als wartend |
 | `lenipo agent status active\|waiting\|blocked\|offline [--issue <KEY>] [--branch <Name>] [--note <Text>]` | Herzschlag: Stand und woran der Agent arbeitet; `offline` beendet die Arbeit am Vorgang |
 | `lenipo agent team [--project <KEY>] [--output json]` | Wer im Projekt arbeitet, mit Stand, Vorgang und Branch |
@@ -47,9 +47,10 @@ Ein Vorgang mit dem Label `agent-question` wartet auf eine Antwort. Er kommt ers
 | `lenipo agent review-request <KEY> [--reviewer <E-Mail>]` | Review anfordern; ohne `--reviewer` wählt Lenipo einen Reviewer-Agenten, bevorzugt eines anderen Herstellers |
 | `lenipo agent reviews [--output json]` | Reviews, die auf einen warten, mit Pull Request |
 | `lenipo agent review <KEY> --approve\|--changes --body <Text>` | Urteil abgeben: Review-Kommentar am Vorgang, Nachricht an den Anfragenden, Status nach Projektregel |
+| `lenipo agent usage [--cost <Betrag>] [--output json]` | Budget-Verbrauch heute und im Monat; mit `--cost` meldet der Runner die Kosten eines Laufs |
 | `lenipo agent watch` | Gibt jede neue Benachrichtigung sofort als JSON-Zeile aus (Ereignis-Strom), verbindet sich nach Abbrüchen neu |
 
-Über MCP heißen sie `set_status`, `get_team`, `claim_task`, `claim_next_task`, `release_task`, `handover`, `report_blocker`, `get_inbox`, `mark_read`, `request_review`, `get_review_queue` und `submit_review`; die Teamliste gibt es auch als Ressource `lenipo://project/<KEY>/team`.
+Über MCP heißen sie `set_status`, `get_team`, `claim_task`, `claim_next_task`, `release_task`, `handover`, `report_blocker`, `get_inbox`, `mark_read`, `request_review`, `get_review_queue`, `submit_review` und `report_usage`; `whoami` nennt Pause und Budget-Stand; die Teamliste gibt es auch als Ressource `lenipo://project/<KEY>/team`.
 
 Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue view|comment|move|edit`) oder den MCP-Werkzeugen.
 
@@ -75,9 +76,15 @@ Je Projekt bekommen Agenten Rollen (Projekteinstellungen → Agenten). Der Sprin
 - Tests vor jedem Push.
 - Höchstens drei Versuche je Vorgang, danach eine Rückfrage.
 - Ein Konto mit eingeschränktem Token; keine Geheimnisse in Kommentaren, Commits oder Pull Requests.
-- Kosten begrenzt der Coding-Agent selbst (z. B. Intervall der Schleife und Laufzeitgrenzen).
+
+## Aufsicht durch Menschen
+
+- **Not-Aus:** Die verantwortliche Person oder ein Admin hält einen Agenten auf seiner Seite (Seitenleiste → Agenten) an, die Projektadministration alle Agenten eines Projekts (Projekteinstellungen → Agenten). Der Agent darf dann nur noch lesen: Schreiben beantwortet Lenipo mit **423** und dem Grund, seine Ansprüche enden, sein Webhook ruht, `lenipo agent next` meldet `stop: paused`. Bei 423 hört der Agent sofort auf.
+- **Budget:** Grenzen je Tag und Monat (UTC) für neu beanspruchte Vorgänge, Minuten mit Anspruch (aus den Herzschlägen) und Kosten. Kosten meldet der Runner nach jedem Lauf (`lenipo agent usage --cost 0.42` oder MCP `report_usage`), in der Währung, in der das Budget eingetragen ist. Bei 80 % und 100 % bekommt die verantwortliche Person eine Nachricht. Ist eine Grenze erreicht, antwortet das Beanspruchen mit **409** (`budget-exceeded`); bereits beanspruchte Arbeit darf der Agent beenden.
+- **Freigabepunkte:** In den Projekteinstellungen lassen sich Status festlegen, die nur Menschen setzen (z. B. „Erledigt“). Verschiebt der Agent dorthin, antwortet Lenipo mit **202** und einer wartenden Anfrage (`lenipo issue move` meldet „wartet auf Freigabe“); eine Person mit dem Recht, Vorgänge zu verschieben, gibt frei (der Vorgang wechselt im Namen des Agenten) oder lehnt mit Begründung ab. Das Ergebnis kommt in die Inbox. Nicht erneut versuchen.
+- **Verlauf:** Jede schreibende und jede abgewiesene Anfrage des Agenten (REST und MCP) steht 90 Tage in seinem Verlauf, zusammen mit Änderungen, Kommentaren, Reviews und Freigaben. Die Seite „Agenten“ zeigt für alle Agenten Stand, Vorgang, Budget heute, Erledigtes und Fehlversuche der letzten 7 Tage und offene Rückfragen; die Seite eines Agenten zusätzlich Budget, Rechte (Gruppen, Projekte mit Berechtigungen und Rollen, Tokens) und den Verlauf.
 
 ## Später
 
 - **Ohne Abfragen in festen Abständen:** Benachrichtigungen kommen schon jetzt über `lenipo agent watch` (Ereignis-Strom `GET /api/v1/me/events`) oder einen Webhook beim Agenten (Administration → Agenten → Tokens, oder Profil → Meine Agenten). Ein Runner, der den Agenten damit anstößt, folgt.
-- Mehrere Agenten auf einem Board, Kostenrahmen in Lenipo, Auswertung der Agenten-Arbeit im Sprintbericht.
+- Mehrere Agenten auf einem Board, Auswertung der Agenten-Arbeit im Sprintbericht.

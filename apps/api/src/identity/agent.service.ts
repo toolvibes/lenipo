@@ -1,13 +1,25 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Agent, CreateAgentRequest, UpdateAgentRequest } from '@toolvibes/shared';
+import {
+  type Agent,
+  AgentBudget,
+  type CreateAgentRequest,
+  type UpdateAgentRequest,
+} from '@toolvibes/shared';
 import { and, eq, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { agentProfiles, notificationSettings, users, webhooks } from '../db/schema/index.js';
+import {
+  agentProfiles,
+  issueClaims,
+  notificationSettings,
+  users,
+  webhooks,
+} from '../db/schema/index.js';
 import { UserService } from './user.service.js';
 
 const owners = alias(users, 'owners');
+const pausers = alias(users, 'pausers');
 
 /**
  * Accounts of AI agents (TL-92, E-144): users of the kind "agent" with a profile. They have no
@@ -73,11 +85,33 @@ export class AgentService {
         ...(request.model !== undefined ? { model: request.model } : {}),
         ...(request.taskFilter !== undefined ? { taskFilter: request.taskFilter } : {}),
         ...(request.ownerId !== undefined ? { ownerId: request.ownerId } : {}),
+        ...(request.budget !== undefined ? { budget: request.budget } : {}),
       };
       if (Object.keys(profile).length > 0) {
         await db.update(agentProfiles).set(profile).where(eq(agentProfiles.userId, id));
       }
     });
+  }
+
+  /** Not-Aus (TL-98, E-150): the agent only reads and its claims end. */
+  async pause(id: string, byId: string, reason: string): Promise<void> {
+    await this.get(id);
+    await this.database.atomic(async () => {
+      const db = this.database.db;
+      await db
+        .update(agentProfiles)
+        .set({ pausedAt: new Date(), pausedById: byId, pauseReason: reason })
+        .where(eq(agentProfiles.userId, id));
+      await db.delete(issueClaims).where(eq(issueClaims.userId, id));
+    });
+  }
+
+  async resume(id: string): Promise<void> {
+    await this.get(id);
+    await this.database.db
+      .update(agentProfiles)
+      .set({ pausedAt: null, pausedById: null, pauseReason: '' })
+      .where(eq(agentProfiles.userId, id));
   }
 
   /** Whether the user answers for the agent. */
@@ -112,10 +146,16 @@ export class AgentService {
         ownerId: owners.id,
         ownerName: owners.displayName,
         webhookUrl: webhooks.url,
+        pausedAt: agentProfiles.pausedAt,
+        pausedById: agentProfiles.pausedById,
+        pauserName: pausers.displayName,
+        pauseReason: agentProfiles.pauseReason,
+        budget: agentProfiles.budget,
       })
       .from(agentProfiles)
       .innerJoin(users, eq(users.id, agentProfiles.userId))
       .leftJoin(owners, eq(owners.id, agentProfiles.ownerId))
+      .leftJoin(pausers, eq(pausers.id, agentProfiles.pausedById))
       .leftJoin(webhooks, eq(webhooks.userId, users.id))
       .where(where)
       .orderBy(users.displayName);
@@ -127,6 +167,17 @@ export class AgentService {
       model: row.model,
       taskFilter: row.taskFilter,
       webhookUrl: row.webhookUrl,
+      paused: row.pausedAt
+        ? {
+            at: row.pausedAt.toISOString(),
+            by:
+              row.pausedById && row.pauserName !== null
+                ? { id: row.pausedById, displayName: row.pauserName }
+                : null,
+            reason: row.pauseReason,
+          }
+        : null,
+      budget: AgentBudget.parse(row.budget),
       createdAt: row.createdAt.toISOString(),
       owner: row.ownerId ? { id: row.ownerId, displayName: row.ownerName ?? '' } : null,
     }));

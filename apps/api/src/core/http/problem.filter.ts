@@ -88,6 +88,8 @@ export class ProblemFilter implements ExceptionFilter {
     if (problem.status >= 500) {
       this.logger.error({ err: exception }, 'Unhandled error');
     }
+    // For the request log of agents (TL-98, E-150).
+    response.locals.problem = problem.detail ?? problem.title;
     response.status(problem.status).type('application/problem+json').json(problem);
   }
 }

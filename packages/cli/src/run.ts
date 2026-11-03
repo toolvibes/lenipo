@@ -406,6 +406,11 @@ async function issue(args: string[], io: Io) {
           },
         }),
       );
+      // Statuses a project keeps for people wait for their approval (TL-98).
+      if ('toStatus' in moved) {
+        io.out(`${needKey()} → ${moved.toStatus.name}: wartet auf Freigabe durch einen Menschen`);
+        return;
+      }
       io.out(`${moved.key} → ${moved.status.name}`);
       return;
     }

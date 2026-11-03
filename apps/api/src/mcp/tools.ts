@@ -31,8 +31,11 @@ import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import type { UserService } from '../identity/user.service.js';
 import type { NotificationService } from '../notifications/notification.service.js';
+import type { AgentActivityService } from '../presence/agent-activity.service.js';
 import type { ClaimService } from '../presence/claim.service.js';
+import type { GuardrailService } from '../presence/guardrail.service.js';
 import type { HandoverService } from '../presence/handover.service.js';
+import type { IssueApprovalService } from '../presence/issue-approval.service.js';
 import type { PresenceService } from '../presence/presence.service.js';
 import type { ReviewService } from '../presence/review.service.js';
 import { QueryException } from '../search/query-exception.js';
@@ -75,6 +78,9 @@ export interface ToolServices extends WikiToolServices {
   approvals: SprintApprovalService;
   estimation: EstimationService;
   reviews: ReviewService;
+  issueApprovals: IssueApprovalService;
+  guardrails: GuardrailService;
+  activity: AgentActivityService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
@@ -191,11 +197,31 @@ export function registerTools(
       },
       // biome-ignore lint/suspicious/noExplicitAny: arguments are validated by the SDK
       (async (args: any) => {
+        const started = performance.now();
+        let result: CallToolResult;
         try {
-          return await handler(args);
+          result = await handler(args);
         } catch (error) {
-          return failure(error);
+          result = failure(error);
         }
+        // Writing and failed tools of agents go to their history (TL-98, E-150).
+        if (!config.readOnly || result.isError) {
+          const message = result.isError
+            ? result.content.map((part) => (part.type === 'text' ? part.text : '')).join(' ')
+            : '';
+          const status = /^(\d{3}): /.exec(message)?.[1];
+          await services.activity.record({
+            userId: principal.userId,
+            via: 'mcp',
+            method: name,
+            path: 'mcp',
+            status: result.isError ? Number(status ?? 400) : 200,
+            durationMs: performance.now() - started,
+            issueKey: typeof args?.key === 'string' ? args.key : null,
+            problem: message.replace(/^\d{3}: /, ''),
+          });
+        }
+        return result;
       }) as never,
     );
     handlers.set(name, async (args) => {
@@ -243,9 +269,49 @@ export function registerTools(
     },
     async () => {
       const me = await services.users.me(principal.userId, 'mcp');
-      return text(
+      // Agents learn whether they are paused and how much budget is left (TL-98, E-150).
+      const pause = me.agent ? await services.guardrails.pauseOf(principal.userId) : null;
+      const usage = me.agent ? await services.guardrails.usage(principal.userId) : null;
+      const lines = [
         `${me.displayName}${me.agent ? ' (agent)' : ` <${me.email}>`}, global permissions: ${me.globalPermissions.join(', ') || 'none'}`,
-        { id: me.id, displayName: me.displayName, email: me.email, agent: me.agent },
+        ...(pause
+          ? [`Paused${pause.reason ? `: ${pause.reason}` : ''}. Only read; take no new work.`]
+          : []),
+        ...(usage
+          ? [
+              `Used today: ${usage.day.issues} issues, ${usage.day.minutes} minutes, cost ${usage.day.cost}; this month: ${usage.month.issues} issues, ${usage.month.minutes} minutes, cost ${usage.month.cost}.`,
+              ...(usage.exceeded.length > 0
+                ? [
+                    `Budget used up (${usage.exceeded.join(', ')}): finish claimed work, claim nothing new.`,
+                  ]
+                : []),
+            ]
+          : []),
+      ];
+      return text(lines.join('\n'), {
+        id: me.id,
+        displayName: me.displayName,
+        email: me.email,
+        agent: me.agent,
+        paused: pause !== null,
+        ...(usage ? { budgetExceeded: usage.exceeded } : {}),
+      });
+    },
+  );
+
+  tool(
+    'report_usage',
+    {
+      title: 'Report the cost of a run',
+      description:
+        'Agents report what a run cost, in the currency of their budget. Lenipo counts claimed issues and claimed time itself; the answer is the budget use.',
+      inputSchema: { cost: z.number().min(0).max(100_000) },
+    },
+    async ({ cost }) => {
+      const usage = await services.guardrails.report(principal, { cost });
+      return text(
+        `Today: ${usage.day.issues} issues, ${usage.day.minutes} minutes, cost ${usage.day.cost}; this month: cost ${usage.month.cost}.${usage.exceeded.length > 0 ? ` Budget used up: ${usage.exceeded.join(', ')}.` : ''}`,
+        usage,
       );
     },
   );
@@ -949,11 +1015,20 @@ export function registerTools(
           content: [{ type: 'text', text: `"${to}" is not allowed now. Allowed:\n${list}` }],
         };
       }
-      const moved = await issues.transition(principal, key, {
+      const request = {
         transitionId: match.id,
         ...(resolution ? { resolution } : {}),
         ...(comment ? { comment: { markdown: comment } } : {}),
-      });
+      };
+      // Statuses the project keeps for people wait for an approval (TL-98, E-150).
+      const approval = await services.issueApprovals.gate(principal, key, request);
+      if (approval) {
+        return text(
+          `A person approves moves of agents to ${approval.toStatus.name}. The request waits (id ${approval.id}); you are told in your inbox when it is decided.`,
+          { approval: approval.id, status: approval.status },
+        );
+      }
+      const moved = await issues.transition(principal, key, request);
       await audited('transition_issue', moved.id);
       return showIssue(moved.key);
     },

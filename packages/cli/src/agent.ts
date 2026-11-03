@@ -79,9 +79,11 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return reviews(rest, io);
     case 'review':
       return review(rest, io);
+    case 'usage':
+      return usage(rest, io);
     default:
       throw new CliError(
-        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch|review-request|reviews|review',
+        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch|review-request|reviews|review|usage',
         2,
       );
   }
@@ -135,7 +137,7 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
 
 ## Ablauf je Durchgang
 
-1. \`lenipo agent next --output json\` ausführen. Ist \`task\` leer, ist nichts zu tun: \`lenipo agent status offline\` und Durchgang beenden.
+1. \`lenipo agent next --output json\` ausführen. Ist \`task\` leer, ist nichts zu tun: \`lenipo agent status offline\` und Durchgang beenden. Steht dort \`stop\` (\`paused\`: ein Mensch hat dich angehalten; \`budget\`: das Budget ist verbraucht), ebenso beenden und nichts Neues anfangen.
 2. Den Vorgang vollständig lesen: \`lenipo issue view <KEY> --comments\` (Beschreibung, Kommentare, Entscheidungen).
 3. Ist \`answered\` wahr, das Label \`${config.questionLabel}\` entfernen (\`lenipo issue edit <KEY> --labels …\` ohne das Label) und die Antwort beachten.
 4. Ist etwas unklar oder fehlt eine Entscheidung: \`lenipo agent ask <KEY> "<Frage>"\` (meldet dich als wartend) und Durchgang beenden. Nicht raten.
@@ -149,6 +151,7 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
    - Review anfordern: \`lenipo agent review-request <KEY>\` (Lenipo wählt einen Reviewer, bevorzugt eines anderen Herstellers)
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
    - Übergabe schreiben: \`lenipo agent handover <KEY> --done "<Zusammenfassung, Entscheidungen, Link zum Pull Request>" --open "<was noch fehlt>"\`; das beendet auch deinen Anspruch. Soll jemand Bestimmtes weitermachen, mit \`--to <E-Mail>\`
+   - meldet dein Runner Kosten, den Lauf mit \`lenipo agent usage --cost <Betrag>\` melden
    - \`lenipo agent status offline\`
 6. Mit \`lenipo agent inbox\` nachsehen, ob dich jemand erwähnt hat, und antworten (\`lenipo issue comment\`); erledigte mit \`--read\` als gelesen markieren.
 
@@ -156,6 +159,7 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
 
 - Nur Vorgänge, die \`lenipo agent next\` nennt (Label \`${config.label}\` oder dem Agenten-Konto zugewiesen, im aktiven Sprint).
 - Höchstens drei Versuche je Vorgang; danach mit \`lenipo agent ask\` um Hilfe bitten.
+- Antwortet Lenipo mit 423 (angehalten), sofort aufhören. Antwortet ein Statuswechsel mit „wartet auf Freigabe“, entscheidet ein Mensch; nicht erneut versuchen.
 - Keine Geheimnisse in Kommentare, Commits oder Pull Requests.
 - Entscheidungen immer im Kommentar festhalten.
 `;
@@ -168,9 +172,31 @@ async function next(args: string[], io: Io) {
   });
   const config = await readAgentConfig(values.dir ?? process.cwd());
   const session = await openSession(io, values.profile);
-  const task = await nextTask(session, config);
+  // A paused agent stops; with the budget used up it only finishes its own work (TL-98).
+  const guard = await guardrails(session);
+  if (guard?.paused) {
+    const reason = guard.paused.reason;
+    if (values.output === 'json') {
+      io.out(JSON.stringify({ task: null, stop: 'paused', reason }, null, 2));
+    } else {
+      io.out(`Angehalten${reason ? `: ${reason}` : ''}. Nichts Neues anfangen.`);
+    }
+    return;
+  }
+  const exceeded = guard?.exceeded ?? [];
+  const task = await nextTask(session, config, { ownOnly: exceeded.length > 0 });
   if (values.output === 'json') {
-    io.out(JSON.stringify({ task }, null, 2));
+    io.out(
+      JSON.stringify(
+        task || exceeded.length === 0 ? { task } : { task: null, stop: 'budget', exceeded },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+  if (!task && exceeded.length > 0) {
+    io.out(`Budget verbraucht (${exceeded.join(', ')}). Nichts Neues anfangen.`);
     return;
   }
   io.out(
@@ -184,7 +210,11 @@ async function next(args: string[], io: Io) {
  * The first open issue of the active sprint, in rank order, that is the agent's: labelled or
  * assigned to it. One waiting for an answer counts once a human commented after the question.
  */
-export async function nextTask(session: Session, config: AgentConfig): Promise<AgentTask | null> {
+export async function nextTask(
+  session: Session,
+  config: AgentConfig,
+  options: { ownOnly?: boolean } = {},
+): Promise<AgentTask | null> {
   const { client } = session;
   const me = await unwrap(client.GET('/api/v1/me'));
   const backlog = await unwrap(
@@ -194,7 +224,9 @@ export async function nextTask(session: Session, config: AgentConfig): Promise<A
   if (!active) return null;
   for (const issue of active.issues) {
     if (issue.status.category === 'done') continue;
-    const mine = issue.labels.includes(config.label) || issue.assignee?.id === me.id;
+    const mine = options.ownOnly
+      ? issue.assignee?.id === me.id
+      : issue.labels.includes(config.label) || issue.assignee?.id === me.id;
     // Taken by someone else, e.g. another agent's claim (TL-94).
     if (!mine || (issue.assignee && issue.assignee.id !== me.id)) continue;
     let answered = false;
@@ -215,6 +247,46 @@ export async function nextTask(session: Session, config: AgentConfig): Promise<A
     };
   }
   return null;
+}
+
+/** Pause and budget of an agent; null for people, who have neither. */
+async function guardrails(session: Session) {
+  const { data, response } = await session.client.GET('/api/v1/me/usage');
+  if (response.status === 404) return null;
+  return data ?? null;
+}
+
+/** Budget use, and with `--cost` the report of a run's cost (TL-98). */
+async function usage(args: string[], io: Io) {
+  const { values } = parseArgs({
+    args,
+    options: { ...COMMON, cost: { type: 'string' }, output: { type: 'string', short: 'o' } },
+  });
+  const { client } = await openSession(io, values.profile);
+  let used: Awaited<ReturnType<typeof guardrails>>;
+  if (values.cost !== undefined) {
+    const cost = Number(values.cost.replace(',', '.'));
+    if (!Number.isFinite(cost) || cost < 0) throw new CliError('--cost erwartet einen Betrag', 2);
+    used = await unwrap(client.POST('/api/v1/me/usage', { body: { cost } }));
+  } else {
+    used = await unwrap(client.GET('/api/v1/me/usage'));
+  }
+  if (!used) return;
+  if (values.output === 'json') {
+    io.out(JSON.stringify({ usage: used }, null, 2));
+    return;
+  }
+  const limit = (value: number | null) => (value === null ? '' : ` von ${value}`);
+  const line = (label: string, period: 'day' | 'month') =>
+    `${label}: ${used[period].issues}${limit(used.budget[period].issues)} Vorgänge, ${used[period].minutes}${limit(used.budget[period].minutes)} Minuten, Kosten ${used[period].cost}${limit(used.budget[period].cost)}`;
+  io.out(
+    [
+      line('Heute', 'day'),
+      line('Monat', 'month'),
+      ...(used.exceeded.length > 0 ? [`Verbraucht: ${used.exceeded.join(', ')}`] : []),
+      ...(used.paused ? [`Angehalten${used.paused.reason ? `: ${used.paused.reason}` : ''}`] : []),
+    ].join('\n'),
+  );
 }
 
 async function ask(args: string[], io: Io) {

@@ -30,6 +30,33 @@ export function useDescribe() {
       ? `„${details.quote}“ · ${details.excerpt ?? ''}`
       : (details.excerpt ?? null);
     // Agents asking to start or complete a sprint, and the answer (TL-96).
+    // Budget warnings about an agent (TL-98).
+    if (details.kind === 'budget') {
+      const item = details.items[0];
+      return {
+        title: t(
+          item?.from === 'month' ? 'notifications.budget.month' : 'notifications.budget.day',
+          {
+            agent: notification.agent?.displayName ?? actor,
+            level: item?.to ?? '',
+            metric: t(
+              `guard.metrics.${item?.field === 'minutes' ? 'minutes' : item?.field === 'cost' ? 'cost' : 'issues'}`,
+            ),
+          },
+        ),
+        detail: null,
+      };
+    }
+    // Agents asking to move an issue into a status kept for people (TL-98).
+    if (details.kind === 'approval' && details.items[0]?.field === 'transition') {
+      return {
+        title: t(`notifications.transition.${outcomeOf(details.items[0]?.to)}`, {
+          actor,
+          status: details.excerpt ?? '',
+        }),
+        detail: outcomeOf(details.items[0]?.to) === 'requested' ? null : (details.excerpt ?? null),
+      };
+    }
     if (details.kind === 'approval') {
       const item = details.items[0];
       const sprint = notification.sprint?.name ?? '';

@@ -25,6 +25,7 @@ import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { GuardrailService } from './guardrail.service.js';
 
 const LEASE = sql`now() + make_interval(mins => ${CLAIM_MINUTES})`;
 const CONFLICT_TYPE = 'urn:lenipo:problem:claim-conflict';
@@ -60,6 +61,7 @@ export class ClaimService {
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(AgentRoleService) private readonly agentRoles: AgentRoleService,
+    @Inject(GuardrailService) private readonly guardrails: GuardrailService,
   ) {}
 
   async get(principal: Principal, key: string): Promise<ClaimResult> {
@@ -107,6 +109,9 @@ export class ClaimService {
       if (held && held.userId !== principal.userId) {
         throw new ConflictException(`${held.name} works on the issue`);
       }
+      // New work only while not paused and within budget (TL-98, E-150).
+      const renewing = held?.userId === principal.userId;
+      if (!renewing) await this.guardrails.requireActive(principal.userId, issue.projectId);
       const branch = request.branch || null;
       const paths = [...new Set(request.paths.map(normalizePath).filter(Boolean))];
       const conflicts = await this.conflicts(
@@ -145,6 +150,7 @@ export class ClaimService {
       if (!issue.assigneeId) {
         await this.issues.update(principal, key, { assigneeId: principal.userId });
       }
+      if (!renewing) await this.guardrails.countClaim(principal.userId);
     });
     const [claim] = await this.select(eq(issueClaims.issueId, visible.id));
     if (!claim) throw new Error('Claim missing after insert');
@@ -219,6 +225,7 @@ export class ClaimService {
       .orderBy(issueClaims.claimedAt)
       .limit(1);
     if (own) return { claim: await this.claim(principal, own.key, request) };
+    await this.guardrails.requireActive(principal.userId, project.id);
 
     const [profile] = await db
       .select({ filter: agentProfiles.taskFilter })

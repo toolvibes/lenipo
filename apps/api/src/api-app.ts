@@ -9,7 +9,35 @@ import { AppsService } from './apps/apps.service.js';
 import { httpMetrics } from './core/metrics.js';
 import { securityHeaders, serveWebApp } from './core/web-app.js';
 import { serveApiDocs } from './openapi/docs.js';
+import { AgentActivityService } from './presence/agent-activity.service.js';
 import { RealtimeService } from './realtime/realtime.service.js';
+
+const READING = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Writing and rejected requests of agents go to their history (TL-98, E-150). MCP calls are
+ * recorded per tool by the MCP server instead.
+ */
+function agentRequestLog(activity: AgentActivityService) {
+  return (request: Request, response: Response, next: NextFunction) => {
+    const started = performance.now();
+    response.on('finish', () => {
+      const principal = request.principal;
+      if (principal?.via !== 'token' || request.path.startsWith('/mcp')) return;
+      if (READING.has(request.method) && response.statusCode < 400) return;
+      void activity.record({
+        userId: principal.userId,
+        via: 'rest',
+        method: request.method,
+        path: request.path,
+        status: response.statusCode,
+        durationMs: performance.now() - started,
+        problem: typeof response.locals.problem === 'string' ? response.locals.problem : '',
+      });
+    });
+    next();
+  };
+}
 
 /** Builds the HTTP application exactly as production runs it (also used by integration tests). */
 export async function createApiApp(deps: AppDependencies): Promise<NestExpressApplication> {
@@ -22,6 +50,7 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.use(httpMetrics);
   app.use(securityHeaders);
   app.use(appCors(app.get(AppsService)));
+  app.use(agentRequestLog(app.get(AgentActivityService)));
   // SCIM clients send application/scim+json (RFC 7644).
   // This replaces Nest's JSON parser, so plain JSON stays in the list.
   app.useBodyParser('json', { type: ['application/json', 'application/scim+json'] });

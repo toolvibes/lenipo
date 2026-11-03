@@ -297,6 +297,8 @@ describe('tl, the command line (TL-37)', () => {
     expect(asked.code).toBe(1);
     expect(asked.err).toContain('No reviewer agent');
     expect((await tl(['agent', 'reviews'])).out).toBe('Keine Reviews offen.');
+    // Budgets belong to agents; a person has none (TL-98).
+    expect((await tl(['agent', 'usage'])).err).toContain('Agent not found');
     const human = new TestClient(test.baseUrl);
     await admin.request('POST', '/admin/users', {
       email: 'mensch@example.org',

@@ -50,6 +50,15 @@ export class SpaceAccessService {
   }
 
   async permissions(userId: string, spaceId: string): Promise<Set<SpacePermission>> {
+    const granted = await this.granted(userId, spaceId);
+    // A paused agent only reads (TL-98, E-150).
+    if (granted.has('view') && (await this.access.agentPause(userId))) {
+      return new Set<SpacePermission>(['view']);
+    }
+    return granted;
+  }
+
+  private async granted(userId: string, spaceId: string): Promise<Set<SpacePermission>> {
     if (await this.access.hasGlobal(userId, 'admin')) return new Set(SPACE_PERMISSIONS);
     const rows = await this.database.db
       .selectDistinct({ role: spaceRoleMembers.role })

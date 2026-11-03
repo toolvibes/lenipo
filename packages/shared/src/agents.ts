@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DisplayName, Id } from './identity.js';
-import { UserRef } from './tracking.js';
+import { ProjectPermission, UserRef } from './tracking.js';
 
 /**
  * Agents (TL-92, E-144): accounts of AI agents such as Claude Code or Codex. They are users with
@@ -20,6 +20,45 @@ export const AGENT_VENDORS = [
 const Vendor = z.string().trim().min(1).max(60);
 const Model = z.string().trim().max(80);
 
+// Guardrails (TL-98, E-150), needed by the agent itself.
+
+export const AgentPause = z
+  .object({
+    at: z.iso.datetime(),
+    by: UserRef.nullable(),
+    reason: z.string(),
+  })
+  .meta({ id: 'AgentPause' });
+export type AgentPause = z.infer<typeof AgentPause>;
+
+export const PauseRequest = z
+  .object({ reason: z.string().trim().max(500).default('') })
+  .meta({ id: 'PauseRequest' });
+export type PauseRequest = z.infer<typeof PauseRequest>;
+
+export const BUDGET_METRICS = ['issues', 'minutes', 'cost'] as const;
+export type BudgetMetric = (typeof BUDGET_METRICS)[number];
+
+/** Limits of one period; null: none. Cost is in the currency the runner reports in. */
+export const BudgetLimits = z
+  .object({
+    /** Issues newly claimed. */
+    issues: z.number().int().min(0).max(100_000).nullable().default(null),
+    /** Minutes holding claims, measured by heartbeats. */
+    minutes: z.number().int().min(0).max(1_000_000).nullable().default(null),
+    cost: z.number().min(0).max(10_000_000).nullable().default(null),
+  })
+  .meta({ id: 'BudgetLimits' });
+export type BudgetLimits = z.infer<typeof BudgetLimits>;
+
+export const AgentBudget = z
+  .object({
+    day: BudgetLimits.default({ issues: null, minutes: null, cost: null }),
+    month: BudgetLimits.default({ issues: null, minutes: null, cost: null }),
+  })
+  .meta({ id: 'AgentBudget' });
+export type AgentBudget = z.infer<typeof AgentBudget>;
+
 export const Agent = z
   .object({
     id: Id,
@@ -32,6 +71,9 @@ export const Agent = z
     /** Where the agent's notifications are sent; null: none (TL-95, E-147). */
     webhookUrl: z.string().nullable(),
     status: z.enum(['active', 'deactivated']),
+    /** Not-Aus (TL-98, E-150): set while the agent only reads. */
+    paused: AgentPause.nullable(),
+    budget: AgentBudget,
     createdAt: z.iso.datetime(),
   })
   .meta({ id: 'Agent' });
@@ -58,6 +100,7 @@ export const UpdateAgentRequest = z
     model: Model.optional(),
     taskFilter: z.string().trim().max(2000).optional(),
     ownerId: Id.nullable().optional(),
+    budget: AgentBudget.optional(),
   })
   .meta({ id: 'UpdateAgentRequest' });
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequest>;
@@ -214,6 +257,10 @@ export const ProjectAgentSettings = z
   .object({
     /** Agents start and complete sprints only after a person approved it. */
     sprintApproval: z.boolean(),
+    /** Statuses agents do not set themselves: a person approves the transition (TL-98). */
+    approvalStatuses: z.array(Id),
+    /** Not-Aus for all agents of the project (TL-98, E-150). */
+    paused: AgentPause.nullable(),
     /** Where an issue moves after a review verdict; null: it stays (TL-97, E-149). */
     reviewStatuses: z.object({ approved: Id.nullable(), changesRequested: Id.nullable() }),
     /** Agents with a role in the project. */
@@ -225,6 +272,7 @@ export type ProjectAgentSettings = z.infer<typeof ProjectAgentSettings>;
 export const UpdateProjectAgentSettings = z
   .object({
     sprintApproval: z.boolean().optional(),
+    approvalStatuses: z.array(Id).max(50).optional(),
     reviewStatuses: z
       .object({ approved: Id.nullable(), changesRequested: Id.nullable() })
       .optional(),
@@ -307,3 +355,140 @@ export const ReviewVerdictRequest = z
   })
   .meta({ id: 'ReviewVerdictRequest' });
 export type ReviewVerdictRequest = z.infer<typeof ReviewVerdictRequest>;
+
+// ---------------------------------------------------------------- guardrails (TL-98, E-150)
+
+export const BudgetUsage = z
+  .object({ issues: z.number().int(), minutes: z.number().int(), cost: z.number() })
+  .meta({ id: 'BudgetUsage' });
+export type BudgetUsage = z.infer<typeof BudgetUsage>;
+
+/** What an agent used today and this month (UTC) against its budget, and whether it is paused. */
+export const AgentUsage = z
+  .object({
+    day: BudgetUsage,
+    month: BudgetUsage,
+    budget: AgentBudget,
+    /** The agent's own Not-Aus: it only reads and takes no new work. */
+    paused: AgentPause.nullable(),
+    /** Limits reached, e.g. `day.issues`; new claims are refused while any is. */
+    exceeded: z.array(z.string()),
+  })
+  .meta({ id: 'AgentUsage' });
+export type AgentUsage = z.infer<typeof AgentUsage>;
+
+export const ReportUsageRequest = z
+  .object({
+    /** What the run cost, in the currency of the budget. */
+    cost: z.number().min(0).max(100_000),
+  })
+  .meta({ id: 'ReportUsageRequest' });
+export type ReportUsageRequest = z.infer<typeof ReportUsageRequest>;
+
+export const IssueApproval = z
+  .object({
+    id: Id,
+    issue: IssueBrief,
+    projectKey: z.string(),
+    toStatus: z.object({ id: Id, name: z.string() }),
+    requestedBy: UserRef,
+    status: z.enum(['pending', 'approved', 'rejected']),
+    decidedBy: UserRef.nullable(),
+    reason: z.string(),
+    createdAt: z.iso.datetime(),
+    decidedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'IssueApproval' });
+export type IssueApproval = z.infer<typeof IssueApproval>;
+
+/** Everything waiting for a person's approval where the caller may decide. */
+export const PendingApprovals = z
+  .object({ sprints: z.array(SprintApproval), issues: z.array(IssueApproval) })
+  .meta({ id: 'PendingApprovals' });
+export type PendingApprovals = z.infer<typeof PendingApprovals>;
+
+export const AGENT_ACTIVITY_KINDS = ['request', 'change', 'comment', 'review', 'approval'] as const;
+
+/** One entry of an agent's history. */
+export const AgentActivity = z
+  .object({
+    at: z.iso.datetime(),
+    kind: z.enum(AGENT_ACTIVITY_KINDS),
+    issue: IssueBrief.nullable(),
+    /** E.g. `POST /issues/TL-1/claim`, `transition_issue`, `Status: Offen → In Arbeit`. */
+    title: z.string(),
+    /** The answer of a request, null for the other kinds. */
+    status: z.number().int().nullable(),
+    /** False for rejected requests and reviews with changes requested. */
+    ok: z.boolean(),
+    /** Why it was rejected, a comment excerpt, a verdict. */
+    detail: z.string(),
+  })
+  .meta({ id: 'AgentActivity' });
+export type AgentActivity = z.infer<typeof AgentActivity>;
+
+export const AgentActivityPage = z
+  .object({
+    entries: z.array(AgentActivity),
+    /** Pass as `before` for older entries; null at the end. */
+    next: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'AgentActivityPage' });
+export type AgentActivityPage = z.infer<typeof AgentActivityPage>;
+
+export const AgentActivityQuery = z.object({
+  before: z.iso.datetime().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  /** Only rejected requests and changes requested. */
+  failures: z.stringbool().default(false),
+});
+
+/** One agent on the dashboard. */
+export const AgentOverview = z
+  .object({
+    agent: Agent,
+    presence: Presence,
+    usage: AgentUsage,
+    /** Issues it resolved as assignee in the last 7 days. */
+    throughput: z.number().int(),
+    /** Rejected writing requests and reviews with changes requested, last 7 days. */
+    failures: z.number().int(),
+    /** Waiting for a person or blocked: on what and since when. */
+    question: z
+      .object({
+        state: z.enum(['waiting', 'blocked']),
+        issue: IssueBrief.nullable(),
+        note: z.string(),
+        since: z.iso.datetime(),
+      })
+      .nullable(),
+  })
+  .meta({ id: 'AgentOverview' });
+export type AgentOverview = z.infer<typeof AgentOverview>;
+
+/** What an agent may do: groups, projects with permissions and roles, tokens. */
+export const AgentRights = z
+  .object({
+    groups: z.array(z.string()),
+    projects: z.array(
+      z.object({
+        key: z.string(),
+        name: z.string(),
+        permissions: z.array(ProjectPermission),
+        /** Empty means implementer. */
+        roles: z.array(AgentRole),
+        /** The project's Not-Aus holds its agents. */
+        paused: z.boolean(),
+      }),
+    ),
+    tokens: z.array(
+      z.object({
+        name: z.string(),
+        scopes: z.array(z.string()),
+        expiresAt: z.iso.datetime().nullable(),
+        lastUsedAt: z.iso.datetime().nullable(),
+      }),
+    ),
+  })
+  .meta({ id: 'AgentRights' });
+export type AgentRights = z.infer<typeof AgentRights>;

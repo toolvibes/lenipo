@@ -115,7 +115,7 @@ function useListEdit() {
           body: { transitionId, ...extras },
         }),
       ),
-    onSuccess: (issue) => refresh(issue.key),
+    onSuccess: (_moved, { key }) => refresh(key),
   });
   const screen = useTransitionScreen((issue, transitionId, extras) =>
     transition.mutateAsync({ key: issue.key, transitionId, extras }),

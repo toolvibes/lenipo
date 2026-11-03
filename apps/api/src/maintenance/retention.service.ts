@@ -119,6 +119,9 @@ export class RetentionService {
       result.auditEntries = deleted.length;
     }
 
+    // The request log of agents is kept 90 days (TL-98, E-150).
+    await db.execute(sql`delete from agent_requests where at < ${before(90)}`);
+
     // Page views per person last 90 days; older days keep anonymous counts (E-135).
     result.pageViews = await anonymizeOldPageViews(db);
 

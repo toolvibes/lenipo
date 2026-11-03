@@ -75,6 +75,12 @@ export const agentProfiles = pgTable(
     taskFilter: text().notNull().default(''),
     /** The responsible person. */
     ownerId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** Not-Aus (TL-98, E-150): while set, the agent only reads. */
+    pausedAt: timestamp({ withTimezone: true }),
+    pausedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    pauseReason: text().notNull().default(''),
+    /** Limits per day and month (`AgentBudget`); empty: none. */
+    budget: jsonb().notNull().default({}),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('agent_profiles_owner_idx').on(table.ownerId)],

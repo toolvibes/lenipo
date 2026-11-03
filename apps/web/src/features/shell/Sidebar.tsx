@@ -359,6 +359,11 @@ export function Sidebar({
         <NavRow to="/plans" active={path.startsWith('/plans')}>
           {t('plans.title')}
         </NavRow>
+        {me.globalPermissions.includes('browse-users') && (
+          <NavRow to="/agents" active={path.startsWith('/agents')}>
+            {t('guard.title')}
+          </NavRow>
+        )}
         <NavRow to="/portal" active={path.startsWith('/portal')}>
           {t('portal.title')}
         </NavRow>

@@ -2,7 +2,7 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nest
 import type { ProjectRole, UserRef } from '@toolvibes/shared';
 import { PROJECT_PERMISSIONS, type ProjectPermission } from '@toolvibes/shared';
 import { and, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
-import { AccessService } from '../access/access.service.js';
+import { AccessService, pausedError } from '../access/access.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -61,6 +61,23 @@ export class ProjectAccessService {
   ) {}
 
   async permissions(userId: string, projectId: string): Promise<Set<ProjectPermission>> {
+    return this.holdPaused(userId, projectId, await this.granted(userId, projectId));
+  }
+
+  /** A paused agent only reads (TL-98, E-150). */
+  private async holdPaused(
+    userId: string,
+    projectId: string,
+    granted: Set<ProjectPermission>,
+  ): Promise<Set<ProjectPermission>> {
+    if (granted.has('browse') && (await this.access.agentPause(userId, projectId))) {
+      return new Set<ProjectPermission>(['browse']);
+    }
+    return granted;
+  }
+
+  /** What the permission scheme grants, without the Not-Aus of agents. */
+  async granted(userId: string, projectId: string): Promise<Set<ProjectPermission>> {
     if (await this.access.hasGlobal(userId, 'admin')) return new Set(PROJECT_PERMISSIONS);
     const scheme = sql`(select p.permission_scheme_id from projects p where p.id = ${projectId})`;
     const rows = await this.database.db.execute<{ permission: ProjectPermission }>(
@@ -68,6 +85,20 @@ export class ProjectAccessService {
         where ${grantApplies(sql`${projectId}::uuid`, scheme, sql`${userId}::uuid`)}`,
     );
     return new Set([...rows].map((row) => row.permission));
+  }
+
+  /**
+   * Whether the agent needs a person's approval to move an issue into this status (TL-98,
+   * E-150). Runs of an approved request carry `approval:` as token id and pass.
+   */
+  async needsApproval(principal: Principal, projectId: string, statusId: string): Promise<boolean> {
+    if ('tokenId' in principal && principal.tokenId.startsWith('approval:')) return false;
+    if (!(await this.access.isAgent(principal.userId))) return false;
+    const [row] = await this.database.db
+      .select({ statuses: projects.agentApprovalStatusIds })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+    return row?.statuses.includes(statusId) ?? false;
   }
 
   /** The viewer of a project's issues, for transition conditions (TL-11). */
@@ -157,10 +188,12 @@ export class ProjectAccessService {
     userId: string,
     issue: { projectId: string; assigneeId: string | null; reporterId: string | null },
   ): Promise<Set<ProjectPermission>> {
-    const granted = await this.permissions(userId, issue.projectId);
-    if (!granted.has('browse')) return granted;
-    if (issue.assigneeId !== userId && issue.reporterId !== userId) return granted;
-    return withRelational(granted, await this.relationalGrants(issue.projectId), issue, userId);
+    const granted = await this.granted(userId, issue.projectId);
+    const all =
+      !granted.has('browse') || (issue.assigneeId !== userId && issue.reporterId !== userId)
+        ? granted
+        : withRelational(granted, await this.relationalGrants(issue.projectId), issue, userId);
+    return this.holdPaused(userId, issue.projectId, all);
   }
 
   /** Like {@link require}, but with the rights on one issue. */
@@ -181,7 +214,7 @@ export class ProjectAccessService {
       throw new NotFoundException('Issue not found');
     }
     const granted = await this.issuePermissions(principal.userId, issue);
-    return this.checkGranted(granted, permission);
+    return this.checkGranted(granted, permission, principal.userId, issue.projectId);
   }
 
   /** Whether issue security lets the user see the issue (TL-13, E-94). */
@@ -203,7 +236,8 @@ export class ProjectAccessService {
     permission: ProjectPermission,
   ): Promise<Set<ProjectPermission>> {
     this.checkScope(principal, permission);
-    return this.checkGranted(await this.permissions(principal.userId, projectId), permission);
+    const granted = await this.permissions(principal.userId, projectId);
+    return this.checkGranted(granted, permission, principal.userId, projectId);
   }
 
   private checkScope(principal: Principal, permission: ProjectPermission) {
@@ -215,9 +249,17 @@ export class ProjectAccessService {
     }
   }
 
-  private checkGranted(granted: Set<ProjectPermission>, permission: ProjectPermission) {
+  private async checkGranted(
+    granted: Set<ProjectPermission>,
+    permission: ProjectPermission,
+    userId: string,
+    projectId: string,
+  ) {
     if (!granted.has('browse')) throw new NotFoundException('Project not found');
     if (!granted.has(permission)) {
+      // Say why a paused agent may not, so it stops instead of trying again.
+      const pause = await this.access.agentPause(userId, projectId);
+      if (pause) throw pausedError(pause);
       throw new ForbiddenException(`Requires the project permission "${permission}"`);
     }
     return granted;

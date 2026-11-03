@@ -18,6 +18,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import {
+  agentProfiles,
   DEFAULT_NOTIFICATION_SCHEME_ID,
   domainEvents,
   groupMembers,
@@ -679,7 +680,7 @@ export class NotificationService {
       .limit(limit);
     const actors = await this.refs(
       db,
-      rows.map((row) => row.notification.actorId),
+      rows.flatMap((row) => [row.notification.actorId, row.notification.agentId]),
     );
     return rows.map(
       ({
@@ -702,6 +703,7 @@ export class NotificationService {
           notification.sprintId && sprintName !== null && boardId
             ? { id: notification.sprintId, name: sprintName, boardId }
             : null,
+        agent: notification.agentId ? (actors.get(notification.agentId) ?? null) : null,
         actor: notification.actorId ? (actors.get(notification.actorId) ?? null) : null,
         category: notification.category,
         details: notification.details as NotificationDetails,
@@ -719,7 +721,15 @@ export class NotificationService {
     const hooks = await tx
       .select({ id: webhooks.id, userId: webhooks.userId })
       .from(webhooks)
-      .where(and(inArray(webhooks.userId, userIds), eq(webhooks.enabled, true)));
+      // Paused agents are not woken up (TL-98, E-150).
+      .innerJoin(agentProfiles, eq(agentProfiles.userId, webhooks.userId))
+      .where(
+        and(
+          inArray(webhooks.userId, userIds),
+          eq(webhooks.enabled, true),
+          isNull(agentProfiles.pausedAt),
+        ),
+      );
     if (hooks.length === 0) return;
     const shown = await this.present(tx, inArray(notifications.id, ids), ids.length);
     const deliveries = hooks.flatMap((hook) =>
@@ -778,11 +788,43 @@ export class NotificationService {
     });
   }
 
+  /**
+   * Budget warnings about an agent (TL-98, E-150): `issues`, `minutes` or `cost` as field, the
+   * period as old value and the level (80, 100) as new value; never by e-mail.
+   */
+  async notifyBudget(
+    tx: Executor,
+    recipients: string[],
+    agentId: string,
+    item: NotificationDetails['items'][number],
+  ): Promise<void> {
+    await this.notifyDirect(tx, recipients, { agentId }, agentId, {
+      kind: 'budget',
+      items: [item],
+    });
+  }
+
+  /** Transition approvals of agents (TL-98, E-150): `transition` as field, the status as excerpt. */
+  async notifyIssueApproval(
+    tx: Executor,
+    recipients: string[],
+    issueId: string,
+    actorId: string,
+    outcome: string,
+    excerpt: string,
+  ): Promise<void> {
+    await this.notifyDirect(tx, recipients, { issueId }, actorId, {
+      kind: 'approval',
+      items: [{ field: 'transition', from: null, to: outcome }],
+      ...(excerpt ? { excerpt: excerpt.slice(0, 500) } : {}),
+    });
+  }
+
   /** Notifications outside the event stream: bell, event stream and agent webhooks. */
   private async notifyDirect(
     tx: Executor,
     recipients: string[],
-    subject: { sprintId: string } | { issueId: string },
+    subject: { sprintId: string } | { issueId: string } | { agentId: string },
     actorId: string | null,
     details: NotificationDetails,
   ): Promise<void> {

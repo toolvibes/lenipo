@@ -23,8 +23,11 @@ import type { DatabaseHandle } from '../db/client.js';
 import { UserService } from '../identity/user.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { OperationsService } from '../operations/operations.service.js';
+import { AgentActivityService } from '../presence/agent-activity.service.js';
 import { ClaimService } from '../presence/claim.service.js';
+import { GuardrailService } from '../presence/guardrail.service.js';
 import { HandoverService } from '../presence/handover.service.js';
+import { IssueApprovalService } from '../presence/issue-approval.service.js';
 import { PresenceService } from '../presence/presence.service.js';
 import { ReviewService } from '../presence/review.service.js';
 import { EverythingService } from '../search/everything.service.js';
@@ -78,6 +81,9 @@ export class McpController {
     @Inject(SprintApprovalService) approvals: SprintApprovalService,
     @Inject(EstimationService) estimation: EstimationService,
     @Inject(ReviewService) reviews: ReviewService,
+    @Inject(IssueApprovalService) issueApprovals: IssueApprovalService,
+    @Inject(GuardrailService) guardrails: GuardrailService,
+    @Inject(AgentActivityService) activity: AgentActivityService,
   ) {
     this.services = {
       database,
@@ -105,6 +111,9 @@ export class McpController {
       approvals,
       estimation,
       reviews,
+      issueApprovals,
+      guardrails,
+      activity,
     };
   }
 

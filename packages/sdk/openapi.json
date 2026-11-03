@@ -2047,6 +2047,143 @@
         }
       }
     },
+    "/api/v1/agents/{id}/pause": {
+      "put": {
+        "operationId": "Agents.pause",
+        "summary": "Pause an AI agent (Not-Aus)",
+        "description": "For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PauseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Agents.resume",
+        "summary": "Let a paused AI agent work again",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/budget": {
+      "put": {
+        "operationId": "Agents.setBudget",
+        "summary": "Set the budget of an AI agent",
+        "description": "Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentBudgetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{key}/agent-settings": {
       "get": {
         "operationId": "Agents.getAgentSettings",
@@ -2088,8 +2225,8 @@
       },
       "put": {
         "operationId": "Agents.updateAgentSettings",
-        "summary": "Change whether agents need approval for sprints",
-        "description": "Requires the project permission `administer`.",
+        "summary": "Change the agent settings of a project",
+        "description": "Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.",
         "tags": ["Agents"],
         "parameters": [
           {
@@ -2169,6 +2306,93 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAgentSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/agent-settings/pause": {
+      "put": {
+        "operationId": "Agents.pauseAgents",
+        "summary": "Pause all agents in the project (Not-Aus)",
+        "description": "They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PauseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAgentSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Agents.resumeAgents",
+        "summary": "Let the agents of the project work again",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2784,6 +3008,378 @@
         "responses": {
           "204": {
             "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/approvals": {
+      "get": {
+        "operationId": "Agents.listIssueApprovals",
+        "summary": "List the transition approval requests of an issue",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssueApproval"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issue-approvals/{id}/decision": {
+      "post": {
+        "operationId": "Agents.decideIssueApproval",
+        "summary": "Approve or reject a transition an agent asked for",
+        "description": "For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueApproval"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/pending": {
+      "get": {
+        "operationId": "Agents.pendingApprovals",
+        "summary": "List what waits for the caller’s approval",
+        "description": "Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.",
+        "tags": ["Agents"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingApprovals"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/overview": {
+      "get": {
+        "operationId": "Agents.overview",
+        "summary": "The agents dashboard",
+        "description": "Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.\n\nRequires the global permission `browse-users`.",
+        "tags": ["Agents"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentOverview"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/usage": {
+      "get": {
+        "operationId": "Agents.agentUsage",
+        "summary": "Get the budget use of an AI agent",
+        "description": "For the agent, its responsible person and administrators.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentUsage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/activity": {
+      "get": {
+        "operationId": "Agents.agentActivity",
+        "summary": "Get the history of an AI agent",
+        "description": "Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "failures",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentActivityPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/rights": {
+      "get": {
+        "operationId": "Agents.agentRights",
+        "summary": "Get what an AI agent may do",
+        "description": "Its groups, the projects it sees with permissions and roles, and its live tokens.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRights"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/usage": {
+      "get": {
+        "operationId": "Agents.myUsage",
+        "summary": "Get the caller’s own budget use",
+        "description": "For agents: what counts against their budget today and this month.",
+        "tags": ["Agents"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentUsage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Agents.reportUsage",
+        "summary": "Report the cost of a run",
+        "description": "Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.",
+        "tags": ["Agents"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportUsageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentUsage"
+                }
+              }
+            }
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -6847,6 +7443,7 @@
       "post": {
         "operationId": "Issues.transition",
         "summary": "Move an issue to another status",
+        "description": "Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.",
         "tags": ["Issues"],
         "parameters": [
           {
@@ -6885,6 +7482,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for a person’s approval",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueApproval"
                 }
               }
             }
@@ -20203,6 +20810,19 @@
             "type": "string",
             "enum": ["active", "deactivated"]
           },
+          "paused": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentPause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "budget": {
+            "$ref": "#/components/schemas/AgentBudget"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -20218,8 +20838,104 @@
           "taskFilter",
           "webhookUrl",
           "status",
+          "paused",
+          "budget",
           "createdAt"
         ],
+        "additionalProperties": false
+      },
+      "AgentPause": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["at", "by", "reason"],
+        "additionalProperties": false
+      },
+      "AgentBudget": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "default": {
+              "issues": null,
+              "minutes": null,
+              "cost": null
+            },
+            "$ref": "#/components/schemas/BudgetLimits"
+          },
+          "month": {
+            "default": {
+              "issues": null,
+              "minutes": null,
+              "cost": null
+            },
+            "$ref": "#/components/schemas/BudgetLimits"
+          }
+        },
+        "required": ["day", "month"],
+        "additionalProperties": false
+      },
+      "BudgetLimits": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minutes": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["issues", "minutes", "cost"],
         "additionalProperties": false
       },
       "CreateAgentRequest": {
@@ -20288,6 +21004,74 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "budget": {
+            "$ref": "#/components/schemas/AgentBudgetInput"
+          }
+        }
+      },
+      "AgentBudgetInput": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "default": {
+              "issues": null,
+              "minutes": null,
+              "cost": null
+            },
+            "$ref": "#/components/schemas/BudgetLimitsInput"
+          },
+          "month": {
+            "default": {
+              "issues": null,
+              "minutes": null,
+              "cost": null
+            },
+            "$ref": "#/components/schemas/BudgetLimitsInput"
+          }
+        }
+      },
+      "BudgetLimitsInput": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minutes": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000000
               },
               {
                 "type": "null"
@@ -20427,11 +21211,39 @@
         ],
         "additionalProperties": false
       },
+      "PauseRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
       "ProjectAgentSettings": {
         "type": "object",
         "properties": {
           "sprintApproval": {
             "type": "boolean"
+          },
+          "approvalStatuses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "paused": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentPause"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "reviewStatuses": {
             "type": "object",
@@ -20471,7 +21283,7 @@
             }
           }
         },
-        "required": ["sprintApproval", "reviewStatuses", "agents"],
+        "required": ["sprintApproval", "approvalStatuses", "paused", "reviewStatuses", "agents"],
         "additionalProperties": false
       },
       "ProjectAgent": {
@@ -20502,6 +21314,15 @@
         "properties": {
           "sprintApproval": {
             "type": "boolean"
+          },
+          "approvalStatuses": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
           },
           "reviewStatuses": {
             "type": "object",
@@ -20932,45 +21753,288 @@
         },
         "required": ["verdict", "body"]
       },
-      "UpdatePresenceRequest": {
+      "IssueApproval": {
         "type": "object",
         "properties": {
-          "state": {
-            "$ref": "#/components/schemas/PresenceState"
-          },
-          "issueKey": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 40
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "branch": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "note": {
+          "id": {
             "type": "string",
-            "maxLength": 280
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "issue": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "summary"],
+            "additionalProperties": false
+          },
+          "projectKey": {
+            "type": "string"
+          },
+          "toStatus": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name"],
+            "additionalProperties": false
+          },
+          "requestedBy": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "decidedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": ["state"]
+        "required": [
+          "id",
+          "issue",
+          "projectKey",
+          "toStatus",
+          "requestedBy",
+          "status",
+          "decidedBy",
+          "reason",
+          "createdAt",
+          "decidedAt"
+        ],
+        "additionalProperties": false
       },
-      "PresenceState": {
-        "type": "string",
-        "enum": ["active", "waiting", "blocked", "offline"]
+      "DecideApprovalRequest": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          },
+          "reason": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": ["approve"]
+      },
+      "PendingApprovals": {
+        "type": "object",
+        "properties": {
+          "sprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintApproval"
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueApproval"
+            }
+          }
+        },
+        "required": ["sprints", "issues"],
+        "additionalProperties": false
+      },
+      "SprintApproval": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["start", "complete"]
+          },
+          "sprint": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "boardId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": ["id", "name", "boardId"],
+            "additionalProperties": false
+          },
+          "projectKey": {
+            "type": "string"
+          },
+          "requestedBy": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "decidedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "sprint",
+          "projectKey",
+          "requestedBy",
+          "status",
+          "decidedBy",
+          "reason",
+          "createdAt",
+          "decidedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AgentOverview": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/Agent"
+          },
+          "presence": {
+            "$ref": "#/components/schemas/Presence"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/AgentUsage"
+          },
+          "throughput": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "failures": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string",
+                    "enum": ["waiting", "blocked"]
+                  },
+                  "issue": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "summary"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "since": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": ["state", "issue", "note", "since"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["agent", "presence", "usage", "throughput", "failures", "question"],
+        "additionalProperties": false
       },
       "Presence": {
         "type": "object",
@@ -21019,6 +22083,278 @@
         },
         "required": ["state", "issue", "branch", "note", "heartbeatAt"],
         "additionalProperties": false
+      },
+      "PresenceState": {
+        "type": "string",
+        "enum": ["active", "waiting", "blocked", "offline"]
+      },
+      "AgentUsage": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/BudgetUsage"
+          },
+          "month": {
+            "$ref": "#/components/schemas/BudgetUsage"
+          },
+          "budget": {
+            "$ref": "#/components/schemas/AgentBudget"
+          },
+          "paused": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentPause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exceeded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["day", "month", "budget", "paused", "exceeded"],
+        "additionalProperties": false
+      },
+      "BudgetUsage": {
+        "type": "object",
+        "properties": {
+          "issues": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "minutes": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "cost": {
+            "type": "number"
+          }
+        },
+        "required": ["issues", "minutes", "cost"],
+        "additionalProperties": false
+      },
+      "AgentActivityPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentActivity"
+            }
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["entries", "next"],
+        "additionalProperties": false
+      },
+      "AgentActivity": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["request", "change", "comment", "review", "approval"]
+          },
+          "issue": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "summary"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": ["at", "kind", "issue", "title", "status", "ok", "detail"],
+        "additionalProperties": false
+      },
+      "AgentRights": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "permissions": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectPermission"
+                  }
+                },
+                "roles": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentRole"
+                  }
+                },
+                "paused": {
+                  "type": "boolean"
+                }
+              },
+              "required": ["key", "name", "permissions", "roles", "paused"],
+              "additionalProperties": false
+            }
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "scopes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "expiresAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["name", "scopes", "expiresAt", "lastUsedAt"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["groups", "projects", "tokens"],
+        "additionalProperties": false
+      },
+      "ReportUsageRequest": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000
+          }
+        },
+        "required": ["cost"]
+      },
+      "UpdatePresenceRequest": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/PresenceState"
+          },
+          "issueKey": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": ["state"]
       },
       "TeamMember": {
         "type": "object",
@@ -27536,26 +28872,6 @@
         "required": ["id", "name", "to", "setsResolution", "requiredFields", "comment", "screen"],
         "additionalProperties": false
       },
-      "TransitionRequest": {
-        "type": "object",
-        "properties": {
-          "transitionId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "resolution": {
-            "type": "string",
-            "minLength": 1
-          },
-          "fields": {
-            "$ref": "#/components/schemas/UpdateIssueRequest"
-          },
-          "comment": {
-            "$ref": "#/components/schemas/RichTextInput"
-          }
-        },
-        "required": ["transitionId"]
-      },
       "RankIssueRequest": {
         "type": "object",
         "properties": {
@@ -28200,6 +29516,26 @@
         },
         "required": ["projectKey"]
       },
+      "TransitionRequest": {
+        "type": "object",
+        "properties": {
+          "transitionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resolution": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fields": {
+            "$ref": "#/components/schemas/UpdateIssueRequest"
+          },
+          "comment": {
+            "$ref": "#/components/schemas/RichTextInput"
+          }
+        },
+        "required": ["transitionId"]
+      },
       "RetentionSettings": {
         "type": "object",
         "properties": {
@@ -28775,6 +30111,16 @@
               }
             ]
           },
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "actor": {
             "anyOf": [
               {
@@ -28805,6 +30151,7 @@
           "issue",
           "page",
           "sprint",
+          "agent",
           "actor",
           "category",
           "details",
@@ -28818,7 +30165,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["created", "updated", "commented", "published", "approval", "review"]
+            "enum": ["created", "updated", "commented", "published", "approval", "review", "budget"]
           },
           "items": {
             "type": "array",
@@ -35479,93 +36826,6 @@
         },
         "required": ["startDate", "endDate"]
       },
-      "SprintApproval": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "action": {
-            "type": "string",
-            "enum": ["start", "complete"]
-          },
-          "sprint": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "boardId": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              }
-            },
-            "required": ["id", "name", "boardId"],
-            "additionalProperties": false
-          },
-          "projectKey": {
-            "type": "string"
-          },
-          "requestedBy": {
-            "$ref": "#/components/schemas/UserRef"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["pending", "approved", "rejected"]
-          },
-          "decidedBy": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "reason": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "decidedAt": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "action",
-          "sprint",
-          "projectKey",
-          "requestedBy",
-          "status",
-          "decidedBy",
-          "reason",
-          "createdAt",
-          "decidedAt"
-        ],
-        "additionalProperties": false
-      },
       "CompleteSprintRequest": {
         "type": "object",
         "properties": {
@@ -35588,20 +36848,6 @@
             ]
           }
         }
-      },
-      "DecideApprovalRequest": {
-        "type": "object",
-        "properties": {
-          "approve": {
-            "type": "boolean"
-          },
-          "reason": {
-            "default": "",
-            "type": "string",
-            "maxLength": 2000
-          }
-        },
-        "required": ["approve"]
       },
       "MoveToSprintRequest": {
         "type": "object",

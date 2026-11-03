@@ -19,6 +19,7 @@ import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { ClaimService } from './claim.service.js';
+import { GuardrailService } from './guardrail.service.js';
 
 /** How far back changes in a project make someone part of its team. */
 const TEAM_DAYS = 30;
@@ -53,6 +54,7 @@ export class PresenceService {
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(ClaimService) private readonly claims: ClaimService,
+    @Inject(GuardrailService) private readonly guardrails: GuardrailService,
   ) {}
 
   /** A heartbeat: the state, and the issue and branch if given; an issue must be visible. */
@@ -71,6 +73,12 @@ export class PresenceService {
       ...(request.note !== undefined ? { note: request.note } : {}),
       updatedAt: new Date(),
     };
+    const [previous] = await this.database.db
+      .select({ updatedAt: presence.updatedAt })
+      .from(presence)
+      .where(eq(presence.userId, principal.userId));
+    // Claimed time counts toward the budget (TL-98, E-150).
+    await this.guardrails.heartbeat(principal.userId, previous?.updatedAt ?? null);
     await this.database.db
       .insert(presence)
       .values({ userId: principal.userId, ...changes })

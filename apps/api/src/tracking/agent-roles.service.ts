@@ -6,12 +6,22 @@ import type {
   UpdateProjectAgentSettings,
 } from '@toolvibes/shared';
 import { and, eq, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { agentProfiles, projectAgentRoles, projects, statuses, users } from '../db/schema/index.js';
+import {
+  agentProfiles,
+  issueClaims,
+  projectAgentRoles,
+  projects,
+  statuses,
+  users,
+} from '../db/schema/index.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
+
+const pausers = alias(users, 'pausers');
 
 /**
  * Roles of agents per project (TL-96, E-148): planners plan and start sprints, coordinators
@@ -66,8 +76,14 @@ export class AgentRoleService {
         sprintApproval: projects.agentSprintApproval,
         approved: projects.reviewApprovedStatusId,
         changesRequested: projects.reviewChangesStatusId,
+        approvalStatuses: projects.agentApprovalStatusIds,
+        pausedAt: projects.agentsPausedAt,
+        pausedById: projects.agentsPausedById,
+        pauserName: pausers.displayName,
+        pauseReason: projects.agentsPauseReason,
       })
       .from(projects)
+      .leftJoin(pausers, eq(pausers.id, projects.agentsPausedById))
       .where(eq(projects.id, project.id));
     const agents = await this.database.db
       .select({
@@ -83,6 +99,17 @@ export class AgentRoleService {
       .orderBy(users.displayName);
     return {
       sprintApproval: row?.sprintApproval ?? false,
+      approvalStatuses: row?.approvalStatuses ?? [],
+      paused: row?.pausedAt
+        ? {
+            at: row.pausedAt.toISOString(),
+            by:
+              row.pausedById && row.pauserName !== null
+                ? { id: row.pausedById, displayName: row.pauserName }
+                : null,
+            reason: row.pauseReason,
+          }
+        : null,
       reviewStatuses: {
         approved: row?.approved ?? null,
         changesRequested: row?.changesRequested ?? null,
@@ -102,9 +129,10 @@ export class AgentRoleService {
   ): Promise<ProjectAgentSettings> {
     const project = await this.projects.findBrowsable(principal, projectKey);
     await this.projectAccess.require(principal, project.id, 'administer');
-    const statusIds = Object.values(request.reviewStatuses ?? {}).filter(
-      (id): id is string => id !== null,
-    );
+    const statusIds = [
+      ...Object.values(request.reviewStatuses ?? {}),
+      ...(request.approvalStatuses ?? []),
+    ].filter((id): id is string => id !== null);
     if (statusIds.length > 0) {
       const known = await this.database.db
         .select({ id: statuses.id })
@@ -118,6 +146,9 @@ export class AgentRoleService {
       ...(request.sprintApproval !== undefined
         ? { agentSprintApproval: request.sprintApproval }
         : {}),
+      ...(request.approvalStatuses
+        ? { agentApprovalStatusIds: [...new Set(request.approvalStatuses)] }
+        : {}),
       ...(request.reviewStatuses
         ? {
             reviewApprovedStatusId: request.reviewStatuses.approved,
@@ -128,6 +159,45 @@ export class AgentRoleService {
     if (Object.keys(patch).length > 0) {
       await this.database.db.update(projects).set(patch).where(eq(projects.id, project.id));
     }
+    return this.settings(principal, projectKey);
+  }
+
+  /** Not-Aus for all agents of the project (TL-98, E-150); their claims there end. */
+  async pause(
+    principal: Principal,
+    projectKey: string,
+    reason: string | null,
+  ): Promise<ProjectAgentSettings> {
+    const project = await this.projects.findBrowsable(principal, projectKey);
+    await this.projectAccess.require(principal, project.id, 'administer');
+    await this.database.atomic(async () => {
+      const db = this.database.db;
+      await db
+        .update(projects)
+        .set(
+          reason === null
+            ? { agentsPausedAt: null, agentsPausedById: null, agentsPauseReason: '' }
+            : {
+                agentsPausedAt: new Date(),
+                agentsPausedById: principal.userId,
+                agentsPauseReason: reason,
+              },
+        )
+        .where(eq(projects.id, project.id));
+      if (reason !== null) {
+        await db
+          .delete(issueClaims)
+          .where(
+            and(
+              eq(issueClaims.projectId, project.id),
+              inArray(
+                issueClaims.userId,
+                db.select({ id: users.id }).from(users).where(eq(users.kind, 'agent')),
+              ),
+            ),
+          );
+      }
+    });
     return this.settings(principal, projectKey);
   }
 
