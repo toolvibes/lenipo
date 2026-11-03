@@ -11563,6 +11563,11 @@ type UpdateSecuritySchemeRequest struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// UpdateSettings defines model for UpdateSettings.
+type UpdateSettings struct {
+	Enabled bool `json:"enabled"`
+}
+
 // UpdateSpaceRequest defines model for UpdateSpaceRequest.
 type UpdateSpaceRequest struct {
 	ApprovalRequired *bool               `json:"approvalRequired,omitempty"`
@@ -11585,6 +11590,17 @@ type UpdateSprintRequest struct {
 	Goal      *string             `json:"goal,omitempty"`
 	Name      *string             `json:"name,omitempty"`
 	StartDate *openapi_types.Date `json:"startDate,omitempty"`
+}
+
+// UpdateStatus defines model for UpdateStatus.
+type UpdateStatus struct {
+	Available bool       `json:"available"`
+	CheckedAt *time.Time `json:"checkedAt"`
+	Current   string     `json:"current"`
+	Enabled   bool       `json:"enabled"`
+	Error     *string    `json:"error"`
+	Latest    *string    `json:"latest"`
+	Url       *string    `json:"url"`
 }
 
 // UpdateVersionRequest defines model for UpdateVersionRequest.
@@ -12586,6 +12602,9 @@ type AdminSetJSONRequestBody = WorkingTimeInput
 
 // OperationsSetTokenLimitsJSONRequestBody defines body for OperationsSetTokenLimits for application/json ContentType.
 type OperationsSetTokenLimitsJSONRequestBody = TokenLimitsInput
+
+// MaintenanceSetEnabledJSONRequestBody defines body for MaintenanceSetEnabled for application/json ContentType.
+type MaintenanceSetEnabledJSONRequestBody = UpdateSettings
 
 // AdminCreateUserJSONRequestBody defines body for AdminCreateUser for application/json ContentType.
 type AdminCreateUserJSONRequestBody = CreateUserRequest
@@ -20010,6 +20029,37 @@ type ClientInterface interface {
 	// Corresponds with PUT /api/v1/admin/tokens/{id}/limits (the `OperationsSetTokenLimits` operationId).
 	OperationsSetTokenLimits(ctx context.Context, id string, body OperationsSetTokenLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MaintenanceStatus Running version and newest release
+	//
+	// The newest release is known only while the update check is on.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Corresponds with GET /api/v1/admin/updates (the `MaintenanceStatus` operationId).
+	MaintenanceStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MaintenanceSetEnabledWithBody Turn the update check on or off
+	//
+	// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+	MaintenanceSetEnabledWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MaintenanceSetEnabled Turn the update check on or off
+	//
+	// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+	MaintenanceSetEnabled(ctx context.Context, body MaintenanceSetEnabledJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminListUsers List all users
 	//
 	// Requires the global permission `admin`.
@@ -26215,6 +26265,67 @@ func (c *Client) OperationsSetTokenLimitsWithBody(ctx context.Context, id string
 // Corresponds with PUT /api/v1/admin/tokens/{id}/limits (the `OperationsSetTokenLimits` operationId).
 func (c *Client) OperationsSetTokenLimits(ctx context.Context, id string, body OperationsSetTokenLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewOperationsSetTokenLimitsRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MaintenanceStatus Running version and newest release
+//
+// The newest release is known only while the update check is on.
+//
+// Requires the global permission `admin`.
+//
+// Corresponds with GET /api/v1/admin/updates (the `MaintenanceStatus` operationId).
+func (c *Client) MaintenanceStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaintenanceStatusRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MaintenanceSetEnabledWithBody Turn the update check on or off
+//
+// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+func (c *Client) MaintenanceSetEnabledWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaintenanceSetEnabledRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MaintenanceSetEnabled Turn the update check on or off
+//
+// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+func (c *Client) MaintenanceSetEnabled(ctx context.Context, body MaintenanceSetEnabledJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMaintenanceSetEnabledRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -38416,6 +38527,73 @@ func NewOperationsSetTokenLimitsRequestWithBody(server string, id string, conten
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/admin/tokens/%s/limits", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewMaintenanceStatusRequest constructs an http.Request for the MaintenanceStatus method
+func NewMaintenanceStatusRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/updates")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMaintenanceSetEnabledRequest calls the generic MaintenanceSetEnabled builder with application/json body
+func NewMaintenanceSetEnabledRequest(server string, body MaintenanceSetEnabledJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMaintenanceSetEnabledRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewMaintenanceSetEnabledRequestWithBody constructs an http.Request for the MaintenanceSetEnabled method, with any body, and a specified content type
+func NewMaintenanceSetEnabledRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/updates")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -54888,6 +55066,39 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /api/v1/admin/tokens/{id}/limits (the `OperationsSetTokenLimits` operationId).
 	OperationsSetTokenLimitsWithResponse(ctx context.Context, id string, body OperationsSetTokenLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetTokenLimitsHTTPResponse, error)
 
+	// MaintenanceStatusWithResponse Running version and newest release
+	//
+	// The newest release is known only while the update check is on.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/admin/updates (the `MaintenanceStatus` operationId).
+	MaintenanceStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*MaintenanceStatusHTTPResponse, error)
+
+	// MaintenanceSetEnabledWithBodyWithResponse Turn the update check on or off
+	//
+	// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+	MaintenanceSetEnabledWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaintenanceSetEnabledHTTPResponse, error)
+
+	// MaintenanceSetEnabledWithResponse Turn the update check on or off
+	//
+	// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+	MaintenanceSetEnabledWithResponse(ctx context.Context, body MaintenanceSetEnabledJSONRequestBody, reqEditors ...RequestEditorFn) (*MaintenanceSetEnabledHTTPResponse, error)
+
 	// AdminListUsersWithResponse List all users
 	//
 	// Requires the global permission `admin`.
@@ -63559,6 +63770,102 @@ func (r OperationsSetTokenLimitsHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r OperationsSetTokenLimitsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type MaintenanceStatusHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UpdateStatus
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r MaintenanceStatusHTTPResponse) GetJSON200() *UpdateStatus {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MaintenanceStatusHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MaintenanceStatusHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MaintenanceStatusHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MaintenanceStatusHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MaintenanceStatusHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type MaintenanceSetEnabledHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UpdateStatus
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r MaintenanceSetEnabledHTTPResponse) GetJSON200() *UpdateStatus {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MaintenanceSetEnabledHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MaintenanceSetEnabledHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MaintenanceSetEnabledHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MaintenanceSetEnabledHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MaintenanceSetEnabledHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -82500,6 +82807,57 @@ func (c *ClientWithResponses) OperationsSetTokenLimitsWithResponse(ctx context.C
 	return ParseOperationsSetTokenLimitsHTTPResponse(rsp)
 }
 
+// MaintenanceStatusWithResponse Running version and newest release
+//
+// The newest release is known only while the update check is on.
+//
+// Requires the global permission `admin`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/admin/updates (the `MaintenanceStatus` operationId).
+func (c *ClientWithResponses) MaintenanceStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*MaintenanceStatusHTTPResponse, error) {
+	rsp, err := c.MaintenanceStatus(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaintenanceStatusHTTPResponse(rsp)
+}
+
+// MaintenanceSetEnabledWithBodyWithResponse Turn the update check on or off
+//
+// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+func (c *ClientWithResponses) MaintenanceSetEnabledWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MaintenanceSetEnabledHTTPResponse, error) {
+	rsp, err := c.MaintenanceSetEnabledWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaintenanceSetEnabledHTTPResponse(rsp)
+}
+
+// MaintenanceSetEnabledWithResponse Turn the update check on or off
+//
+// Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/admin/updates (the `MaintenanceSetEnabled` operationId).
+func (c *ClientWithResponses) MaintenanceSetEnabledWithResponse(ctx context.Context, body MaintenanceSetEnabledJSONRequestBody, reqEditors ...RequestEditorFn) (*MaintenanceSetEnabledHTTPResponse, error) {
+	rsp, err := c.MaintenanceSetEnabled(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMaintenanceSetEnabledHTTPResponse(rsp)
+}
+
 // AdminListUsersWithResponse List all users
 //
 // Requires the global permission `admin`.
@@ -92710,6 +93068,72 @@ func ParseOperationsSetTokenLimitsHTTPResponse(rsp *http.Response) (*OperationsS
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest TokenLimits
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMaintenanceStatusHTTPResponse parses an HTTP response from a MaintenanceStatusWithResponse call
+func ParseMaintenanceStatusHTTPResponse(rsp *http.Response) (*MaintenanceStatusHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MaintenanceStatusHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UpdateStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMaintenanceSetEnabledHTTPResponse parses an HTTP response from a MaintenanceSetEnabledWithResponse call
+func ParseMaintenanceSetEnabledHTTPResponse(rsp *http.Response) (*MaintenanceSetEnabledHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MaintenanceSetEnabledHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UpdateStatus
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

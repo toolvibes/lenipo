@@ -841,10 +841,12 @@ from .update_project_agent_settings import UpdateProjectAgentSettings
 from .update_project_agent_settings_review_statuses import UpdateProjectAgentSettingsReviewStatuses
 from .update_security_scheme_request import UpdateSecuritySchemeRequest
 from .update_security_scheme_request_levels_item import UpdateSecuritySchemeRequestLevelsItem
+from .update_settings import UpdateSettings
 from .update_space_request import UpdateSpaceRequest
 from .update_sprint_request import UpdateSprintRequest
 from .update_sprint_request_capacity import UpdateSprintRequestCapacity
 from .update_sprint_request_capacity_people_item import UpdateSprintRequestCapacityPeopleItem
+from .update_status import UpdateStatus
 from .update_version_request import UpdateVersionRequest
 from .update_webhook_request import UpdateWebhookRequest
 from .update_webhook_request_locale import UpdateWebhookRequestLocale
@@ -1726,10 +1728,12 @@ __all__ = (
     "UpdateProjectAgentSettingsReviewStatuses",
     "UpdateSecuritySchemeRequest",
     "UpdateSecuritySchemeRequestLevelsItem",
+    "UpdateSettings",
     "UpdateSpaceRequest",
     "UpdateSprintRequest",
     "UpdateSprintRequestCapacity",
     "UpdateSprintRequestCapacityPeopleItem",
+    "UpdateStatus",
     "UpdateVersionRequest",
     "UpdateWebhookRequest",
     "UpdateWebhookRequestLocale",
