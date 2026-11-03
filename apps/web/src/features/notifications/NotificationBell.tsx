@@ -14,6 +14,10 @@ import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { useFieldLabel } from '../tracking/fieldLabel';
 
+const OUTCOMES = ['requested', 'approved', 'rejected'] as const;
+const outcomeOf = (value: string | null | undefined) =>
+  OUTCOMES.find((outcome) => outcome === value) ?? 'requested';
+
 /** One sentence per notification, e.g. "Mira Kaya hat Sie erwähnt". */
 export function useDescribe() {
   const { t } = useTranslation();
@@ -25,6 +29,19 @@ export function useDescribe() {
     const excerpt = details.quote
       ? `„${details.quote}“ · ${details.excerpt ?? ''}`
       : (details.excerpt ?? null);
+    // Agents asking to start or complete a sprint, and the answer (TL-96).
+    if (details.kind === 'approval') {
+      const item = details.items[0];
+      const sprint = notification.sprint?.name ?? '';
+      return {
+        title: t(`notifications.approval.${outcomeOf(item?.to)}`, {
+          actor,
+          sprint,
+          action: t(`notifications.approval.${item?.field === 'complete' ? 'complete' : 'start'}`),
+        }),
+        detail: details.excerpt ?? null,
+      };
+    }
     if (category === 'mention') {
       return { title: t('notifications.mentioned', { actor }), detail: excerpt };
     }

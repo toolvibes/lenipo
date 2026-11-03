@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type {
+  AgentRole,
   BacklogData,
   CompleteSprintRequest,
   CreateSprintRequest,
@@ -25,6 +26,7 @@ import { boards, issues, sprintIssues, sprints, users } from '../db/schema/index
 import { emitProjectEvent } from '../notifications/events.js';
 import { signal } from '../realtime/signals.js';
 import { SearchService } from '../search/search.service.js';
+import { AgentRoleService } from '../tracking/agent-roles.service.js';
 import { recordChanges } from '../tracking/history.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
@@ -71,6 +73,7 @@ export class SprintService {
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AgentRoleService) private readonly agentRoles: AgentRoleService,
   ) {}
 
   // ---------------------------------------------------------------- loading
@@ -98,16 +101,28 @@ export class SprintService {
     });
   }
 
-  private async load(principal: Principal, sprintId: string, plan: boolean) {
+  private async load(
+    principal: Principal,
+    sprintId: string,
+    plan: boolean,
+    roles: AgentRole[] = ['planner'],
+  ) {
     const [row] = await this.database.db.select().from(sprints).where(eq(sprints.id, sprintId));
     if (!row) throw new NotFoundException('Sprint not found');
     const board = await this.boards.get(principal, row.boardId);
-    if (plan) await this.requirePlanning(principal, row.boardId);
+    if (plan) await this.requirePlanning(principal, row.boardId, roles);
     return { sprint: row, board };
   }
 
-  /** Planning sprints needs `edit-issues` in the board's location project. */
-  private async requirePlanning(principal: Principal, boardId: string) {
+  /**
+   * Planning sprints needs `edit-issues` in the board's location project; agents also need a
+   * role there, the planner by default (TL-96, E-148).
+   */
+  private async requirePlanning(
+    principal: Principal,
+    boardId: string,
+    roles: AgentRole[] = ['planner'],
+  ) {
     const [board] = await this.database.db
       .select({ projectId: boards.projectId, type: boards.type })
       .from(boards)
@@ -115,6 +130,7 @@ export class SprintService {
     if (!board) throw new NotFoundException('Board not found');
     if (board.type !== 'scrum') throw new BadRequestException('Only Scrum boards have sprints');
     await this.projectAccess.require(principal, board.projectId, 'edit-issues');
+    await this.agentRoles.require(principal, board.projectId, roles);
     return board;
   }
 
@@ -152,8 +168,9 @@ export class SprintService {
     principal: Principal,
     boardId: string,
     request: CreateSprintRequest,
+    roles: AgentRole[] = ['planner'],
   ): Promise<Sprint> {
-    await this.requirePlanning(principal, boardId);
+    await this.requirePlanning(principal, boardId, roles);
     const board = await this.boards.get(principal, boardId);
     const [existing] = await this.database.db
       .select({ total: count() })
@@ -260,6 +277,10 @@ export class SprintService {
     for (const key of issueKeys) {
       loaded.push((await this.issueService.authorize(principal, key, 'edit-issues')).issue);
     }
+    // Agents plan only where they are planners (TL-96).
+    for (const projectId of new Set(loaded.map((issue) => issue.projectId))) {
+      await this.agentRoles.require(principal, projectId, ['planner']);
+    }
     const board = target
       ? await this.database.db.select().from(boards).where(eq(boards.id, target.boardId))
       : [];
@@ -362,15 +383,18 @@ export class SprintService {
     sprintId: string,
     request: CompleteSprintRequest,
   ): Promise<Sprint> {
-    const { sprint, board } = await this.load(principal, sprintId, true);
+    // A coordinator completes the sprint (TL-96, E-148).
+    const roles: AgentRole[] = ['coordinator', 'planner'];
+    const { sprint, board } = await this.load(principal, sprintId, true, roles);
     if (sprint.state !== 'active') throw new ConflictException('This sprint is not running');
     let target: SprintRow | null = null;
     if (request.moveTo === 'new') {
-      const created = await this.create(principal, board.id, {
-        goal: '',
-        startDate: null,
-        endDate: null,
-      });
+      const created = await this.create(
+        principal,
+        board.id,
+        { goal: '', startDate: null, endDate: null },
+        roles,
+      );
       [target = null] = await this.database.db
         .select()
         .from(sprints)

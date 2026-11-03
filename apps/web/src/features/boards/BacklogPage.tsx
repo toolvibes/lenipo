@@ -41,6 +41,7 @@ import { IssueTypeIcon, PriorityIcon, StatusLozenge, useMetaName } from '../trac
 import { Avatar } from '../tracking/UserPicker';
 import { BoardTabs } from './BoardTabs';
 import { CapacitySummary } from './Capacity';
+import { SprintApprovals } from './SprintApprovals';
 import { CompleteSprintDialog, SprintDialog, useEstimate } from './SprintDialogs';
 
 const BACKLOG = 'backlog';
@@ -658,6 +659,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           />
         }
       />
+      <SprintApprovals projectKey={board.project.key} boardId={board.id} />
       <PageHeading
         title={t('sprints.backlog')}
         subtitle={board.name}

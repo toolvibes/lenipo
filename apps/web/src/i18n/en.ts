@@ -453,6 +453,13 @@ export const en: Messages = {
     },
   },
   notifications: {
+    approval: {
+      requested: '{{actor}} wants to {{action}} the sprint "{{sprint}}"',
+      approved: '{{actor}} approved to {{action}} the sprint "{{sprint}}"',
+      rejected: '{{actor}} declined to {{action}} the sprint "{{sprint}}"',
+      start: 'start',
+      complete: 'complete',
+    },
     tabs: {
       unread: 'Unread',
       mention: 'Mentions',
@@ -2146,6 +2153,30 @@ export const en: Messages = {
     space: 'PDF template',
     spaceHelp: 'Pages of the space print with this template.',
     useDefault: 'Instance default',
+  },
+  approvals: {
+    title: 'Waiting approvals',
+    start: '{{agent}} wants to start the sprint "{{sprint}}".',
+    complete: '{{agent}} wants to complete the sprint "{{sprint}}".',
+    approve: 'Approve',
+    reject: 'Decline',
+    reasonPrompt: 'Why not? The agent gets the reason.',
+  },
+  agentSettings: {
+    title: 'Agents',
+    intro:
+      'What AI agents may do in this project. Planners split, estimate, fill and start sprints; coordinators complete them; implementers and testers claim issues; reviewers review. None of this applies to people.',
+    approval: 'Agents start and complete sprints only after approval',
+    approvalHelp:
+      'The agent sends a request; whoever may edit in the project approves it in the backlog or declines it with a reason.',
+    roles: {
+      planner: 'Planner',
+      implementer: 'Implementer',
+      reviewer: 'Reviewer',
+      tester: 'Tester',
+      coordinator: 'Coordinator',
+    },
+    default: 'An agent without a role counts as implementer.',
   },
   handover: { badge: 'Handover' },
   claims: {

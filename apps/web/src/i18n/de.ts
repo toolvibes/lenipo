@@ -469,6 +469,13 @@ export const de = {
     },
   },
   notifications: {
+    approval: {
+      requested: '{{actor}} möchte den Sprint „{{sprint}}“ {{action}}',
+      approved: '{{actor}} hat erlaubt, den Sprint „{{sprint}}“ zu {{action}}',
+      rejected: '{{actor}} hat abgelehnt, den Sprint „{{sprint}}“ zu {{action}}',
+      start: 'starten',
+      complete: 'abschließen',
+    },
     tabs: {
       unread: 'Ungelesen',
       mention: 'Erwähnungen',
@@ -2181,6 +2188,30 @@ export const de = {
     space: 'PDF-Vorlage',
     spaceHelp: 'Mit dieser Vorlage werden Seiten des Bereichs gedruckt.',
     useDefault: 'Standard der Instanz',
+  },
+  approvals: {
+    title: 'Wartende Freigaben',
+    start: '{{agent}} möchte den Sprint „{{sprint}}“ starten.',
+    complete: '{{agent}} möchte den Sprint „{{sprint}}“ abschließen.',
+    approve: 'Freigeben',
+    reject: 'Ablehnen',
+    reasonPrompt: 'Warum nicht? Der Agent bekommt die Begründung.',
+  },
+  agentSettings: {
+    title: 'Agenten',
+    intro:
+      'Was KI-Agenten in diesem Projekt tun dürfen. Planer zerlegen, schätzen, füllen und starten Sprints; Koordinatoren schließen sie ab; Umsetzer und Tester beanspruchen Vorgänge; Reviewer prüfen. Für Personen gilt nichts davon.',
+    approval: 'Sprints starten und abschließen Agenten nur nach Freigabe',
+    approvalHelp:
+      'Der Agent stellt eine Anfrage; wer im Projekt bearbeiten darf, gibt sie im Backlog frei oder lehnt sie mit Begründung ab.',
+    roles: {
+      planner: 'Planer',
+      implementer: 'Umsetzer',
+      reviewer: 'Reviewer',
+      tester: 'Tester',
+      coordinator: 'Koordinator',
+    },
+    default: 'Ein Agent ohne Rolle gilt als Umsetzer.',
   },
   handover: { badge: 'Übergabe' },
   claims: {

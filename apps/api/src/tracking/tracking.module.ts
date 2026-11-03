@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
+import { AgentRolesController } from './agent-roles.controller.js';
+import { AgentRoleService } from './agent-roles.service.js';
 import { AttachmentService } from './attachment.service.js';
 import { AttachmentsController } from './attachments.controller.js';
 import { TrackingBootstrapService } from './bootstrap.service.js';
@@ -32,6 +34,7 @@ import { WorklogService } from './worklog.service.js';
 @Module({
   imports: [IdentityModule],
   controllers: [
+    AgentRolesController,
     ProjectsController,
     IssuesController,
     AttachmentsController,
@@ -43,6 +46,7 @@ import { WorklogService } from './worklog.service.js';
     EstimationController,
   ],
   providers: [
+    AgentRoleService,
     TrackingBootstrapService,
     EstimationService,
     MetaService,
@@ -64,6 +68,8 @@ import { WorklogService } from './worklog.service.js';
     AttachmentService,
   ],
   exports: [
+    EstimationService,
+    AgentRoleService,
     AttachmentService,
     ProjectMemberService,
     ComponentService,

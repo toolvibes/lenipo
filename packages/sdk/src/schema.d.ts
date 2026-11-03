@@ -774,6 +774,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/agent-settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the agent settings of a project
+     * @description Whether agents need approval to start and complete sprints, and the roles of agents in the project. An agent without roles counts as implementer.
+     */
+    get: operations['Agents.getAgentSettings'];
+    /**
+     * Change whether agents need approval for sprints
+     * @description Requires the project permission `administer`.
+     */
+    put: operations['Agents.updateAgentSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/agent-settings/roles/{userId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the roles of an agent in the project
+     * @description planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+     */
+    put: operations['Agents.setAgentRoles'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/agents/{id}/webhook': {
     parameters: {
       query?: never;
@@ -5554,7 +5598,7 @@ export interface paths {
     put?: never;
     /**
      * Start a planned sprint
-     * @description One sprint runs per board. The estimates at this moment are the commitment.
+     * @description One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
      */
     post: operations['Sprints.start'];
     delete?: never;
@@ -5577,6 +5621,43 @@ export interface paths {
      * @description Unfinished issues go to the backlog, a new sprint (`"new"`) or a planned sprint (its id).
      */
     post: operations['Sprints.complete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/sprint-approvals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the sprint approval requests of agents in a project */
+    get: operations['Sprints.listApprovals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sprint-approvals/{id}/decision': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve or reject an agent’s sprint request
+     * @description For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+     */
+    post: operations['Sprints.decide'];
     delete?: never;
     options?: never;
     head?: never;
@@ -6786,6 +6867,23 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
       secret: string;
+    };
+    ProjectAgentSettings: {
+      sprintApproval: boolean;
+      agents: components['schemas']['ProjectAgent'][];
+    };
+    ProjectAgent: {
+      agent: components['schemas']['UserRef'];
+      vendor: string;
+      roles: components['schemas']['AgentRole'][];
+    };
+    /** @enum {string} */
+    AgentRole: 'planner' | 'implementer' | 'reviewer' | 'tester' | 'coordinator';
+    UpdateProjectAgentSettings: {
+      sprintApproval: boolean;
+    };
+    SetAgentRolesRequest: {
+      roles: components['schemas']['AgentRole'][];
     };
     AgentWebhookRequest: {
       /** Format: uri */
@@ -9070,6 +9168,11 @@ export interface components {
         title: string;
         spaceKey: string;
       } | null;
+      sprint: {
+        id: string;
+        name: string;
+        boardId: string;
+      } | null;
       actor: components['schemas']['UserRef'] | null;
       category: components['schemas']['NotificationCategory'];
       details: components['schemas']['NotificationDetails'];
@@ -9079,7 +9182,7 @@ export interface components {
     };
     NotificationDetails: {
       /** @enum {string} */
-      kind: 'created' | 'updated' | 'commented' | 'published';
+      kind: 'created' | 'updated' | 'commented' | 'published' | 'approval';
       items: {
         field: string;
         from: string | null;
@@ -10763,9 +10866,36 @@ export interface components {
       endDate: string;
       goal?: string;
     };
+    SprintApproval: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      action: 'start' | 'complete';
+      sprint: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+        /** Format: uuid */
+        boardId: string;
+      };
+      projectKey: string;
+      requestedBy: components['schemas']['UserRef'];
+      /** @enum {string} */
+      status: 'pending' | 'approved' | 'rejected';
+      decidedBy: components['schemas']['UserRef'] | null;
+      reason: string;
+      /** Format: date-time */
+      createdAt: string;
+      decidedAt: string | null;
+    };
     CompleteSprintRequest: {
       /** @default backlog */
       moveTo?: 'backlog' | 'new' | string;
+    };
+    DecideApprovalRequest: {
+      approve: boolean;
+      /** @default  */
+      reason?: string;
     };
     MoveToSprintRequest: {
       issueKeys: string[];
@@ -12908,6 +13038,108 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.getAgentSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectAgentSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.updateAgentSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateProjectAgentSettings'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectAgentSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.setAgentRoles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetAgentRolesRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectAgentSettings'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -23579,6 +23811,15 @@ export interface operations {
           'application/json': components['schemas']['Sprint'];
         };
       };
+      /** @description Waiting for a person’s approval */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SprintApproval'];
+        };
+      };
       /** @description Error (RFC 9457 problem details) */
       default: {
         headers: {
@@ -23612,6 +23853,83 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Sprint'];
+        };
+      };
+      /** @description Waiting for a person’s approval */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SprintApproval'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.listApprovals': {
+    parameters: {
+      query?: {
+        status?: 'pending' | 'approved' | 'rejected';
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SprintApproval'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Sprints.decide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecideApprovalRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SprintApproval'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

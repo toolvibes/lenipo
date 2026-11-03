@@ -31,6 +31,7 @@ import {
   projectRoleMembers,
   projects,
   spaces,
+  sprints,
   users,
   webhookDeliveries,
   webhooks,
@@ -665,11 +666,14 @@ export class NotificationService {
         summary: issues.summary,
         pageTitle: pages.title,
         spaceKey: spaces.key,
+        sprintName: sprints.name,
+        boardId: sprints.boardId,
       })
       .from(notifications)
       .leftJoin(issues, eq(issues.id, notifications.issueId))
       .leftJoin(pages, eq(pages.id, notifications.pageId))
       .leftJoin(spaces, eq(spaces.id, pages.spaceId))
+      .leftJoin(sprints, eq(sprints.id, notifications.sprintId))
       .where(where)
       .orderBy(desc(notifications.id))
       .limit(limit);
@@ -678,13 +682,25 @@ export class NotificationService {
       rows.map((row) => row.notification.actorId),
     );
     return rows.map(
-      ({ notification, key, summary, pageTitle, spaceKey }): Notification & { userId: string } => ({
+      ({
+        notification,
+        key,
+        summary,
+        pageTitle,
+        spaceKey,
+        sprintName,
+        boardId,
+      }): Notification & { userId: string } => ({
         id: notification.id,
         userId: notification.userId,
         issue: key && summary !== null ? { key, summary } : null,
         page:
           notification.pageId && pageTitle !== null && spaceKey
             ? { id: notification.pageId, title: pageTitle, spaceKey }
+            : null,
+        sprint:
+          notification.sprintId && sprintName !== null && boardId
+            ? { id: notification.sprintId, name: sprintName, boardId }
             : null,
         actor: notification.actorId ? (actors.get(notification.actorId) ?? null) : null,
         category: notification.category,
@@ -721,6 +737,45 @@ export class NotificationService {
         })),
     );
     if (deliveries.length > 0) await tx.insert(webhookDeliveries).values(deliveries);
+  }
+
+  /**
+   * Approval requests of agents and their outcome (TL-96, E-148): about a sprint, in the bell,
+   * the event stream and agent webhooks, never by e-mail.
+   */
+  async notifySprint(
+    tx: Executor,
+    recipients: string[],
+    sprintId: string,
+    actorId: string | null,
+    excerpt: string,
+    /** What happened: `start` or `complete` as field, `requested`/`approved`/`rejected` as value. */
+    item: NotificationDetails['items'][number],
+  ): Promise<void> {
+    if (recipients.length === 0) return;
+    const inserted = await tx
+      .insert(notifications)
+      .values(
+        recipients.map((userId) => ({
+          userId,
+          sprintId,
+          category: 'other' as const,
+          actorId,
+          details: {
+            kind: 'approval',
+            items: [item],
+            ...(excerpt ? { excerpt } : {}),
+          } satisfies NotificationDetails,
+          emailPending: false,
+        })),
+      )
+      .returning({ id: notifications.id });
+    await this.toAgentWebhooks(
+      tx,
+      inserted.map((entry) => entry.id),
+      recipients,
+    );
+    for (const userId of recipients) await signal(tx, { type: 'notification', userId });
   }
 
   /** The newest notification id of the user, 0 without any. */

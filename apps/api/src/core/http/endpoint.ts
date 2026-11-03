@@ -11,6 +11,8 @@ export interface EndpointSpec {
   upload?: string;
   /** The success response is the raw file content. */
   binary?: boolean;
+  /** A 202 answer besides the success one, e.g. a request waiting for approval (TL-96). */
+  accepted?: { description: string; response: z.ZodType };
 }
 
 export interface EndpointRecord {

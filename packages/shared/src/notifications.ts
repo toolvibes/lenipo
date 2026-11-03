@@ -15,7 +15,7 @@ export type NotificationCategory = z.infer<typeof NotificationCategory>;
 
 export const NotificationDetails = z
   .object({
-    kind: z.enum(['created', 'updated', 'commented', 'published']),
+    kind: z.enum(['created', 'updated', 'commented', 'published', 'approval']),
     items: z.array(
       z.object({ field: z.string(), from: z.string().nullable(), to: z.string().nullable() }),
     ),
@@ -35,6 +35,8 @@ export const Notification = z
     /** What the notification is about: an issue, or a wiki page (E-63). */
     issue: z.object({ key: z.string(), summary: z.string() }).nullable(),
     page: z.object({ id: z.string(), title: z.string(), spaceKey: z.string() }).nullable(),
+    /** A sprint, for approval requests of agents (TL-96, E-148). */
+    sprint: z.object({ id: z.string(), name: z.string(), boardId: z.string() }).nullable(),
     actor: UserRef.nullable(),
     category: NotificationCategory,
     details: NotificationDetails,

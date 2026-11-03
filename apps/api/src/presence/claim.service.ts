@@ -20,6 +20,7 @@ import {
   users,
 } from '../db/schema/index.js';
 import { requireIssueScope, SearchService } from '../search/search.service.js';
+import { AgentRoleService } from '../tracking/agent-roles.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
@@ -58,6 +59,7 @@ export class ClaimService {
     @Inject(SearchService) private readonly search: SearchService,
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
+    @Inject(AgentRoleService) private readonly agentRoles: AgentRoleService,
   ) {}
 
   async get(principal: Principal, key: string): Promise<ClaimResult> {
@@ -92,6 +94,8 @@ export class ClaimService {
         .where(eq(issues.id, visible.id))
         .for('update');
       if (!issue) throw new ConflictException('The issue is gone');
+      // Agents take work as implementers or testers (TL-96, E-148).
+      await this.agentRoles.require(principal, issue.projectId, ['implementer', 'tester']);
       if (issue.assigneeId && issue.assigneeId !== principal.userId) {
         throw new ConflictException('The issue is assigned to someone else');
       }

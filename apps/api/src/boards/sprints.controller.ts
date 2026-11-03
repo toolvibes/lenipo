@@ -8,20 +8,24 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Res,
 } from '@nestjs/common';
 import {
   BacklogData,
   Burndown,
   CompleteSprintRequest,
   CreateSprintRequest,
+  DecideApprovalRequest,
   MoveToSprintRequest,
   Sprint,
+  SprintApproval,
   SprintReport,
   SprintState,
   StartSprintRequest,
   UpdateSprintRequest,
   Velocity,
 } from '@toolvibes/shared';
+import type { Response } from 'express';
 import { z } from 'zod';
 import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
@@ -29,9 +33,12 @@ import type { Principal } from '../core/http/principal.js';
 import { RequireModule } from '../operations/operations.guard.js';
 import { ReportService } from './report.service.js';
 import { SprintService } from './sprint.service.js';
+import { SprintApprovalService } from './sprint-approval.service.js';
 
 const SprintListQuery = z.object({ state: SprintState.optional() });
 type SprintListQuery = z.infer<typeof SprintListQuery>;
+const ApprovalListQuery = z.object({ status: SprintApproval.shape.status.optional() });
+type ApprovalListQuery = z.infer<typeof ApprovalListQuery>;
 
 /** Sprints and backlog of Scrum boards (T-SPR, E-55); planning needs `edit-issues`. */
 @RequireModule('boards')
@@ -40,6 +47,7 @@ export class SprintsController {
   constructor(
     @Inject(SprintService) private readonly sprints: SprintService,
     @Inject(ReportService) private readonly reports: ReportService,
+    @Inject(SprintApprovalService) private readonly approvals: SprintApprovalService,
   ) {}
 
   @Endpoint({
@@ -138,16 +146,24 @@ export class SprintsController {
   @Endpoint({
     tag: 'Sprints',
     summary: 'Start a planned sprint',
-    description: 'One sprint runs per board. The estimates at this moment are the commitment.',
+    description:
+      'One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.',
     response: Sprint,
+    accepted: { description: 'Waiting for a person’s approval', response: SprintApproval },
   })
   @Post('sprints/:id/start')
   @HttpCode(200)
-  start(
+  async start(
     @CurrentPrincipal() principal: Principal,
     @Param('id', ParseUUIDPipe) id: string,
     @ValidBody(StartSprintRequest) body: StartSprintRequest,
-  ): Promise<Sprint> {
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Sprint | SprintApproval> {
+    const approval = await this.approvals.gate(principal, id, 'start', body);
+    if (approval) {
+      response.status(202);
+      return approval;
+    }
     return this.sprints.start(principal, id, body);
   }
 
@@ -157,15 +173,53 @@ export class SprintsController {
     description:
       'Unfinished issues go to the backlog, a new sprint (`"new"`) or a planned sprint (its id).',
     response: Sprint,
+    accepted: { description: 'Waiting for a person’s approval', response: SprintApproval },
   })
   @Post('sprints/:id/complete')
   @HttpCode(200)
-  complete(
+  async complete(
     @CurrentPrincipal() principal: Principal,
     @Param('id', ParseUUIDPipe) id: string,
     @ValidBody(CompleteSprintRequest) body: CompleteSprintRequest,
-  ): Promise<Sprint> {
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Sprint | SprintApproval> {
+    const approval = await this.approvals.gate(principal, id, 'complete', body);
+    if (approval) {
+      response.status(202);
+      return approval;
+    }
     return this.sprints.complete(principal, id, body);
+  }
+
+  @Endpoint({
+    tag: 'Sprints',
+    summary: 'List the sprint approval requests of agents in a project',
+    response: z.array(SprintApproval),
+  })
+  @Get('projects/:key/sprint-approvals')
+  listApprovals(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidQuery(ApprovalListQuery) query: ApprovalListQuery,
+  ): Promise<SprintApproval[]> {
+    return this.approvals.list(principal, key, query.status);
+  }
+
+  @Endpoint({
+    tag: 'Sprints',
+    summary: 'Approve or reject an agent’s sprint request',
+    description:
+      'For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.',
+    response: SprintApproval,
+  })
+  @Post('sprint-approvals/:id/decision')
+  @HttpCode(200)
+  decide(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(DecideApprovalRequest) body: DecideApprovalRequest,
+  ): Promise<SprintApproval> {
+    return this.approvals.decide(principal, id, body);
   }
 
   @Endpoint({

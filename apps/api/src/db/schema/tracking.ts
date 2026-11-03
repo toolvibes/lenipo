@@ -133,6 +133,8 @@ export const projects = pgTable(
     archivedAt: timestamp({ withTimezone: true }),
     /** Wiki pages created on sprint completion and release (TL-28, E-109), null when off. */
     wikiPages: jsonb(),
+    /** Agents start and complete sprints only after a person approved it (TL-96, E-148). */
+    agentSprintApproval: boolean().notNull().default(false),
   },
   (table) => [uniqueIndex('projects_key_unique').on(table.key)],
 );
@@ -761,4 +763,19 @@ export const issueClaims = pgTable(
     index('issue_claims_project_idx').on(table.projectId, table.expiresAt),
     index('issue_claims_user_idx').on(table.userId),
   ],
+);
+
+/** The roles of an agent in a project (TL-96, E-148); no row means implementer. */
+export const projectAgentRoles = pgTable(
+  'project_agent_roles',
+  {
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    roles: text().array().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.userId] })],
 );

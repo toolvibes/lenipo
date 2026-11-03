@@ -179,6 +179,18 @@ export function buildOpenApiDocument(version: string): Record<string, unknown> {
                 },
               }
             : { description: 'Success, no content' },
+        ...(spec.accepted
+          ? {
+              '202': {
+                description: spec.accepted.description,
+                content: {
+                  'application/json': {
+                    schema: components.add(spec.accepted.response, 'output'),
+                  },
+                },
+              },
+            }
+          : {}),
         default: {
           description: 'Error (RFC 9457 problem details)',
           content: { 'application/problem+json': { schema: problemRef } },

@@ -13,6 +13,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sprints } from './boards.js';
 import { users } from './identity.js';
 import { issues } from './tracking.js';
 import { pages } from './wiki.js';
@@ -63,6 +64,8 @@ export const notifications = pgTable(
     /** What it is about: an issue, or a wiki page (E-63); exactly one of the two. */
     issueId: uuid().references(() => issues.id, { onDelete: 'cascade' }),
     pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
+    /** Approval requests of agents (TL-96); never e-mailed. */
+    sprintId: uuid().references(() => sprints.id, { onDelete: 'cascade' }),
     eventId: bigint({ mode: 'number' }).references(() => domainEvents.id, { onDelete: 'set null' }),
     category: notificationCategory().notNull(),
     actorId: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -79,7 +82,10 @@ export const notifications = pgTable(
     index('notifications_email_idx')
       .on(table.userId, table.issueId, table.pageId)
       .where(sql`${table.emailPending}`),
-    check('notifications_subject', sql`num_nonnulls(${table.issueId}, ${table.pageId}) = 1`),
+    check(
+      'notifications_subject',
+      sql`num_nonnulls(${table.issueId}, ${table.pageId}, ${table.sprintId}) = 1`,
+    ),
   ],
 );
 

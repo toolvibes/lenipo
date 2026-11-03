@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { users } from './identity.js';
 import { issues, projects, statuses } from './tracking.js';
 
 export const boardType = pgEnum('board_type', ['kanban', 'scrum']);
@@ -162,5 +163,41 @@ export const sprintIssues = pgTable(
   (table) => [
     index('sprint_issues_sprint_idx').on(table.sprintId),
     index('sprint_issues_issue_idx').on(table.issueId),
+  ],
+);
+
+/**
+ * An agent's request to start or complete a sprint in a project that wants approval (TL-96,
+ * E-148); approving runs the action in the agent's name with the stored request.
+ */
+export const sprintApprovals = pgTable(
+  'sprint_approvals',
+  {
+    id: uuid().primaryKey(),
+    sprintId: uuid()
+      .notNull()
+      .references(() => sprints.id, { onDelete: 'cascade' }),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    /** start or complete. */
+    action: text().notNull(),
+    /** The body of the start or complete call. */
+    request: jsonb().notNull(),
+    requestedById: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** pending, approved or rejected. */
+    status: text().notNull().default('pending'),
+    decidedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    reason: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('sprint_approvals_pending')
+      .on(table.sprintId, table.action)
+      .where(sql`${table.status} = 'pending'`),
+    index('sprint_approvals_project_idx').on(table.projectId, table.status),
   ],
 );

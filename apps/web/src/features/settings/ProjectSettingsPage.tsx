@@ -30,6 +30,7 @@ import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { IssueTrash } from '../tracking/IssueTrash';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
+import { AgentSettings } from './AgentSettings';
 import { MailHandlerSettings } from './MailHandlerSettings';
 import { RoleMembers } from './RoleMembers';
 import { ServiceDeskSettings } from './ServiceDeskSettings';
@@ -329,6 +330,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
     | 'automation'
     | 'wikiPages'
     | 'serviceDesk'
+    | 'agents'
     | 'trash'
   >('workflow');
   useCurrentProject(projectKey);
@@ -420,6 +422,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('serviceDesk.title')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'agents' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('agents')}
+              >
+                {t('agentSettings.title')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -460,6 +470,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
           {view === 'trash' && mayDelete && <IssueTrash projectKey={projectKey} />}
+          {view === 'agents' && administer && <AgentSettings projectKey={projectKey} />}
           {view === 'serviceDesk' && administer && (
             <div className="flex flex-col gap-6">
               <ServiceDeskSettings projectKey={projectKey} />

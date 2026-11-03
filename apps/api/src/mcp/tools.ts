@@ -8,6 +8,7 @@ import {
   CreateIssueRequest,
   CreateProjectRequest,
   CreateWorklogRequest,
+  ESTIMATE_CARDS,
   type FeatureFlags,
   type ModuleName,
   PRESENCE_STATES,
@@ -23,6 +24,7 @@ import type { AuditService } from '../audit/audit.service.js';
 import type { BoardService } from '../boards/board.service.js';
 import type { ReportService } from '../boards/report.service.js';
 import type { SprintService } from '../boards/sprint.service.js';
+import type { SprintApprovalService } from '../boards/sprint-approval.service.js';
 import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
@@ -35,6 +37,7 @@ import { QueryException } from '../search/query-exception.js';
 import type { SearchService } from '../search/search.service.js';
 import type { ComponentService } from '../tracking/component.service.js';
 import type { CustomFieldService } from '../tracking/custom-field.service.js';
+import type { EstimationService } from '../tracking/estimation.service.js';
 import type { IssueService } from '../tracking/issue.service.js';
 import type { ProjectService } from '../tracking/project.service.js';
 import type { VersionService } from '../tracking/version.service.js';
@@ -67,6 +70,8 @@ export interface ToolServices extends WikiToolServices {
   claims: ClaimService;
   handovers: HandoverService;
   notifications: NotificationService;
+  approvals: SprintApprovalService;
+  estimation: EstimationService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
@@ -145,6 +150,9 @@ const MODULE_TOOLS: Partial<Record<ModuleName, string[]>> = {
     'get_active_sprint',
     'move_to_sprint',
     'get_sprint_report',
+    'create_sprint',
+    'start_sprint',
+    'complete_sprint',
   ],
   'time-tracking': ['log_work'],
 };
@@ -503,6 +511,108 @@ export function registerTools(
       });
       await audited('report_blocker', comment.id);
       return text(`${issue} is reported as blocked${blockedBy ? ` by ${blockedBy}` : ''}.`);
+    },
+  );
+
+  // ---------------------------------------------------------------- sprint self-management (TL-96)
+
+  tool(
+    'create_sprint',
+    {
+      title: 'Plan a new sprint',
+      description:
+        'Creates a planned sprint on a Scrum board (id from list_boards). Agents need the role planner in the project.',
+      inputSchema: {
+        board: z.uuid(),
+        name: z.string().max(80).optional(),
+        goal: z.string().max(1000).optional(),
+      },
+    },
+    async ({ board, name, goal }) => {
+      const sprint = await services.sprints.create(principal, board, {
+        ...(name ? { name } : {}),
+        goal: goal ?? '',
+        startDate: null,
+        endDate: null,
+      });
+      return text(`Planned ${sprint.name} (${sprint.id}).`, sprint);
+    },
+  );
+
+  tool(
+    'start_sprint',
+    {
+      title: 'Start a sprint',
+      description:
+        'Starts a planned sprint. Agents need the role planner. Where the project wants approval, the request waits for a person instead and you are told once it is decided (get_inbox).',
+      inputSchema: {
+        sprint: z.uuid(),
+        startDate: z.iso.date(),
+        endDate: z.iso.date(),
+        goal: z.string().max(1000).optional(),
+      },
+    },
+    async ({ sprint, startDate, endDate, goal }) => {
+      const request = { startDate, endDate, ...(goal ? { goal } : {}) };
+      const approval = await services.approvals.gate(principal, sprint, 'start', request);
+      if (approval) return text('Waiting for a person to approve the start.', approval);
+      const started = await services.sprints.start(principal, sprint, request);
+      return text(`Started ${started.name}.`, started);
+    },
+  );
+
+  tool(
+    'complete_sprint',
+    {
+      title: 'Complete the running sprint',
+      description:
+        'Completes it; unfinished issues go to the backlog, a new sprint ("new") or a planned one (id). Agents need the role coordinator or planner; where the project wants approval, a person decides first. Write the report with get_sprint_report and a wiki page afterwards.',
+      inputSchema: {
+        sprint: z.uuid(),
+        moveTo: z.string().optional().describe('"backlog" (default), "new" or a sprint id'),
+      },
+    },
+    async ({ sprint, moveTo }) => {
+      const request = { moveTo: moveTo ?? 'backlog' };
+      const approval = await services.approvals.gate(principal, sprint, 'complete', request);
+      if (approval) return text('Waiting for a person to approve the completion.', approval);
+      const completed = await services.sprints.complete(principal, sprint, request);
+      return text(`Completed ${completed.name}.`, completed);
+    },
+  );
+
+  tool(
+    'estimate',
+    {
+      title: 'Lay a planning poker card',
+      description:
+        'Your estimate for an issue in its planning poker round; starts a round if none is open. Others see only that you voted until the cards are turned over (reveal_estimates).',
+      inputSchema: { issue: IssueKey, card: z.enum(ESTIMATE_CARDS) },
+    },
+    async ({ issue, card }) => {
+      if (!(await services.estimation.get(principal, issue))) {
+        await services.estimation.start(principal, issue);
+      }
+      const round = await services.estimation.vote(principal, issue, card);
+      return text(`Voted ${card} on ${issue}; ${round?.votes.length ?? 1} card(s) laid.`);
+    },
+  );
+
+  tool(
+    'reveal_estimates',
+    {
+      title: 'Turn the planning poker cards over',
+      description:
+        'Shows all cards of the open round on an issue. Set the agreed value with update_issue (story points) and end the round with end=true.',
+      inputSchema: { issue: IssueKey, end: z.boolean().optional() },
+    },
+    async ({ issue, end }) => {
+      const round = await services.estimation.reveal(principal, issue);
+      const lines = (round?.votes ?? []).map(
+        (vote) => `- ${vote.user.displayName}: ${vote.value ?? '–'}`,
+      );
+      if (end) await services.estimation.end(principal, issue);
+      return text(lines.join('\n') || 'No round open.', { votes: round?.votes ?? [] });
     },
   );
 

@@ -189,3 +189,68 @@ export const AgentWebhook = z
   .object({ url: z.string(), secret: z.string() })
   .meta({ id: 'AgentWebhook' });
 export type AgentWebhook = z.infer<typeof AgentWebhook>;
+
+// ---------------------------------------------------------------- roles and approvals (TL-96, E-148)
+
+/**
+ * What an agent does in a project: planners plan, fill and start sprints, coordinators complete
+ * them, implementers and testers claim work, reviewers review. Without roles: implementer.
+ */
+export const AGENT_ROLES = ['planner', 'implementer', 'reviewer', 'tester', 'coordinator'] as const;
+export const AgentRole = z.enum(AGENT_ROLES).meta({ id: 'AgentRole' });
+export type AgentRole = z.infer<typeof AgentRole>;
+
+export const ProjectAgent = z
+  .object({
+    agent: UserRef,
+    vendor: z.string(),
+    /** Empty means implementer. */
+    roles: z.array(AgentRole),
+  })
+  .meta({ id: 'ProjectAgent' });
+export type ProjectAgent = z.infer<typeof ProjectAgent>;
+
+export const ProjectAgentSettings = z
+  .object({
+    /** Agents start and complete sprints only after a person approved it. */
+    sprintApproval: z.boolean(),
+    /** Agents with a role in the project. */
+    agents: z.array(ProjectAgent),
+  })
+  .meta({ id: 'ProjectAgentSettings' });
+export type ProjectAgentSettings = z.infer<typeof ProjectAgentSettings>;
+
+export const UpdateProjectAgentSettings = z
+  .object({ sprintApproval: z.boolean() })
+  .meta({ id: 'UpdateProjectAgentSettings' });
+export type UpdateProjectAgentSettings = z.infer<typeof UpdateProjectAgentSettings>;
+
+export const SetAgentRolesRequest = z
+  .object({ roles: z.array(AgentRole).max(AGENT_ROLES.length) })
+  .meta({ id: 'SetAgentRolesRequest' });
+export type SetAgentRolesRequest = z.infer<typeof SetAgentRolesRequest>;
+
+export const SprintApproval = z
+  .object({
+    id: Id,
+    action: z.enum(['start', 'complete']),
+    sprint: z.object({ id: Id, name: z.string(), boardId: Id }),
+    projectKey: z.string(),
+    requestedBy: UserRef,
+    status: z.enum(['pending', 'approved', 'rejected']),
+    decidedBy: UserRef.nullable(),
+    /** Why it was rejected. */
+    reason: z.string(),
+    createdAt: z.iso.datetime(),
+    decidedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'SprintApproval' });
+export type SprintApproval = z.infer<typeof SprintApproval>;
+
+export const DecideApprovalRequest = z
+  .object({
+    approve: z.boolean(),
+    reason: z.string().trim().max(2000).default(''),
+  })
+  .meta({ id: 'DecideApprovalRequest' });
+export type DecideApprovalRequest = z.infer<typeof DecideApprovalRequest>;

@@ -15,6 +15,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { BoardService } from '../boards/board.service.js';
 import { ReportService } from '../boards/report.service.js';
 import { SprintService } from '../boards/sprint.service.js';
+import { SprintApprovalService } from '../boards/sprint-approval.service.js';
 import { CurrentPrincipal } from '../core/http/decorators.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -29,6 +30,7 @@ import { EverythingService } from '../search/everything.service.js';
 import { SearchService } from '../search/search.service.js';
 import { ComponentService } from '../tracking/component.service.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
+import { EstimationService } from '../tracking/estimation.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { VersionService } from '../tracking/version.service.js';
@@ -72,6 +74,8 @@ export class McpController {
     @Inject(ClaimService) claims: ClaimService,
     @Inject(HandoverService) handovers: HandoverService,
     @Inject(NotificationService) notifications: NotificationService,
+    @Inject(SprintApprovalService) approvals: SprintApprovalService,
+    @Inject(EstimationService) estimation: EstimationService,
   ) {
     this.services = {
       database,
@@ -96,6 +100,8 @@ export class McpController {
       claims,
       handovers,
       notifications,
+      approvals,
+      estimation,
     };
   }
 

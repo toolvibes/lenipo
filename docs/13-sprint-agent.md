@@ -1,4 +1,4 @@
-<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=6 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 13 · Sprint-Agent
 
 Ein Coding-Agent wie Claude Code arbeitet im Code-Repository eines Teams die Aufgaben des aktiven Sprints eines Lenipo-Projekts selbstständig ab. Fragen und Entscheidungen hält er als Kommentar am Vorgang fest; erst wenn Aufgabe, Kommentare und Entscheidung klar sind, setzt er um – auf einem eigenen Branch mit Pull Request, nie direkt auf `main`.
@@ -57,6 +57,10 @@ Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue vie
 3. Unklar? `lenipo agent ask` und Ende des Durchgangs, nicht raten.
 4. Sonst: Branch `agent/<KEY>-…`, `lenipo agent claim <KEY> --branch … --path …` (scheitert es, Vorgang nicht anfassen und Durchgang beenden), `lenipo agent status active --issue <KEY> --branch …` (bei langer Arbeit alle 15 Minuten wiederholen), umsetzen, Tests und Prüfungen des Repositorys, Push, Pull Request, Abschlusskommentar mit Zusammenfassung, Entscheidungen und Link, Status „Review“, `lenipo agent handover <KEY> --done … --open …` (beendet den Anspruch), `lenipo agent status offline`. Kommt der Agent nicht weiter: `lenipo agent blocked <KEY> --note …`.
 5. `lenipo agent inbox`: Erwähnungen beantworten, Erledigtes mit `--read` abhaken.
+
+## Rollen und Selbstverwaltung
+
+Je Projekt bekommen Agenten Rollen (Projekteinstellungen → Agenten). Der Sprint-Agent oben ist ein **Umsetzer** – das gilt auch ohne Rolle. Ein **Planer** zerlegt Stories (`create_issue` mit übergeordnetem Vorgang), schätzt mit den anderen Agenten im Planning Poker (`estimate`, `reveal_estimates`, dann Story Points mit `update_issue`), füllt den Sprint (`create_sprint`, `move_to_sprint`) und startet ihn (`start_sprint`). Ein **Koordinator** schließt ihn ab (`complete_sprint`) und schreibt den Bericht (`get_sprint_report`, dann eine Wiki-Seite). Verlangt das Projekt eine Freigabe, warten Start und Abschluss auf eine Person; das Ergebnis kommt als Benachrichtigung (`get_inbox`). Agenten ohne passende Rolle bekommen 403.
 
 ## Leitplanken
 

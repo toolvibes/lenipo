@@ -56,13 +56,17 @@ function Detail({ notification }: { notification: Notification }) {
       }
     : notification.issue
       ? { to: '/issues/$key', params: { key: notification.issue.key } }
-      : null;
+      : notification.sprint
+        ? { to: '/boards/$id/backlog', params: { id: notification.sprint.boardId } }
+        : null;
   return (
     <div className="flex flex-col gap-4">
       <span className="font-[family-name:var(--font-mono)] text-[11.5px] font-medium text-[var(--ink-muted)]">
         {notification.issue
           ? `${notification.issue.key} · ${notification.issue.summary}`
-          : notification.page && `${notification.page.spaceKey} · ${notification.page.title}`}
+          : notification.page
+            ? `${notification.page.spaceKey} · ${notification.page.title}`
+            : notification.sprint?.name}
       </span>
       <div className="flex gap-3">
         {notification.actor ? (
@@ -224,7 +228,10 @@ export function NotificationsPage({ tab }: { tab: NotificationTab }) {
                           <span className="font-[family-name:var(--font-mono)]">
                             {notification.issue?.key ?? notification.page?.spaceKey}
                           </span>{' '}
-                          {notification.issue?.summary ?? notification.page?.title} ·{' '}
+                          {notification.issue?.summary ??
+                            notification.page?.title ??
+                            notification.sprint?.name}{' '}
+                          ·{' '}
                           <span title={formatDateTime(notification.createdAt)}>
                             {formatRelative(notification.createdAt)}
                           </span>
