@@ -29,6 +29,8 @@ export type IssueEvent =
       mentions: string[];
       /** An edit: only people mentioned for the first time are told. */
       edited: boolean;
+      /** An agent's internal note (TL-47): never reaches service desk customers. */
+      internal?: boolean;
     }
   | { type: 'issue.comment_deleted'; commentId: string }
   /** Moved to the trash with its subtasks (TL-61, E-126); the issue is gone from lists. */

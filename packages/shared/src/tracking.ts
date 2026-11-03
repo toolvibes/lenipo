@@ -697,6 +697,8 @@ export const Comment = z
     updatedAt: z.iso.datetime(),
     /** Changed after it was written (E-42). */
     edited: z.boolean(),
+    /** An internal note: customers of a service desk never see it (TL-47, E-137). */
+    internal: z.boolean(),
     canEdit: z.boolean(),
     canDelete: z.boolean(),
   })
@@ -704,7 +706,7 @@ export const Comment = z
 export type Comment = z.infer<typeof Comment>;
 
 export const CreateCommentRequest = z
-  .object({ body: RichTextInput })
+  .object({ body: RichTextInput, internal: z.boolean().optional() })
   .meta({ id: 'CreateCommentRequest' });
 export type CreateCommentRequest = z.infer<typeof CreateCommentRequest>;
 

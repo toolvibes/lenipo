@@ -110,6 +110,11 @@ function CommentItem({
               {t('issues.edited')}
             </span>
           )}
+          {comment.internal && (
+            <span className="rounded-[4px] bg-[var(--warning-soft)] px-1.5 text-xs font-medium text-[var(--warning)]">
+              {t('serviceDesk.internal')}
+            </span>
+          )}
           {!editing && comment.canEdit && (
             <button type="button" className={action} onClick={() => setEditing(true)}>
               {t('issues.editComment')}
@@ -178,12 +183,14 @@ function Activity({
   const [tab, setTab] = useState<'comments' | 'worklogs' | 'history'>('comments');
   const comments = useQuery(commentsQuery(issueKey));
   const history = useQuery({ ...historyQuery(issueKey), enabled: tab === 'history' });
+  // An internal note stays hidden from service desk customers (TL-47, E-137).
+  const [internal, setInternal] = useState(false);
   const addComment = useMutation({
     mutationFn: (body: RichText) =>
       unwrap(
         client.POST('/api/v1/issues/{key}/comments', {
           params: { path: { key: issueKey } },
-          body: { body },
+          body: { body, ...(internal ? { internal: true } : {}) },
         }),
       ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issue', issueKey] }),
@@ -228,6 +235,16 @@ function Activity({
               clearOnSubmit
               mentionProjectKey={projectKey}
             />
+          )}
+          {canComment && (
+            <label className="flex items-center gap-2 text-[13px] text-[var(--ink-muted)]">
+              <input
+                type="checkbox"
+                checked={internal}
+                onChange={(event) => setInternal(event.target.checked)}
+              />
+              {t('serviceDesk.internalNote')}
+            </label>
           )}
           {addComment.error && <FormError message={addComment.error.message} />}
           {comments.data?.length === 0 && (

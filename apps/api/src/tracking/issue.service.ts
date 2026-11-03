@@ -546,7 +546,7 @@ export class IssueService {
    * Rich text as stored: Markdown becomes a document (E-51). Mentions stay only for active
    * people who can see the project; `@email` finds them by address, others become text.
    */
-  private async richText<T extends RichTextInput | null>(
+  async richText<T extends RichTextInput | null>(
     input: T,
     projectId: string,
   ): Promise<Exclude<T, { markdown: string }>> {
@@ -596,7 +596,16 @@ export class IssueService {
 
   // ---------------------------------------------------------------- writing
 
-  async create(principal: Principal, input: CreateIssueRequest): Promise<Issue> {
+  /**
+   * `options.reporterId`: files the issue for that person, e.g. a service desk customer, who
+   * becomes reporter, watcher and actor of the event (TL-47, E-137).
+   */
+  async create(
+    principal: Principal,
+    input: CreateIssueRequest,
+    options: { reporterId?: string; requestTypeId?: string } = {},
+  ): Promise<Issue> {
+    const reporterId = options.reporterId ?? principal.userId;
     const project = await this.projectService.findBrowsable(principal, input.projectKey);
     const permissions = await this.projectAccess.require(principal, project.id, 'create-issues');
     const request = { ...input, description: await this.richText(input.description, project.id) };
@@ -671,8 +680,9 @@ export class IssueService {
         description: request.description,
         descriptionText: plainText(request.description),
         assigneeId,
-        reporterId: principal.userId,
+        reporterId,
         parentId: parent?.id ?? null,
+        requestTypeId: options.requestTypeId ?? null,
         labels: [...new Set(request.labels)],
         storyPoints: request.storyPoints,
         startDate: request.startDate,
@@ -681,7 +691,7 @@ export class IssueService {
         rank: rankBetween(last?.rank ?? null, null),
       });
       const watchers = [
-        ...new Set([principal.userId, assigneeId].filter((user): user is string => !!user)),
+        ...new Set([reporterId, assigneeId].filter((user): user is string => !!user)),
       ];
       await tx.insert(issueWatchers).values(watchers.map((userId) => ({ issueId: id, userId })));
       await this.components.replaceOnIssue(
@@ -701,7 +711,7 @@ export class IssueService {
         'affects',
         affectsVersions.map((version) => version.id),
       );
-      await emitIssueEvent(tx, id, principal.userId, {
+      await emitIssueEvent(tx, id, reporterId, {
         type: 'issue.created',
         mentions: mentionedUserIds(request.description),
       });
@@ -1553,6 +1563,7 @@ export class IssueService {
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       edited: row.updatedAt.getTime() !== row.createdAt.getTime(),
+      internal: row.internal,
       canEdit: own,
       canDelete: own || permissions.has('administer'),
     };
@@ -1666,6 +1677,7 @@ export class IssueService {
         authorId: principal.userId,
         body: request.body,
         bodyText: text,
+        internal: input.internal ?? false,
       });
       await tx.update(issues).set({ updatedAt: sql`now()` }).where(eq(issues.id, issue.id));
       await tx
@@ -1678,6 +1690,7 @@ export class IssueService {
         excerpt: text.slice(0, 500),
         mentions: mentionedUserIds(request.body),
         edited: false,
+        ...(input.internal ? { internal: true } : {}),
       });
     });
     const author = (await this.userRefs([principal.userId])).get(principal.userId) ?? null;
@@ -1689,6 +1702,7 @@ export class IssueService {
       createdAt: now,
       updatedAt: now,
       edited: false,
+      internal: input.internal ?? false,
       canEdit: true,
       canDelete: true,
     };

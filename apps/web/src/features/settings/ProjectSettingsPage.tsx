@@ -31,6 +31,7 @@ import { IssueTrash } from '../tracking/IssueTrash';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
 import { RoleMembers } from './RoleMembers';
+import { ServiceDeskSettings } from './ServiceDeskSettings';
 import { WikiPagesSettings } from './WikiPagesSettings';
 import { WorkflowEditor } from './WorkflowEditor';
 
@@ -326,6 +327,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
     | 'security'
     | 'automation'
     | 'wikiPages'
+    | 'serviceDesk'
     | 'trash'
   >('workflow');
   useCurrentProject(projectKey);
@@ -409,6 +411,14 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               >
                 {t('projectPages.title')}
               </button>
+              <button
+                type="button"
+                aria-current={view === 'serviceDesk' ? 'page' : undefined}
+                className={NAV_ITEM}
+                onClick={() => setView('serviceDesk')}
+              >
+                {t('serviceDesk.title')}
+              </button>
               <button type="button" className={NAV_ITEM} onClick={() => setDialog('fields')}>
                 {t('fields.project.button')}
               </button>
@@ -449,6 +459,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
           {view === 'trash' && mayDelete && <IssueTrash projectKey={projectKey} />}
+          {view === 'serviceDesk' && administer && <ServiceDeskSettings projectKey={projectKey} />}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

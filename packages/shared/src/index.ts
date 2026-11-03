@@ -21,6 +21,7 @@ export * from './problem.js';
 export * from './releases.js';
 export * from './reports.js';
 export * from './search.js';
+export * from './servicedesk.js';
 export * from './timeline.js';
 export * from './timesheet.js';
 export * from './tracking.js';

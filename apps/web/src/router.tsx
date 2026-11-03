@@ -50,6 +50,7 @@ import { ActivityPage } from './features/personal/ActivityPage';
 import { ProfilePage } from './features/personal/ProfilePage';
 import { PlanPage } from './features/plans/PlanPage';
 import { PlansPage } from './features/plans/PlansPage';
+import { PortalDeskPage, PortalPage, PortalRequestPage } from './features/portal/PortalPages';
 import { ReleasePage, ReleasesPage } from './features/releases/ReleasesPage';
 import { ProjectReportsPage } from './features/reports/ProjectReportsPage';
 import { type ReportKind as BoardReportKind, ReportsPage } from './features/reports/ReportsPage';
@@ -617,6 +618,30 @@ const planRoute = createRoute({
   },
 });
 
+const portalRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/portal',
+  component: PortalPage,
+});
+
+const portalDeskRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/portal/$key',
+  component: function PortalDesk() {
+    const { key } = portalDeskRoute.useParams();
+    return <PortalDeskPage key={key} deskKey={key.toUpperCase()} />;
+  },
+});
+
+const portalRequestRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/portal/requests/$key',
+  component: function PortalRequest() {
+    const { key } = portalRequestRoute.useParams();
+    return <PortalRequestPage key={key} issueKey={key.toUpperCase()} />;
+  },
+});
+
 const boardsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/boards',
@@ -944,6 +969,9 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     plansRoute,
     planRoute,
+    portalRoute,
+    portalDeskRoute,
+    portalRequestRoute,
     spacesRoute,
     spaceRoute.addChildren([
       spaceHomeRoute,

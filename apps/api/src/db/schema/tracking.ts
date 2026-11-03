@@ -445,6 +445,8 @@ export const issues = pgTable(
     deletedAt: timestamp({ withTimezone: true }),
     /** Who moved it to the trash (TL-61, E-126). */
     deletedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** Filed through the service desk portal as this request type (TL-47, E-137). */
+    requestTypeId: uuid(),
   },
   (table) => [
     uniqueIndex('issues_key_unique').on(table.key),
@@ -514,6 +516,8 @@ export const issueComments = pgTable(
     authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
     body: jsonb().notNull(),
     bodyText: text().notNull(),
+    /** An agent's note that customers of a service desk never see (TL-47, E-137). */
+    internal: boolean().notNull().default(false),
     searchVector: tsvector()
       .notNull()
       .generatedAlwaysAs(sql.raw(searchVector('body_text', 'A'))),

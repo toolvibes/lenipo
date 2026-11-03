@@ -106,6 +106,7 @@ export class NotificationService {
       return;
     // Issues moved by a workflow change would flood every watcher (E-70).
     if (event.type === 'issue.updated' && event.migration) return;
+    await this.notifyCustomer(tx, issue, event, row.actorId);
     const mentions = new Set(event.mentions);
 
     let candidates: string[];
@@ -151,6 +152,52 @@ export class NotificationService {
     };
 
     await this.deliver(tx, row, { issueId: issue.id }, recipients, details, category);
+  }
+
+  /**
+   * Service desk customers hear of public answers and status changes by e-mail, with a link to
+   * the portal; internal notes never reach them (TL-47, E-137). People who work in the project
+   * hear of everything through the normal notifications instead.
+   */
+  private async notifyCustomer(
+    tx: Executor,
+    issue: typeof issues.$inferSelect,
+    event: IssueEvent,
+    actorId: string | null,
+  ): Promise<void> {
+    if (!issue.requestTypeId || !issue.reporterId || issue.reporterId === actorId) return;
+    const answered = event.type === 'issue.commented' && !event.edited && !event.internal;
+    const moved =
+      event.type === 'issue.updated' && event.items.some((item) => STATUS_FIELDS.has(item.field));
+    if (!answered && !moved) return;
+    if ((await this.projectAccess.permissions(issue.reporterId, issue.projectId)).has('browse')) {
+      return;
+    }
+    const [customer] = await tx
+      .select({ email: users.email, locale: users.locale, status: users.status })
+      .from(users)
+      .where(eq(users.id, issue.reporterId));
+    if (!customer || customer.status !== 'active') return;
+    const link = `${(this.config.PUBLIC_URL ?? '').replace(/\/+$/, '')}/portal/requests/${issue.key}`;
+    const german = customer.locale !== 'en';
+    const subject = answered
+      ? german
+        ? `[${issue.key}] Neue Antwort auf Ihre Anfrage`
+        : `[${issue.key}] New answer to your request`
+      : german
+        ? `[${issue.key}] Ihre Anfrage hat einen neuen Status`
+        : `[${issue.key}] Your request has a new status`;
+    const line = german
+      ? `„${issue.summary}“: Details und Antworten im Portal: ${link}`
+      : `"${issue.summary}": details and answers in the portal: ${link}`;
+    const escape = (value: string) =>
+      value.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
+    await this.mailer.send({
+      to: customer.email,
+      subject,
+      text: `${line}\n`,
+      html: `<p>${escape(german ? `„${issue.summary}“` : `"${issue.summary}"`)}</p><p><a href="${escape(link)}">${german ? 'Anfrage im Portal öffnen' : 'Open the request in the portal'}</a></p>`,
+    });
   }
 
   /**

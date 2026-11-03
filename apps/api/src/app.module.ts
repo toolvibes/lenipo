@@ -25,6 +25,7 @@ import { PlanningModule } from './planning/planning.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
 import { SearchModule } from './search/search.module.js';
+import { ServiceDeskModule } from './servicedesk/servicedesk.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { TrackingModule } from './tracking/tracking.module.js';
 import { WikiModule } from './wiki/wiki.module.js';
@@ -63,6 +64,7 @@ export class AppModule {
         TrackingModule,
         SearchModule,
         PlanningModule,
+        ServiceDeskModule,
         ExportsModule,
         GitModule,
         ImportsModule,

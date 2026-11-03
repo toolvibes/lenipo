@@ -3658,6 +3658,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/portal/desks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Service desks the caller may file requests in */
+    get: operations['Portal.portalDesks'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/portal/desks/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A service desk with its request types */
+    get: operations['Portal.portalDesk'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/portal/desks/{key}/requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** File a request */
+    post: operations['Portal.createRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/portal/requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The caller’s requests */
+    get: operations['Portal.myRequests'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/portal/requests/{issueKey}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** One of the caller’s requests with its public comments */
+    get: operations['Portal.portalRequest'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/portal/requests/{issueKey}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Answer in a request */
+    post: operations['Portal.portalComment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/permission-scheme': {
     parameters: {
       query?: never;
@@ -4314,6 +4416,94 @@ export interface paths {
      */
     post: operations['Search.search'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/service-desk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The service desk of a project */
+    get: operations['Service desk.getServiceDesk'];
+    /** Run the project as a service desk, or change its settings */
+    put: operations['Service desk.saveServiceDesk'];
+    post?: never;
+    /** Stop running the project as a service desk */
+    delete: operations['Service desk.disableServiceDesk'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/service-desk/request-types': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a request type */
+    post: operations['Service desk.addRequestType'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/service-desk/request-types/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Change a request type */
+    put: operations['Service desk.updateRequestType'];
+    post?: never;
+    /** Remove a request type */
+    delete: operations['Service desk.removeRequestType'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/service-desk/customers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a customer (person or group) */
+    post: operations['Service desk.addCustomer'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/service-desk/customers/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a customer */
+    delete: operations['Service desk.removeCustomer'];
     options?: never;
     head?: never;
     patch?: never;
@@ -7516,11 +7706,13 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
       edited: boolean;
+      internal: boolean;
       canEdit: boolean;
       canDelete: boolean;
     };
     CreateCommentRequest: {
       body: components['schemas']['RichTextInput'];
+      internal?: boolean;
     };
     ChangeGroup: {
       id: number;
@@ -8567,6 +8759,76 @@ export interface components {
         reason: 'forbidden' | 'changed' | 'gone';
       }[];
     };
+    PortalDesk: {
+      key: string;
+      name: string;
+      intro: string;
+      requestTypes: components['schemas']['RequestType'][];
+    };
+    RequestType: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      issueType: {
+        key: string;
+        name: string;
+      };
+      fields: string[];
+    };
+    CreatePortalRequest: {
+      /** Format: uuid */
+      requestTypeId: string;
+      summary: string;
+      description?: components['schemas']['RichTextInput'];
+      priority?: string;
+      /** Format: date */
+      dueDate?: string;
+      customFields?: {
+        [key: string]: unknown;
+      };
+    };
+    PortalRequestDetail: {
+      key: string;
+      summary: string;
+      status: components['schemas']['StatusInfo'];
+      requestType: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      description: components['schemas']['RichTextOutput'] | null;
+      comments: {
+        /** Format: uuid */
+        id: string;
+        author: components['schemas']['UserRef'] | null;
+        body: components['schemas']['RichTextOutput'];
+        /** Format: date-time */
+        createdAt: string;
+        fromAgent: boolean;
+      }[];
+    };
+    PortalRequest: {
+      key: string;
+      summary: string;
+      status: components['schemas']['StatusInfo'];
+      requestType: string;
+      project: {
+        key: string;
+        name: string;
+      };
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    PortalCommentRequest: {
+      body: components['schemas']['RichTextInput'];
+    };
     SetProjectPermissionSchemeRequest: {
       schemeId: string | null;
     };
@@ -9196,6 +9458,67 @@ export interface components {
       )[];
       headings?: string[];
     };
+    ServiceDesk: {
+      settings: components['schemas']['ServiceDeskSettings'];
+      requestTypes: components['schemas']['RequestType'][];
+      customers: components['schemas']['ServiceCustomer'][];
+      portalPath: string;
+    };
+    ServiceDeskSettings: {
+      /** @enum {string} */
+      customerAccess: 'list' | 'everyone';
+      intro: string;
+      firstResponseHours: {
+        [key: string]: number;
+      };
+      resolutionHours: {
+        [key: string]: number;
+      };
+      pauseStatusIds: string[];
+      timeZone: string;
+      dayStartHour: number;
+    };
+    ServiceCustomer: {
+      /** Format: uuid */
+      id: string;
+      user: components['schemas']['UserRef'] | null;
+      group: {
+        /** Format: uuid */
+        id: string;
+        name: string;
+      } | null;
+    };
+    ServiceDeskSettingsInput: {
+      /** @enum {string} */
+      customerAccess: 'list' | 'everyone';
+      intro: string;
+      firstResponseHours: {
+        [key: string]: number;
+      };
+      resolutionHours: {
+        [key: string]: number;
+      };
+      pauseStatusIds: string[];
+      timeZone: string;
+      dayStartHour: number;
+    };
+    SaveRequestTypeRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      issueType: string;
+      /** @default [] */
+      fields?: string[];
+    };
+    AddServiceCustomerRequest:
+      | {
+          /** Format: uuid */
+          userId: string;
+        }
+      | {
+          /** Format: uuid */
+          groupId: string;
+        };
     SetupStatusResponse: {
       required: boolean;
     };
@@ -17995,6 +18318,196 @@ export interface operations {
       };
     };
   };
+  'Portal.portalDesks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalDesk'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Portal.portalDesk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Portal.createRequest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePortalRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalRequestDetail'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Portal.myRequests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalRequest'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Portal.portalRequest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        issueKey: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalRequestDetail'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Portal.portalComment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        issueKey: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PortalCommentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PortalRequestDetail'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Projects.setPermissionScheme': {
     parameters: {
       query?: never;
@@ -19391,6 +19904,267 @@ export interface operations {
         content: {
           'application/octet-stream': string;
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.getServiceDesk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ServiceDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.saveServiceDesk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ServiceDeskSettingsInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ServiceDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.disableServiceDesk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.addRequestType': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveRequestTypeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ServiceDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.updateRequestType': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveRequestTypeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ServiceDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.removeRequestType': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.addCustomer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddServiceCustomerRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ServiceDesk'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.removeCustomer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
