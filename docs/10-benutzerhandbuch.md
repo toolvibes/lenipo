@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=7 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=8 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -26,6 +26,14 @@ Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen,
 - Auf dem **Board** werden Karten zwischen Spalten gezogen; das ändert den Status. Schnellfilter und die Suche oben grenzen ein.
 - Im **Backlog** (Scrum) werden Vorgänge priorisiert und in Sprints geplant. „Sprint starten“ legt Ziel, Zeitraum und Kapazität fest; „Sprint abschließen“ verschiebt Offenes in den nächsten Sprint oder ins Backlog.
 - **Berichte** zeigen Burndown, Velocity, Durchlaufzeit und Kumulatives Flussdiagramm; die **Timeline** plant Epics über Wochen und Monate; der **Kalender** zeigt Vorgänge nach Fälligkeit.
+
+## Pläne über mehrere Projekte
+
+Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen, auf Wunsch mit TQL eingegrenzt (z. B. `labels = roadmap`). Die Zeitleiste zeigt die Epics und ihre Vorgänge aller Projekte; alle sehen nur, was sie sehen dürfen.
+
+- **Kapazität:** Je Projekt und Monat trägt man ein, wie viele Story Points das Team schafft. Die Tabelle zeigt die geplanten offenen Punkte (nach Fälligkeit, sonst Start) dagegen; Überlastung ist rot.
+- **Szenarien:** „Szenario anlegen“ und dann mit dem Stift Start, Fälligkeit oder Story Points einzelner Vorgänge ändern, ohne die echten Vorgänge anzufassen. Zeitleiste und Kapazität rechnen mit dem Szenario. „In echte Daten übernehmen“ schreibt die Änderungen in die Vorgänge; was man nicht ändern darf oder was inzwischen jemand geändert hat, wird übersprungen und genannt.
+- Ändern dürfen einen Plan die Person, die ihn angelegt hat, und die Administration.
 
 ## Suche mit TQL
 

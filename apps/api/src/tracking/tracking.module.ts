@@ -74,6 +74,7 @@ import { WorklogService } from './worklog.service.js';
     WorkingTimeService,
     WorklogService,
     VersionService,
+    TimelineService,
   ],
 })
 export class TrackingModule {}

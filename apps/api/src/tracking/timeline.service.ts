@@ -30,14 +30,14 @@ import { ProjectAccessService } from './project-access.service.js';
 type Range = { start: string; end: string };
 
 /** The issue's own dates as a bar; a single date makes a one-day bar. */
-function ownSpan(issue: IssueSummary): TimelineSpan | null {
+export function ownSpan(issue: IssueSummary): TimelineSpan | null {
   const start = issue.startDate ?? issue.dueDate;
   const end = issue.dueDate ?? issue.startDate;
   return start && end ? { start, end, derived: false } : null;
 }
 
 /** The smallest range around all given ranges; ISO dates sort as text. */
-function cover(ranges: Range[]): Range | null {
+export function cover(ranges: Range[]): Range | null {
   const starts = ranges.map((range) => range.start).sort();
   const ends = ranges.map((range) => range.end).sort();
   const start = starts[0];

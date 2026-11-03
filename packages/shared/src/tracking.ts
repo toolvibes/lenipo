@@ -444,7 +444,7 @@ const Summary = z.string().trim().min(1, 'Zusammenfassung fehlt').max(255);
 const Labels = z
   .array(z.string().trim().min(1).max(64).regex(/^\S+$/, 'Labels ohne Leerzeichen'))
   .max(30);
-const StoryPoints = z.number().min(0).max(1000).nullable();
+export const StoryPoints = z.number().min(0).max(1000).nullable();
 /** A duration such as "1w 2d 3h 30m", read with the instance's working time (E-47). */
 const DurationText = z.string().trim().min(1).max(50);
 

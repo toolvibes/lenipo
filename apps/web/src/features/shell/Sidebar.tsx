@@ -348,6 +348,9 @@ export function Sidebar({
             {t('sidebar.allBoards')}
           </NavRow>
         )}
+        <NavRow to="/plans" active={path.startsWith('/plans')}>
+          {t('plans.title')}
+        </NavRow>
         {modules.dashboards && (
           <NavRow to="/dashboards" active={path === '/dashboards'}>
             {t('dashboards.title')}

@@ -3513,6 +3513,151 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/plans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the plans */
+    get: operations['Plans.listPlans'];
+    put?: never;
+    /** Create a plan over several projects */
+    post: operations['Plans.createPlan'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a plan */
+    get: operations['Plans.getPlan'];
+    put?: never;
+    post?: never;
+    /** Delete a plan (owner and admins) */
+    delete: operations['Plans.deletePlan'];
+    options?: never;
+    head?: never;
+    /** Change a plan (owner and admins) */
+    patch: operations['Plans.updatePlan'];
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The plan: epics of its projects, capacity, scenarios; optionally as a scenario */
+    get: operations['Plans.viewPlan'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/capacity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set the capacity of a project for a month */
+    put: operations['Plans.setCapacity'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/scenarios': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a what-if scenario */
+    post: operations['Plans.createScenario'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/scenarios/{scenarioId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a scenario with its changes */
+    delete: operations['Plans.deleteScenario'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/scenarios/{scenarioId}/changes/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Record what the scenario changes on an issue
+     * @description Start date, due date and story points; an empty object removes the change.
+     */
+    put: operations['Plans.setChange'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/plans/{id}/scenarios/{scenarioId}/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply the scenario to the real issues
+     * @description All changes or the given issues. Changes the caller may not make, or to issues edited since, are skipped and listed.
+     */
+    post: operations['Plans.applyScenario'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/permission-scheme': {
     parameters: {
       query?: never;
@@ -8303,6 +8448,125 @@ export interface components {
       /** Format: date-time */
       at: string;
     };
+    PlanSummary: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      owner: components['schemas']['UserRef'] | null;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+      canEdit: boolean;
+    };
+    CreatePlanRequest: {
+      name: string;
+      /** @default  */
+      description?: string;
+      projectKeys: string[];
+      /** @default  */
+      tql?: string;
+    };
+    Plan: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      description: string;
+      owner: components['schemas']['UserRef'] | null;
+      projects: {
+        key: string;
+        name: string;
+      }[];
+      canEdit: boolean;
+      tql: string;
+    };
+    PlanView: {
+      plan: components['schemas']['Plan'];
+      scenarios: components['schemas']['PlanScenario'][];
+      scenarioId: string | null;
+      projects: {
+        key: string;
+        name: string;
+        epics: components['schemas']['TimelineEpic'][];
+      }[];
+      capacity: {
+        projectKey: string;
+        /** Format: date */
+        month: string;
+        capacity: number | null;
+        planned: number;
+      }[];
+    };
+    PlanScenario: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      changes: {
+        key: string;
+        change: components['schemas']['ScenarioChange'];
+      }[];
+    };
+    ScenarioChange: {
+      startDate?: string | null;
+      dueDate?: string | null;
+      storyPoints?: number | null;
+    };
+    TimelineEpic: {
+      issue: components['schemas']['IssueSummary'];
+      span: components['schemas']['TimelineSpan'] | null;
+      progress: {
+        done: number;
+        total: number;
+        /** @enum {string} */
+        unit: 'points' | 'issues';
+      };
+      children: components['schemas']['TimelineRow'][];
+    };
+    TimelineSpan: {
+      /** Format: date */
+      start: string;
+      /** Format: date */
+      end: string;
+      derived: boolean;
+    };
+    TimelineRow: {
+      issue: components['schemas']['IssueSummary'];
+      span: components['schemas']['TimelineSpan'] | null;
+    };
+    UpdatePlanRequest: {
+      name?: string;
+      /** @default  */
+      description?: string;
+      projectKeys?: string[];
+      /** @default  */
+      tql?: string;
+    };
+    SetCapacityRequest: {
+      projectKey: string;
+      /** Format: date */
+      month: string;
+      points: number | null;
+    };
+    CreateScenarioRequest: {
+      name: string;
+    };
+    ScenarioChangeInput: {
+      startDate?: string | null;
+      dueDate?: string | null;
+      storyPoints?: number | null;
+    };
+    ApplyScenarioRequest: {
+      issueKeys?: string[];
+    };
+    ApplyScenarioResult: {
+      applied: string[];
+      skipped: {
+        key: string;
+        /** @enum {string} */
+        reason: 'forbidden' | 'changed' | 'gone';
+      }[];
+    };
     SetProjectPermissionSchemeRequest: {
       schemeId: string | null;
     };
@@ -8420,28 +8684,6 @@ export interface components {
       dependencies: components['schemas']['TimelineDependency'][];
       conflicts: components['schemas']['TimelineConflict'][];
       canEditVersions: boolean;
-    };
-    TimelineEpic: {
-      issue: components['schemas']['IssueSummary'];
-      span: components['schemas']['TimelineSpan'] | null;
-      progress: {
-        done: number;
-        total: number;
-        /** @enum {string} */
-        unit: 'points' | 'issues';
-      };
-      children: components['schemas']['TimelineRow'][];
-    };
-    TimelineSpan: {
-      /** Format: date */
-      start: string;
-      /** Format: date */
-      end: string;
-      derived: boolean;
-    };
-    TimelineRow: {
-      issue: components['schemas']['IssueSummary'];
-      span: components['schemas']['TimelineSpan'] | null;
     };
     TimelineMilestone: {
       /** Format: uuid */
@@ -17379,6 +17621,367 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ActivityPage'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.listPlans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlanSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.createPlan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePlanRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Plan'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.getPlan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Plan'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.deletePlan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.updatePlan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePlanRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Plan'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.viewPlan': {
+    parameters: {
+      query?: {
+        scenario?: string;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlanView'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.setCapacity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetCapacityRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.createScenario': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateScenarioRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlanScenario'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.deleteScenario': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        scenarioId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.setChange': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        scenarioId: string;
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ScenarioChangeInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlanScenario'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Plans.applyScenario': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        scenarioId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ApplyScenarioRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApplyScenarioResult'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

@@ -48,6 +48,8 @@ import {
 } from './features/notifications/NotificationsPage';
 import { ActivityPage } from './features/personal/ActivityPage';
 import { ProfilePage } from './features/personal/ProfilePage';
+import { PlanPage } from './features/plans/PlanPage';
+import { PlansPage } from './features/plans/PlansPage';
 import { ReleasePage, ReleasesPage } from './features/releases/ReleasesPage';
 import { ProjectReportsPage } from './features/reports/ProjectReportsPage';
 import { type ReportKind as BoardReportKind, ReportsPage } from './features/reports/ReportsPage';
@@ -600,6 +602,21 @@ const dashboardRoute = createRoute({
   },
 });
 
+const plansRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/plans',
+  component: PlansPage,
+});
+
+const planRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/plans/$id',
+  component: function Plan() {
+    const { id } = planRoute.useParams();
+    return <PlanPage key={id} id={id} />;
+  },
+});
+
 const boardsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/boards',
@@ -925,6 +942,8 @@ const routeTree = rootRoute.addChildren([
     helpRoute,
     dashboardsRoute,
     dashboardRoute,
+    plansRoute,
+    planRoute,
     spacesRoute,
     spaceRoute.addChildren([
       spaceHomeRoute,

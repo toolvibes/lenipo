@@ -21,6 +21,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { OnboardingModule } from './onboarding/onboarding.module.js';
 import { OpenApiController } from './openapi/openapi.controller.js';
 import { PersonalModule } from './personal/personal.module.js';
+import { PlanningModule } from './planning/planning.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
 import { SearchModule } from './search/search.module.js';
@@ -61,6 +62,7 @@ export class AppModule {
         IdentityModule,
         TrackingModule,
         SearchModule,
+        PlanningModule,
         ExportsModule,
         GitModule,
         ImportsModule,

@@ -11,6 +11,7 @@ export * from './invitations.js';
 export * from './notifications.js';
 export * from './oauth.js';
 export * from './personal.js';
+export * from './plans.js';
 export * from './search.js';
 export * from './system.js';
 export * from './tracking.js';
