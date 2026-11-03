@@ -774,6 +774,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/agents/{id}/webhook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the webhook of an AI agent; the secret is returned only once
+     * @description Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+     */
+    put: operations['Agents.setWebhook'];
+    post?: never;
+    /** Remove the webhook of an AI agent */
+    delete: operations['Agents.removeWebhook'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/issues/{key}/claim': {
     parameters: {
       query?: never;
@@ -830,6 +851,46 @@ export interface paths {
      * @description One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
      */
     post: operations['Agents.claimNext'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/handover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Hand an issue over
+     * @description Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+     */
+    post: operations['Agents.handover'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/blocker': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Report a blocker
+     * @description Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+     */
+    post: operations['Agents.blocker'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3036,6 +3097,26 @@ export interface paths {
     get: operations['Notifications.settings'];
     /** Change the caller’s notification settings */
     put: operations['Notifications.updateSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Stream the caller’s new notifications (Server-Sent Events)
+     * @description Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.
+     */
+    get: operations['Notifications.events'];
+    put?: never;
     post?: never;
     delete?: never;
     options?: never;
@@ -6649,6 +6730,7 @@ export interface components {
       model: string;
       owner: components['schemas']['UserRef'] | null;
       taskFilter: string;
+      webhookUrl: string | null;
       /** @enum {string} */
       status: 'active' | 'deactivated';
       /** Format: date-time */
@@ -6705,6 +6787,14 @@ export interface components {
       lastUsedAt: string | null;
       secret: string;
     };
+    AgentWebhookRequest: {
+      /** Format: uri */
+      url: string;
+    };
+    AgentWebhook: {
+      url: string;
+      secret: string;
+    };
     ClaimResult: {
       claim: components['schemas']['Claim'] | null;
     };
@@ -6736,6 +6826,42 @@ export interface components {
       /** @default false */
       force?: boolean;
       filter?: string;
+    };
+    HandoverRequest: {
+      done: string;
+      /** @default  */
+      open?: string;
+      /** @default  */
+      notes?: string;
+      to?: string;
+    };
+    Comment: {
+      /** Format: uuid */
+      id: string;
+      author: components['schemas']['UserRef'] | null;
+      body: components['schemas']['RichTextOutput'];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      edited: boolean;
+      internal: boolean;
+      /** @enum {string} */
+      kind: 'comment' | 'handover';
+      canEdit: boolean;
+      canDelete: boolean;
+    };
+    RichTextOutput: components['schemas']['RichText'] | string;
+    RichText: {
+      /** @constant */
+      type: 'doc';
+      content?: unknown[];
+    } & {
+      [key: string]: unknown;
+    };
+    BlockerRequest: {
+      blockedBy?: string;
+      note: string;
     };
     UpdatePresenceRequest: {
       state: components['schemas']['PresenceState'];
@@ -7566,13 +7692,6 @@ export interface components {
       | {
           markdown: string;
         };
-    RichText: {
-      /** @constant */
-      type: 'doc';
-      content?: unknown[];
-    } & {
-      [key: string]: unknown;
-    };
     Issue: {
       /** Format: uuid */
       id: string;
@@ -7645,7 +7764,6 @@ export interface components {
       watcherCount: number;
       links: components['schemas']['IssueLink'][];
     };
-    RichTextOutput: components['schemas']['RichText'] | string;
     IssueLink: {
       /** Format: uuid */
       id: string;
@@ -8627,20 +8745,6 @@ export interface components {
     RankIssueRequest: {
       afterKey?: string | null;
       beforeKey?: string | null;
-    };
-    Comment: {
-      /** Format: uuid */
-      id: string;
-      author: components['schemas']['UserRef'] | null;
-      body: components['schemas']['RichTextOutput'];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-      edited: boolean;
-      internal: boolean;
-      canEdit: boolean;
-      canDelete: boolean;
     };
     CreateCommentRequest: {
       body: components['schemas']['RichTextInput'];
@@ -12816,6 +12920,70 @@ export interface operations {
       };
     };
   };
+  'Agents.setWebhook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AgentWebhookRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentWebhook'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.removeWebhook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Agents.getClaim': {
     parameters: {
       query?: never;
@@ -12964,6 +13132,76 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ClaimResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.handover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['HandoverRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Comment'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.blocker': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BlockerRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Comment'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
@@ -17740,6 +17978,7 @@ export interface operations {
         category?: components['schemas']['NotificationCategory'];
         limit?: number;
         before?: number;
+        after?: number;
       };
       header?: never;
       path?: never;
@@ -17877,6 +18116,33 @@ export interface operations {
         content: {
           'application/json': components['schemas']['NotificationSettings'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Notifications.events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

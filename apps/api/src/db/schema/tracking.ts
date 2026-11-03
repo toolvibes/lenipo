@@ -518,6 +518,8 @@ export const issueComments = pgTable(
     bodyText: text().notNull(),
     /** An agent's note that customers of a service desk never see (TL-47, E-137). */
     internal: boolean().notNull().default(false),
+    /** 'comment', or 'handover' with done, open and notes (TL-95, E-147). */
+    kind: text().notNull().default('comment'),
     searchVector: tsvector()
       .notNull()
       .generatedAlwaysAs(sql.raw(searchVector('body_text', 'A'))),

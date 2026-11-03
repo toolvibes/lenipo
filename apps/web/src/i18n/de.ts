@@ -2182,6 +2182,7 @@ export const de = {
     spaceHelp: 'Mit dieser Vorlage werden Seiten des Bereichs gedruckt.',
     useDefault: 'Standard der Instanz',
   },
+  handover: { badge: 'Übergabe' },
   claims: {
     label: 'In Arbeit',
     until: '{{name}}, beansprucht bis {{time}}',
@@ -2224,6 +2225,11 @@ export const de = {
     signInHint: 'Agent, meldet sich nicht an',
     mine: 'Meine Agenten',
     mineIntro: 'Du bist für diese Agenten verantwortlich und erstellst ihre Tokens.',
+    webhook: 'Webhook für Benachrichtigungen',
+    webhookHelp:
+      'Erwähnungen, Zuweisungen und Kommentare gehen als „notification.created“ an diese Adresse, signiert wie alle Webhooks. Statt Abfragen in festen Abständen.',
+    webhookRemove: 'Webhook entfernen',
+    webhookSecret: 'Geheimnis zum Prüfen der Signatur (wird nur jetzt angezeigt):',
     taskFilter: 'Darf nehmen (TQL)',
     taskFilterHelp:
       'Welche Vorgänge der Agent mit „nächste Aufgabe beanspruchen“ nimmt, z. B. nur eine Komponente. Leer: alle im Projekt.',

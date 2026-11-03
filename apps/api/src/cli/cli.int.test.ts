@@ -284,6 +284,14 @@ describe('tl, the command line (TL-37)', () => {
     const claimed = await tl(['agent', 'claim', mine, '--branch', 'agent/x', '--path', 'apps/web']);
     expect(claimed.out).toContain(`${mine} · Für den Agenten – beansprucht bis`);
     expect((await tl(['agent', 'release', mine])).out).toBe(`${mine}: freigegeben.`);
+    // Handover and blocker as single commands (TL-95).
+    expect((await tl(['agent', 'handover', mine, '--done', 'Entwurf steht.'])).out).toBe(
+      `${mine}: übergeben.`,
+    );
+    expect((await tl(['agent', 'blocked', mine, '--note', 'Farbe fehlt.'])).out).toBe(
+      `${mine}: als blockiert gemeldet.`,
+    );
+    expect((await tl(['agent', 'inbox'])).code).toBe(0);
     const human = new TestClient(test.baseUrl);
     await admin.request('POST', '/admin/users', {
       email: 'mensch@example.org',

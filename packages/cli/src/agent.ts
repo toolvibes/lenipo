@@ -8,7 +8,8 @@ import { CliError, type Io, openSession, type Session, unwrap } from './session.
  * sprint of one project. `lenipo agent init` writes the setup into the repository, `next` says
  * which issue to take, `ask` puts a question and waits for a human answer. `status` sends a
  * heartbeat and `team` shows who works in the project (TL-93). `claim` and `release` take and give
- * back an issue, with branch and paths as the work area (TL-94).
+ * back an issue, with branch and paths as the work area (TL-94). `handover`, `blocked`, `inbox` and
+ * `watch` are the messages between people and agents (TL-95).
  */
 
 /** What `.lenipo/agent.json` holds; the instance comes from the profile or LENIPO_URL. */
@@ -63,8 +64,19 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return claim(rest, io);
     case 'release':
       return release(rest, io);
+    case 'handover':
+      return handover(rest, io);
+    case 'blocked':
+      return blocked(rest, io);
+    case 'inbox':
+      return inbox(rest, io);
+    case 'watch':
+      return watch(rest, io);
     default:
-      throw new CliError('lenipo agent init|next|ask|status|team|claim|release', 2);
+      throw new CliError(
+        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch',
+        2,
+      );
   }
 }
 
@@ -124,12 +136,13 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
    - eigener Branch \`agent/<KEY>-<kurzer-name>\`, nie direkt auf main
    - den Vorgang beanspruchen: \`lenipo agent claim <KEY> --branch <Branch> --path <Ordner> …\` mit den Ordnern oder Dateien, die du ändern wirst. Scheitert das (jemand anderes arbeitet daran oder in denselben Dateien), den Vorgang nicht anfassen und den Durchgang beenden
    - \`lenipo agent status active --issue <KEY> --branch <Branch>\` melden und bei längerer Arbeit alle 15 Minuten wiederholen; das hält auch den Anspruch
-   - kommst du nicht weiter: \`lenipo agent status blocked --issue <KEY> --note "<Grund>"\`
+   - kommst du nicht weiter: \`lenipo agent blocked <KEY> --note "<Grund>" [--by <blockierender Vorgang>]\` und Durchgang beenden
    - Tests und Prüfungen des Repositorys laufen lassen; erst bei Erfolg pushen
    - Pull Request öffnen
-   - Kommentar am Vorgang mit Zusammenfassung, getroffenen Entscheidungen und Link zum Pull Request
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
-   - \`lenipo agent release <KEY>\` und \`lenipo agent status offline\`
+   - Übergabe schreiben: \`lenipo agent handover <KEY> --done "<Zusammenfassung, Entscheidungen, Link zum Pull Request>" --open "<was noch fehlt>"\`; das beendet auch deinen Anspruch. Soll jemand Bestimmtes weitermachen, mit \`--to <E-Mail>\`
+   - \`lenipo agent status offline\`
+6. Mit \`lenipo agent inbox\` nachsehen, ob dich jemand erwähnt hat, und antworten (\`lenipo issue comment\`); erledigte mit \`--read\` als gelesen markieren.
 
 ## Leitplanken
 
@@ -364,4 +377,132 @@ async function release(args: string[], io: Io) {
   const { client } = await openSession(io, values.profile);
   await unwrap(client.DELETE('/api/v1/issues/{key}/claim', { params: { path: { key } } }));
   io.out(`${key}: freigegeben.`);
+}
+
+/** A handover: done, open and notes as one comment; `--to` takes over assignee and claim (TL-95). */
+async function handover(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      ...COMMON,
+      done: { type: 'string' },
+      open: { type: 'string' },
+      notes: { type: 'string' },
+      to: { type: 'string' },
+    },
+    allowPositionals: true,
+  });
+  const key = positionals[0]?.toUpperCase();
+  if (!key || !values.done) {
+    throw new CliError(
+      'lenipo agent handover <KEY> --done <Text> [--open <Text>] [--notes <Text>] [--to <E-Mail|Id>]',
+      2,
+    );
+  }
+  const { client } = await openSession(io, values.profile);
+  await unwrap(
+    client.POST('/api/v1/issues/{key}/handover', {
+      params: { path: { key } },
+      body: {
+        done: values.done,
+        open: values.open ?? '',
+        notes: values.notes ?? '',
+        ...(values.to ? { to: values.to } : {}),
+      },
+    }),
+  );
+  io.out(`${key}: übergeben${values.to ? ` an ${values.to}` : ''}.`);
+}
+
+/** Reports a blocker: link, comment and the blocked state (TL-95). */
+async function blocked(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: { ...COMMON, by: { type: 'string' }, note: { type: 'string' } },
+    allowPositionals: true,
+  });
+  const key = positionals[0]?.toUpperCase();
+  if (!key || !values.note) {
+    throw new CliError('lenipo agent blocked <KEY> --note <Text> [--by <KEY>]', 2);
+  }
+  const { client } = await openSession(io, values.profile);
+  await unwrap(
+    client.POST('/api/v1/issues/{key}/blocker', {
+      params: { path: { key } },
+      body: { note: values.note, ...(values.by ? { blockedBy: values.by.toUpperCase() } : {}) },
+    }),
+  );
+  io.out(
+    `${key}: als blockiert gemeldet${values.by ? ` (durch ${values.by.toUpperCase()})` : ''}.`,
+  );
+}
+
+/** Unread notifications: mentions, assignments, comments (TL-95). */
+async function inbox(args: string[], io: Io) {
+  const { values } = parseArgs({
+    args,
+    options: { ...COMMON, output: { type: 'string', short: 'o' }, read: { type: 'boolean' } },
+  });
+  const { client } = await openSession(io, values.profile);
+  const list = await unwrap(
+    client.GET('/api/v1/me/notifications', { params: { query: { unread: 'true', limit: 50 } } }),
+  );
+  if (values.read && list.notifications.length > 0) {
+    await unwrap(
+      client.POST('/api/v1/me/notifications/read', {
+        body: { ids: list.notifications.map((entry) => entry.id) },
+      }),
+    );
+  }
+  if (values.output === 'json') {
+    io.out(JSON.stringify({ notifications: list.notifications }, null, 2));
+    return;
+  }
+  io.out(
+    list.notifications
+      .map(
+        (entry) =>
+          `${entry.issue?.key ?? entry.page?.title ?? ''} · ${entry.category} · ${entry.actor?.displayName ?? ''}`,
+      )
+      .join('\n') || 'Nichts Neues.',
+  );
+}
+
+/**
+ * Prints each new notification as one JSON line as soon as it comes, from the event stream
+ * (Server-Sent Events); reconnects with the last id after a break (TL-95).
+ */
+async function watch(args: string[], io: Io) {
+  const { values } = parseArgs({ args, options: COMMON });
+  const session = await openSession(io, values.profile);
+  let last: string | undefined;
+  for (;;) {
+    try {
+      const response = await session.authorizedFetch(`${session.url}/api/v1/me/events`, {
+        headers: { accept: 'text/event-stream', ...(last ? { 'last-event-id': last } : {}) },
+      });
+      if (!response.ok || !response.body) {
+        throw new CliError(`${response.status}: Ereignisse nicht verfügbar`);
+      }
+      const decoder = new TextDecoder();
+      let buffer = '';
+      for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+        buffer += decoder.decode(chunk, { stream: true });
+        let end = buffer.indexOf('\n\n');
+        while (end >= 0) {
+          const block = buffer.slice(0, end);
+          buffer = buffer.slice(end + 2);
+          const id = /^id: (.*)$/m.exec(block)?.[1];
+          const data = /^data: (.*)$/m.exec(block)?.[1];
+          if (id) last = id;
+          if (data) io.out(data);
+          end = buffer.indexOf('\n\n');
+        }
+      }
+    } catch (error) {
+      if (error instanceof CliError) throw error;
+    }
+    // The stream ended (restart, proxy): wait a moment and pick up where it broke.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
 }

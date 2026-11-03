@@ -27,7 +27,9 @@ import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import type { UserService } from '../identity/user.service.js';
+import type { NotificationService } from '../notifications/notification.service.js';
 import type { ClaimService } from '../presence/claim.service.js';
+import type { HandoverService } from '../presence/handover.service.js';
 import type { PresenceService } from '../presence/presence.service.js';
 import { QueryException } from '../search/query-exception.js';
 import type { SearchService } from '../search/search.service.js';
@@ -63,6 +65,8 @@ export interface ToolServices extends WikiToolServices {
   audit: AuditService;
   presence: PresenceService;
   claims: ClaimService;
+  handovers: HandoverService;
+  notifications: NotificationService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
@@ -402,6 +406,103 @@ export function registerTools(
       await services.claims.release(principal, issue);
       await audited('release_task', issue);
       return text(`Released ${issue}.`);
+    },
+  );
+
+  // ---------------------------------------------------------------- messages (TL-95)
+
+  tool(
+    'get_inbox',
+    {
+      title: 'Read your notifications',
+      description:
+        'Mentions, assignments, comments and changes on issues and pages you watch, newest first. Answer mentions with add_comment; mark what you handled with mark_read. A client that can hold a connection gets them live from GET /api/v1/me/events (Server-Sent Events).',
+      inputSchema: {
+        unread: z.boolean().optional().describe('Only unread ones (default true)'),
+        limit: z.number().int().min(1).max(100).optional(),
+      },
+      readOnly: true,
+    },
+    async ({ unread, limit }) => {
+      const list = await services.notifications.list(principal.userId, {
+        unread: unread ?? true,
+        limit: limit ?? 30,
+      });
+      const lines = list.notifications.map((entry) => {
+        const about = entry.issue
+          ? `${entry.issue.key} ${entry.issue.summary}`
+          : entry.page
+            ? `page "${entry.page.title}"`
+            : '';
+        const excerpt =
+          'excerpt' in entry.details && entry.details.excerpt ? `: ${entry.details.excerpt}` : '';
+        return `- #${entry.id} ${entry.category} by ${entry.actor?.displayName ?? 'someone'} on ${about}${excerpt} (${entry.createdAt})`;
+      });
+      return text(lines.join('\n') || 'No notifications.', list);
+    },
+  );
+
+  tool(
+    'mark_read',
+    {
+      title: 'Mark notifications as read',
+      description: 'Marks the given notification ids (from get_inbox) as read, or all.',
+      inputSchema: {
+        ids: z.array(z.number().int()).max(100).optional(),
+        all: z.boolean().optional(),
+      },
+    },
+    async ({ ids, all }) => {
+      await services.notifications.markRead(principal.userId, ids, all ?? false);
+      return text('Marked as read.');
+    },
+  );
+
+  tool(
+    'handover',
+    {
+      title: 'Hand an issue over',
+      description:
+        'One structured comment with what is done, what is open and notes, shown as handover. With `to` (id or e-mail of a person or agent) they become assignee, are mentioned and take over your claim with its work area; without, your claim ends.',
+      inputSchema: {
+        issue: IssueKey,
+        done: z.string().min(1).max(20_000).describe('What is done, Markdown'),
+        open: z.string().max(20_000).optional().describe('What is still missing'),
+        notes: z.string().max(20_000).optional(),
+        to: z.string().max(254).optional().describe('Who takes over: id or e-mail'),
+      },
+    },
+    async ({ issue, done, open, notes, to }) => {
+      const comment = await services.handovers.handover(principal, issue, {
+        done,
+        open: open ?? '',
+        notes: notes ?? '',
+        ...(to ? { to } : {}),
+      });
+      await audited('handover', comment.id);
+      return text(`Handed ${issue} over${to ? ` to ${to}` : ''}.`, { id: comment.id });
+    },
+  );
+
+  tool(
+    'report_blocker',
+    {
+      title: 'Report a blocker',
+      description:
+        'You cannot go on: links the blocking issue (if any), writes the note as comment and sets your status to blocked on this issue, so the team sees it.',
+      inputSchema: {
+        issue: IssueKey,
+        blockedBy: IssueKey.optional().describe('The issue in the way'),
+        note: z.string().min(1).max(2000).describe('What blocks you and what you need'),
+      },
+    },
+    async ({ issue, blockedBy, note }) => {
+      const comment = await services.handovers.blocker(principal, issue, {
+        note,
+        ...(blockedBy ? { blockedBy } : {}),
+      });
+      await audited('report_blocker', comment.id);
+      return text(`${issue} is reported as blocked${blockedBy ? ` by ${blockedBy}` : ''}.`);
     },
   );
 

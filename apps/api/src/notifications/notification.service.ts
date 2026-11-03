@@ -11,7 +11,8 @@ import {
   type UpdateNotificationSettings,
   type UserRef,
 } from '@toolvibes/shared';
-import { and, asc, count, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
+import { v7 as uuidv7 } from 'uuid';
 import type { AppConfig } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
@@ -31,6 +32,8 @@ import {
   projects,
   spaces,
   users,
+  webhookDeliveries,
+  webhooks,
 } from '../db/schema/index.js';
 import { signal } from '../realtime/signals.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
@@ -358,23 +361,31 @@ export class NotificationService {
       .from(notificationSettings)
       .where(inArray(notificationSettings.userId, recipients));
     const settingsOf = new Map(settings.map((entry) => [entry.userId, entry]));
-    await tx.insert(notifications).values(
-      recipients.map((userId) => {
-        const kind = category(userId);
-        const choice = settingsOf.get(userId);
-        const wantsEmail =
-          (choice?.emailEnabled ?? true) &&
-          (choice?.emailCategories ?? NOTIFICATION_CATEGORIES).includes(kind);
-        return {
-          userId,
-          ...subject,
-          eventId: row.id,
-          category: kind,
-          actorId: row.actorId,
-          details,
-          emailPending: this.mailer.enabled && wantsEmail,
-        };
-      }),
+    const inserted = await tx
+      .insert(notifications)
+      .values(
+        recipients.map((userId) => {
+          const kind = category(userId);
+          const choice = settingsOf.get(userId);
+          const wantsEmail =
+            (choice?.emailEnabled ?? true) &&
+            (choice?.emailCategories ?? NOTIFICATION_CATEGORIES).includes(kind);
+          return {
+            userId,
+            ...subject,
+            eventId: row.id,
+            category: kind,
+            actorId: row.actorId,
+            details,
+            emailPending: this.mailer.enabled && wantsEmail,
+          };
+        }),
+      )
+      .returning({ id: notifications.id });
+    await this.toAgentWebhooks(
+      tx,
+      inserted.map((entry) => entry.id),
+      recipients,
     );
     // The bells of the recipients update at once (P-NTF-01, E-58).
     for (const userId of recipients) await signal(tx, { type: 'notification', userId });
@@ -631,7 +642,23 @@ export class NotificationService {
   }
 
   async list(userId: string, query: NotificationListQuery): Promise<NotificationList> {
-    const rows = await this.database.db
+    const list = await this.present(
+      this.database.db,
+      and(
+        eq(notifications.userId, userId),
+        query.unread ? isNull(notifications.readAt) : undefined,
+        query.category ? eq(notifications.category, query.category) : undefined,
+        query.before ? lt(notifications.id, query.before) : undefined,
+        query.after !== undefined ? gt(notifications.id, query.after) : undefined,
+      ),
+      query.limit,
+    );
+    return { notifications: list, unreadCount: await this.unreadCount(userId) };
+  }
+
+  /** Notifications as the API shows them, newest first. */
+  private async present(db: Executor, where: SQL | undefined, limit: number) {
+    const rows = await db
       .select({
         notification: notifications,
         key: issues.key,
@@ -643,23 +670,17 @@ export class NotificationService {
       .leftJoin(issues, eq(issues.id, notifications.issueId))
       .leftJoin(pages, eq(pages.id, notifications.pageId))
       .leftJoin(spaces, eq(spaces.id, pages.spaceId))
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          query.unread ? isNull(notifications.readAt) : undefined,
-          query.category ? eq(notifications.category, query.category) : undefined,
-          query.before ? lt(notifications.id, query.before) : undefined,
-        ),
-      )
+      .where(where)
       .orderBy(desc(notifications.id))
-      .limit(query.limit);
+      .limit(limit);
     const actors = await this.refs(
-      this.database.db,
+      db,
       rows.map((row) => row.notification.actorId),
     );
-    const list: Notification[] = rows.map(
-      ({ notification, key, summary, pageTitle, spaceKey }) => ({
+    return rows.map(
+      ({ notification, key, summary, pageTitle, spaceKey }): Notification & { userId: string } => ({
         id: notification.id,
+        userId: notification.userId,
         issue: key && summary !== null ? { key, summary } : null,
         page:
           notification.pageId && pageTitle !== null && spaceKey
@@ -672,7 +693,43 @@ export class NotificationService {
         read: notification.readAt !== null,
       }),
     );
-    return { notifications: list, unreadCount: await this.unreadCount(userId) };
+  }
+
+  /**
+   * Agents with their own webhook get their new notifications there, signed and retried like
+   * every webhook delivery (TL-95, E-147).
+   */
+  private async toAgentWebhooks(tx: Executor, ids: number[], userIds: string[]): Promise<void> {
+    const hooks = await tx
+      .select({ id: webhooks.id, userId: webhooks.userId })
+      .from(webhooks)
+      .where(and(inArray(webhooks.userId, userIds), eq(webhooks.enabled, true)));
+    if (hooks.length === 0) return;
+    const shown = await this.present(tx, inArray(notifications.id, ids), ids.length);
+    const deliveries = hooks.flatMap((hook) =>
+      shown
+        .filter((notification) => notification.userId === hook.userId)
+        .map(({ userId: _user, ...notification }) => ({
+          id: uuidv7(),
+          webhookId: hook.id,
+          type: 'notification.created',
+          payload: {
+            type: 'notification.created',
+            timestamp: notification.createdAt,
+            data: { notification },
+          },
+        })),
+    );
+    if (deliveries.length > 0) await tx.insert(webhookDeliveries).values(deliveries);
+  }
+
+  /** The newest notification id of the user, 0 without any. */
+  async latestId(userId: string): Promise<number> {
+    const [row] = await this.database.db
+      .select({ id: sql<number | null>`max(${notifications.id})` })
+      .from(notifications)
+      .where(eq(notifications.userId, userId));
+    return Number(row?.id ?? 0);
   }
 
   async markRead(userId: string, ids: number[] | undefined, all: boolean): Promise<void> {

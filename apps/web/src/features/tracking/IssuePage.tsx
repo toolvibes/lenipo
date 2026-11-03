@@ -123,7 +123,13 @@ function CommentItem({
     'text-xs text-[var(--ink-muted)] underline-offset-2 hover:text-[var(--ink)] hover:underline';
 
   return (
-    <article className="flex gap-3">
+    <article
+      className={`flex gap-3 ${
+        comment.kind === 'handover'
+          ? 'rounded-[var(--radius-md)] border-l-[3px] border-[var(--accent)] bg-[var(--accent-soft)] py-2 pr-2 pl-3'
+          : ''
+      }`}
+    >
       {comment.author && <Avatar user={comment.author} size={28} />}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
@@ -140,6 +146,11 @@ function CommentItem({
               title={formatDateTime(comment.updatedAt)}
             >
               {t('issues.edited')}
+            </span>
+          )}
+          {comment.kind === 'handover' && (
+            <span className="rounded-[4px] bg-[var(--surface-1)] px-1.5 text-xs font-medium text-[var(--accent)]">
+              {t('handover.badge')}
             </span>
           )}
           {comment.internal && (

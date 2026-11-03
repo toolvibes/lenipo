@@ -39,6 +39,11 @@ export const webhooks = pgTable('webhooks', {
   /** Start of the current run of failed deliveries; null while deliveries succeed. */
   failingSince: timestamp({ withTimezone: true }),
   createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
+  /**
+   * Set for an agent's own webhook: it gets that agent's notifications and no other events, and
+   * the instance list leaves it out (TL-95, E-147).
+   */
+  userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

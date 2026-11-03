@@ -4,7 +4,7 @@ import { and, eq, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { agentProfiles, notificationSettings, users } from '../db/schema/index.js';
+import { agentProfiles, notificationSettings, users, webhooks } from '../db/schema/index.js';
 import { UserService } from './user.service.js';
 
 const owners = alias(users, 'owners');
@@ -111,10 +111,12 @@ export class AgentService {
         createdAt: agentProfiles.createdAt,
         ownerId: owners.id,
         ownerName: owners.displayName,
+        webhookUrl: webhooks.url,
       })
       .from(agentProfiles)
       .innerJoin(users, eq(users.id, agentProfiles.userId))
       .leftJoin(owners, eq(owners.id, agentProfiles.ownerId))
+      .leftJoin(webhooks, eq(webhooks.userId, users.id))
       .where(where)
       .orderBy(users.displayName);
     return rows.map((row) => ({
@@ -124,6 +126,7 @@ export class AgentService {
       vendor: row.vendor,
       model: row.model,
       taskFilter: row.taskFilter,
+      webhookUrl: row.webhookUrl,
       createdAt: row.createdAt.toISOString(),
       owner: row.ownerId ? { id: row.ownerId, displayName: row.ownerName ?? '' } : null,
     }));

@@ -91,6 +91,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     PasswordService,
     DirectoryService,
     UserLifecycleService,
+    AgentService,
   ],
 })
 export class IdentityModule {}

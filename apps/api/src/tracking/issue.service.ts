@@ -1564,6 +1564,7 @@ export class IssueService {
       updatedAt: row.updatedAt.toISOString(),
       edited: row.updatedAt.getTime() !== row.createdAt.getTime(),
       internal: row.internal,
+      kind: row.kind as Comment['kind'],
       canEdit: own,
       canDelete: own || permissions.has('administer'),
     };
@@ -1664,6 +1665,7 @@ export class IssueService {
     principal: Principal,
     key: string,
     input: CreateCommentRequest,
+    kind: Comment['kind'] = 'comment',
   ): Promise<Comment> {
     const { issue } = await this.load(principal, key, 'comment');
     const request = { body: await this.richText(input.body, issue.projectId) };
@@ -1678,6 +1680,7 @@ export class IssueService {
         body: request.body,
         bodyText: text,
         internal: input.internal ?? false,
+        kind,
       });
       await tx.update(issues).set({ updatedAt: sql`now()` }).where(eq(issues.id, issue.id));
       await tx
@@ -1703,6 +1706,7 @@ export class IssueService {
       updatedAt: now,
       edited: false,
       internal: input.internal ?? false,
+      kind,
       canEdit: true,
       canDelete: true,
     };

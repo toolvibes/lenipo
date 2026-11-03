@@ -56,6 +56,8 @@ export const NotificationListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(30),
   /** Older than this notification id, for paging. */
   before: z.coerce.number().int().positive().optional(),
+  /** Newer than this notification id, e.g. to catch up after a broken event stream (TL-95). */
+  after: z.coerce.number().int().nonnegative().optional(),
 });
 export type NotificationListQuery = z.infer<typeof NotificationListQuery>;
 

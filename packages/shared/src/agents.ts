@@ -29,6 +29,8 @@ export const Agent = z
     owner: UserRef.nullable(),
     /** TQL for what the agent may take with claim-next; empty: anything (TL-94, E-146). */
     taskFilter: z.string(),
+    /** Where the agent's notifications are sent; null: none (TL-95, E-147). */
+    webhookUrl: z.string().nullable(),
     status: z.enum(['active', 'deactivated']),
     createdAt: z.iso.datetime(),
   })
@@ -150,3 +152,40 @@ export type Claim = z.infer<typeof Claim>;
 /** A claim, or null when there is none (or nothing fit claim-next). */
 export const ClaimResult = z.object({ claim: Claim.nullable() }).meta({ id: 'ClaimResult' });
 export type ClaimResult = z.infer<typeof ClaimResult>;
+
+// ---------------------------------------------------------------- collaboration (TL-95, E-147)
+
+const Section = z.string().trim().max(20_000);
+
+export const HandoverRequest = z
+  .object({
+    /** What is done, Markdown. */
+    done: Section.min(1),
+    /** What is still missing, Markdown. */
+    open: Section.default(''),
+    notes: Section.default(''),
+    /** The person or agent taking over: id or e-mail; becomes assignee and holds the claim. */
+    to: z.string().trim().min(1).max(254).optional(),
+  })
+  .meta({ id: 'HandoverRequest' });
+export type HandoverRequest = z.infer<typeof HandoverRequest>;
+
+export const BlockerRequest = z
+  .object({
+    /** The issue in the way; linked as "blocks" when given. */
+    blockedBy: z.string().trim().min(1).max(40).optional(),
+    note: z.string().trim().min(1).max(2000),
+  })
+  .meta({ id: 'BlockerRequest' });
+export type BlockerRequest = z.infer<typeof BlockerRequest>;
+
+export const AgentWebhookRequest = z
+  .object({ url: z.url().max(2000) })
+  .meta({ id: 'AgentWebhookRequest' });
+export type AgentWebhookRequest = z.infer<typeof AgentWebhookRequest>;
+
+/** Returned once when the webhook is set; the secret signs every delivery. */
+export const AgentWebhook = z
+  .object({ url: z.string(), secret: z.string() })
+  .meta({ id: 'AgentWebhook' });
+export type AgentWebhook = z.infer<typeof AgentWebhook>;

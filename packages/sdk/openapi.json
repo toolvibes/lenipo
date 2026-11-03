@@ -2155,6 +2155,90 @@
         }
       }
     },
+    "/api/v1/agents/{id}/webhook": {
+      "put": {
+        "operationId": "Agents.setWebhook",
+        "summary": "Set the webhook of an AI agent; the secret is returned only once",
+        "description": "Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWebhook"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Agents.removeWebhook",
+        "summary": "Remove the webhook of an AI agent",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/issues/{key}/claim": {
       "get": {
         "operationId": "Agents.getClaim",
@@ -2358,6 +2442,110 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClaimResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/handover": {
+      "post": {
+        "operationId": "Agents.handover",
+        "summary": "Hand an issue over",
+        "description": "Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoverRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/blocker": {
+      "post": {
+        "operationId": "Agents.blocker",
+        "summary": "Report a blocker",
+        "description": "Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
                 }
               }
             }
@@ -8753,6 +8941,16 @@
               "exclusiveMinimum": 0,
               "maximum": 9007199254740991
             }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
           }
         ],
         "responses": {
@@ -8901,6 +9099,31 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/events": {
+      "get": {
+        "operationId": "Notifications.events",
+        "summary": "Stream the caller’s new notifications (Server-Sent Events)",
+        "description": "Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success, no content"
           },
           "default": {
             "description": "Error (RFC 9457 problem details)",
@@ -20757,6 +20980,12 @@
           "taskFilter": {
             "type": "string"
           },
+          "webhookUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -20777,6 +21006,7 @@
           "model",
           "owner",
           "taskFilter",
+          "webhookUrl",
           "status",
           "createdAt"
         ],
@@ -21008,6 +21238,35 @@
         ],
         "additionalProperties": false
       },
+      "AgentWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "AgentWebhook": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "secret"
+        ],
+        "additionalProperties": false
+      },
       "ClaimResult": {
         "type": "object",
         "properties": {
@@ -21135,6 +21394,144 @@
             "maxLength": 2000
           }
         }
+      },
+      "HandoverRequest": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "open": {
+            "default": "",
+            "type": "string",
+            "maxLength": 20000
+          },
+          "notes": {
+            "default": "",
+            "type": "string",
+            "maxLength": 20000
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "done"
+        ]
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "body": {
+            "$ref": "#/components/schemas/RichTextOutput"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "handover"
+            ]
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "body",
+          "createdAt",
+          "updatedAt",
+          "edited",
+          "internal",
+          "kind",
+          "canEdit",
+          "canDelete"
+        ],
+        "additionalProperties": false
+      },
+      "RichTextOutput": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RichText"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "RichText": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "doc"
+          },
+          "content": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": {}
+      },
+      "BlockerRequest": {
+        "type": "object",
+        "properties": {
+          "blockedBy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "note"
+        ]
       },
       "UpdatePresenceRequest": {
         "type": "object",
@@ -24585,23 +24982,6 @@
           }
         ]
       },
-      "RichText": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "doc"
-          },
-          "content": {
-            "type": "array",
-            "items": {}
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": {}
-      },
       "Issue": {
         "type": "object",
         "properties": {
@@ -24980,16 +25360,6 @@
           "links"
         ],
         "additionalProperties": false
-      },
-      "RichTextOutput": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/RichText"
-          },
-          {
-            "type": "string"
-          }
-        ]
       },
       "IssueLink": {
         "type": "object",
@@ -28828,63 +29198,6 @@
             ]
           }
         }
-      },
-      "Comment": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "author": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "body": {
-            "$ref": "#/components/schemas/RichTextOutput"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "edited": {
-            "type": "boolean"
-          },
-          "internal": {
-            "type": "boolean"
-          },
-          "canEdit": {
-            "type": "boolean"
-          },
-          "canDelete": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "author",
-          "body",
-          "createdAt",
-          "updatedAt",
-          "edited",
-          "internal",
-          "canEdit",
-          "canDelete"
-        ],
-        "additionalProperties": false
       },
       "CreateCommentRequest": {
         "type": "object",

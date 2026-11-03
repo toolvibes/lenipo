@@ -22,6 +22,7 @@ import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
 import { TopBar } from '../../ui/TopBar';
+import { AgentWebhookForm } from '../admin/AgentsPage';
 import { RecoveryCodeList, TwoFactorSetupFlow } from '../auth/TwoFactorPage';
 import { Settings as EmailSettings } from '../notifications/NotificationBell';
 
@@ -709,6 +710,7 @@ function MyAgents({ me, agents }: { me: Me; agents: Agent[] }) {
             </span>
           </h3>
           <Tokens me={me} agentId={agent.id} />
+          <AgentWebhookForm agent={agent} />
         </div>
       ))}
     </div>

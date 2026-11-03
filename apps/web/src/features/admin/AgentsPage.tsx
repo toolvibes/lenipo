@@ -124,6 +124,80 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
   );
 }
 
+/** Where the agent's notifications go, instead of polling (TL-95, E-147). */
+export function AgentWebhookForm({ agent }: { agent: Agent }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [url, setUrl] = useState(agent.webhookUrl ?? '');
+  const [secret, setSecret] = useState<string | null>(null);
+  const done = () => queryClient.invalidateQueries({ queryKey: agentsQuery.queryKey });
+  const save = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.PUT('/api/v1/agents/{id}/webhook', {
+          params: { path: { id: agent.id } },
+          body: { url: url.trim() },
+        }),
+      ),
+    onSuccess: (hook) => {
+      setSecret(hook.secret);
+      void done();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () =>
+      unwrap(client.DELETE('/api/v1/agents/{id}/webhook', { params: { path: { id: agent.id } } })),
+    onSuccess: () => {
+      setUrl('');
+      setSecret(null);
+      void done();
+    },
+  });
+  return (
+    <form
+      className="flex max-w-[720px] flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        save.mutate();
+      }}
+    >
+      {(save.error ?? remove.error) && (
+        <FormError message={(save.error ?? remove.error)?.message ?? ''} />
+      )}
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-[260px] flex-1">
+          <TextField
+            label={t('agents.webhook')}
+            help={t('agents.webhookHelp')}
+            type="url"
+            value={url}
+            placeholder="https://runner.example.org/lenipo"
+            onChange={(event) => setUrl(event.target.value)}
+          />
+        </div>
+        <Button type="submit" size="sm" disabled={!url.trim() || save.isPending}>
+          {t('common.save')}
+        </Button>
+        {agent.webhookUrl && (
+          <Button
+            type="button"
+            size="sm"
+            disabled={remove.isPending}
+            onClick={() => remove.mutate()}
+          >
+            {t('agents.webhookRemove')}
+          </Button>
+        )}
+      </div>
+      {secret && (
+        <p role="status" className="m-0 text-[13px]">
+          {t('agents.webhookSecret')} <code className="break-all">{secret}</code>
+        </p>
+      )}
+    </form>
+  );
+}
+
 /** Accounts of AI agents with their tokens (TL-92, E-144). */
 export function AgentsPage() {
   const { t } = useTranslation();
@@ -181,7 +255,12 @@ export function AgentsPage() {
                 {t('agents.tokens')}
               </Button>
             </div>
-            {tokensOf === agent.id && me.data && <Tokens me={me.data} agentId={agent.id} />}
+            {tokensOf === agent.id && me.data && (
+              <>
+                <Tokens me={me.data} agentId={agent.id} />
+                <AgentWebhookForm agent={agent} />
+              </>
+            )}
           </li>
         ))}
       </ul>

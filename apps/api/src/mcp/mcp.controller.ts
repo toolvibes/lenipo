@@ -20,8 +20,10 @@ import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { UserService } from '../identity/user.service.js';
+import { NotificationService } from '../notifications/notification.service.js';
 import { OperationsService } from '../operations/operations.service.js';
 import { ClaimService } from '../presence/claim.service.js';
+import { HandoverService } from '../presence/handover.service.js';
 import { PresenceService } from '../presence/presence.service.js';
 import { EverythingService } from '../search/everything.service.js';
 import { SearchService } from '../search/search.service.js';
@@ -68,6 +70,8 @@ export class McpController {
     @Inject(OperationsService) private readonly operations: OperationsService,
     @Inject(PresenceService) presence: PresenceService,
     @Inject(ClaimService) claims: ClaimService,
+    @Inject(HandoverService) handovers: HandoverService,
+    @Inject(NotificationService) notifications: NotificationService,
   ) {
     this.services = {
       database,
@@ -90,6 +94,8 @@ export class McpController {
       everything,
       presence,
       claims,
+      handovers,
+      notifications,
     };
   }
 

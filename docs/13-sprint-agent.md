@@ -1,4 +1,4 @@
-<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=4 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a196b1-4ccb-766b-bac7-296c0a8e1047 version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 13 · Sprint-Agent
 
 Ein Coding-Agent wie Claude Code arbeitet im Code-Repository eines Teams die Aufgaben des aktiven Sprints eines Lenipo-Projekts selbstständig ab. Fragen und Entscheidungen hält er als Kommentar am Vorgang fest; erst wenn Aufgabe, Kommentare und Entscheidung klar sind, setzt er um – auf einem eigenen Branch mit Pull Request, nie direkt auf `main`.
@@ -41,8 +41,12 @@ Ein Vorgang mit dem Label `agent-question` wartet auf eine Antwort. Er kommt ers
 | `lenipo agent team [--project <KEY>] [--output json]` | Wer im Projekt arbeitet, mit Stand, Vorgang und Branch |
 | `lenipo agent claim [<KEY>] [--branch <Name>] [--path <Ordner> …] [--force] [--filter <TQL>]` | Beansprucht den Vorgang (ohne Schlüssel den nächsten passenden des Projekts) und weist ihn dem Agenten zu; scheitert, wenn jemand anderes daran arbeitet oder sich Branch oder Pfade mit einem anderen Anspruch überschneiden |
 | `lenipo agent release <KEY>` | Gibt den Anspruch frei |
+| `lenipo agent handover <KEY> --done <Text> [--open <Text>] [--notes <Text>] [--to <E-Mail>]` | Übergabe als ein Kommentar; mit `--to` übernimmt die Person oder der Agent Zuweisung und Anspruch, sonst endet der eigene Anspruch |
+| `lenipo agent blocked <KEY> --note <Text> [--by <KEY>]` | Blocker melden: Verknüpfung, Kommentar, Stand „blockiert“ |
+| `lenipo agent inbox [--read] [--output json]` | Ungelesene Benachrichtigungen (Erwähnungen, Zuweisungen, Kommentare); `--read` markiert sie als gelesen |
+| `lenipo agent watch` | Gibt jede neue Benachrichtigung sofort als JSON-Zeile aus (Ereignis-Strom), verbindet sich nach Abbrüchen neu |
 
-Über MCP heißen sie `set_status`, `get_team`, `claim_task`, `claim_next_task` und `release_task`; die Teamliste gibt es auch als Ressource `lenipo://project/<KEY>/team`.
+Über MCP heißen sie `set_status`, `get_team`, `claim_task`, `claim_next_task`, `release_task`, `handover`, `report_blocker`, `get_inbox` und `mark_read`; die Teamliste gibt es auch als Ressource `lenipo://project/<KEY>/team`.
 
 Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue view|comment|move|edit`) oder den MCP-Werkzeugen.
 
@@ -51,7 +55,8 @@ Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue vie
 1. `lenipo agent next --output json`; ist `task` leer: `lenipo agent status offline`, Ende des Durchgangs.
 2. Vorgang mit Kommentaren lesen.
 3. Unklar? `lenipo agent ask` und Ende des Durchgangs, nicht raten.
-4. Sonst: Branch `agent/<KEY>-…`, `lenipo agent claim <KEY> --branch … --path …` (scheitert es, Vorgang nicht anfassen und Durchgang beenden), `lenipo agent status active --issue <KEY> --branch …` (bei langer Arbeit alle 15 Minuten wiederholen), umsetzen, Tests und Prüfungen des Repositorys, Push, Pull Request, Abschlusskommentar mit Zusammenfassung, Entscheidungen und Link, Status „Review“, `lenipo agent release <KEY>`, `lenipo agent status offline`.
+4. Sonst: Branch `agent/<KEY>-…`, `lenipo agent claim <KEY> --branch … --path …` (scheitert es, Vorgang nicht anfassen und Durchgang beenden), `lenipo agent status active --issue <KEY> --branch …` (bei langer Arbeit alle 15 Minuten wiederholen), umsetzen, Tests und Prüfungen des Repositorys, Push, Pull Request, Abschlusskommentar mit Zusammenfassung, Entscheidungen und Link, Status „Review“, `lenipo agent handover <KEY> --done … --open …` (beendet den Anspruch), `lenipo agent status offline`. Kommt der Agent nicht weiter: `lenipo agent blocked <KEY> --note …`.
+5. `lenipo agent inbox`: Erwähnungen beantworten, Erledigtes mit `--read` abhaken.
 
 ## Leitplanken
 
@@ -63,5 +68,5 @@ Alles Weitere erledigt der Agent mit den vorhandenen Befehlen (`lenipo issue vie
 
 ## Später
 
-- **Webhooks statt Abfragen:** Lenipo meldet `issue.updated` und `comment.created` an einen lokalen Runner, der den Agenten anstößt.
+- **Ohne Abfragen in festen Abständen:** Benachrichtigungen kommen schon jetzt über `lenipo agent watch` (Ereignis-Strom `GET /api/v1/me/events`) oder einen Webhook beim Agenten (Administration → Agenten → Tokens, oder Profil → Meine Agenten). Ein Runner, der den Agenten damit anstößt, folgt.
 - Mehrere Agenten auf einem Board, Kostenrahmen in Lenipo, Auswertung der Agenten-Arbeit im Sprintbericht.

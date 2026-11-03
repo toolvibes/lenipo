@@ -40,6 +40,8 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
   private io?: Server;
   private listener?: postgres.Sql;
   private recheck?: NodeJS.Timeout;
+  /** Event streams of agents and other API clients, by user (TL-95). */
+  private readonly streams = new Map<string, Set<() => void>>();
 
   constructor(
     @Inject(CONFIG) private readonly config: AppConfig,
@@ -143,6 +145,17 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
     }
   }
 
+  /** Calls `listener` whenever the user gets a notification; returns the unsubscribe. */
+  onNotification(userId: string, listener: () => void): () => void {
+    const listeners = this.streams.get(userId) ?? new Set();
+    listeners.add(listener);
+    this.streams.set(userId, listeners);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) this.streams.delete(userId);
+    };
+  }
+
   private dispatch(payload: string): void {
     let parsed: Signal;
     try {
@@ -150,6 +163,9 @@ export class RealtimeService implements BeforeApplicationShutdown, OnApplication
     } catch {
       this.logger.warn({ payload }, 'Unreadable realtime signal');
       return;
+    }
+    if (parsed.type === 'notification') {
+      for (const listener of this.streams.get(parsed.userId) ?? []) listener();
     }
     const io = this.io;
     if (!io) return;

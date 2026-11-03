@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  AgentWebhook,
   CreatedWebhook,
   CreateWebhookRequest,
   UpdateWebhookRequest,
@@ -8,7 +9,7 @@ import type {
   WebhookEventType,
   WebhookFormat,
 } from '@toolvibes/shared';
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppConfig } from '../core/config.js';
@@ -233,8 +234,65 @@ export class WebhookService {
     return row;
   }
 
+  /** The instance's webhooks; agents' own ones are managed with the agent (TL-95). */
   async list(): Promise<Webhook[]> {
-    return this.present(await this.database.db.select().from(webhooks).orderBy(webhooks.name));
+    return this.present(
+      await this.database.db
+        .select()
+        .from(webhooks)
+        .where(isNull(webhooks.userId))
+        .orderBy(webhooks.name),
+    );
+  }
+
+  /**
+   * An agent's own webhook (TL-95, E-147): it gets the agent's notifications as
+   * `notification.created`. Setting it again replaces it with a new secret, shown once.
+   */
+  async setForUser(principal: Principal, userId: string, url: string): Promise<AgentWebhook> {
+    this.checkTarget(url);
+    const secret = generateSecret();
+    const id = uuidv7();
+    await this.database.atomic(async () => {
+      const db = this.database.db;
+      await db.delete(webhooks).where(eq(webhooks.userId, userId));
+      await db.insert(webhooks).values({
+        id,
+        name: `agent:${userId}`,
+        url,
+        secret,
+        events: ['notification.created'],
+        projectIds: [],
+        createdById: principal.userId,
+        userId,
+      });
+    });
+    await this.audit.record({
+      action: 'webhook.created',
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'webhook',
+      targetId: id,
+      details: { url, agentId: userId },
+    });
+    return { url, secret };
+  }
+
+  async removeForUser(principal: Principal, userId: string): Promise<void> {
+    const removed = await this.database.db
+      .delete(webhooks)
+      .where(eq(webhooks.userId, userId))
+      .returning({ id: webhooks.id });
+    for (const { id } of removed) {
+      await this.audit.record({
+        action: 'webhook.deleted',
+        actorId: principal.userId,
+        via: principal.via,
+        targetType: 'webhook',
+        targetId: id,
+        details: { agentId: userId },
+      });
+    }
   }
 
   async get(id: string): Promise<Webhook> {
