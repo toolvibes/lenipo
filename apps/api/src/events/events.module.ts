@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AiModule } from '../ai/ai.module.js';
 import { AutomationModule } from '../automation/automation.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { ImportsModule } from '../imports/imports.module.js';
@@ -22,6 +23,7 @@ import { EventProcessor } from './event-processor.js';
     SearchModule,
     ImportsModule,
     MaintenanceModule,
+    AiModule,
   ],
   providers: [EventProcessor, EventWorker],
 })

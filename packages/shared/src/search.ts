@@ -135,6 +135,8 @@ export const EverythingQuery = z
     /** Only this project and the wiki spaces linked to it. */
     project: z.string().trim().min(1).max(10).optional(),
     limit: z.coerce.number().int().min(1).max(50).default(10),
+    /** By meaning instead of words: issues and pages only, nearest first (TL-49). */
+    semantic: z.stringbool().default(false),
   })
   .meta({ id: 'EverythingQuery' });
 export type EverythingQuery = z.infer<typeof EverythingQuery>;

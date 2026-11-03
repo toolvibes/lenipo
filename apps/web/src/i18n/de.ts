@@ -464,6 +464,8 @@ export const de = {
       'invalid-boolean': '„{{field}}“ ist true oder false, nicht „{{value}}“.',
       'value-not-found': 'Den Wert „{{value}}“ gibt es für „{{field}}“ nicht.',
       'no-search-terms': '„{{value}}“ enthält keine Wörter, nach denen sich suchen lässt.',
+      'semantic-unavailable':
+        'Die Suche nach Bedeutung ist nicht eingerichtet (Administration → KI).',
     },
   },
   notifications: {
@@ -946,6 +948,8 @@ export const de = {
     more_one: 'Alle {{count}} anzeigen',
     more_other: 'Alle {{count}} anzeigen',
     tql: 'Als TQL-Suche öffnen',
+    meaning: 'Nach Bedeutung',
+    meaningHelp: 'Findet Vorgänge und Seiten mit ähnlicher Bedeutung, auch ohne gleiche Wörter.',
   },
   home: {
     wikiTasks: 'Meine Wiki-Aufgaben',
@@ -1697,6 +1701,7 @@ export const de = {
       email: 'E-Mail senden',
       webhook: 'Webhook aufrufen',
       'create-page': 'Wiki-Seite anlegen',
+      ai: 'KI fragen',
     },
     status: {
       success: 'Ausgeführt',
@@ -1792,6 +1797,9 @@ export const de = {
       parentId: 'Übergeordnete Seite (ID, optional)',
       title: 'Titel',
       content: 'Inhalt (Markdown)',
+      prompt: 'Frage an die KI',
+      promptHelp:
+        'Mit Werten wie {{issue.summary}} und {{issue.description}}. Die Antwort steht danach in {{ai.response}}, z. B. für einen Kommentar.',
       match: 'Erfüllt, wenn',
       over: 'Für',
       fields: 'Felder',
@@ -2060,6 +2068,28 @@ export const de = {
     setUp: 'Einrichten',
     regenerate: 'Neue Wiederherstellungscodes',
     disable: 'Abschalten',
+  },
+  ai: {
+    title: 'KI',
+    intro:
+      'Ein Sprachmodell mit OpenAI-kompatibler Schnittstelle, z. B. Ollama, vLLM, LocalAI, OpenAI oder Mistral. Das Embedding-Modell ermöglicht die Suche nach Bedeutung, das Chat-Modell die Automatisierungsaktion „KI fragen“. Ohne Adresse ist beides aus.',
+    noVector:
+      'Die Datenbank hat kein pgvector. Ohne die Erweiterung gibt es keine Suche nach Bedeutung; die KI-Aktion funktioniert trotzdem.',
+    baseUrl: 'Adresse der Schnittstelle',
+    baseUrlHelp: 'Bis vor /embeddings und /chat/completions, z. B. http://ollama:11434/v1.',
+    apiKey: 'API-Schlüssel',
+    apiKeyHelp: 'Optional, für Anbieter mit Schlüssel.',
+    apiKeySet: 'Ein Schlüssel ist gespeichert; leer lassen, um ihn zu behalten.',
+    removeKey: 'Schlüssel entfernen',
+    embeddingModel: 'Embedding-Modell',
+    embeddingModelHelp: 'Für die Suche nach Bedeutung, z. B. nomic-embed-text.',
+    chatModel: 'Chat-Modell',
+    chatModelHelp: 'Für die Aktion „KI fragen“ in Automatisierungsregeln.',
+    dailyLimit: 'Aufrufe der KI-Aktion pro Tag',
+    usedToday_one: 'Heute {{count}} Aufruf.',
+    usedToday_other: 'Heute {{count}} Aufrufe.',
+    test: 'Verbindung testen',
+    indexed: 'Erfasst: {{issues}} Vorgänge, {{pages}} Seiten.',
   },
   signIn: {
     title: 'Anmeldung & Sitzungen',

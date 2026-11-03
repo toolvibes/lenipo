@@ -24,7 +24,14 @@ const SETTINGS_KEY = 'backups';
 export const BACKUP_FORMAT = 'lenipo-backup';
 const FORMAT_VERSION = 1;
 /** Not worth keeping or harmful to bring back: the backup list itself and sign-in state. */
-const SKIPPED_TABLES = ['backups', 'sessions', 'oidc_login_attempts', 'collab_writes'];
+// Embeddings are rebuilt from the content, and the target may lack pgvector (TL-49).
+const SKIPPED_TABLES = [
+  'backups',
+  'sessions',
+  'oidc_login_attempts',
+  'collab_writes',
+  'semantic_embeddings',
+];
 const STORAGE_KEY = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 const TABLE_NAME = /^[a-z0-9_]+$/;
 const BATCH_ROWS = 200;

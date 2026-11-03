@@ -131,6 +131,7 @@ export function registerWikiTools(tool: Tool, principal: Principal, services: Wi
         type: 'page',
         project,
         limit: 20,
+        semantic: false,
       });
       const lines = result.pages.map(
         (page) =>
@@ -145,6 +146,46 @@ export function registerWikiTools(tool: Tool, principal: Principal, services: Wi
           pages: result.pages.map(({ id, title, space }) => ({ id, title, space: space.key })),
         },
       );
+    },
+  );
+
+  tool(
+    'semantic_search',
+    {
+      title: 'Search by meaning',
+      description:
+        'Finds issues and wiki pages close in meaning to a question or description, nearest first, even without shared words. Needs the AI extension set up by an admin.',
+      inputSchema: {
+        query: z.string().min(1).max(200),
+        project: z.string().max(10).optional().describe('Only this project and its linked spaces'),
+      },
+      readOnly: true,
+    },
+    async ({ query, project }) => {
+      const may = (read: 'issues:read' | 'wiki:read', write: 'issues:write' | 'wiki:write') =>
+        !('scopes' in principal) ||
+        principal.scopes.includes(read) ||
+        principal.scopes.includes(write);
+      const issuesAllowed = may('issues:read', 'issues:write');
+      const pagesAllowed = may('wiki:read', 'wiki:write');
+      if (!issuesAllowed && !pagesAllowed) {
+        throw new ForbiddenException('This token lacks the issues:read and wiki:read scopes');
+      }
+      const result = await everything.search(principal, {
+        q: query,
+        type: issuesAllowed && pagesAllowed ? undefined : issuesAllowed ? 'issue' : 'page',
+        project,
+        limit: 10,
+        semantic: true,
+      });
+      const lines = [
+        ...result.issues.map((issue) => `- ${issue.key} ${issue.summary} [${issue.status.name}]`),
+        ...result.pages.map((page) => `- Page ${page.title} (${page.id}) in ${page.space.key}`),
+      ];
+      return text(lines.length === 0 ? 'Nothing close in meaning.' : lines.join('\n'), {
+        issues: result.issues.map(({ key, summary }) => ({ key, summary })),
+        pages: result.pages.map(({ id, title, space }) => ({ id, title, space: space.key })),
+      });
     },
   );
 

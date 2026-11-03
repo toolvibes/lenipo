@@ -264,6 +264,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/ai': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The language model for semantic search and the AI action
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.getAiSettings'];
+    /**
+     * Set up the language model
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Admin.setAiSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/ai/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Try the chat and the embedding model once
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Admin.testAi'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/custom-fields': {
     parameters: {
       query?: never;
@@ -4341,6 +4385,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/search/semantic-status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Whether search by meaning is available */
+    get: operations['Search.semanticStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -5648,6 +5709,36 @@ export interface components {
       /** Format: uuid */
       userId: string;
     };
+    AiSettings: {
+      baseUrl: string;
+      hasApiKey: boolean;
+      chatModel: string;
+      embeddingModel: string;
+      dailyLimit: number;
+      usedToday: number;
+      vectorAvailable: boolean;
+      indexed: {
+        issues: number;
+        pages: number;
+      };
+    };
+    UpdateAiSettingsRequest: {
+      baseUrl: '' | string;
+      apiKey?: string;
+      chatModel: string;
+      embeddingModel: string;
+      dailyLimit: number;
+    };
+    AiTestResult: {
+      chat: {
+        ok: boolean;
+        detail: string;
+      };
+      embeddings: {
+        ok: boolean;
+        detail: string;
+      };
+    };
     CustomField: {
       /** Format: uuid */
       id: string;
@@ -6260,6 +6351,11 @@ export interface components {
               /** @constant */
               type: 'comment';
               body: string;
+            }
+          | {
+              /** @constant */
+              type: 'ai';
+              prompt: string;
             }
           | {
               /** @constant */
@@ -9336,6 +9432,9 @@ export interface components {
       /** @default true */
       createUsers?: boolean;
     };
+    SemanticStatus: {
+      available: boolean;
+    };
     SearchRequest: {
       /** @default  */
       query?: string;
@@ -10655,6 +10754,97 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.getAiSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AiSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.setAiSettings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateAiSettingsRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AiSettings'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.testAi': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AiTestResult'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -19841,6 +20031,35 @@ export interface operations {
       };
     };
   };
+  'Search.semanticStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SemanticStatus'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Search.run': {
     parameters: {
       query?: never;
@@ -19881,6 +20100,7 @@ export interface operations {
         type?: 'issue' | 'page' | 'project' | 'space';
         project?: string;
         limit?: number;
+        semantic?: string;
       };
       header?: never;
       path?: never;

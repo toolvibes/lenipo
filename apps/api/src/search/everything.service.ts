@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import type {
   EverythingQuery,
   EverythingResult,
@@ -6,8 +6,27 @@ import type {
   SearchMatch,
   Snippet,
 } from '@toolvibes/shared';
-import { and, count, desc, eq, gt, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gt,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  type SQL,
+  type SQLWrapper,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import {
+  distanceTo,
+  nearestIds,
+  SEMANTIC_CANDIDATES,
+  SemanticService,
+} from '../ai/semantic.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -73,6 +92,7 @@ export class EverythingService {
     @Inject(SpaceAccessService) private readonly spaceAccess: SpaceAccessService,
     @Inject(IssueService) private readonly issueService: IssueService,
     @Inject(OperationsService) private readonly operations: OperationsService,
+    @Inject(SemanticService) private readonly semantic: SemanticService,
   ) {}
 
   async search(principal: Principal, query: EverythingQuery): Promise<EverythingResult> {
@@ -101,6 +121,8 @@ export class EverythingService {
           wiki ? undefined : sql`false`,
         ),
       );
+
+    if (query.semantic) return this.byMeaning(principal, query, projectIds, spaceIds);
 
     const german = tsQuery('german', text);
     const english = tsQuery('english', text);
@@ -283,6 +305,92 @@ export class EverythingService {
       ),
       projects: projectRows,
       spaces: spaceRows,
+    };
+  }
+
+  /**
+   * Issues and pages nearest in meaning (TL-49, E-139), behind the same permission filters as
+   * the search by words; projects and spaces have no embeddings.
+   */
+  private async byMeaning(
+    principal: Principal,
+    query: EverythingQuery,
+    projectIds: SQL | SQLWrapper,
+    spaceIds: SQL | SQLWrapper,
+  ): Promise<EverythingResult> {
+    const vector = await this.semantic.queryVector(query.q);
+    if (!vector) throw new ServiceUnavailableException('Search by meaning is not set up.');
+    const db = this.database.db;
+    const wants = (type: EverythingQuery['type'] & string) => !query.type || query.type === type;
+    const limit = (type: EverythingQuery['type'] & string) =>
+      query.type === type ? query.limit : Math.min(query.limit, type === 'issue' ? 10 : 5);
+
+    const issueWhere = and(
+      inArray(issues.projectId, projectIds as SQL),
+      isNull(issues.deletedAt),
+      securityVisible(principal.userId),
+      sql`${issues.id} in (${nearestIds('issue', vector, SEMANTIC_CANDIDATES)})`,
+    );
+    const parent = alias(pages, 'parent');
+    const pageJoin = and(eq(pageVersions.pageId, pages.id), eq(pageVersions.number, pages.version));
+    const pageWhere = and(
+      inArray(pages.spaceId, spaceIds as SQL),
+      isNull(pages.deletedAt),
+      pageVisible(principal.userId),
+      gt(pages.version, 0),
+      sql`${pages.id} in (${nearestIds('page', vector, SEMANTIC_CANDIDATES)})`,
+    );
+    const [issueCount, pageCount, issueRows, pageRows] = await Promise.all([
+      db.select({ n: count() }).from(issues).where(issueWhere),
+      db.select({ n: count() }).from(pages).innerJoin(pageVersions, pageJoin).where(pageWhere),
+      wants('issue')
+        ? db
+            .select()
+            .from(issues)
+            .where(issueWhere)
+            .orderBy(sql`${distanceTo('issue', vector, issues.id)} asc nulls last`)
+            .limit(limit('issue'))
+        : Promise.resolve([]),
+      wants('page')
+        ? db
+            .select({
+              id: pages.id,
+              title: pages.title,
+              spaceKey: spaces.key,
+              spaceName: spaces.name,
+              parentTitle: parent.title,
+              publishedAt: pages.publishedAt,
+              text: sql<string>`left(${pageVersions.text}, 200)`,
+            })
+            .from(pages)
+            .innerJoin(pageVersions, pageJoin)
+            .innerJoin(spaces, eq(spaces.id, pages.spaceId))
+            .leftJoin(parent, eq(parent.id, pages.parentId))
+            .where(pageWhere)
+            .orderBy(sql`${distanceTo('page', vector, pages.id)} asc nulls last`)
+            .limit(limit('page'))
+        : Promise.resolve([]),
+    ]);
+    return {
+      counts: {
+        issue: issueCount[0]?.n ?? 0,
+        page: pageCount[0]?.n ?? 0,
+        project: 0,
+        space: 0,
+      },
+      issues: await this.issueService.summarize(principal.userId, issueRows),
+      pages: pageRows.map(
+        (row): PageHit => ({
+          id: row.id,
+          title: row.title,
+          space: { key: row.spaceKey, name: row.spaceName },
+          parentTitle: row.parentTitle,
+          publishedAt: row.publishedAt?.toISOString() ?? null,
+          snippet: row.text ? [{ text: row.text, hit: false }] : [],
+        }),
+      ),
+      projects: [],
+      spaces: [],
     };
   }
 

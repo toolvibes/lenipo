@@ -24,7 +24,8 @@ export type TqlErrorCode =
   | 'invalid-boolean'
   // Reported by the API, which knows the stored values.
   | 'value-not-found'
-  | 'no-search-terms';
+  | 'no-search-terms'
+  | 'semantic-unavailable';
 
 export interface TqlError {
   code: TqlErrorCode;
@@ -71,6 +72,8 @@ const MESSAGES: Record<TqlErrorCode, (params: Record<string, string>) => string>
   'invalid-boolean': (p) => `"${p.field}" is true or false, not "${p.value}".`,
   'value-not-found': (p) => `The value "${p.value}" does not exist for the field "${p.field}".`,
   'no-search-terms': (p) => `"${p.value}" contains no words to search for.`,
+  'semantic-unavailable': () =>
+    'Semantic search is not set up: it needs an embedding model and pgvector in the database.',
 };
 
 export function tqlError(

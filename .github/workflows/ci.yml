@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        # With pgvector for semantic search; the local setup builds the same on Alpine.
+        image: pgvector/pgvector:0.8.6-pg17
         env:
           POSTGRES_USER: tasklore
           POSTGRES_PASSWORD: tasklore

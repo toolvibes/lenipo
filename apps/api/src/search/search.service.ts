@@ -21,6 +21,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { AccessService } from '../access/access.service.js';
+import { SemanticService } from '../ai/semantic.service.js';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
@@ -79,6 +80,7 @@ export class SearchService {
     @Inject(UserService) private readonly userService: UserService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
     @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
+    @Inject(SemanticService) private readonly semantic: SemanticService,
   ) {}
 
   private async browsableProjects(userId: string) {
@@ -135,6 +137,7 @@ export class SearchService {
       projects: visibleProjects,
       components,
       workingTime: await this.workingTime.get(),
+      semantic: (query) => this.semantic.queryVector(query),
       customFields: new Map(
         fields.map((field) => [
           field.id,

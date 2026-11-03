@@ -568,6 +568,104 @@
         }
       }
     },
+    "/api/v1/admin/ai": {
+      "get": {
+        "operationId": "Admin.getAiSettings",
+        "summary": "The language model for semantic search and the AI action",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Admin.setAiSettings",
+        "summary": "Set up the language model",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAiSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ai/test": {
+      "post": {
+        "operationId": "Admin.testAi",
+        "summary": "Try the chat and the embedding model once",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiTestResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/custom-fields": {
       "get": {
         "operationId": "Admin.list",
@@ -12378,6 +12476,35 @@
         }
       }
     },
+    "/api/v1/search/semantic-status": {
+      "get": {
+        "operationId": "Search.semanticStatus",
+        "summary": "Whether search by meaning is available",
+        "tags": ["Search"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/search": {
       "post": {
         "operationId": "Search.run",
@@ -12463,6 +12590,14 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 50
+            }
+          },
+          {
+            "name": "semantic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -16375,6 +16510,132 @@
         },
         "required": ["userId"]
       },
+      "AiSettings": {
+        "type": "object",
+        "properties": {
+          "baseUrl": {
+            "type": "string"
+          },
+          "hasApiKey": {
+            "type": "boolean"
+          },
+          "chatModel": {
+            "type": "string"
+          },
+          "embeddingModel": {
+            "type": "string"
+          },
+          "dailyLimit": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "usedToday": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "vectorAvailable": {
+            "type": "boolean"
+          },
+          "indexed": {
+            "type": "object",
+            "properties": {
+              "issues": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "pages": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["issues", "pages"],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "baseUrl",
+          "hasApiKey",
+          "chatModel",
+          "embeddingModel",
+          "dailyLimit",
+          "usedToday",
+          "vectorAvailable",
+          "indexed"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateAiSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "baseUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": ""
+              },
+              {
+                "type": "string",
+                "format": "uri"
+              }
+            ]
+          },
+          "apiKey": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "chatModel": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "embeddingModel": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "dailyLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          }
+        },
+        "required": ["baseUrl", "chatModel", "embeddingModel", "dailyLimit"]
+      },
+      "AiTestResult": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": ["ok", "detail"],
+            "additionalProperties": false
+          },
+          "embeddings": {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": ["ok", "detail"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["chat", "embeddings"],
+        "additionalProperties": false
+      },
       "CustomField": {
         "type": "object",
         "properties": {
@@ -18289,6 +18550,20 @@
                   }
                 },
                 "required": ["type", "body"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "ai"
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": ["type", "prompt"]
               },
               {
                 "type": "object",
@@ -29823,6 +30098,16 @@
           }
         },
         "required": ["name"]
+      },
+      "SemanticStatus": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": ["available"],
+        "additionalProperties": false
       },
       "SearchRequest": {
         "type": "object",

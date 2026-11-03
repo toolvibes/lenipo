@@ -4,6 +4,7 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
+import { SemanticService } from '../ai/semantic.service.js';
 import { AutomationEngine } from '../automation/automation.engine.js';
 import { type AppConfig, runsRole } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
@@ -44,6 +45,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(RetentionService) private readonly retention: RetentionService,
     @Inject(BackupService) private readonly backups: BackupService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
+    @Inject(SemanticService) private readonly semantic: SemanticService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -62,6 +64,10 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       while ((await this.automation.runDue()) > 0);
     });
     this.every('schedules', 30_000, () => this.automation.tickSchedules());
+    // Embeddings for semantic search, a batch at a time while there is something new (TL-49).
+    this.every('embeddings', 30_000, async () => {
+      while ((await this.semantic.indexPending()) > 0);
+    });
     // Verified pages that nobody touched for long enough become outdated (TL-29).
     this.every('outdated', 60 * 60_000, async () => {
       const { outdatedAfterDays } = await wikiSettings(this.database);

@@ -11,6 +11,7 @@ import { ISSUE_KEY } from '@toolvibes/tql';
 import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
+import { AiSettingsPage } from './features/admin/AiSettingsPage';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { DirectoriesPage } from './features/admin/DirectoriesPage';
 import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
@@ -501,7 +502,7 @@ const everythingRoute = createRoute({
   path: '/search',
   validateSearch: (
     search: Record<string, unknown>,
-  ): { q?: string; type?: EverythingType; project?: string } => ({
+  ): { q?: string; type?: EverythingType; project?: string; meaning?: boolean } => ({
     q: typeof search.q === 'string' && search.q.trim() ? search.q : undefined,
     type:
       search.type === 'issue' ||
@@ -511,10 +512,11 @@ const everythingRoute = createRoute({
         ? search.type
         : undefined,
     project: typeof search.project === 'string' ? search.project : undefined,
+    meaning: search.meaning === true || search.meaning === 'true' ? true : undefined,
   }),
   component: function Everything() {
-    const { q, type, project } = everythingRoute.useSearch();
-    return <EverythingPage q={q ?? ''} type={type} project={project} />;
+    const { q, type, project, meaning } = everythingRoute.useSearch();
+    return <EverythingPage q={q ?? ''} type={type} project={project} meaning={meaning} />;
   },
 });
 
@@ -884,6 +886,12 @@ const gitConnectionsRoute = createRoute({
   component: GitConnectionsPage,
 });
 
+const aiSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/ai',
+  component: AiSettingsPage,
+});
+
 const embedHostsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/embeds',
@@ -1024,6 +1032,7 @@ const routeTree = rootRoute.addChildren([
       timeTrackingRoute,
       automationAdminRoute,
       embedHostsRoute,
+      aiSettingsRoute,
       gitConnectionsRoute,
       importRoute,
       maintenancePageRoute,

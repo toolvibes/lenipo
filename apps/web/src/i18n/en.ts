@@ -449,6 +449,7 @@ export const en: Messages = {
       'invalid-boolean': '“{{field}}” is true or false, not “{{value}}”.',
       'value-not-found': 'The value “{{value}}” does not exist for “{{field}}”.',
       'no-search-terms': '“{{value}}” contains no words to search for.',
+      'semantic-unavailable': 'Search by meaning is not set up (Administration → AI).',
     },
   },
   notifications: {
@@ -927,6 +928,8 @@ export const en: Messages = {
     more_one: 'Show all {{count}}',
     more_other: 'Show all {{count}}',
     tql: 'Open as TQL search',
+    meaning: 'By meaning',
+    meaningHelp: 'Finds issues and pages with a similar meaning, even without the same words.',
   },
   home: {
     wikiTasks: 'My wiki tasks',
@@ -1670,6 +1673,7 @@ export const en: Messages = {
       email: 'Send e-mail',
       webhook: 'Call webhook',
       'create-page': 'Create wiki page',
+      ai: 'Ask AI',
     },
     status: {
       success: 'Ran',
@@ -1761,6 +1765,9 @@ export const en: Messages = {
       parentId: 'Parent page (id, optional)',
       title: 'Title',
       content: 'Content (Markdown)',
+      prompt: 'Question for the AI',
+      promptHelp:
+        'With values such as {{issue.summary}} and {{issue.description}}. The answer is then in {{ai.response}}, e.g. for a comment.',
       match: 'Met when',
       over: 'For',
       fields: 'Fields',
@@ -2026,6 +2033,28 @@ export const en: Messages = {
     setUp: 'Set up',
     regenerate: 'New recovery codes',
     disable: 'Turn off',
+  },
+  ai: {
+    title: 'AI',
+    intro:
+      'A language model with an OpenAI-compatible interface, e.g. Ollama, vLLM, LocalAI, OpenAI or Mistral. The embedding model enables search by meaning, the chat model the automation action “Ask AI”. Without an address, both are off.',
+    noVector:
+      'The database has no pgvector. Without the extension there is no search by meaning; the AI action works anyway.',
+    baseUrl: 'Interface address',
+    baseUrlHelp: 'Up to /embeddings and /chat/completions, e.g. http://ollama:11434/v1.',
+    apiKey: 'API key',
+    apiKeyHelp: 'Optional, for providers with a key.',
+    apiKeySet: 'A key is stored; leave empty to keep it.',
+    removeKey: 'Remove key',
+    embeddingModel: 'Embedding model',
+    embeddingModelHelp: 'For search by meaning, e.g. nomic-embed-text.',
+    chatModel: 'Chat model',
+    chatModelHelp: 'For the action “Ask AI” in automation rules.',
+    dailyLimit: 'Calls of the AI action per day',
+    usedToday_one: '{{count}} call today.',
+    usedToday_other: '{{count}} calls today.',
+    test: 'Test connection',
+    indexed: 'Covered: {{issues}} issues, {{pages}} pages.',
   },
   signIn: {
     title: 'Sign-in & sessions',

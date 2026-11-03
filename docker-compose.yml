@@ -4,7 +4,10 @@ name: tasklore
 
 services:
   postgres:
-    image: postgres:17-alpine
+    # postgres:17-alpine with pgvector (semantic search).
+    build:
+      context: ./deploy/postgres
+    image: lenipo-postgres:17
     environment:
       POSTGRES_USER: tasklore
       POSTGRES_PASSWORD: tasklore

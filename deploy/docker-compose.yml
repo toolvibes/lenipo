@@ -29,7 +29,10 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:17-alpine
+    # postgres:17-alpine with pgvector (semantic search).
+    build:
+      context: ./postgres
+    image: lenipo-postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_USER: lenipo

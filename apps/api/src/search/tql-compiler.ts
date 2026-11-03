@@ -36,6 +36,12 @@ import {
   sql,
 } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import {
+  distanceTo,
+  nearestIds,
+  type QueryVector,
+  SEMANTIC_CANDIDATES,
+} from '../ai/semantic.service.js';
 import type { Executor } from '../db/client.js';
 import {
   groupMembers,
@@ -70,6 +76,8 @@ export interface CompileContext {
   workingTime: WorkingTime;
   /** Options of select fields by field id, for values written as labels (E-50). */
   customFields: ReadonlyMap<string, CustomFieldOptions>;
+  /** The text of `similar ~ "…"` as vector; null without semantic search (TL-49). */
+  semantic?: (text: string) => Promise<QueryVector | null>;
 }
 
 export interface CompiledQuery {
@@ -134,6 +142,9 @@ export class TqlCompiler {
   /** Whether the query searches text, and in which of the two forms (TL-90). */
   private hasText = false;
   private textByRow = false;
+  /** Vectors of the texts in `similar ~ "…"`; the first one orders unordered results. */
+  private vectors = new Map<string, QueryVector>();
+  private similarity: SQL | undefined;
 
   constructor(
     private readonly db: Executor,
@@ -143,7 +154,10 @@ export class TqlCompiler {
   async compile(query: Query): Promise<CompiledQuery> {
     await this.resolveReferences(query.where);
     const where = query.where ? this.expression(query.where) : undefined;
-    const orderBy = this.orderBy(query);
+    const orderBy =
+      this.similarity && query.orderBy.length === 0
+        ? [sql`${this.similarity} asc nulls last`, desc(issues.id)]
+        : this.orderBy(query);
     if (!this.hasText || !query.where) return { where, orderBy };
     // Same clauses again, now with text matches per row; errors were collected the first time.
     const errors = this.errors.length;
@@ -163,6 +177,7 @@ export class TqlCompiler {
     const sprintValues = new Set<string>();
     const versionValues = new Set<string>();
     const visitedBy = new Set<Expression>();
+    const semanticValues = new Map<string, { start: number; end: number }>();
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
@@ -176,6 +191,10 @@ export class TqlCompiler {
           }
         }
         visit(node);
+      } else if (node.field.type === 'semantic') {
+        for (const item of items(node.operand)) {
+          if (item.kind === 'value') semanticValues.set(item.value, item.span);
+        }
       } else if (node.field.type === 'user') {
         for (const item of items(node.operand)) {
           if (item.kind === 'value') userValues.add(item.value.toLowerCase());
@@ -200,6 +219,12 @@ export class TqlCompiler {
       }
     };
     if (expression) visit(expression);
+
+    for (const [text, span] of semanticValues) {
+      const vector = await this.context.semantic?.(text);
+      if (vector) this.vectors.set(text, vector);
+      else this.errors.push(tqlError('semantic-unavailable', span));
+    }
 
     if (versionValues.size > 0 && this.context.projects.length > 0) {
       // Only versions of projects the searcher sees, so names do not leak (E-57).
@@ -359,6 +384,8 @@ export class TqlCompiler {
         return this.linkType(clause);
       case 'duration':
         return this.duration(clause);
+      case 'semantic':
+        return this.semantic(clause);
       case 'sprint':
         return this.sprint(clause);
       case 'version':
@@ -761,6 +788,18 @@ export class TqlCompiler {
           union all ${commented})`;
     }
     return clause.operator === '~' ? match : not(match);
+  }
+
+  /**
+   * The issues nearest in meaning (TL-49, E-139): the closest candidates by embedding, which
+   * the other clauses and the permission filter then narrow.
+   */
+  private semantic(clause: Clause): SQL {
+    const item = items(clause.operand)[0];
+    const vector = item?.kind === 'value' ? this.vectors.get(item.value) : undefined;
+    if (!vector) return sql`false`;
+    this.similarity ??= distanceTo('issue', vector, issues.id);
+    return sql`${issues.id} in (${nearestIds('issue', vector, SEMANTIC_CANDIDATES)})`;
   }
 
   // ---------------------------------------------------------------- labels, numbers, keys

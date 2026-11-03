@@ -40,7 +40,9 @@ export type FieldType =
   | 'option'
   | 'boolean'
   | 'sprint'
-  | 'version';
+  | 'version'
+  // Meaning instead of words, through the embeddings of the AI extension (TL-49).
+  | 'semantic';
 
 export interface FieldDef {
   /** Canonical name, used in suggestions and by the SQL compiler. */
@@ -152,6 +154,7 @@ export const FIELDS: readonly FieldDef[] = [
   },
   { id: 'comment', aliases: [], type: 'text', operators: TEXT, orderable: false },
   { id: 'text', aliases: [], type: 'text', operators: TEXT, orderable: false },
+  { id: 'similar', aliases: [], type: 'semantic', operators: ['~'], orderable: false },
   {
     id: 'labels',
     aliases: ['label'],

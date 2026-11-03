@@ -103,6 +103,11 @@ export const AutomationAction = z.discriminatedUnion('type', [
     userId: z.string().max(40).default(''),
   }),
   z.object({ type: z.literal('comment'), body: Template }),
+  /**
+   * Asks the configured language model (TL-49, E-139); the answer is `{{ai.response}}` for the
+   * following actions. The action itself changes nothing.
+   */
+  z.object({ type: z.literal('ai'), prompt: Template }),
   z.object({
     type: z.literal('create-issue'),
     /** Empty: the project of the current issue or of the rule. */

@@ -23,6 +23,7 @@ import {
 import { parse as parseTql } from '@toolvibes/tql';
 import { and, asc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
+import { AiService } from '../ai/ai.service.js';
 import type { AppConfig } from '../core/config.js';
 import type { Principal } from '../core/http/principal.js';
 import type { Logger } from '../core/logger.js';
@@ -43,6 +44,7 @@ import {
 import { Mailer } from '../notifications/mailer.js';
 import { OperationsService } from '../operations/operations.service.js';
 import { SearchService } from '../search/search.service.js';
+import { markdownOf } from '../tracking/content-format.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
 import { postJson } from '../webhooks/http.js';
@@ -162,6 +164,7 @@ export class AutomationEngine implements OnApplicationBootstrap {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(SearchService) private readonly search: SearchService,
+    @Inject(AiService) private readonly ai: AiService,
     @Inject(PageService) private readonly pages: PageService,
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(Mailer) private readonly mailer: Mailer,
@@ -557,7 +560,8 @@ export class AutomationEngine implements OnApplicationBootstrap {
       issue: issue && {
         ...issue,
         url: `${(this.config.PUBLIC_URL ?? '').replace(/\/$/, '')}/issues/${issue.key}`,
-        description: undefined,
+        // As Markdown, e.g. for the prompt of the AI action.
+        description: issue.description === null ? '' : markdownOf(issue.description),
       },
       ...state.data,
     };
@@ -791,6 +795,18 @@ export class AutomationEngine implements OnApplicationBootstrap {
           body: { markdown: this.text(action.body, state) },
         });
         state.log.push({ level: 'info', message: `${issue.key}: kommentiert` });
+        return;
+      }
+      case 'ai': {
+        let response: string;
+        try {
+          response = await this.ai.chat(this.text(action.prompt, state));
+        } catch (error) {
+          throw new RuleFailure(`KI: ${(error as Error).message}`);
+        }
+        // For the following actions, e.g. a comment with {{ai.response}} (TL-49, E-139).
+        state.data = { ...state.data, ai: { response } };
+        state.log.push({ level: 'info', message: `KI geantwortet (${response.length} Zeichen)` });
         return;
       }
       case 'create-issue': {

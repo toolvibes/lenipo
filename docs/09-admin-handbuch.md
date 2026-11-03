@@ -12,7 +12,7 @@ cd deploy
 POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --build
 ```
 
-Das startet Lenipo (API, Collab-Server und Worker in einem Prozess), PostgreSQL 17, Valkey und Caddy mit automatischem HTTPS. Anhänge liegen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, `--profile s3` startet zusätzlich RustFS.
+Das startet Lenipo (API, Collab-Server und Worker in einem Prozess), PostgreSQL 17 mit der Erweiterung pgvector (gebaut aus `deploy/postgres`), Valkey und Caddy mit automatischem HTTPS. Anhänge liegen im Volume `app-files`; für S3 `STORAGE_DRIVER=s3` und die `S3_*`-Variablen setzen, `--profile s3` startet zusätzlich RustFS.
 
 **Kubernetes:** Helm-Chart unter `deploy/helm/lenipo` mit je einem Deployment für api, collab und worker; PostgreSQL, Valkey und S3 laufen außerhalb. Secrets (`DATABASE_URL`, `REDIS_URL`, S3-Schlüssel, `SMTP_URL` …) als vorhandenes Secret (`existingSecret`) oder über `secrets`.
 
@@ -56,6 +56,17 @@ Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und steh
 ## Service Desk
 
 Projekteinstellungen → Service Desk → „Als Service Desk betreiben“. Dort: wer Anfragen stellen darf (eingetragene Kunden, oft externe Konten, oder alle Angemeldeten), Begrüßung im Portal, Anfragetypen (Name, Vorgangstyp, zusätzliche Felder Priorität und Fälligkeit) und SLA-Ziele in Stunden Arbeitszeit je Priorität für erste Antwort und Lösung. Gezählt wird an den Arbeitstagen der Instanz (Zeiterfassung: Stunden pro Tag, Tage pro Woche) ab der eingestellten Uhrzeit in Europe/Berlin; in gewählten Status (z. B. „Wartet auf Kunde“) ruht die Uhr. Kunden brauchen keine Rolle im Projekt; sie sehen nur ihre eigenen Anfragen und keine internen Notizen.
+
+## KI (optional)
+
+Administration → KI verbindet ein Sprachmodell mit OpenAI-kompatibler Schnittstelle: Ollama, vLLM, LocalAI oder ein Anbieter wie OpenAI oder Mistral. Einzutragen sind die Adresse bis vor `/embeddings` (z. B. `http://ollama:11434/v1`), bei Bedarf ein API-Schlüssel und zwei Modelle:
+
+- **Embedding-Modell** für die Suche nach Bedeutung. Für deutsche Texte ein mehrsprachiges Modell nehmen, z. B. `qwen3-embedding`, `bge-m3` oder `multilingual-e5`. Der Worker erfasst danach alle Vorgänge und veröffentlichten Seiten und hält sie aktuell; nach einem Modellwechsel erfasst er alles neu.
+- **Chat-Modell** für die Automatisierungsaktion „KI fragen“, begrenzt auf eine einstellbare Zahl von Aufrufen pro Tag (0 schaltet die Aktion ab).
+
+„Verbindung testen“ ruft beide Modelle einmal auf. Inhalte von Vorgängen und Seiten gehen an das eingetragene Modell; wer keine Daten nach außen geben will, betreibt das Modell selbst. Der Schlüssel liegt wie das LDAP-Passwort in der Datenbank und wird nie angezeigt.
+
+Die Suche nach Bedeutung braucht **pgvector** in PostgreSQL. Die mitgelieferte Docker-Compose-Datei bringt es mit; bei einer eigenen Datenbank installiert es ein Superuser einmal mit `CREATE EXTENSION vector`. Ohne die Erweiterung funktioniert die KI-Aktion trotzdem. Wer eine bestehende Installation von `postgres:17-alpine` auf das neue Image umstellt, behält seine Daten (gleiche Basis); ein Wechsel auf das Debian-basierte `pgvector/pgvector:pg17` braucht danach `REINDEX DATABASE`. Die Embeddings gehören nicht zum Backup, sie entstehen nach einer Wiederherstellung neu.
 
 ## Rechte
 

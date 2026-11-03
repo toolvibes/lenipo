@@ -39,7 +39,7 @@ Dann <http://localhost:5173> öffnen. Beim allerersten Start gibt es noch keinen
 
 | Dienst aus `docker-compose.yml` | Adresse |
 | --- | --- |
-| PostgreSQL 17 | `localhost:5440` (Benutzer, Passwort und Datenbank `tasklore`) |
+| PostgreSQL 17 mit pgvector | `localhost:5440` (Benutzer, Passwort und Datenbank `tasklore`) |
 | Valkey (Redis-kompatibel) | `localhost:6380` |
 | RustFS als S3-Speicher | `localhost:9010`, Konsole <http://localhost:9011> |
 | Mailpit (alle E-Mails landen hier) | SMTP `localhost:1026`, Postfach <http://localhost:8026> |
@@ -83,7 +83,7 @@ cd deploy
 POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --build
 ```
 
-Startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
+Startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL mit pgvector, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
 
 ### Kubernetes
 

@@ -1,6 +1,7 @@
 import {
   bigint,
   bigserial,
+  date,
   index,
   inet,
   integer,
@@ -18,6 +19,13 @@ export const systemSettings = pgTable('system_settings', {
   key: text().primaryKey(),
   value: jsonb().notNull(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Calls to the language model per day, for the daily limit of the AI action (TL-49, E-139). */
+export const aiUsage = pgTable('ai_usage', {
+  day: date().primaryKey(),
+  chatCalls: integer().notNull().default(0),
+  embeddingCalls: integer().notNull().default(0),
 });
 
 /** Security-relevant and administrative events. Append-only. */

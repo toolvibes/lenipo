@@ -5,7 +5,7 @@ import type { EverythingResult, SearchMatch, Snippet } from '@toolvibes/shared';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../lib/format';
-import { type EverythingType, everythingQuery } from '../../lib/search';
+import { type EverythingType, everythingQuery, semanticStatusQuery } from '../../lib/search';
 import { projectsQuery } from '../../lib/tracking';
 import { CHIP } from '../../ui/TopBar';
 import { IssueTypeIcon, StatusLozenge } from '../tracking/icons';
@@ -227,16 +227,21 @@ export function EverythingPage({
   q,
   type,
   project,
+  meaning = false,
 }: {
   q: string;
   type?: EverythingType;
   project?: string;
+  /** By meaning instead of words (TL-49). */
+  meaning?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [draft, setDraft] = useState(q);
   const projects = useQuery(projectsQuery);
-  const results = useQuery(everythingQuery(q, type, project));
+  const semantic = useQuery(semanticStatusQuery).data?.available ?? false;
+  const byMeaning = meaning && semantic;
+  const results = useQuery(everythingQuery(q, type, project, byMeaning));
 
   useEffect(() => setDraft(q), [q]);
   useEffect(() => {
@@ -245,16 +250,19 @@ export function EverythingPage({
       () =>
         void navigate({
           to: '/search',
-          search: { q: draft.trim() || undefined, type, project },
+          search: { q: draft.trim() || undefined, type, project, meaning: meaning || undefined },
           replace: true,
         }),
       250,
     );
     return () => clearTimeout(timer);
-  }, [draft, q, type, project, navigate]);
+  }, [draft, q, type, project, meaning, navigate]);
 
-  const go = (next: { type?: EverythingType; project?: string }) =>
-    void navigate({ to: '/search', search: { q: q || undefined, type, project, ...next } });
+  const go = (next: { type?: EverythingType; project?: string; meaning?: boolean }) =>
+    void navigate({
+      to: '/search',
+      search: { q: q || undefined, type, project, meaning: meaning || undefined, ...next },
+    });
   // Kept from the last query while typing, but not once the field is empty.
   const data = q ? results.data : undefined;
   const total = data
@@ -275,7 +283,8 @@ export function EverythingPage({
           aria-label={t('everything.title')}
           className="min-w-0 flex-1 border-0 bg-transparent text-[17px] text-[var(--ink)] outline-none placeholder:text-[var(--ink-muted)]"
         />
-        {data && q && (
+        {/* By meaning, every search has its nearest matches: no count. */}
+        {data && q && !byMeaning && (
           <span className="shrink-0 text-[12.5px] text-[var(--ink-muted)]">
             {t('everything.hits', { count: total })}
           </span>
@@ -303,6 +312,17 @@ export function EverythingPage({
           </button>
         ))}
         <span className="flex-1" />
+        {semantic && (
+          <button
+            type="button"
+            aria-pressed={byMeaning}
+            onClick={() => go({ meaning: !byMeaning || undefined })}
+            title={t('everything.meaningHelp')}
+            className={`${CHIP} h-7 cursor-pointer text-[13px]`}
+          >
+            {t('everything.meaning')}
+          </button>
+        )}
         <select
           value={project ?? ''}
           onChange={(event) => go({ project: event.target.value || undefined })}
@@ -324,7 +344,7 @@ export function EverythingPage({
         {q && (
           <Link
             to="/issues"
-            search={{ q: `text ~ "${q.replaceAll('"', '')}"` }}
+            search={{ q: `${byMeaning ? 'similar' : 'text'} ~ "${q.replaceAll('"', '')}"` }}
             className="text-[var(--accent)] no-underline hover:underline"
           >
             {t('everything.tql')}

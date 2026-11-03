@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=9 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=10 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -51,6 +51,8 @@ project = WEB AND status = "In Arbeit" AND labels in (frontend, api)
 text ~ "Anmeldung" AND created > -7d
 fixVersion = "2.0" AND statusCategory != done
 ```
+
+Ist die KI-Erweiterung eingerichtet, findet `similar ~ "Anmeldung klappt nicht"` die Vorgänge mit ähnlicher Bedeutung, auch ohne gleiche Wörter – die ähnlichsten zuerst, kombinierbar mit anderen Bedingungen. In der globalen Suche schaltet „Nach Bedeutung“ dasselbe für Vorgänge und Seiten ein; Assistenten über MCP haben dafür das Werkzeug `semantic_search`.
 
 Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Filter** lassen sich teilen, abonnieren (Ergebnisse per E-Mail zu einer festen Zeit) und als Dashboard-Gadget nutzen. Die globale Suche oben (`/` oder `Strg+K`/`⌘K`) findet Vorgänge, Seiten, Projekte und Bereiche.
 
