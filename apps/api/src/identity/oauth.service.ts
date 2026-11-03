@@ -14,8 +14,9 @@ import {
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { DATABASE } from '../core/tokens.js';
-import type { DatabaseHandle } from '../db/client.js';
+import type { DatabaseHandle, Executor } from '../db/client.js';
 import {
+  apps,
   oauthClients,
   oauthGrants,
   oauthTokens,
@@ -466,6 +467,8 @@ export class OAuthService {
           ),
           sql`not exists (select 1 from ${oauthGrants} where ${oauthGrants.clientId} = ${oauthClients.id} and ${oauthGrants.revokedAt} is null)`,
           isNull(oauthClients.registeredById),
+          // Clients of installed apps stay as long as the app (TL-50).
+          sql`not exists (select 1 from ${apps} where ${apps.clientId} = ${oauthClients.id})`,
         ),
       );
     if (stale.length) {
@@ -476,6 +479,61 @@ export class OAuthService {
         ),
       );
     }
+  }
+
+  // ---------------------------------------------------------------- installed apps (TL-50)
+
+  /** The OAuth client of an installed app; without redirects, it only gets tokens from here. */
+  async createAppClient(name: string, description: string, db: Executor = this.database.db) {
+    const id = uuidv7();
+    await db.insert(oauthClients).values({ id, name, description, redirectUris: [] });
+    return id;
+  }
+
+  /**
+   * A short-lived access token of an installed app for the person looking at it, through one
+   * grant per person (shown and revocable under connected apps like any other).
+   */
+  async appAccess(
+    clientId: string,
+    userId: string,
+    scopes: string[],
+    seconds: number,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
+    return this.database.atomic(async () => {
+      const db = this.database.db;
+      const [current] = await db
+        .select({ id: oauthGrants.id, scopes: oauthGrants.scopes })
+        .from(oauthGrants)
+        .where(
+          and(
+            eq(oauthGrants.clientId, clientId),
+            eq(oauthGrants.userId, userId),
+            isNull(oauthGrants.revokedAt),
+          ),
+        )
+        .limit(1);
+      let grantId = current?.id;
+      if (!grantId) {
+        grantId = uuidv7();
+        await db.insert(oauthGrants).values({ id: grantId, clientId, userId, scopes });
+      } else if (current && current.scopes.join(' ') !== scopes.join(' ')) {
+        await db.update(oauthGrants).set({ scopes }).where(eq(oauthGrants.id, grantId));
+      }
+      const accessToken = `${ACCESS_PREFIX}${randomSecret()}`;
+      await db.insert(oauthTokens).values({
+        id: uuidv7(),
+        grantId,
+        kind: 'access',
+        tokenHash: sha256(accessToken),
+        expiresAt: new Date(Date.now() + seconds * 1000),
+      });
+      await db
+        .update(oauthClients)
+        .set({ lastUsedAt: sql`now()` })
+        .where(eq(oauthClients.id, clientId));
+      return { accessToken, expiresIn: seconds };
+    });
   }
 
   // ---------------------------------------------------------------- apps registered by admins

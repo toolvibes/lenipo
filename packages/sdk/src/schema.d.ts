@@ -597,6 +597,128 @@ export interface paths {
     patch: operations['Administration.updateNotificationScheme'];
     trace?: never;
   };
+  '/api/v1/admin/apps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List installed apps
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Apps.listInstalledApps'];
+    put?: never;
+    /**
+     * Install an app from its manifest, approving its scopes
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Apps.installApp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/apps/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Load and check the manifest of an app before installing it
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Apps.previewApp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/apps/{id}/refresh': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Load the manifest again; new scopes need approval
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Apps.refreshApp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/apps/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove an app; its tokens end at once
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Apps.uninstallApp'];
+    options?: never;
+    head?: never;
+    /**
+     * Switch an app on or off
+     * @description Requires the global permission `admin`.
+     */
+    patch: operations['Apps.updateApp'];
+    trace?: never;
+  };
+  '/api/v1/apps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Enabled apps with their panels, macros and gadgets */
+    get: operations['Apps.listApps'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/apps/{id}/token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** A short-lived token for an app, acting as you within its approved scopes */
+    post: operations['Apps.appToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/login': {
     parameters: {
       query?: never;
@@ -6074,6 +6196,91 @@ export interface components {
           /** Format: uuid */
           userId: string;
         };
+    InstalledApp: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      vendor: string;
+      origin: string;
+      usesApi: boolean;
+      modules: {
+        issuePanels: components['schemas']['AppModule'][];
+        macros: components['schemas']['AppModule'][];
+        gadgets: components['schemas']['AppModule'][];
+      };
+      manifestUrl: string;
+      description: string;
+      scopes: components['schemas']['TokenScope'][];
+      enabled: boolean;
+      /** Format: date-time */
+      installedAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    AppModule: {
+      key: string;
+      title: string;
+      url: string;
+    };
+    /** @enum {string} */
+    TokenScope: 'issues:read' | 'issues:write' | 'wiki:read' | 'wiki:write' | 'admin';
+    AppManifestRequest: {
+      /** Format: uri */
+      manifestUrl: string;
+    };
+    AppManifest: {
+      key: string;
+      name: string;
+      /** @default  */
+      vendor: string;
+      /** @default  */
+      description: string;
+      /** Format: uri */
+      baseUrl: string;
+      /** @default [] */
+      scopes: ('issues:read' | 'issues:write' | 'wiki:read' | 'wiki:write')[];
+      /** @default {} */
+      modules: {
+        /** @default [] */
+        issuePanels?: components['schemas']['AppModule'][];
+        /** @default [] */
+        macros?: components['schemas']['AppModule'][];
+        /** @default [] */
+        gadgets?: components['schemas']['AppModule'][];
+      };
+    };
+    InstallAppRequest: {
+      /** Format: uri */
+      manifestUrl: string;
+      approvedScopes: components['schemas']['TokenScope'][];
+    };
+    RefreshAppRequest: {
+      /** @default [] */
+      approvedScopes?: components['schemas']['TokenScope'][];
+    };
+    UpdateAppRequest: {
+      enabled: boolean;
+    };
+    AppSummary: {
+      /** Format: uuid */
+      id: string;
+      key: string;
+      name: string;
+      vendor: string;
+      origin: string;
+      usesApi: boolean;
+      modules: {
+        issuePanels: components['schemas']['AppModule'][];
+        macros: components['schemas']['AppModule'][];
+        gadgets: components['schemas']['AppModule'][];
+      };
+    };
+    AppToken: {
+      accessToken: string;
+      expiresIn: number;
+      scopes: components['schemas']['TokenScope'][];
+    };
     LoginRequest: {
       /** Format: email */
       email: string;
@@ -6356,6 +6563,11 @@ export interface components {
               /** @constant */
               type: 'ai';
               prompt: string;
+            }
+          | {
+              /** @constant */
+              type: 'script';
+              code: string;
             }
           | {
               /** @constant */
@@ -7061,6 +7273,15 @@ export interface components {
           /** @constant */
           type: 'report';
           report: components['schemas']['ReportConfig'];
+        }
+      | {
+          /** @constant */
+          type: 'app';
+          /** Format: uuid */
+          appId: string;
+          module: string;
+          /** @default  */
+          config: string;
         };
     /** @enum {string} */
     StatisticField:
@@ -7251,6 +7472,15 @@ export interface components {
           /** @constant */
           type: 'report';
           report: components['schemas']['ReportConfigInput'];
+        }
+      | {
+          /** @constant */
+          type: 'app';
+          /** Format: uuid */
+          appId: string;
+          module: string;
+          /** @default  */
+          config?: string;
         };
     ReportConfigInput:
       | {
@@ -8122,8 +8352,6 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
     };
-    /** @enum {string} */
-    TokenScope: 'issues:read' | 'issues:write' | 'wiki:read' | 'wiki:write' | 'admin';
     CreateTokenRequest: {
       name: string;
       scopes: components['schemas']['TokenScope'][];
@@ -11602,6 +11830,260 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['NotificationScheme'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.listInstalledApps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InstalledApp'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.installApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InstallAppRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InstalledApp'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.previewApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AppManifestRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AppManifest'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.refreshApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RefreshAppRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InstalledApp'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.uninstallApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.updateApp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateAppRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InstalledApp'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.listApps': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AppSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Apps.appToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AppToken'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=10 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=11 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.

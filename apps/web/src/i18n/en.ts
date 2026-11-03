@@ -1674,6 +1674,7 @@ export const en: Messages = {
       webhook: 'Call webhook',
       'create-page': 'Create wiki page',
       ai: 'Ask AI',
+      script: 'Run script',
     },
     status: {
       success: 'Ran',
@@ -1765,6 +1766,9 @@ export const en: Messages = {
       parentId: 'Parent page (id, optional)',
       title: 'Title',
       content: 'Content (Markdown)',
+      code: 'JavaScript',
+      codeHelp:
+        'Runs isolated for at most 1 s, without network or files. It gets issue, data and rule; what it returns is then in {{script.result}}.',
       prompt: 'Question for the AI',
       promptHelp:
         'With values such as {{issue.summary}} and {{issue.description}}. The answer is then in {{ai.response}}, e.g. for a comment.',
@@ -1954,6 +1958,7 @@ export const en: Messages = {
       'wiki-page': 'Wiki page',
       text: 'Text',
       report: 'Report',
+      app: 'App',
     },
     typeHelp: {
       'filter-results': 'Issues of a TQL query or a saved filter.',
@@ -1967,6 +1972,7 @@ export const en: Messages = {
       'wiki-page': 'The content of a wiki page.',
       text: 'Your own text in Markdown.',
       report: 'One of the reports, e.g. control chart or cumulative flow diagram.',
+      app: 'A gadget of an installed app.',
     },
     fields: {
       status: 'Status',
@@ -1981,6 +1987,9 @@ export const en: Messages = {
       label: 'Label',
     },
     config: {
+      appModule: 'App gadget',
+      chooseApp: 'Choose a gadget …',
+      appConfig: 'Setting for the app (optional)',
       type: 'Kind',
       column: 'Column',
       columnN: 'Column {{n}}',
@@ -2033,6 +2042,33 @@ export const en: Messages = {
     setUp: 'Set up',
     regenerate: 'New recovery codes',
     disable: 'Turn off',
+  },
+  apps: {
+    title: 'Apps',
+    intro:
+      'Apps add panels to the issue page, wiki macros and dashboard gadgets. They run in sandboxed iframes on their own address; Lenipo hands them the context and, on request, a short-lived token of the viewer, limited to the approved permissions.',
+    manifestUrl: 'Manifest address',
+    manifestHelp: 'The JSON file the app describes itself with, e.g. …/lenipo-app.json.',
+    check: 'Check',
+    install: 'Install',
+    scopes: 'The app acts with these permissions of the person viewing it: {{scopes}}',
+    noScopes: 'The app gets no access to the API.',
+    approve: 'I approve these permissions.',
+    none: 'No apps installed yet.',
+    noModules: 'no modules',
+    off: 'off',
+    refresh: 'Reload manifest',
+    enable: 'Switch on',
+    disable: 'Switch off',
+    remove: 'Remove',
+    removeConfirm:
+      'Remove “{{name}}”? Its panels, macros and gadgets disappear, its tokens end at once.',
+    kinds: { issuePanels: 'Panel', macros: 'Macro', gadgets: 'Gadget' },
+    frameTitle: '{{app}}: {{module}}',
+    unavailable: 'This app is no longer available.',
+    macroModule: 'App macro',
+    chooseMacro: 'Choose a macro of an app …',
+    macroConfig: 'Setting for the app (optional)',
   },
   ai: {
     title: 'AI',
@@ -2576,6 +2612,7 @@ export const en: Messages = {
     attachmentList: 'Attachments / gallery',
     documentPreview: 'Document preview',
     embed: 'Embed (iframe)',
+    appMacro: 'App macro',
     liveSearch: 'Live search',
     placeholder: 'Start typing – everyone editing sees changes instantly.',
     toolbar: 'Formatting',

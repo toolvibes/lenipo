@@ -29,6 +29,7 @@ import {
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TopBar } from '../../ui/TopBar';
+import { AppIssuePanels } from '../apps/AppFrame';
 import { SlaPanel } from '../servicedesk/Sla';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
@@ -897,6 +898,7 @@ export function IssuePage({
           />
           <DevelopmentPanel issueKey={data.key} />
           <SlaPanel issueKey={data.key} />
+          <AppIssuePanels issueKey={data.key} projectKey={data.project.key} />
           <PlanningPoker
             issueKey={data.key}
             canEdit={canEdit}

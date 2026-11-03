@@ -1702,6 +1702,7 @@ export const de = {
       webhook: 'Webhook aufrufen',
       'create-page': 'Wiki-Seite anlegen',
       ai: 'KI fragen',
+      script: 'Skript ausführen',
     },
     status: {
       success: 'Ausgeführt',
@@ -1797,6 +1798,9 @@ export const de = {
       parentId: 'Übergeordnete Seite (ID, optional)',
       title: 'Titel',
       content: 'Inhalt (Markdown)',
+      code: 'JavaScript',
+      codeHelp:
+        'Läuft abgeschottet höchstens 1 s, ohne Netz und Dateien. Zur Verfügung stehen issue, data und rule; was das Skript mit return zurückgibt, steht danach in {{script.result}}.',
       prompt: 'Frage an die KI',
       promptHelp:
         'Mit Werten wie {{issue.summary}} und {{issue.description}}. Die Antwort steht danach in {{ai.response}}, z. B. für einen Kommentar.',
@@ -1988,6 +1992,7 @@ export const de = {
       'wiki-page': 'Wiki-Seite',
       text: 'Text',
       report: 'Bericht',
+      app: 'App',
     },
     typeHelp: {
       'filter-results': 'Vorgänge einer TQL-Abfrage oder eines gespeicherten Filters.',
@@ -2001,6 +2006,7 @@ export const de = {
       'wiki-page': 'Der Inhalt einer Wiki-Seite.',
       text: 'Eigener Text in Markdown.',
       report: 'Einer der Berichte, z. B. Control Chart oder kumulatives Flussdiagramm.',
+      app: 'Ein Gadget einer installierten App.',
     },
     fields: {
       status: 'Status',
@@ -2015,6 +2021,9 @@ export const de = {
       label: 'Label',
     },
     config: {
+      appModule: 'Gadget der App',
+      chooseApp: 'Gadget wählen …',
+      appConfig: 'Einstellung für die App (optional)',
       type: 'Art',
       column: 'Spalte',
       columnN: 'Spalte {{n}}',
@@ -2068,6 +2077,33 @@ export const de = {
     setUp: 'Einrichten',
     regenerate: 'Neue Wiederherstellungscodes',
     disable: 'Abschalten',
+  },
+  apps: {
+    title: 'Apps',
+    intro:
+      'Apps zeigen eigene Panels am Vorgang, Wiki-Makros und Dashboard-Gadgets. Sie laufen in abgeschotteten iFrames auf ihrer eigenen Adresse; Lenipo gibt ihnen den Zusammenhang und auf Wunsch ein kurzlebiges Token der ansehenden Person, begrenzt auf die freigegebenen Rechte.',
+    manifestUrl: 'Adresse des Manifests',
+    manifestHelp: 'Die JSON-Datei, mit der sich die App beschreibt, z. B. …/lenipo-app.json.',
+    check: 'Prüfen',
+    install: 'Installieren',
+    scopes: 'Die App handelt mit diesen Rechten der Person, die sie ansieht: {{scopes}}',
+    noScopes: 'Die App bekommt keinen Zugriff auf die API.',
+    approve: 'Ich gebe diese Rechte frei.',
+    none: 'Noch keine Apps installiert.',
+    noModules: 'keine Bausteine',
+    off: 'aus',
+    refresh: 'Manifest neu laden',
+    enable: 'Einschalten',
+    disable: 'Ausschalten',
+    remove: 'Entfernen',
+    removeConfirm:
+      '„{{name}}“ entfernen? Panels, Makros und Gadgets der App verschwinden, ihre Tokens enden sofort.',
+    kinds: { issuePanels: 'Panel', macros: 'Makro', gadgets: 'Gadget' },
+    frameTitle: '{{app}}: {{module}}',
+    unavailable: 'Diese App ist nicht mehr verfügbar.',
+    macroModule: 'Makro der App',
+    chooseMacro: 'Makro einer App wählen …',
+    macroConfig: 'Einstellung für die App (optional)',
   },
   ai: {
     title: 'KI',
@@ -2618,6 +2654,7 @@ export const de = {
     attachmentList: 'Anhänge / Galerie',
     documentPreview: 'Dokumentvorschau',
     embed: 'Einbetten (iFrame)',
+    appMacro: 'App-Makro',
     liveSearch: 'Live-Suche',
     placeholder: 'Text eingeben – Änderungen erscheinen sofort bei allen Bearbeitenden.',
     toolbar: 'Formatierung',

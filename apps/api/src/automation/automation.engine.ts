@@ -51,6 +51,7 @@ import { postJson } from '../webhooks/http.js';
 import { PageService } from '../wiki/page.service.js';
 import { automationContext } from './context.js';
 import { cronMatches, parseCron } from './cron.js';
+import { runScript } from './script.js';
 import { render } from './smart-values.js';
 
 type EventRow = typeof domainEvents.$inferSelect;
@@ -807,6 +808,22 @@ export class AutomationEngine implements OnApplicationBootstrap {
         // For the following actions, e.g. a comment with {{ai.response}} (TL-49, E-139).
         state.data = { ...state.data, ai: { response } };
         state.log.push({ level: 'info', message: `KI geantwortet (${response.length} Zeichen)` });
+        return;
+      }
+      case 'script': {
+        let result: unknown;
+        try {
+          result = await runScript(action.code, {
+            issue: this.values(state).issue ?? null,
+            data: state.data,
+            rule: { id: state.rule.id, name: state.rule.name },
+          });
+        } catch (error) {
+          throw new RuleFailure(`Skript: ${(error as Error).message}`);
+        }
+        // For the following actions as {{script.result}} (TL-50, E-140).
+        state.data = { ...state.data, script: { result } };
+        state.log.push({ level: 'info', message: 'Skript ausgeführt' });
         return;
       }
       case 'create-issue': {

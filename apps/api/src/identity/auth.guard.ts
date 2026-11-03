@@ -34,7 +34,9 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!crossSiteAllowed && isCrossSiteWrite(request)) {
+    // A Bearer token is no ambient credential: apps on their own origin may send it (TL-50).
+    const bearer = /^bearer\s/i.test(request.get('authorization') ?? '');
+    if (!crossSiteAllowed && !bearer && isCrossSiteWrite(request)) {
       throw new ForbiddenException('Cross-site request rejected');
     }
 

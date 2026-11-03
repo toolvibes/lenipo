@@ -1,0 +1,13 @@
+{
+  "key": "hallo",
+  "name": "Hallo-App",
+  "vendor": "Lenipo-Beispiel",
+  "description": "Zeigt, wie eine App Zusammenhang und Token bekommt und die API aufruft.",
+  "baseUrl": "http://localhost:5190/",
+  "scopes": ["issues:read"],
+  "modules": {
+    "issuePanels": [{ "key": "info", "title": "Hallo-App", "url": "app.html" }],
+    "macros": [{ "key": "info", "title": "Hallo-Makro", "url": "app.html" }],
+    "gadgets": [{ "key": "info", "title": "Hallo-Gadget", "url": "app.html" }]
+  }
+}

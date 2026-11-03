@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AiSettingsPage } from './features/admin/AiSettingsPage';
+import { AppsPage } from './features/admin/AppsPage';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
 import { DirectoriesPage } from './features/admin/DirectoriesPage';
 import { EmbedHostsPage } from './features/admin/EmbedHostsPage';
@@ -886,6 +887,12 @@ const gitConnectionsRoute = createRoute({
   component: GitConnectionsPage,
 });
 
+const appsAdminRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/apps',
+  component: AppsPage,
+});
+
 const aiSettingsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/ai',
@@ -1033,6 +1040,7 @@ const routeTree = rootRoute.addChildren([
       automationAdminRoute,
       embedHostsRoute,
       aiSettingsRoute,
+      appsAdminRoute,
       gitConnectionsRoute,
       importRoute,
       maintenancePageRoute,

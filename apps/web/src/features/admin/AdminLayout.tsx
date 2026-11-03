@@ -15,6 +15,7 @@ const PAGES = [
   { to: '/admin/automation', label: 'automation.title' },
   { to: '/admin/embeds', label: 'wikiMacros.embedTitle' },
   { to: '/admin/ai', label: 'ai.title' },
+  { to: '/admin/apps', label: 'apps.title' },
   { to: '/admin/access-check', label: 'access.title' },
   { to: '/admin/custom-fields', label: 'fields.title' },
   { to: '/admin/time-tracking', label: 'time.settingsTitle' },

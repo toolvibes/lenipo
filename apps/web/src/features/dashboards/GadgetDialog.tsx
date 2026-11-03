@@ -19,6 +19,7 @@ import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
+import { appsQuery } from '../apps/AppFrame';
 import { ReportSettings, reportOf, reportReady } from '../reports/ReportSettings';
 
 /** The starting settings of a new gadget of each type. */
@@ -46,6 +47,8 @@ function initial(type: GadgetType): GadgetConfig {
       return { type, markdown: '' };
     case 'report':
       return { type, report: reportOf('cfd') };
+    case 'app':
+      return { type, appId: '', module: '', config: '' };
   }
 }
 
@@ -54,6 +57,7 @@ function complete(config: GadgetConfig): boolean {
   if (config.type === 'wiki-page') return !!config.pageId;
   if (config.type === 'text') return config.markdown.trim() !== '';
   if (config.type === 'report') return reportReady(config.report);
+  if (config.type === 'app') return !!config.appId && !!config.module;
   return true;
 }
 
@@ -272,6 +276,8 @@ function ConfigFields({
       return (
         <PagePicker value={config.pageId} onChange={(pageId) => onChange({ ...config, pageId })} />
       );
+    case 'app':
+      return <AppGadgetSettings config={config} onChange={onChange} />;
     case 'report':
       return (
         <ReportSettings
@@ -399,5 +405,44 @@ export function GadgetDialog({
         </div>
       </form>
     </Dialog>
+  );
+}
+
+/** Which gadget of which installed app, and a setting handed to it (TL-50). */
+function AppGadgetSettings({
+  config,
+  onChange,
+}: {
+  config: Extract<GadgetConfig, { type: 'app' }>;
+  onChange: (config: GadgetConfig) => void;
+}) {
+  const { t } = useTranslation();
+  const apps = useQuery(appsQuery).data ?? [];
+  return (
+    <div className="flex flex-col gap-3">
+      <Select
+        label={t('dashboards.config.appModule')}
+        value={config.appId ? `${config.appId}:${config.module}` : ''}
+        options={[
+          { value: '', label: t('dashboards.config.chooseApp') },
+          ...apps.flatMap((app) =>
+            app.modules.gadgets.map((module) => ({
+              value: `${app.id}:${module.key}`,
+              label: `${app.name}: ${module.title}`,
+            })),
+          ),
+        ]}
+        onChange={(event) => {
+          const [appId = '', module = ''] = event.target.value.split(':');
+          onChange({ ...config, appId, module });
+        }}
+      />
+      <TextField
+        label={t('dashboards.config.appConfig')}
+        value={config.config}
+        maxLength={2_000}
+        onChange={(event) => onChange({ ...config, config: event.target.value })}
+      />
+    </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   MagnifyingGlass,
   Minus,
   Paperclip,
+  PuzzlePiece,
   Quotes,
   Rectangle,
   Scissors,
@@ -439,6 +440,21 @@ export function slashItems(t: TFunction, onImage?: () => void): SlashItem[] {
           .chain()
           .focus()
           .insertContent({ type: 'documentPreview', attrs: { attachment: '' } })
+          .run(),
+    },
+    {
+      id: 'app',
+      label: t('editor.appMacro'),
+      keywords: 'app erweiterung extension plugin',
+      icon: PuzzlePiece,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertContent({
+            type: 'appMacro',
+            attrs: { app: '', module: '', config: '', height: 300 },
+          })
           .run(),
     },
     {

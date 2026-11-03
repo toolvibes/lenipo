@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=6 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=7 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -67,6 +67,45 @@ Administration → KI verbindet ein Sprachmodell mit OpenAI-kompatibler Schnitts
 „Verbindung testen“ ruft beide Modelle einmal auf. Inhalte von Vorgängen und Seiten gehen an das eingetragene Modell; wer keine Daten nach außen geben will, betreibt das Modell selbst. Der Schlüssel liegt wie das LDAP-Passwort in der Datenbank und wird nie angezeigt.
 
 Die Suche nach Bedeutung braucht **pgvector** in PostgreSQL. Die mitgelieferte Docker-Compose-Datei bringt es mit; bei einer eigenen Datenbank installiert es ein Superuser einmal mit `CREATE EXTENSION vector`. Ohne die Erweiterung funktioniert die KI-Aktion trotzdem. Wer eine bestehende Installation von `postgres:17-alpine` auf das neue Image umstellt, behält seine Daten (gleiche Basis); ein Wechsel auf das Debian-basierte `pgvector/pgvector:pg17` braucht danach `REINDEX DATABASE`. Die Embeddings gehören nicht zum Backup, sie entstehen nach einer Wiederherstellung neu.
+
+## Apps
+
+Apps erweitern Lenipo um **Panels am Vorgang**, **Wiki-Makros** (im Editor über `/` → „App-Makro“) und **Dashboard-Gadgets**. Sie laufen nicht im Server, sondern als Seiten auf ihrer eigenen Adresse in abgeschotteten iFrames. Administration → Apps installiert eine App aus der Adresse ihres Manifests: Lenipo lädt und prüft es, zeigt die verlangten Rechte und installiert erst nach der Freigabe. „Manifest neu laden“ übernimmt Änderungen; mehr Rechte als bisher brauchen eine neue Freigabe. Ausschalten blendet die App aus, Entfernen beendet zusätzlich sofort alle ihre Tokens.
+
+Das **Manifest** (JSON):
+
+```json
+{
+  "key": "hallo",
+  "name": "Hallo-App",
+  "vendor": "Beispiel GmbH",
+  "description": "Was die App tut.",
+  "baseUrl": "https://app.example.org/",
+  "scopes": ["issues:read"],
+  "modules": {
+    "issuePanels": [{ "key": "info", "title": "Info", "url": "panel.html" }],
+    "macros": [{ "key": "chart", "title": "Diagramm", "url": "macro.html" }],
+    "gadgets": [{ "key": "kpi", "title": "Kennzahl", "url": "gadget.html" }]
+  }
+}
+```
+
+Die App muss auf einer anderen Adresse als Lenipo laufen, und alle Modul-Adressen liegen auf ihrer eigenen. `scopes` sind die Rechte, mit denen sie im Namen der ansehenden Person handelt (`issues:read`, `issues:write`, `wiki:read`, `wiki:write`; nie `admin`); ohne Scopes bekommt sie keinen API-Zugriff.
+
+Das **Protokoll** läuft über `postMessage`, beide Seiten prüfen die Herkunft:
+
+| Nachricht | Richtung | Inhalt |
+| --- | --- | --- |
+| `lenipo:ready` | App → Lenipo | Die Seite ist bereit. |
+| `lenipo:context` | Lenipo → App | `context`: `app`, `module`, `kind` (`issuePanel`, `macro`, `gadget`), `issueKey`, `projectKey`, `pageId`, `config` (Einstellung von Makro oder Gadget), `user`, `locale`, `theme`. Kommt nach dem Laden und nach `ready`. |
+| `lenipo:resize` | App → Lenipo | `height` in Pixeln (40 bis 2.000). |
+| `lenipo:token` | App → Lenipo | Bittet um ein Token. |
+| `lenipo:token` | Lenipo → App | `accessToken` (15 Minuten gültig, neu anfragen), `expiresIn`, `scopes`, `apiBase`. Die App ruft damit die REST-API mit `Authorization: Bearer …` auf; CORS ist für die Adressen installierter Apps offen. |
+| `lenipo:error` | Lenipo → App | `message`, wenn kein Token ausgegeben wurde. |
+
+Die Tokens gehören zu einer Verbindung je Person, die im Profil unter den verbundenen Apps steht und dort widerrufen werden kann. Eine lauffähige Beispiel-App liegt unter `examples/lenipo-app`.
+
+In Automatisierungsregeln führt die Aktion **„Skript ausführen“** JavaScript abgeschottet aus (QuickJS in WebAssembly, höchstens 1 Sekunde und 32 MB, ohne Netz, Dateien und Zeitgeber). Das Skript bekommt `issue`, `data` und `rule`; was es mit `return` zurückgibt, steht den folgenden Aktionen als `{{script.result}}` zur Verfügung. Das Skript selbst ändert nichts.
 
 ## Rechte
 

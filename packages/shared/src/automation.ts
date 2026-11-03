@@ -108,6 +108,11 @@ export const AutomationAction = z.discriminatedUnion('type', [
    * following actions. The action itself changes nothing.
    */
   z.object({ type: z.literal('ai'), prompt: Template }),
+  /**
+   * JavaScript in an isolated interpreter without network or files (TL-50, E-140); what it
+   * returns is `{{script.result}}` for the following actions.
+   */
+  z.object({ type: z.literal('script'), code: z.string().max(20_000) }),
   z.object({
     type: z.literal('create-issue'),
     /** Empty: the project of the current issue or of the rule. */

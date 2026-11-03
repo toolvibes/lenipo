@@ -8,21 +8,24 @@ import type { NextFunction, Request, Response } from 'express';
  * attributes), images from anywhere over https (Markdown images), the collaboration and
  * realtime sockets, iframes for the embed macro (its own allowlist decides), never framed.
  */
-const APP_CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  "connect-src 'self' ws: wss:",
-  'frame-src https:',
-  "worker-src 'self'",
-  "manifest-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-].join('; ');
+function appCsp(appOrigins: Iterable<string>): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' ws: wss:",
+    // Installed apps may run on plain http, e.g. inside the company network (TL-50).
+    ['frame-src https:', ...appOrigins].join(' '),
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
 
 /** Headers on every answer: no sniffing, no framing, no full referrer, HTTPS remembered. */
 export function securityHeaders(req: Request, res: Response, next: NextFunction): void {
@@ -37,7 +40,11 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
  * Serves the built web app from the API process (decision E-07): hashed assets as static
  * files, every other browser navigation falls back to index.html for client-side routing.
  */
-export function serveWebApp(app: NestExpressApplication, dir: string): void {
+export function serveWebApp(
+  app: NestExpressApplication,
+  dir: string,
+  appOrigins: () => Promise<Iterable<string>>,
+): void {
   const index = join(dir, 'index.html');
   if (!existsSync(index)) {
     throw new Error(`WEB_DIST_DIR has no index.html: ${dir}`);
@@ -53,7 +60,7 @@ export function serveWebApp(app: NestExpressApplication, dir: string): void {
       }
     },
   });
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
     if (
       req.method !== 'GET' ||
       req.path.startsWith('/api/') ||
@@ -64,7 +71,7 @@ export function serveWebApp(app: NestExpressApplication, dir: string): void {
       return;
     }
     res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Content-Security-Policy', APP_CSP);
+    res.setHeader('Content-Security-Policy', appCsp(await appOrigins().catch(() => [])));
     res.sendFile(index);
   });
 }

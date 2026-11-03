@@ -17,6 +17,7 @@ import { createdResolvedQuery, statisticsQuery } from '../../lib/dashboards';
 import { formatDate } from '../../lib/format';
 import { activityQuery } from '../../lib/personal';
 import { pageQuery } from '../../lib/wiki';
+import { AppFrame, appsQuery } from '../apps/AppFrame';
 import { ActivityFeed } from '../personal/ActivityFeed';
 import { ReportView } from '../reports/analysis';
 import { BurndownChart } from '../reports/charts';
@@ -626,5 +627,20 @@ export function GadgetBody({ config }: { config: GadgetConfig }) {
       return <Text config={config} />;
     case 'report':
       return <ReportView config={config.report} />;
+    case 'app':
+      return <AppGadget config={config} />;
   }
+}
+
+/** A gadget of an installed app (TL-50); gone or switched off, it says so. */
+function AppGadget({ config }: { config: Of<'app'> }) {
+  const { t } = useTranslation();
+  const apps = useQuery(appsQuery);
+  const app = apps.data?.find((entry) => entry.id === config.appId);
+  const module = app?.modules.gadgets.find((entry) => entry.key === config.module);
+  if (!apps.data) return null;
+  if (!app || !module) {
+    return <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('apps.unavailable')}</p>;
+  }
+  return <AppFrame app={app} module={module} place={{ kind: 'gadget', config: config.config }} />;
 }

@@ -27,6 +27,7 @@ const ACTIONS = [
   'webhook',
   'create-page',
   'ai',
+  'script',
 ] as const;
 
 /** A new component of a type with empty settings. */
@@ -56,6 +57,8 @@ export function blank(type: Type): AutomationComponent {
       return { type, to: 'initiator', userId: '' };
     case 'comment':
       return { type, body: '' };
+    case 'script':
+      return { type, code: 'return { words: issue.summary.split(" ").length };' };
     case 'ai':
       return {
         type,
@@ -291,6 +294,13 @@ function ActionFields({
       );
     case 'comment':
       return area('body', t('automation.fields.body'));
+    case 'script':
+      return (
+        <div className="flex flex-col gap-1">
+          {area('code', t('automation.fields.code'))}
+          <span className="text-xs text-[var(--ink-muted)]">{t('automation.fields.codeHelp')}</span>
+        </div>
+      );
     case 'ai':
       return (
         <div className="flex flex-col gap-1">

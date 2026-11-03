@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger as NestPinoLogger } from 'nestjs-pino';
 import { type AppDependencies, AppModule } from './app.module.js';
+import { appCors } from './apps/app-cors.js';
+import { AppsService } from './apps/apps.service.js';
 import { httpMetrics } from './core/metrics.js';
 import { securityHeaders, serveWebApp } from './core/web-app.js';
 import { serveApiDocs } from './openapi/docs.js';
@@ -18,6 +20,7 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.useLogger(app.get(NestPinoLogger));
   app.use(httpMetrics);
   app.use(securityHeaders);
+  app.use(appCors(app.get(AppsService)));
   // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115);
   // Jira clients append rest/api/2 to the server address (TL-48, E-138).
   app.setGlobalPrefix('api/v1', {
@@ -33,7 +36,8 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.set('trust proxy', 'loopback, linklocal, uniquelocal');
   serveApiDocs(app);
   if (deps.config.WEB_DIST_DIR) {
-    serveWebApp(app, deps.config.WEB_DIST_DIR);
+    const apps = app.get(AppsService);
+    serveWebApp(app, deps.config.WEB_DIST_DIR, () => apps.enabledOrigins());
   }
   // Realtime signals on the same port as the API (E-58).
   await app.get(RealtimeService).attach(app.getHttpServer());

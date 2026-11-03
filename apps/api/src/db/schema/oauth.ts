@@ -1,4 +1,13 @@
-import { index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 
 /** A client that registered itself, e.g. an MCP client (RFC 7591, TL-69, E-115). */
@@ -57,4 +66,29 @@ export const oauthTokens = pgTable(
     uniqueIndex('oauth_tokens_hash_unique').on(table.tokenHash),
     index('oauth_tokens_grant_idx').on(table.grantId),
   ],
+);
+
+/**
+ * Installed apps (TL-50, E-140): the manifest as fetched and approved, and the OAuth client
+ * through which the app gets short-lived tokens for the person looking at it.
+ */
+export const apps = pgTable(
+  'apps',
+  {
+    id: uuid().primaryKey(),
+    key: text().notNull(),
+    manifestUrl: text().notNull(),
+    origin: text().notNull(),
+    manifest: jsonb().notNull(),
+    /** Scopes the admin approved; the app never gets more. */
+    scopes: text().array().notNull(),
+    enabled: boolean().notNull().default(true),
+    clientId: uuid()
+      .notNull()
+      .references(() => oauthClients.id),
+    installedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+    installedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('apps_key_idx').on(table.key)],
 );

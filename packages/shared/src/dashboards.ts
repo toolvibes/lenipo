@@ -46,6 +46,13 @@ export const GadgetConfig = z
     z.object({ type: z.literal('text'), markdown: z.string().max(20_000) }),
     /** Any report of the reports page (TL-21, E-102). */
     z.object({ type: z.literal('report'), report: ReportConfig }),
+    /** A gadget module of an installed app (TL-50, E-140). */
+    z.object({
+      type: z.literal('app'),
+      appId: Id,
+      module: z.string().max(40),
+      config: z.string().max(2_000).default(''),
+    }),
   ])
   .meta({ id: 'GadgetConfig' });
 export type GadgetConfig = z.infer<typeof GadgetConfig>;
@@ -62,6 +69,7 @@ export const GADGET_TYPES = [
   'wiki-page',
   'text',
   'report',
+  'app',
 ] as const satisfies readonly GadgetType[];
 
 export const Gadget = z

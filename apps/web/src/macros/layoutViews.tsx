@@ -10,6 +10,7 @@ import {
 import type { LabelledPage, RichText } from '@toolvibes/shared';
 import { createContext, type FormEvent, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppFrame, appsQuery } from '../features/apps/AppFrame';
 import { SeriesChart } from '../features/reports/analysis';
 import { RichTextView } from '../features/tracking/RichTextEditor';
 import { client, unwrap } from '../lib/api';
@@ -597,6 +598,65 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   );
 }
 
+/** A macro of an installed app (TL-50, E-140): chosen while editing, shown in its iframe. */
+function AppMacroView({ node, updateAttributes, editor }: NodeViewProps) {
+  const { t } = useTranslation();
+  const apps = useQuery(appsQuery).data;
+  const choices = (apps ?? []).flatMap((app) =>
+    app.modules.macros.map((module) => ({ app, module })),
+  );
+  const chosen = choices.find(
+    (choice) => choice.app.key === node.attrs.app && choice.module.key === node.attrs.module,
+  );
+  return (
+    <NodeViewWrapper className="tl-macro" contentEditable={false}>
+      {editor.isEditable && (
+        <div className="tl-macro-settings">
+          <select
+            aria-label={t('apps.macroModule')}
+            value={chosen ? `${chosen.app.key}:${chosen.module.key}` : ''}
+            onChange={(event) => {
+              const [app = '', module = ''] = event.target.value.split(':');
+              updateAttributes({ app, module });
+            }}
+            className={`${field} min-w-0 flex-1`}
+          >
+            <option value="">{t('apps.chooseMacro')}</option>
+            {choices.map(({ app, module }) => (
+              <option key={`${app.key}:${module.key}`} value={`${app.key}:${module.key}`}>
+                {app.name}: {module.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <Settings
+        node={node}
+        updateAttributes={updateAttributes}
+        editor={editor}
+        fields={[
+          { key: 'config', label: t('apps.macroConfig') },
+          { key: 'height', label: t('wikiMacros.height'), type: 'number' },
+        ]}
+      />
+      {chosen ? (
+        <AppFrame
+          app={chosen.app}
+          module={chosen.module}
+          height={Math.min(1200, Math.max(60, Number(node.attrs.height) || 300))}
+          place={{
+            kind: 'macro',
+            pageId: pageOf(editor).pageId ?? undefined,
+            config: String(node.attrs.config ?? ''),
+          }}
+        />
+      ) : (
+        apps && <Hint>{node.attrs.app ? t('apps.unavailable') : t('apps.chooseMacro')}</Hint>
+      )}
+    </NodeViewWrapper>
+  );
+}
+
 function LiveSearchView({ node, updateAttributes, editor }: NodeViewProps) {
   const { t } = useTranslation();
   const space = String(node.attrs.space ?? '');
@@ -775,6 +835,7 @@ export const layoutViews = {
   documentPreview: ReactNodeViewRenderer(DocumentPreviewView),
   embed: ReactNodeViewRenderer(EmbedView),
   liveSearch: ReactNodeViewRenderer(LiveSearchView),
+  appMacro: ReactNodeViewRenderer(AppMacroView),
   chart: ReactNodeViewRenderer(ChartView),
 };
 

@@ -1570,6 +1570,319 @@
         }
       }
     },
+    "/api/v1/admin/apps": {
+      "get": {
+        "operationId": "Apps.listInstalledApps",
+        "summary": "List installed apps",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InstalledApp"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Apps.installApp",
+        "summary": "Install an app from its manifest, approving its scopes",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallAppRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledApp"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/apps/preview": {
+      "post": {
+        "operationId": "Apps.previewApp",
+        "summary": "Load and check the manifest of an app before installing it",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppManifestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppManifest"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/apps/{id}/refresh": {
+      "post": {
+        "operationId": "Apps.refreshApp",
+        "summary": "Load the manifest again; new scopes need approval",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshAppRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledApp"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/apps/{id}": {
+      "patch": {
+        "operationId": "Apps.updateApp",
+        "summary": "Switch an app on or off",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstalledApp"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Apps.uninstallApp",
+        "summary": "Remove an app; its tokens end at once",
+        "description": "Requires the global permission `admin`.",
+        "tags": ["Apps"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps": {
+      "get": {
+        "operationId": "Apps.listApps",
+        "summary": "Enabled apps with their panels, macros and gadgets",
+        "tags": ["Apps"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppSummary"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{id}/token": {
+      "post": {
+        "operationId": "Apps.appToken",
+        "summary": "A short-lived token for an app, acting as you within its approved scopes",
+        "tags": ["Apps"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppToken"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "Auth.login",
@@ -17749,6 +18062,312 @@
           }
         ]
       },
+      "InstalledApp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "usesApi": {
+            "type": "boolean"
+          },
+          "modules": {
+            "type": "object",
+            "properties": {
+              "issuePanels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "macros": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "gadgets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              }
+            },
+            "required": ["issuePanels", "macros", "gadgets"],
+            "additionalProperties": false
+          },
+          "manifestUrl": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "installedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "vendor",
+          "origin",
+          "usesApi",
+          "modules",
+          "manifestUrl",
+          "description",
+          "scopes",
+          "enabled",
+          "installedAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "AppModule": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": ["key", "title", "url"],
+        "additionalProperties": false
+      },
+      "TokenScope": {
+        "type": "string",
+        "enum": ["issues:read", "issues:write", "wiki:read", "wiki:write", "admin"]
+      },
+      "AppManifestRequest": {
+        "type": "object",
+        "properties": {
+          "manifestUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": ["manifestUrl"]
+      },
+      "AppManifest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "vendor": {
+            "default": "",
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "scopes": {
+            "default": [],
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["issues:read", "issues:write", "wiki:read", "wiki:write"]
+            }
+          },
+          "modules": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "issuePanels": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "macros": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "gadgets": {
+                "default": [],
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["key", "name", "vendor", "description", "baseUrl", "scopes", "modules"],
+        "additionalProperties": false
+      },
+      "InstallAppRequest": {
+        "type": "object",
+        "properties": {
+          "manifestUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "approvedScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          }
+        },
+        "required": ["manifestUrl", "approvedScopes"]
+      },
+      "RefreshAppRequest": {
+        "type": "object",
+        "properties": {
+          "approvedScopes": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          }
+        }
+      },
+      "UpdateAppRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["enabled"]
+      },
+      "AppSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "usesApi": {
+            "type": "boolean"
+          },
+          "modules": {
+            "type": "object",
+            "properties": {
+              "issuePanels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "macros": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              },
+              "gadgets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppModule"
+                }
+              }
+            },
+            "required": ["issuePanels", "macros", "gadgets"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "key", "name", "vendor", "origin", "usesApi", "modules"],
+        "additionalProperties": false
+      },
+      "AppToken": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenScope"
+            }
+          }
+        },
+        "required": ["accessToken", "expiresIn", "scopes"],
+        "additionalProperties": false
+      },
       "LoginRequest": {
         "type": "object",
         "properties": {
@@ -18564,6 +19183,20 @@
                   }
                 },
                 "required": ["type", "prompt"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "script"
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 20000
+                  }
+                },
+                "required": ["type", "code"]
               },
               {
                 "type": "object",
@@ -21235,6 +21868,31 @@
             },
             "required": ["type", "report"],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "app"
+              },
+              "appId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "module": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "config": {
+                "default": "",
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "required": ["type", "appId", "module", "config"],
+            "additionalProperties": false
           }
         ]
       },
@@ -21750,6 +22408,30 @@
               }
             },
             "required": ["type", "report"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "app"
+              },
+              "appId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "module": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "config": {
+                "default": "",
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "required": ["type", "appId", "module"]
           }
         ]
       },
@@ -24933,10 +25615,6 @@
         },
         "required": ["id", "name", "prefix", "scopes", "createdAt", "expiresAt", "lastUsedAt"],
         "additionalProperties": false
-      },
-      "TokenScope": {
-        "type": "string",
-        "enum": ["issues:read", "issues:write", "wiki:read", "wiki:write", "admin"]
       },
       "CreateTokenRequest": {
         "type": "object",

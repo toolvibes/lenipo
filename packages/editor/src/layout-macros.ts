@@ -23,6 +23,8 @@ export const LEAF_MACROS = {
   documentPreview: { directive: 'preview', attrs: { attachment: '' } },
   embed: { directive: 'embed', attrs: { url: '', height: 400 } },
   liveSearch: { directive: 'search', attrs: { space: '' } },
+  /** A macro module of an installed app, by app and module key (TL-50, E-140). */
+  appMacro: { directive: 'app', attrs: { app: '', module: '', config: '', height: 300 } },
 } as const satisfies Record<string, { directive: string; attrs: Record<string, AttrValue> }>;
 export type LeafMacroName = keyof typeof LEAF_MACROS;
 export const LEAF_MACRO_NAMES = Object.keys(LEAF_MACROS) as LeafMacroName[];
