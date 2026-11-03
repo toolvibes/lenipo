@@ -49,6 +49,27 @@ export const SetupRequest = z
   .meta({ id: 'SetupRequest' });
 export type SetupRequest = z.infer<typeof SetupRequest>;
 
+/**
+ * Setup by a provider such as a hosting service (TL-102, E-153): with the SETUP_TOKEN of the
+ * instance it names the instance and invites the first administrator, who sets a password.
+ */
+export const ProvisionRequest = z
+  .object({
+    instanceName: z.string().trim().min(1).max(80),
+    admin: z.object({ email: Email }),
+  })
+  .meta({ id: 'ProvisionRequest' });
+export type ProvisionRequest = z.infer<typeof ProvisionRequest>;
+
+export const ProvisionResult = z
+  .object({
+    /** Where the first administrator sets name and password. */
+    link: z.string(),
+    expiresAt: z.iso.datetime(),
+  })
+  .meta({ id: 'ProvisionResult' });
+export type ProvisionResult = z.infer<typeof ProvisionResult>;
+
 export const LoginRequest = z
   .object({
     email: Email,

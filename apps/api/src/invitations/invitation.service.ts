@@ -27,6 +27,7 @@ import { invitations, projects, systemSettings, users } from '../db/schema/index
 import { USERS_GROUP } from '../identity/group.service.js';
 import { PasswordService } from '../identity/password.service.js';
 import { randomSecret, sha256 } from '../identity/secrets.js';
+import { SetupService } from '../identity/setup.service.js';
 import { UserService } from '../identity/user.service.js';
 import { invitationEmail } from '../notifications/email.js';
 import { Mailer } from '../notifications/mailer.js';
@@ -56,6 +57,7 @@ export class InvitationService {
     @Inject(ProjectMemberService) private readonly members: ProjectMemberService,
     @Inject(Mailer) private readonly mailer: Mailer,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
+    @Inject(SetupService) private readonly setup: SetupService,
   ) {}
 
   private async administers(principal: Principal, projectId: string): Promise<boolean> {
@@ -232,6 +234,7 @@ export class InvitationService {
       project: preview?.project ?? null,
       invitedBy: preview?.invitedBy?.displayName ?? null,
       registration: row.kind === 'register',
+      setup: row.kind === 'setup',
     };
   }
 
@@ -241,20 +244,30 @@ export class InvitationService {
     if (await this.users.findForLogin(row.email)) {
       throw new ConflictException('A user with this email already exists; sign in instead');
     }
-    const userId = await this.users.create({
-      email: row.email,
-      displayName: request.displayName,
-      passwordHash: await this.passwords.hash(request.password),
-      // External collaborators only get the project they were invited to (TL-66).
-      groupNames: row.external ? [] : [USERS_GROUP],
-      external: row.external,
-    } as never);
-    const [claimed] = await this.database.db
-      .update(invitations)
-      .set({ acceptedAt: sql`now()` })
-      .where(and(eq(invitations.id, row.id), isNull(invitations.acceptedAt)))
-      .returning({ id: invitations.id });
-    if (!claimed) throw new GoneException('This link was already used');
+    const passwordHash = await this.passwords.hash(request.password);
+    const userId = await this.database.atomic(async () => {
+      const db = this.database.db;
+      const id = await this.users.create(
+        {
+          email: row.email,
+          displayName: request.displayName,
+          passwordHash,
+          // External collaborators only get the project they were invited to (TL-66).
+          groupNames: row.external ? [] : [USERS_GROUP],
+          external: row.external,
+        } as never,
+        db,
+      );
+      const [claimed] = await db
+        .update(invitations)
+        .set({ acceptedAt: sql`now()` })
+        .where(and(eq(invitations.id, row.id), isNull(invitations.acceptedAt)))
+        .returning({ id: invitations.id });
+      if (!claimed) throw new GoneException('This link was already used');
+      // The first administrator, invited by the provider of the instance (TL-102).
+      if (row.kind === 'setup') await this.setup.completeByInvitation(id, db);
+      return id;
+    });
     if (row.projectId && row.role && row.invitedById) {
       const [project] = await this.database.db
         .select()
@@ -273,7 +286,12 @@ export class InvitationService {
       }
     }
     await this.audit.record({
-      action: row.kind === 'register' ? 'user.registered' : 'invitation.accepted',
+      action:
+        row.kind === 'register'
+          ? 'user.registered'
+          : row.kind === 'setup'
+            ? 'setup.completed'
+            : 'invitation.accepted',
       actorId: userId,
       via: 'session',
       targetType: 'user',

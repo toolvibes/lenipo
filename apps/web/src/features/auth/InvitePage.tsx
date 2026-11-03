@@ -70,11 +70,13 @@ export function InvitePage({ token }: { token: string }) {
           : t('invite.title', { instance: data.instanceName })
       }
       subtitle={
-        data.project
-          ? t('invite.intoProject', { name: data.invitedBy ?? '', project: data.project.name })
-          : data.invitedBy
-            ? t('invite.by', { name: data.invitedBy })
-            : undefined
+        data.setup
+          ? t('invite.setup')
+          : data.project
+            ? t('invite.intoProject', { name: data.invitedBy ?? '', project: data.project.name })
+            : data.invitedBy
+              ? t('invite.by', { name: data.invitedBy })
+              : undefined
       }
     >
       <form className="flex flex-col gap-4" onSubmit={submit}>

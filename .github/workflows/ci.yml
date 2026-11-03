@@ -97,3 +97,12 @@ jobs:
       - name: Go SDK builds
         working-directory: sdks/go
         run: go build ./...
+
+  image:
+    name: Production image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Only the build; the image is not pushed. Catches files the build needs but
+      # .dockerignore leaves out.
+      - run: docker build --tag lenipo:ci .

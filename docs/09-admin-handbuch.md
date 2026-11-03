@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=17 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=18 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -27,6 +27,7 @@ Umgebungsvariablen, beim Start geprüft (ein Fehler nennt die Variable):
 | `DATABASE_URL` | PostgreSQL-Verbindung (Pflicht) |
 | `PUBLIC_URL` | Öffentliche Adresse, für Links in E-Mails, OAuth und SAML |
 | `MODE` | `all` (Standard) oder eine Rolle: `api`, `collab`, `worker` |
+| `SETUP_TOKEN` | Optional, mindestens 32 Zeichen: Mit `Authorization: Bearer <SETUP_TOKEN>` richtet ein Bereitsteller (Hosting-Dienst, Deployment-Skript) die Instanz über `POST /api/v1/setup/provision` ein. Er legt den Namen und eine Einladung für die erste Admin-Person an und bekommt den Link zurück; die Person setzt Name und Passwort selbst. Gilt nur, solange die Einrichtung aussteht |
 | `REDIS_URL` | Valkey: Anfragegrenzen über alle Instanzen, mehrere Collab-Server |
 | `STORAGE_DRIVER`, `STORAGE_LOCAL_DIR`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Ablage der Anhänge und Backups |
 | `ATTACHMENT_MAX_MB` | Größte Anhangsdatei (Standard 25) |
@@ -123,7 +124,7 @@ Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projek
 
 ## Sicherung und Wiederherstellung
 
-- **Backups** (Administration → Wartung): ein ZIP mit allen Tabellen und Anhängen im Dateispeicher, täglich zur eingestellten Stunde, die letzten drei bleiben. Von Hand oder per Cronjob: `lenipo admin backup create` und `lenipo admin backup download <id>`. Backups gehören zusätzlich außer Haus.
+- **Backups** (Administration → Wartung): ein ZIP mit allen Tabellen und Anhängen im Dateispeicher, täglich zur eingestellten Stunde, die letzten drei bleiben. Von Hand oder per Cronjob: `lenipo admin backup create` und `lenipo admin backup download <id>`, oder ohne Token direkt im Container: `docker compose exec app node api/dist/maintenance/backup-cli.js --out /tmp/lenipo.zip`. Backups gehören zusätzlich außer Haus.
 - **Wiederherstellen** geht in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das ZIP hochladen. Danach melden sich alle mit ihren alten Konten an.
 - **Aufbewahrung:** Papierkorb 30 Tage, Audit-Log 365 Tage, alte Seitenversionen optional ausdünnen, Seitenaufrufe je Person 90 Tage (danach anonyme Zahlen); stündlich im Worker.
 - **Archive** einzelner Projekte oder Bereiche (Administration → Import) ziehen Inhalte in eine andere Instanz um.

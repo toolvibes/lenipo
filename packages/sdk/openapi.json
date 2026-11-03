@@ -15723,6 +15723,47 @@
         }
       }
     },
+    "/api/v1/setup/provision": {
+      "post": {
+        "operationId": "Setup.provision",
+        "summary": "Set up the instance as its provider",
+        "description": "For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.",
+        "tags": ["Setup"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProvisionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/setup/restore": {
       "post": {
         "operationId": "Setup.restore",
@@ -28339,9 +28380,12 @@
           },
           "registration": {
             "type": "boolean"
+          },
+          "setup": {
+            "type": "boolean"
           }
         },
-        "required": ["email", "instanceName", "project", "invitedBy", "registration"],
+        "required": ["email", "instanceName", "project", "invitedBy", "registration", "setup"],
         "additionalProperties": false
       },
       "AcceptInvitationRequest": {
@@ -36146,6 +36190,44 @@
           }
         },
         "required": ["token", "instanceName", "admin"]
+      },
+      "ProvisionRequest": {
+        "type": "object",
+        "properties": {
+          "instanceName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "admin": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string",
+                "maxLength": 254,
+                "format": "email",
+                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              }
+            },
+            "required": ["email"]
+          }
+        },
+        "required": ["instanceName", "admin"]
+      },
+      "ProvisionResult": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": ["link", "expiresAt"],
+        "additionalProperties": false
       },
       "RestoreResult": {
         "type": "object",

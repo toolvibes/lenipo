@@ -21,6 +21,15 @@ const configSchema = z.object({
   WEB_DIST_DIR: z.string().min(1).optional(),
   /** Public address of this installation, used in log messages and links (e.g. https://lenipo.example.org). */
   PUBLIC_URL: z.url().optional(),
+  /**
+   * Lets a provider (e.g. a hosting service) set up the instance over the API (TL-102, E-153):
+   * name it and invite the first administrator. Keep it secret like a password.
+   */
+  SETUP_TOKEN: z
+    .string()
+    .min(32)
+    .refine((token) => !/^(lp|tl)_/i.test(token), 'must not look like a Lenipo token')
+    .optional(),
   /** Send session cookies only over HTTPS. Defaults to true in production. */
   COOKIE_SECURE: z.stringbool().optional(),
   /** OpenID Connect sign-in (Keycloak, Authentik, Entra ID …). Enabled when issuer and client id are set. */

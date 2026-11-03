@@ -41,6 +41,8 @@ export const InvitationPreview = z
     invitedBy: z.string().nullable(),
     /** Self-registration rather than an invitation. */
     registration: z.boolean(),
+    /** The first administrator of a new instance (TL-102). */
+    setup: z.boolean(),
   })
   .meta({ id: 'InvitationPreview' });
 export type InvitationPreview = z.infer<typeof InvitationPreview>;

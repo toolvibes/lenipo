@@ -1067,6 +1067,8 @@ export const de = {
     },
   },
   invite: {
+    setup:
+      'Ihre Umgebung ist bereit. Legen Sie Ihr Konto an; Sie verwalten Lenipo als Administrator.',
     title: 'Willkommen bei {{instance}}',
     registerTitle: 'Registrierung bei {{instance}}',
     intoProject: '{{name}} lädt Sie in das Projekt „{{project}}“ ein.',

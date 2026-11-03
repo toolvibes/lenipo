@@ -1,21 +1,29 @@
 import { ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import type { SetupRequest } from '@toolvibes/shared';
-import { count, eq, sql } from 'drizzle-orm';
+import type { ProvisionRequest, ProvisionResult, SetupRequest } from '@toolvibes/shared';
+import { and, count, eq, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AuditService } from '../audit/audit.service.js';
 import type { AppConfig } from '../core/config.js';
 import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
-import { globalPermissionGrants, groupMembers, systemSettings, users } from '../db/schema/index.js';
+import {
+  globalPermissionGrants,
+  groupMembers,
+  invitations,
+  systemSettings,
+  users,
+} from '../db/schema/index.js';
 import { ADMINISTRATORS_GROUP, GroupService, USERS_GROUP } from './group.service.js';
 import { PasswordService } from './password.service.js';
-import { constantTimeEquals, setupCode, sha256 } from './secrets.js';
+import { constantTimeEquals, randomSecret, setupCode, sha256 } from './secrets.js';
 
 const SETUP_KEY = 'setup';
 const INSTANCE_KEY = 'instance';
 const SETUP_LOCK_KEY = 7_211_043;
 const CODE_LIFETIME_MS = 24 * 60 * 60 * 1000;
+/** How long the invitation of the first administrator from a provider lasts. */
+const PROVISION_DAYS = 14;
 
 interface StoredSetupCode {
   codeHash: string;
@@ -90,6 +98,74 @@ export class SetupService {
         type: 'urn:lenipo:problem:setup-code',
       });
     }
+  }
+
+  /** Whether the SETUP_TOKEN of the environment is set and matches. */
+  acceptsToken(token: string): boolean {
+    const expected = this.config.SETUP_TOKEN;
+    return !!expected && constantTimeEquals(sha256(expected), sha256(token));
+  }
+
+  /**
+   * Setup by a provider (TL-102, E-153): names the instance and invites the first administrator,
+   * who sets name and password through the link. A new call replaces the open invitation.
+   */
+  async provision(request: ProvisionRequest): Promise<ProvisionResult> {
+    const token = randomSecret();
+    const expiresAt = new Date(Date.now() + PROVISION_DAYS * 86_400_000);
+    await this.database.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
+      if (!(await this.isRequired(tx))) {
+        throw new ConflictException('Setup has already been completed');
+      }
+      await this.groupService.ensureBuiltIns(tx);
+      const instance = { name: request.instanceName };
+      await tx
+        .insert(systemSettings)
+        .values({ key: INSTANCE_KEY, value: instance })
+        .onConflictDoUpdate({
+          target: systemSettings.key,
+          set: { value: instance, updatedAt: sql`now()` },
+        });
+      await tx
+        .update(invitations)
+        .set({ revokedAt: sql`now()` })
+        .where(
+          and(
+            eq(invitations.kind, 'setup'),
+            isNull(invitations.acceptedAt),
+            isNull(invitations.revokedAt),
+          ),
+        );
+      await tx.insert(invitations).values({
+        id: uuidv7(),
+        kind: 'setup',
+        email: request.admin.email.toLowerCase(),
+        tokenHash: sha256(token),
+        expiresAt,
+      });
+    });
+    await this.audit.record({
+      action: 'setup.provisioned',
+      targetType: 'instance',
+      details: { instanceName: request.instanceName, email: request.admin.email },
+    });
+    const base = (this.config.PUBLIC_URL ?? '').replace(/\/+$/, '');
+    return {
+      link: `${base}/invite?token=${encodeURIComponent(token)}`,
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  /** The invited first administrator joins: administrators and users, setup is done. */
+  async completeByInvitation(userId: string, db: Executor = this.database.db): Promise<void> {
+    await db.execute(sql`select pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
+    if (!(await this.isRequired(db))) {
+      throw new ConflictException('Setup has already been completed');
+    }
+    const groupIds = await this.groupService.idsByName([ADMINISTRATORS_GROUP], db);
+    await db.insert(groupMembers).values(groupIds.map((groupId) => ({ groupId, userId })));
+    await db.delete(systemSettings).where(eq(systemSettings.key, SETUP_KEY));
   }
 
   /** Creates the first administrator. Returns the new user's id. */

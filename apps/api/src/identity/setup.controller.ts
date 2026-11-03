@@ -1,5 +1,20 @@
-import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { Me, SetupRequest, SetupStatusResponse } from '@toolvibes/shared';
+import {
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
+import {
+  Me,
+  ProvisionRequest,
+  ProvisionResult,
+  SetupRequest,
+  SetupStatusResponse,
+} from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import type { AppConfig } from '../core/config.js';
 import { Public, ValidBody } from '../core/http/decorators.js';
@@ -49,5 +64,25 @@ export class SetupController {
     const session = await this.sessions.create(userId, 'setup', client);
     setSessionCookie(response, this.config, session.secret, session.expiresAt);
     return this.users.me(userId, 'session');
+  }
+
+  @Endpoint({
+    tag: 'Setup',
+    summary: 'Set up the instance as its provider',
+    description:
+      'For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.',
+    response: ProvisionResult,
+  })
+  @Post('provision')
+  @HttpCode(201)
+  async provision(
+    @ValidBody(ProvisionRequest) body: ProvisionRequest,
+    @Req() request: Request,
+  ): Promise<ProvisionResult> {
+    const [scheme, token] = (request.get('authorization') ?? '').split(' ');
+    if (scheme?.toLowerCase() !== 'bearer' || !token || !this.setup.acceptsToken(token)) {
+      throw new ForbiddenException('Setup by a provider needs the SETUP_TOKEN of the instance');
+    }
+    return this.setup.provision(body);
   }
 }

@@ -7,5 +7,7 @@
 .env.*
 !.env.example
 .claude
-docs
+# The web app shows the user handbook (Help page); the rest of docs stays out.
+docs/*
+!docs/10-benutzerhandbuch.md
 design

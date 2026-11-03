@@ -1047,6 +1047,8 @@ export const en: Messages = {
     },
   },
   invite: {
+    setup:
+      'Your environment is ready. Create your account; you manage Lenipo as its administrator.',
     title: 'Welcome to {{instance}}',
     registerTitle: 'Register with {{instance}}',
     intoProject: '{{name}} invites you to the project “{{project}}”.',
