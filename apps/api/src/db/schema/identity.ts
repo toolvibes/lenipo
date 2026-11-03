@@ -55,8 +55,27 @@ export const users = pgTable(
     /** Provisioned by an identity provider over SCIM (TL-52, E-141), with its id there. */
     scimManaged: boolean().notNull().default(false),
     scimExternalId: text(),
+    /** 'person', or 'agent' for an AI agent with its own tokens and no sign-in (TL-92, E-144). */
+    kind: text().notNull().default('person'),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
+);
+
+/** What only agents have: who made them, which model, who answers for them (TL-92, E-144). */
+export const agentProfiles = pgTable(
+  'agent_profiles',
+  {
+    userId: uuid()
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The tool, e.g. "Claude Code" or "Codex CLI". */
+    vendor: text().notNull(),
+    model: text().notNull().default(''),
+    /** The responsible person. */
+    ownerId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('agent_profiles_owner_idx').on(table.ownerId)],
 );
 
 export const groups = pgTable(

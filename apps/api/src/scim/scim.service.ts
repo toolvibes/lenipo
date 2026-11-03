@@ -180,7 +180,7 @@ export class ScimService {
     const [row] = await this.database.db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), ne(users.id, AUTOMATION_ACTOR_ID)));
+      .where(and(eq(users.id, id), ne(users.id, AUTOMATION_ACTOR_ID), eq(users.kind, 'person')));
     if (!row) throw new ScimError(404, 'User not found');
     const memberOf = await this.database.db
       .select({ id: groups.id, name: groups.name })
@@ -221,7 +221,8 @@ export class ScimService {
 
   async listUsers(base: string, filter: string | undefined, startIndex: number, size: number) {
     const parsed = parseFilter(filter);
-    const conditions: SQL[] = [ne(users.id, AUTOMATION_ACTOR_ID)];
+    // Agents are not the identity provider's (TL-92).
+    const conditions: SQL[] = [ne(users.id, AUTOMATION_ACTOR_ID), eq(users.kind, 'person')];
     if (parsed) {
       if (['username', 'emails.value', 'emails'].includes(parsed.attribute)) {
         conditions.push(eq(users.email, parsed.value.toLowerCase()));
@@ -503,7 +504,9 @@ export class ScimService {
     const known = await db
       .select({ id: users.id })
       .from(users)
-      .where(and(inArray(users.id, ids), ne(users.id, AUTOMATION_ACTOR_ID)));
+      .where(
+        and(inArray(users.id, ids), ne(users.id, AUTOMATION_ACTOR_ID), eq(users.kind, 'person')),
+      );
     if (known.length === 0) return;
     await db
       .insert(groupMembers)

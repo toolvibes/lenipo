@@ -1,9 +1,11 @@
+import { Robot } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import type { UserRef } from '@toolvibes/shared';
 import { Command } from 'cmdk';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { initials, presenceColor } from '../../lib/presence';
+import { agentsQuery } from '../../lib/queries';
 import { projectUsersQuery } from '../../lib/tracking';
 import { Dialog } from '../../ui/Dialog';
 
@@ -16,11 +18,17 @@ interface UserPickerProps {
   projectKey: string;
 }
 
+/** Initials in a circle; AI agents get a rounded square with a robot instead (TL-92). */
 export function Avatar({ user, size = 24 }: { user: UserRef; size?: number }) {
+  const { t } = useTranslation();
+  const agents = useQuery(agentsQuery);
+  const agent = agents.data?.some((entry) => entry.id === user.id) ?? false;
   return (
     <span
-      title={user.displayName}
-      className="grid shrink-0 place-items-center rounded-full font-semibold text-white"
+      title={agent ? t('agents.avatarTitle', { name: user.displayName }) : user.displayName}
+      className={`grid shrink-0 place-items-center font-semibold text-white ${
+        agent ? 'rounded-[28%]' : 'rounded-full'
+      }`}
       style={{
         width: size,
         height: size,
@@ -29,7 +37,7 @@ export function Avatar({ user, size = 24 }: { user: UserRef; size?: number }) {
       }}
       aria-hidden
     >
-      {initials(user.displayName)}
+      {agent ? <Robot size={size * 0.62} weight="bold" /> : initials(user.displayName)}
     </span>
   );
 }

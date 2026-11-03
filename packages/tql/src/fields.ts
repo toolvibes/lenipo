@@ -346,6 +346,8 @@ export interface FunctionDef {
 export const FUNCTIONS: readonly FunctionDef[] = [
   { name: 'currentUser', result: 'user', minArgs: 0, maxArgs: 0 },
   { name: 'membersOf', result: 'users', minArgs: 1, maxArgs: 1 },
+  /** The accounts of AI agents (TL-92). */
+  { name: 'agents', result: 'users', minArgs: 0, maxArgs: 0 },
   /** Issues linked to the given one, optionally only through one link type or direction. */
   { name: 'linkedIssues', result: 'issues', minArgs: 1, maxArgs: 2 },
   /** The caller's recently viewed issues (TL-17). */

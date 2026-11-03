@@ -298,7 +298,11 @@ export const AddProjectMemberRequest = z
   .meta({ id: 'AddProjectMemberRequest' });
 export type AddProjectMemberRequest = z.infer<typeof AddProjectMemberRequest>;
 
-export const UserLookup = UserRef.extend({ email: z.string() }).meta({ id: 'UserLookup' });
+export const UserLookup = UserRef.extend({
+  email: z.string(),
+  /** An AI agent's account (TL-92, E-144). */
+  agent: z.boolean(),
+}).meta({ id: 'UserLookup' });
 export type UserLookup = z.infer<typeof UserLookup>;
 
 export const IssueTypeInfo = z

@@ -1,6 +1,7 @@
 export const PRODUCT_NAME = 'Lenipo';
 
 export * from './access-check.js';
+export * from './agents.js';
 export * from './ai.js';
 export * from './apps.js';
 export * from './automation.js';

@@ -16,6 +16,20 @@ export const meQuery = queryOptions({
   staleTime: 60_000,
 });
 
+/** The AI agents (TL-92, E-144); empty for people who may not browse users. */
+export const agentsQuery = queryOptions({
+  queryKey: ['agents'],
+  queryFn: async () => {
+    try {
+      return await unwrap(client.GET('/api/v1/agents'));
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return [];
+      throw error;
+    }
+  },
+  staleTime: 5 * 60_000,
+});
+
 export const authProvidersQuery = queryOptions({
   queryKey: ['auth-providers'],
   queryFn: () => unwrap(client.GET('/api/v1/auth/providers')),

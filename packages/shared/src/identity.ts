@@ -72,6 +72,8 @@ export const Me = z
     keyboardShortcuts: z.boolean(),
     /** Has a local password to change; false for accounts that only sign in via OIDC (TL-59). */
     hasPassword: z.boolean(),
+    /** The account of an AI agent (TL-92, E-144). */
+    agent: z.boolean(),
     /** Two-factor sign-in (TL-18, E-100). */
     get twoFactor() {
       return TwoFactorStatus;
@@ -144,6 +146,8 @@ export const UserSummary = z
     groups: z.array(z.string()),
     /** External collaborator (TL-66, E-131). */
     external: z.boolean(),
+    /** An AI agent's account (TL-92, E-144). */
+    agent: z.boolean(),
   })
   .meta({ id: 'UserSummary' });
 export type UserSummary = z.infer<typeof UserSummary>;

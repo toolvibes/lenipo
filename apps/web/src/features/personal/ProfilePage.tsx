@@ -2,6 +2,7 @@ import { Check, Copy } from '@phosphor-icons/react';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
+  type Agent,
   type CreatedToken,
   type Me,
   TOKEN_SCOPES,
@@ -13,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { applyLocale } from '../../i18n';
 import { client, unwrap } from '../../lib/api';
 import { formatDate, formatRelative } from '../../lib/format';
-import { meQuery } from '../../lib/queries';
+import { agentsQuery, meQuery } from '../../lib/queries';
 import { applyTheme, readTheme, type ThemePreference } from '../../lib/theme';
 import { timeZones } from '../../lib/timeZones';
 import { Button } from '../../ui/Button';
@@ -24,10 +25,6 @@ import { TopBar } from '../../ui/TopBar';
 import { RecoveryCodeList, TwoFactorSetupFlow } from '../auth/TwoFactorPage';
 import { Settings as EmailSettings } from '../notifications/NotificationBell';
 
-const tokensQuery = queryOptions({
-  queryKey: ['me', 'tokens'],
-  queryFn: () => unwrap(client.GET('/api/v1/me/tokens')),
-});
 const sessionsQuery = queryOptions({
   queryKey: ['me', 'sessions'],
   queryFn: () => unwrap(client.GET('/api/v1/me/sessions')),
@@ -266,34 +263,56 @@ export function CopyButton({ text }: { text: string }) {
   );
 }
 
-function Tokens({ me }: { me: Me }) {
+/** Personal access tokens, or with `agentId` those of an agent one answers for (TL-92). */
+export function Tokens({ me, agentId }: { me: Me; agentId?: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const tokens = useQuery(tokensQuery);
+  const queryKey = agentId ? ['agents', agentId, 'tokens'] : ['me', 'tokens'];
+  const tokens = useQuery({
+    queryKey,
+    queryFn: () =>
+      agentId
+        ? unwrap(client.GET('/api/v1/agents/{id}/tokens', { params: { path: { id: agentId } } }))
+        : unwrap(client.GET('/api/v1/me/tokens')),
+  });
   const [name, setName] = useState('');
-  const [scopes, setScopes] = useState<TokenScope[]>(['issues:read', 'wiki:read']);
+  const [scopes, setScopes] = useState<TokenScope[]>(
+    agentId ? ['issues:read', 'issues:write'] : ['issues:read', 'wiki:read'],
+  );
   const [days, setDays] = useState(90);
   const [created, setCreated] = useState<CreatedToken | null>(null);
+  // Agent tokens never administer (E-144).
   const available = TOKEN_SCOPES.filter(
-    (scope) => scope !== 'admin' || me.globalPermissions.includes('admin'),
+    (scope) => scope !== 'admin' || (!agentId && me.globalPermissions.includes('admin')),
   );
   const create = useMutation({
-    mutationFn: () =>
-      unwrap(
-        client.POST('/api/v1/me/tokens', {
-          body: { name: name.trim(), scopes, expiresInDays: days },
-        }),
-      ),
+    mutationFn: () => {
+      const body = { name: name.trim(), scopes, expiresInDays: days };
+      return agentId
+        ? unwrap(
+            client.POST('/api/v1/agents/{id}/tokens', {
+              params: { path: { id: agentId } },
+              body,
+            }),
+          )
+        : unwrap(client.POST('/api/v1/me/tokens', { body }));
+    },
     onSuccess: (token) => {
       setCreated(token);
       setName('');
-      void queryClient.invalidateQueries({ queryKey: tokensQuery.queryKey });
+      void queryClient.invalidateQueries({ queryKey });
     },
   });
   const revoke = useMutation({
     mutationFn: (id: string) =>
-      unwrap(client.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tokensQuery.queryKey }),
+      agentId
+        ? unwrap(
+            client.DELETE('/api/v1/agents/{id}/tokens/{tokenId}', {
+              params: { path: { id: agentId, tokenId: id } },
+            }),
+          )
+        : unwrap(client.DELETE('/api/v1/me/tokens/{id}', { params: { path: { id } } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
   const mcpCommand = created
     ? `claude mcp add --transport http lenipo ${window.location.origin}/mcp --header "Authorization: Bearer ${created.secret}"`
@@ -301,7 +320,9 @@ function Tokens({ me }: { me: Me }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('profile.tokensIntro')}</p>
+      {!agentId && (
+        <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('profile.tokensIntro')}</p>
+      )}
       {created && (
         <div
           role="status"
@@ -672,6 +693,28 @@ function TwoFactor({ me }: { me: Me }) {
   );
 }
 
+/** Tokens for the agents the person answers for (TL-92, E-144). */
+function MyAgents({ me, agents }: { me: Me; agents: Agent[] }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-6">
+      <p className="m-0 max-w-[640px] text-[var(--ink-muted)]">{t('agents.mineIntro')}</p>
+      {agents.map((agent) => (
+        <div key={agent.id} className="flex flex-col gap-3">
+          <h3 className="m-0 text-[14px] font-semibold">
+            {agent.displayName}
+            <span className="font-normal text-[var(--ink-muted)]">
+              {' '}
+              · {[agent.vendor, agent.model].filter(Boolean).join(' · ')}
+            </span>
+          </h3>
+          <Tokens me={me} agentId={agent.id} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Opens the person's private space, created on first use (TL-29, E-110). */
 function PersonalSpaceButton() {
   const { t } = useTranslation();
@@ -697,7 +740,11 @@ function PersonalSpaceButton() {
 export function ProfilePage() {
   const { t } = useTranslation();
   const me = useQuery(meQuery);
+  const agents = useQuery(agentsQuery);
   if (!me.data) return null;
+  const myAgents = (agents.data ?? []).filter(
+    (agent) => agent.owner?.id === me.data?.id && agent.status === 'active',
+  );
   return (
     <>
       <TopBar crumbs={[t('profile.title')]} />
@@ -733,6 +780,11 @@ export function ProfilePage() {
         <Section id="tokens" title={t('profile.tokens')}>
           <Tokens me={me.data} />
         </Section>
+        {myAgents.length > 0 && (
+          <Section id="agents" title={t('agents.mine')}>
+            <MyAgents me={me.data} agents={myAgents} />
+          </Section>
+        )}
         <Section id="connected-apps" title={t('oauth.connected')}>
           <ConnectedApps />
         </Section>

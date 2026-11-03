@@ -50,7 +50,10 @@ assignee = currentUser() AND resolution is EMPTY ORDER BY priority, updated DESC
 project = WEB AND status = "In Arbeit" AND labels in (frontend, api)
 text ~ "Anmeldung" AND created > -7d
 fixVersion = "2.0" AND statusCategory != done
+assignee in agents() AND status = Review
 ```
+
+`agents()` steht für alle KI-Agenten; sie erscheinen überall mit einem eckigen Avatar mit Roboter statt der Initialen.
 
 Ist die KI-Erweiterung eingerichtet, findet `similar ~ "Anmeldung klappt nicht"` die Vorgänge mit ähnlicher Bedeutung, auch ohne gleiche Wörter – die ähnlichsten zuerst, kombinierbar mit anderen Bedingungen. In der globalen Suche schaltet „Nach Bedeutung“ dasselbe für Vorgänge und Seiten ein; Assistenten über MCP haben dafür das Werkzeug `semantic_search`.
 

@@ -11,6 +11,7 @@ import { ISSUE_KEY } from '@toolvibes/tql';
 import { useTranslation } from 'react-i18next';
 import { AccessCheckPage } from './features/admin/AccessCheckPage';
 import { AdminLayout } from './features/admin/AdminLayout';
+import { AgentsPage } from './features/admin/AgentsPage';
 import { AiSettingsPage } from './features/admin/AiSettingsPage';
 import { AppsPage } from './features/admin/AppsPage';
 import { CustomFieldsPage } from './features/admin/CustomFieldsPage';
@@ -906,6 +907,12 @@ const aiSettingsRoute = createRoute({
   component: AiSettingsPage,
 });
 
+const agentsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/agents',
+  component: AgentsPage,
+});
+
 const embedHostsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/embeds',
@@ -1047,6 +1054,7 @@ const routeTree = rootRoute.addChildren([
       automationAdminRoute,
       embedHostsRoute,
       aiSettingsRoute,
+      agentsRoute,
       appsAdminRoute,
       printTemplatesRoute,
       gitConnectionsRoute,

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { securitySettingsQuery } from '../../lib/admin';
 import { client, unwrap } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
+import { AgentBadge } from '../../ui/AgentBadge';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { ExternalBadge } from '../../ui/ExternalBadge';
@@ -211,35 +212,45 @@ export function SignInSettingsPage() {
                     </span>
                   )}
                   {user.external && <ExternalBadge />}
+                  {user.agent && <AgentBadge />}
                 </span>
-                <span className="text-xs text-[var(--ink-muted)]">{user.email}</span>
+                <span className="text-xs text-[var(--ink-muted)]">
+                  {user.agent ? t('agents.signInHint') : user.email}
+                </span>
               </span>
-              <Button
-                size="sm"
-                disabled={userAction.isPending}
-                onClick={() => {
-                  if (window.confirm(t('signIn.endSessionsConfirm', { name: user.displayName }))) {
-                    setDone(null);
-                    userAction.mutate({ id: user.id, action: 'sessions' });
-                  }
-                }}
-              >
-                {t('signIn.endSessions')}
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                disabled={userAction.isPending}
-                onClick={() => {
-                  if (window.confirm(t('signIn.resetConfirm', { name: user.displayName }))) {
-                    setDone(null);
-                    userAction.mutate({ id: user.id, action: '2fa' });
-                  }
-                }}
-              >
-                {t('signIn.reset')}
-              </Button>
-              {user.id !== me?.id && !user.email.endsWith('@anonymized.invalid') && (
+              {/* Agents never sign in: no sessions, no second factor (TL-92). */}
+              {!user.agent && (
+                <Button
+                  size="sm"
+                  disabled={userAction.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(t('signIn.endSessionsConfirm', { name: user.displayName }))
+                    ) {
+                      setDone(null);
+                      userAction.mutate({ id: user.id, action: 'sessions' });
+                    }
+                  }}
+                >
+                  {t('signIn.endSessions')}
+                </Button>
+              )}
+              {!user.agent && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={userAction.isPending}
+                  onClick={() => {
+                    if (window.confirm(t('signIn.resetConfirm', { name: user.displayName }))) {
+                      setDone(null);
+                      userAction.mutate({ id: user.id, action: '2fa' });
+                    }
+                  }}
+                >
+                  {t('signIn.reset')}
+                </Button>
+              )}
+              {user.id !== me?.id && !user.agent && !user.email.endsWith('@anonymized.invalid') && (
                 <Button
                   size="sm"
                   disabled={userAction.isPending}

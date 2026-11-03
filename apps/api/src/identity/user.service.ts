@@ -22,6 +22,8 @@ export interface NewUser {
   groupNames: string[];
   /** External collaborator (TL-66). */
   external?: boolean;
+  /** 'agent' for an AI agent's account (TL-92). */
+  kind?: 'person' | 'agent';
 }
 
 @Injectable()
@@ -65,6 +67,7 @@ export class UserService {
         displayName: user.displayName,
         passwordHash: user.passwordHash,
         external: user.external ?? false,
+        kind: user.kind ?? 'person',
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -99,6 +102,7 @@ export class UserService {
       onboarded: user.onboardedAt !== null,
       keyboardShortcuts: user.keyboardShortcuts,
       hasPassword: user.passwordHash !== null,
+      agent: user.kind === 'agent',
       twoFactor: await this.twoFactor.status(userId, stage),
     };
   }
@@ -124,6 +128,7 @@ export class UserService {
         displayName: users.displayName,
         status: users.status,
         external: users.external,
+        agent: sql<boolean>`${users.kind} = 'agent'`,
         groups: sql<
           string[]
         >`coalesce(array_agg(${groups.name} order by ${groups.name}) filter (where ${groups.name} is not null), '{}')`,
@@ -170,7 +175,12 @@ export class UserService {
   async search(query: string, limit: number): Promise<UserLookup[]> {
     const pattern = `%${query.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
     return this.database.db
-      .select({ id: users.id, displayName: users.displayName, email: users.email })
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        email: users.email,
+        agent: sql<boolean>`${users.kind} = 'agent'`,
+      })
       .from(users)
       .where(
         and(

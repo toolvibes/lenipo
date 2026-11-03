@@ -221,7 +221,7 @@ export function registerTools(
           return `- ${names}: ${field.type}; ${field.operators.join(' ') || 'sort only'}${field.orderable ? '; sortable' : ''}`;
         });
       return text(
-        `Functions: currentUser(), membersOf(group), now(), startOfDay/Week/Month/Year([±n]), endOf…, linkedIssues(KEY[, type]).\nDates: 2026-10-28, -7d, 2w. Text search with ~ ("word*" for prefixes).\n\n${lines.join('\n')}`,
+        `Functions: currentUser(), membersOf(group), agents(), now(), startOfDay/Week/Month/Year([±n]), endOf…, linkedIssues(KEY[, type]).\nDates: 2026-10-28, -7d, 2w. Text search with ~ ("word*" for prefixes).\n\n${lines.join('\n')}`,
       );
     },
   );

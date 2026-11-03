@@ -9,6 +9,8 @@ import { InstanceController, OperationsController } from '../operations/operatio
 import { OperationsGuard } from '../operations/operations.guard.js';
 import { OperationsService } from '../operations/operations.service.js';
 import { AdminController } from './admin.controller.js';
+import { AgentService } from './agent.service.js';
+import { AgentsController } from './agents.controller.js';
 import { AttemptLimiter } from './attempt-limiter.js';
 import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
@@ -47,6 +49,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     OAuthController,
     DirectoriesController,
     SamlController,
+    AgentsController,
   ],
   providers: [
     AccessService,
@@ -66,6 +69,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     TokenService,
     UserService,
     UserLifecycleService,
+    AgentService,
     OperationsService,
     AuthGuard,
     OperationsGuard,

@@ -15,6 +15,7 @@ const PAGES = [
   { to: '/admin/automation', label: 'automation.title' },
   { to: '/admin/embeds', label: 'wikiMacros.embedTitle' },
   { to: '/admin/ai', label: 'ai.title' },
+  { to: '/admin/agents', label: 'agents.title' },
   { to: '/admin/apps', label: 'apps.title' },
   { to: '/admin/print-templates', label: 'printTemplates.title' },
   { to: '/admin/access-check', label: 'access.title' },

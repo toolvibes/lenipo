@@ -136,6 +136,8 @@ export class TqlCompiler {
   readonly errors: TqlError[] = [];
   private usersByValue = new Map<string, string>();
   private groupsByValue = new Map<string, string>();
+  /** The accounts of AI agents, when the query names `agents()` (TL-92). */
+  private agentIds: string[] = [];
   private issuesByKey = new Map<string, string>();
   private sprintsByValue = new Map<string, string[]>();
   private versionsByValue = new Map<string, string[]>();
@@ -178,6 +180,7 @@ export class TqlCompiler {
     const versionValues = new Set<string>();
     const visitedBy = new Set<Expression>();
     const semanticValues = new Map<string, { start: number; end: number }>();
+    let wantsAgents = false;
     const visit = (node: Expression): void => {
       if (node.kind === 'and' || node.kind === 'or') node.items.forEach(visit);
       else if (node.kind === 'not') visit(node.expression);
@@ -200,7 +203,7 @@ export class TqlCompiler {
           if (item.kind === 'value') userValues.add(item.value.toLowerCase());
           else if (item.fn.name === 'membersOf' && item.args[0]) {
             groupValues.add(item.args[0].toLowerCase());
-          }
+          } else if (item.fn.name === 'agents') wantsAgents = true;
         }
       } else if (node.field.type === 'version') {
         for (const item of items(node.operand)) {
@@ -319,6 +322,13 @@ export class TqlCompiler {
         this.groupsByValue.set(row.name.toLowerCase(), row.id);
         this.groupsByValue.set(row.id, row.id);
       }
+    }
+    if (wantsAgents) {
+      const rows = await this.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.kind, 'agent'));
+      this.agentIds = rows.map((row) => row.id);
     }
   }
 
@@ -642,6 +652,7 @@ export class TqlCompiler {
     for (const item of items(clause.operand)) {
       if (item.kind === 'function') {
         if (item.fn.name === 'currentUser') ids.push(this.context.userId);
+        else if (item.fn.name === 'agents') ids.push(...this.agentIds);
         else if (item.fn.name === 'membersOf') {
           const name = item.args[0] ?? '';
           const group = this.groupsByValue.get(name.toLowerCase());
@@ -692,6 +703,7 @@ export class TqlCompiler {
     for (const item of items(clause.operand)) {
       if (item.kind === 'function') {
         if (item.fn.name === 'currentUser') ids.push(this.context.userId);
+        else if (item.fn.name === 'agents') ids.push(...this.agentIds);
         else if (item.fn.name === 'membersOf') {
           const group = this.groupsByValue.get((item.args[0] ?? '').toLowerCase());
           if (group) groupIds.push(group);
@@ -884,6 +896,7 @@ export class TqlCompiler {
       if (field.type === 'user') {
         if (item.kind === 'function') {
           if (item.fn.name === 'currentUser') ids.push(this.context.userId);
+          else if (item.fn.name === 'agents') ids.push(...this.agentIds);
           continue;
         }
         const id = this.usersByValue.get(item.value.toLowerCase());

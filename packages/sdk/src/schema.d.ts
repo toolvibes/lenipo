@@ -685,6 +685,95 @@ export interface paths {
     patch: operations['Administration.updateNotificationScheme'];
     trace?: never;
   };
+  '/api/v1/agents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the AI agents
+     * @description With vendor, model and responsible person; the web app marks them by this list.
+     *
+     *     Requires the global permission `browse-users`.
+     */
+    get: operations['Agents.list'];
+    put?: never;
+    /**
+     * Create an AI agent
+     * @description A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+     *
+     *     Requires the global permission `admin`.
+     */
+    post: operations['Agents.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Change an AI agent
+     * @description Requires the global permission `admin`.
+     */
+    patch: operations['Agents.update'];
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/tokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the tokens of an AI agent
+     * @description For its responsible person and administrators.
+     */
+    get: operations['Agents.listTokens'];
+    put?: never;
+    /**
+     * Create a token for an AI agent; the secret is returned only once
+     * @description Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+     */
+    post: operations['Agents.createToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/agents/{id}/tokens/{tokenId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke a token of an AI agent */
+    delete: operations['Agents.revokeToken'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/apps': {
     parameters: {
       query?: never;
@@ -5965,6 +6054,7 @@ export interface components {
       status: 'active' | 'deactivated';
       groups: string[];
       external: boolean;
+      agent: boolean;
     };
     AnonymizeUserRequest: {
       confirmation: string;
@@ -6438,6 +6528,66 @@ export interface components {
           /** Format: uuid */
           userId: string;
         };
+    Agent: {
+      /** Format: uuid */
+      id: string;
+      displayName: string;
+      vendor: string;
+      model: string;
+      owner: components['schemas']['UserRef'] | null;
+      /** @enum {string} */
+      status: 'active' | 'deactivated';
+      /** Format: date-time */
+      createdAt: string;
+    };
+    CreateAgentRequest: {
+      displayName: string;
+      vendor: string;
+      /** @default  */
+      model?: string;
+      /** Format: uuid */
+      ownerId?: string;
+      /** @default [] */
+      groups?: string[];
+    };
+    UpdateAgentRequest: {
+      displayName?: string;
+      vendor?: string;
+      model?: string;
+      ownerId?: string | null;
+    };
+    TokenInfo: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      scopes: components['schemas']['TokenScope'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+      lastUsedAt: string | null;
+    };
+    /** @enum {string} */
+    TokenScope: 'issues:read' | 'issues:write' | 'wiki:read' | 'wiki:write' | 'admin';
+    CreateTokenRequest: {
+      name: string;
+      scopes: components['schemas']['TokenScope'][];
+      expiresInDays: number;
+    };
+    CreatedToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      scopes: components['schemas']['TokenScope'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+      lastUsedAt: string | null;
+      secret: string;
+    };
     InstalledApp: {
       /** Format: uuid */
       id: string;
@@ -6465,8 +6615,6 @@ export interface components {
       title: string;
       url: string;
     };
-    /** @enum {string} */
-    TokenScope: 'issues:read' | 'issues:write' | 'wiki:read' | 'wiki:write' | 'admin';
     AppManifestRequest: {
       /** Format: uri */
       manifestUrl: string;
@@ -6541,6 +6689,7 @@ export interface components {
       onboarded: boolean;
       keyboardShortcuts: boolean;
       hasPassword: boolean;
+      agent: boolean;
       twoFactor: components['schemas']['TwoFactorStatus'];
     };
     TwoFactorStatus: {
@@ -8582,36 +8731,6 @@ export interface components {
       ip: string | null;
       userAgent: string | null;
     };
-    TokenInfo: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      prefix: string;
-      scopes: components['schemas']['TokenScope'][];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      expiresAt: string;
-      lastUsedAt: string | null;
-    };
-    CreateTokenRequest: {
-      name: string;
-      scopes: components['schemas']['TokenScope'][];
-      expiresInDays: number;
-    };
-    CreatedToken: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      prefix: string;
-      scopes: components['schemas']['TokenScope'][];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      expiresAt: string;
-      lastUsedAt: string | null;
-      secret: string;
-    };
     Space: {
       /** Format: uuid */
       id: string;
@@ -10453,6 +10572,7 @@ export interface components {
       id: string;
       displayName: string;
       email: string;
+      agent: boolean;
     };
     GroupRef: {
       /** Format: uuid */
@@ -12310,6 +12430,199 @@ export interface operations {
         content: {
           'application/json': components['schemas']['NotificationScheme'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateAgentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateAgentRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Agent'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.listTokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenInfo'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.createToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateTokenRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedToken'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.revokeToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        tokenId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

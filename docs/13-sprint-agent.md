@@ -15,7 +15,7 @@ Ein Vorgang mit dem Label `agent-question` wartet auf eine Antwort. Er kommt ers
 
 ## Einrichten
 
-1. **Konto für den Agenten** anlegen (z. B. „Sprint-Agent“), damit im Verlauf klar ist, was der Agent getan hat. Es braucht im Projekt die Rolle „Entwickler“. Als dieses Konto einen persönlichen Zugriffstoken erstellen, nur mit `issues:read` und `issues:write`.
+1. **Agent anlegen:** Administration → Agenten → „Agent anlegen“ (z. B. „Sprint-Agent“, Werkzeug „Claude Code“), damit im Verlauf klar ist, was der Agent getan hat. Er braucht im Projekt die Rolle „Entwickler“. Die verantwortliche Person erstellt unter Profil → „Meine Agenten“ einen Token, nur mit `issues:read` und `issues:write`.
 2. Im Code-Repository anmelden und einrichten:
 
    ```bash

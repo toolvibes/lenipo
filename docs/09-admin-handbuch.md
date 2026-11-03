@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=10 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=11 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -51,6 +51,7 @@ Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und steh
 - **SCIM 2.0** für Identitätsanbieter wie Entra ID, Okta oder Keycloak: Administration → Verzeichnisse → SCIM-Provisionierung erzeugt ein Token (nur einmal angezeigt, widerrufbar); im Anbieter als Adresse `https://<lenipo>/scim/v2` und das Token als Bearer-Token eintragen. Der Anbieter legt Personen (Anmeldename = E-Mail, ohne Passwort, Anmeldung über OIDC oder SAML) und Gruppen an, ändert und deaktiviert sie; ein vorhandenes Konto mit derselben E-Mail übernimmt er. Löschen deaktiviert nur, Beiträge bleiben. Gruppen, die der Anbieter angelegt hat, verwaltet nur er; eingebaute und in Lenipo angelegte Gruppen kann er nicht ändern.
 - **Einladungen** per E-Mail, **Selbstregistrierung** für freigegebene Domains (standardmäßig aus).
 - **Externe** (Kunden, Partner): Einladung mit „Als externe Person einladen“ oder in der Benutzerverwaltung „Als extern führen“. Externe sind nicht in der Gruppe „users“, haben keine globalen Rechte und sehen nur die Projekte und Bereiche, in denen sie eine Rolle haben. Beim Zuordnen zu einem Projekt gibt „Auch im verknüpften Wiki-Bereich freigeben“ die passende Stufe im Wiki-Bereich des Projekts.
+- **Agenten** (KI-Agenten wie Claude Code, Codex oder Gemini CLI): Administration → Agenten legt ein Konto mit Werkzeug, Modell und verantwortlicher Person an. Agenten haben kein Passwort und melden sich nie an; sie arbeiten mit Tokens, die die verantwortliche Person (Profil → „Meine Agenten“) oder ein Admin erstellt – nie mit dem Bereich `admin`. Agenten sind nicht in der Gruppe „users“ und bekommen Projekte wie andere Personen über die Rollen des Projekts. Überall erscheinen sie mit einem eckigen Avatar mit Roboter; `assignee in agents()` findet ihre Vorgänge. E-Mails bekommen sie nicht, SCIM sieht sie nicht. Deaktivieren in der Personenliste stoppt alle ihre Tokens.
 - **Deaktivieren** beendet alle Sitzungen und Tokens; **Anonymisieren** (DSGVO) ersetzt Name und E-Mail überall durch „Ehemalige Person n“ und ist nicht umkehrbar.
 - **API-Tokens** und **OAuth-Apps**: Personen legen Tokens selbst an; Admins registrieren Apps von Drittanbietern (vertraulich mit Secret oder öffentlich mit PKCE) und sehen alle Verbindungen.
 

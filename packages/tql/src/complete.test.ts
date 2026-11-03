@@ -54,7 +54,7 @@ describe('completion', () => {
     expect(assignee.context.prefix).toBe('cur');
     expect(assignee.labels).toEqual(['currentUser()']);
     expect(at('assignee = |').labels).toEqual(['currentUser()', 'EMPTY']);
-    expect(at('assignee in |').labels).toEqual(['(', 'currentUser()', 'membersOf()']);
+    expect(at('assignee in |').labels).toEqual(['(', 'currentUser()', 'membersOf()', 'agents()']);
     expect(at('created > start|').labels).toContain('startOfWeek()');
     expect(at('key in |').labels).toEqual(['(', 'linkedIssues()', 'issueHistory()']);
     expect(at('comp|').labels).toEqual(['component']);
