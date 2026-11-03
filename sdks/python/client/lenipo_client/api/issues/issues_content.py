@@ -1,0 +1,189 @@
+from http import HTTPStatus
+from typing import Any, cast
+from urllib.parse import quote
+
+import httpx
+
+from ...client import AuthenticatedClient, Client
+from ...types import Response, UNSET
+from ... import errors
+
+from ...models.problem import Problem
+from ...types import File, FileTypes
+from io import BytesIO
+from typing import cast
+
+
+
+def _get_kwargs(
+    id: str,
+
+) -> dict[str, Any]:
+    
+
+    
+
+    
+
+    _kwargs: dict[str, Any] = {
+        "method": "get",
+        "url": "/api/v1/attachments/{id}/content".format(id=quote(str(id), safe=""),),
+    }
+
+
+    return _kwargs
+
+
+
+def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> File | Problem:
+    if response.status_code == 200:
+        response_200 = File(
+             payload = BytesIO(response.content)
+        )
+
+
+
+        return response_200
+
+    response_default = Problem.from_dict(response.json())
+
+
+
+    return response_default
+
+
+
+def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[File | Problem]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+def sync_detailed(
+    id: str,
+    *,
+    client: AuthenticatedClient | Client,
+
+) -> Response[File | Problem]:
+    """ Download the content of an attachment
+
+     Verified raster images (PNG, JPEG, GIF, WebP) are served inline unless `download=1`; everything else
+    always as a download.
+
+    Args:
+        id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[File | Problem]
+     """
+
+
+    kwargs = _get_kwargs(
+        id=id,
+
+    )
+
+    response = client.get_httpx_client().request(
+        **kwargs,
+    )
+
+    return _build_response(client=client, response=response)
+
+def sync(
+    id: str,
+    *,
+    client: AuthenticatedClient | Client,
+
+) -> File | Problem | None:
+    """ Download the content of an attachment
+
+     Verified raster images (PNG, JPEG, GIF, WebP) are served inline unless `download=1`; everything else
+    always as a download.
+
+    Args:
+        id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        File | Problem
+     """
+
+
+    return sync_detailed(
+        id=id,
+client=client,
+
+    ).parsed
+
+async def asyncio_detailed(
+    id: str,
+    *,
+    client: AuthenticatedClient | Client,
+
+) -> Response[File | Problem]:
+    """ Download the content of an attachment
+
+     Verified raster images (PNG, JPEG, GIF, WebP) are served inline unless `download=1`; everything else
+    always as a download.
+
+    Args:
+        id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[File | Problem]
+     """
+
+
+    kwargs = _get_kwargs(
+        id=id,
+
+    )
+
+    response = await client.get_async_httpx_client().request(
+        **kwargs
+    )
+
+    return _build_response(client=client, response=response)
+
+async def asyncio(
+    id: str,
+    *,
+    client: AuthenticatedClient | Client,
+
+) -> File | Problem | None:
+    """ Download the content of an attachment
+
+     Verified raster images (PNG, JPEG, GIF, WebP) are served inline unless `download=1`; everything else
+    always as a download.
+
+    Args:
+        id (str):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        File | Problem
+     """
+
+
+    return (await asyncio_detailed(
+        id=id,
+client=client,
+
+    )).parsed

@@ -4,3 +4,6 @@ generate:
   models: true
   client: true
 output: lenipo.gen.go
+output-options:
+  # The API has a schema SetupStatusResponse; the default suffix "Response" would clash.
+  response-type-suffix: HTTPResponse

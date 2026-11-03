@@ -1,0 +1,1619 @@
+""" Contains all the data models used in inputs/outputs """
+
+from .accept_invitation_request import AcceptInvitationRequest
+from .access_check_request import AccessCheckRequest
+from .access_check_result import AccessCheckResult
+from .access_check_result_user import AccessCheckResultUser
+from .access_check_step import AccessCheckStep
+from .access_check_step_params import AccessCheckStepParams
+from .activity_entry import ActivityEntry
+from .activity_entry_issue import ActivityEntryIssue
+from .activity_entry_items_item import ActivityEntryItemsItem
+from .activity_entry_kind import ActivityEntryKind
+from .activity_entry_project import ActivityEntryProject
+from .activity_page import ActivityPage
+from .add_gadget_request import AddGadgetRequest
+from .add_group_member_request import AddGroupMemberRequest
+from .add_project_member_request_type_0 import AddProjectMemberRequestType0
+from .add_project_member_request_type_1 import AddProjectMemberRequestType1
+from .add_service_customer_request_type_0 import AddServiceCustomerRequestType0
+from .add_service_customer_request_type_1 import AddServiceCustomerRequestType1
+from .add_space_member_request_type_0 import AddSpaceMemberRequestType0
+from .add_space_member_request_type_1 import AddSpaceMemberRequestType1
+from .admin_token import AdminToken
+from .admin_token_owner import AdminTokenOwner
+from .ai_settings import AiSettings
+from .ai_settings_indexed import AiSettingsIndexed
+from .ai_test_result import AiTestResult
+from .ai_test_result_chat import AiTestResultChat
+from .ai_test_result_embeddings import AiTestResultEmbeddings
+from .announcement import Announcement
+from .announcement_input import AnnouncementInput
+from .announcement_input_level import AnnouncementInputLevel
+from .announcement_level import AnnouncementLevel
+from .anonymize_user_request import AnonymizeUserRequest
+from .app_manifest import AppManifest
+from .app_manifest_modules import AppManifestModules
+from .app_manifest_request import AppManifestRequest
+from .app_manifest_scopes_item import AppManifestScopesItem
+from .app_module import AppModule
+from .app_summary import AppSummary
+from .app_summary_modules import AppSummaryModules
+from .app_token import AppToken
+from .apply_scenario_request import ApplyScenarioRequest
+from .apply_scenario_result import ApplyScenarioResult
+from .apply_scenario_result_skipped_item import ApplyScenarioResultSkippedItem
+from .apply_scenario_result_skipped_item_reason import ApplyScenarioResultSkippedItemReason
+from .arrange_gadgets_request import ArrangeGadgetsRequest
+from .attachment import Attachment
+from .auth_providers import AuthProviders
+from .auth_providers_oidc import AuthProvidersOidc
+from .auth_providers_saml_item import AuthProvidersSamlItem
+from .automation_hook_response_202 import AutomationHookResponse202
+from .automation_rule import AutomationRule
+from .automation_rule_last_run_type_0 import AutomationRuleLastRunType0
+from .automation_rule_last_run_type_0_status import AutomationRuleLastRunType0Status
+from .automation_rule_owner_type_0 import AutomationRuleOwnerType0
+from .automation_rule_project_type_0 import AutomationRuleProjectType0
+from .automation_run import AutomationRun
+from .automation_run_log_item import AutomationRunLogItem
+from .automation_run_log_item_level import AutomationRunLogItemLevel
+from .automation_run_status import AutomationRunStatus
+from .automation_trigger_input_type_0 import AutomationTriggerInputType0
+from .automation_trigger_input_type_1 import AutomationTriggerInputType1
+from .automation_trigger_input_type_10 import AutomationTriggerInputType10
+from .automation_trigger_input_type_10_event import AutomationTriggerInputType10Event
+from .automation_trigger_input_type_2 import AutomationTriggerInputType2
+from .automation_trigger_input_type_3 import AutomationTriggerInputType3
+from .automation_trigger_input_type_4 import AutomationTriggerInputType4
+from .automation_trigger_input_type_5 import AutomationTriggerInputType5
+from .automation_trigger_input_type_6 import AutomationTriggerInputType6
+from .automation_trigger_input_type_7 import AutomationTriggerInputType7
+from .automation_trigger_input_type_8 import AutomationTriggerInputType8
+from .automation_trigger_input_type_9 import AutomationTriggerInputType9
+from .automation_trigger_type_0 import AutomationTriggerType0
+from .automation_trigger_type_1 import AutomationTriggerType1
+from .automation_trigger_type_10 import AutomationTriggerType10
+from .automation_trigger_type_10_event import AutomationTriggerType10Event
+from .automation_trigger_type_2 import AutomationTriggerType2
+from .automation_trigger_type_3 import AutomationTriggerType3
+from .automation_trigger_type_4 import AutomationTriggerType4
+from .automation_trigger_type_5 import AutomationTriggerType5
+from .automation_trigger_type_6 import AutomationTriggerType6
+from .automation_trigger_type_7 import AutomationTriggerType7
+from .automation_trigger_type_8 import AutomationTriggerType8
+from .automation_trigger_type_9 import AutomationTriggerType9
+from .average_age import AverageAge
+from .average_age_points_item import AverageAgePointsItem
+from .backlog_data import BacklogData
+from .backlog_data_sprints_item import BacklogDataSprintsItem
+from .backup import Backup
+from .backup_settings import BackupSettings
+from .backup_settings_input import BackupSettingsInput
+from .backup_state import BackupState
+from .backup_trigger import BackupTrigger
+from .blog import Blog
+from .blog_months_item import BlogMonthsItem
+from .blog_post import BlogPost
+from .board import Board
+from .board_column import BoardColumn
+from .board_data import BoardData
+from .board_data_reachable import BoardDataReachable
+from .board_estimation import BoardEstimation
+from .board_project import BoardProject
+from .board_summary import BoardSummary
+from .board_summary_project import BoardSummaryProject
+from .board_summary_type import BoardSummaryType
+from .board_swimlanes import BoardSwimlanes
+from .board_type import BoardType
+from .bulk_action_type_0 import BulkActionType0
+from .bulk_action_type_1 import BulkActionType1
+from .bulk_action_type_2 import BulkActionType2
+from .bulk_action_type_3 import BulkActionType3
+from .bulk_action_type_4 import BulkActionType4
+from .bulk_action_type_5 import BulkActionType5
+from .bulk_action_type_6 import BulkActionType6
+from .bulk_create_request import BulkCreateRequest
+from .bulk_items_result import BulkItemsResult
+from .bulk_items_result_results_item import BulkItemsResultResultsItem
+from .bulk_request import BulkRequest
+from .bulk_result import BulkResult
+from .bulk_result_results_item import BulkResultResultsItem
+from .bulk_update_request import BulkUpdateRequest
+from .bulk_update_request_updates_item import BulkUpdateRequestUpdatesItem
+from .burndown import Burndown
+from .burndown_estimation import BurndownEstimation
+from .burndown_point import BurndownPoint
+from .burndown_point_type import BurndownPointType
+from .change_group import ChangeGroup
+from .change_group_items_item import ChangeGroupItemsItem
+from .change_password_request import ChangePasswordRequest
+from .clone_issue_request import CloneIssueRequest
+from .comment import Comment
+from .complete_sprint_request import CompleteSprintRequest
+from .component import Component
+from .component_ref import ComponentRef
+from .control_chart import ControlChart
+from .control_chart_cycle import ControlChartCycle
+from .control_chart_lead import ControlChartLead
+from .control_chart_points_item import ControlChartPointsItem
+from .copy_dashboard_request import CopyDashboardRequest
+from .create_board_request import CreateBoardRequest
+from .create_board_request_type import CreateBoardRequestType
+from .create_comment_request import CreateCommentRequest
+from .create_component_request import CreateComponentRequest
+from .create_custom_field_request import CreateCustomFieldRequest
+from .create_custom_field_request_type import CreateCustomFieldRequestType
+from .create_dashboard_request import CreateDashboardRequest
+from .create_filter_request import CreateFilterRequest
+from .create_filter_subscription import CreateFilterSubscription
+from .create_git_connection_request import CreateGitConnectionRequest
+from .create_group_request import CreateGroupRequest
+from .create_invitation_request import CreateInvitationRequest
+from .create_issue_link_request import CreateIssueLinkRequest
+from .create_issue_link_request_direction import CreateIssueLinkRequestDirection
+from .create_issue_request import CreateIssueRequest
+from .create_issue_request_custom_fields import CreateIssueRequestCustomFields
+from .create_notification_scheme_request import CreateNotificationSchemeRequest
+from .create_page_comment_request import CreatePageCommentRequest
+from .create_page_request import CreatePageRequest
+from .create_page_request_kind import CreatePageRequestKind
+from .create_page_request_variables import CreatePageRequestVariables
+from .create_permission_scheme_request import CreatePermissionSchemeRequest
+from .create_plan_request import CreatePlanRequest
+from .create_portal_request import CreatePortalRequest
+from .create_portal_request_custom_fields import CreatePortalRequestCustomFields
+from .create_project_request import CreateProjectRequest
+from .create_scenario_request import CreateScenarioRequest
+from .create_scim_token_request import CreateScimTokenRequest
+from .create_security_scheme_request import CreateSecuritySchemeRequest
+from .create_space_request import CreateSpaceRequest
+from .create_space_request_type import CreateSpaceRequestType
+from .create_sprint_request import CreateSprintRequest
+from .create_token_request import CreateTokenRequest
+from .create_user_request import CreateUserRequest
+from .create_version_request import CreateVersionRequest
+from .create_webhook_request import CreateWebhookRequest
+from .create_webhook_request_locale import CreateWebhookRequestLocale
+from .create_worklog_request import CreateWorklogRequest
+from .created_git_connection import CreatedGitConnection
+from .created_resolved import CreatedResolved
+from .created_resolved_points_item import CreatedResolvedPointsItem
+from .created_resolved_request import CreatedResolvedRequest
+from .created_scim_token import CreatedScimToken
+from .created_token import CreatedToken
+from .created_webhook import CreatedWebhook
+from .created_webhook_last_delivery_type_0 import CreatedWebhookLastDeliveryType0
+from .created_webhook_last_delivery_type_0_status import CreatedWebhookLastDeliveryType0Status
+from .created_webhook_locale import CreatedWebhookLocale
+from .custom_field import CustomField
+from .custom_field_option import CustomFieldOption
+from .custom_field_type import CustomFieldType
+from .dashboard import Dashboard
+from .dashboard_layout import DashboardLayout
+from .dashboard_owner import DashboardOwner
+from .dashboard_summary import DashboardSummary
+from .dashboard_summary_owner import DashboardSummaryOwner
+from .dashboards_list_scope import DashboardsListScope
+from .development_summary import DevelopmentSummary
+from .diff_block_content import DiffBlockContent
+from .diff_block_content_type import DiffBlockContentType
+from .diff_block_type_0 import DiffBlockType0
+from .diff_block_type_0_op import DiffBlockType0Op
+from .diff_block_type_1 import DiffBlockType1
+from .directories_test_response_201 import DirectoriesTestResponse201
+from .directory import Directory
+from .directory_config_type_0 import DirectoryConfigType0
+from .directory_order import DirectoryOrder
+from .directory_sync_result import DirectorySyncResult
+from .directory_type import DirectoryType
+from .email_mode import EmailMode
+from .embed_hosts import EmbedHosts
+from .embed_hosts_output import EmbedHostsOutput
+from .estimate_card import EstimateCard
+from .estimate_vote_request import EstimateVoteRequest
+from .estimation import Estimation
+from .estimation_state import EstimationState
+from .estimation_votes_item import EstimationVotesItem
+from .everything_result import EverythingResult
+from .everything_result_counts import EverythingResultCounts
+from .everything_result_projects_item import EverythingResultProjectsItem
+from .everything_result_spaces_item import EverythingResultSpacesItem
+from .favourite import Favourite
+from .favourite_kind import FavouriteKind
+from .feature_flags import FeatureFlags
+from .feature_flags_input import FeatureFlagsInput
+from .feed_token import FeedToken
+from .field_series import FieldSeries
+from .field_series_request import FieldSeriesRequest
+from .filter_share_input_type_0 import FilterShareInputType0
+from .filter_share_input_type_1 import FilterShareInputType1
+from .filter_share_input_type_2 import FilterShareInputType2
+from .filter_share_input_type_3 import FilterShareInputType3
+from .filter_share_type_0 import FilterShareType0
+from .filter_share_type_1_group import FilterShareType1Group
+from .filter_share_type_2_project import FilterShareType2Project
+from .filter_share_type_3 import FilterShareType3
+from .filter_subscription import FilterSubscription
+from .filter_subscription_group_type_0 import FilterSubscriptionGroupType0
+from .filter_subscription_subscriber import FilterSubscriptionSubscriber
+from .filters_list_scope import FiltersListScope
+from .gadget import Gadget
+from .gadget_config_input_type_0 import GadgetConfigInputType0
+from .gadget_config_input_type_1 import GadgetConfigInputType1
+from .gadget_config_input_type_10 import GadgetConfigInputType10
+from .gadget_config_input_type_11 import GadgetConfigInputType11
+from .gadget_config_input_type_2 import GadgetConfigInputType2
+from .gadget_config_input_type_3 import GadgetConfigInputType3
+from .gadget_config_input_type_4 import GadgetConfigInputType4
+from .gadget_config_input_type_5 import GadgetConfigInputType5
+from .gadget_config_input_type_6 import GadgetConfigInputType6
+from .gadget_config_input_type_7 import GadgetConfigInputType7
+from .gadget_config_input_type_8 import GadgetConfigInputType8
+from .gadget_config_input_type_9 import GadgetConfigInputType9
+from .gadget_config_type_0 import GadgetConfigType0
+from .gadget_config_type_1 import GadgetConfigType1
+from .gadget_config_type_10 import GadgetConfigType10
+from .gadget_config_type_11 import GadgetConfigType11
+from .gadget_config_type_2 import GadgetConfigType2
+from .gadget_config_type_3 import GadgetConfigType3
+from .gadget_config_type_4 import GadgetConfigType4
+from .gadget_config_type_5 import GadgetConfigType5
+from .gadget_config_type_6 import GadgetConfigType6
+from .gadget_config_type_7 import GadgetConfigType7
+from .gadget_config_type_8 import GadgetConfigType8
+from .gadget_config_type_9 import GadgetConfigType9
+from .git_connection import GitConnection
+from .git_provider import GitProvider
+from .global_permission import GlobalPermission
+from .group_ref import GroupRef
+from .group_summary import GroupSummary
+from .health_status import HealthStatus
+from .health_status_database import HealthStatusDatabase
+from .health_status_status import HealthStatusStatus
+from .import_archive_body import ImportArchiveBody
+from .import_archive_dry_run import ImportArchiveDryRun
+from .import_confluence_body import ImportConfluenceBody
+from .import_confluence_dry_run import ImportConfluenceDryRun
+from .import_job import ImportJob
+from .import_job_created_by_type_0 import ImportJobCreatedByType0
+from .import_job_state import ImportJobState
+from .import_report import ImportReport
+from .import_report_counts import ImportReportCounts
+from .import_source import ImportSource
+from .incoming_webhook_request import IncomingWebhookRequest
+from .install_app_request import InstallAppRequest
+from .installed_app import InstalledApp
+from .installed_app_modules import InstalledAppModules
+from .instance_notice import InstanceNotice
+from .instance_notice_announcement_type_0 import InstanceNoticeAnnouncementType0
+from .instance_notice_announcement_type_0_level import InstanceNoticeAnnouncementType0Level
+from .invitation import Invitation
+from .invitation_invited_by_type_0 import InvitationInvitedByType0
+from .invitation_preview import InvitationPreview
+from .invitation_preview_project_type_0 import InvitationPreviewProjectType0
+from .invitation_project_type_0 import InvitationProjectType0
+from .invitations_accept_response_200 import InvitationsAcceptResponse200
+from .issue import Issue
+from .issue_columns import IssueColumns
+from .issue_columns_columns_item_type_0 import IssueColumnsColumnsItemType0
+from .issue_columns_input import IssueColumnsInput
+from .issue_columns_input_columns_item_type_0 import IssueColumnsInputColumnsItemType0
+from .issue_custom_fields import IssueCustomFields
+from .issue_custom_fields_additional_property_type_3 import IssueCustomFieldsAdditionalPropertyType3
+from .issue_custom_fields_additional_property_type_4_item import IssueCustomFieldsAdditionalPropertyType4Item
+from .issue_custom_fields_additional_property_type_5 import IssueCustomFieldsAdditionalPropertyType5
+from .issue_custom_fields_additional_property_type_6_item import IssueCustomFieldsAdditionalPropertyType6Item
+from .issue_development import IssueDevelopment
+from .issue_development_branches_item import IssueDevelopmentBranchesItem
+from .issue_development_builds_item import IssueDevelopmentBuildsItem
+from .issue_development_builds_item_state import IssueDevelopmentBuildsItemState
+from .issue_development_commits import IssueDevelopmentCommits
+from .issue_development_commits_latest_item import IssueDevelopmentCommitsLatestItem
+from .issue_development_pull_requests_item import IssueDevelopmentPullRequestsItem
+from .issue_development_pull_requests_item_review_type_0 import IssueDevelopmentPullRequestsItemReviewType0
+from .issue_development_pull_requests_item_state import IssueDevelopmentPullRequestsItemState
+from .issue_export_request import IssueExportRequest
+from .issue_export_request_columns_item_type_0 import IssueExportRequestColumnsItemType0
+from .issue_export_request_format import IssueExportRequestFormat
+from .issue_hit import IssueHit
+from .issue_hit_custom_fields import IssueHitCustomFields
+from .issue_hit_custom_fields_additional_property_type_3 import IssueHitCustomFieldsAdditionalPropertyType3
+from .issue_hit_custom_fields_additional_property_type_4_item import IssueHitCustomFieldsAdditionalPropertyType4Item
+from .issue_hit_custom_fields_additional_property_type_5 import IssueHitCustomFieldsAdditionalPropertyType5
+from .issue_hit_custom_fields_additional_property_type_6_item import IssueHitCustomFieldsAdditionalPropertyType6Item
+from .issue_hit_project import IssueHitProject
+from .issue_link import IssueLink
+from .issue_link_direction import IssueLinkDirection
+from .issue_link_type_info import IssueLinkTypeInfo
+from .issue_list import IssueList
+from .issue_lookup import IssueLookup
+from .issue_lookup_request import IssueLookupRequest
+from .issue_page_ref import IssuePageRef
+from .issue_page_ref_kind import IssuePageRefKind
+from .issue_page_ref_space import IssuePageRefSpace
+from .issue_project import IssueProject
+from .issue_ref import IssueRef
+from .issue_security_level_type_0 import IssueSecurityLevelType0
+from .issue_sla import IssueSla
+from .issue_summary import IssueSummary
+from .issue_summary_custom_fields import IssueSummaryCustomFields
+from .issue_summary_custom_fields_additional_property_type_3 import IssueSummaryCustomFieldsAdditionalPropertyType3
+from .issue_summary_custom_fields_additional_property_type_4_item import IssueSummaryCustomFieldsAdditionalPropertyType4Item
+from .issue_summary_custom_fields_additional_property_type_5 import IssueSummaryCustomFieldsAdditionalPropertyType5
+from .issue_summary_custom_fields_additional_property_type_6_item import IssueSummaryCustomFieldsAdditionalPropertyType6Item
+from .issue_summary_project import IssueSummaryProject
+from .issue_type_info import IssueTypeInfo
+from .issues_add_comment_format import IssuesAddCommentFormat
+from .issues_comments_format import IssuesCommentsFormat
+from .issues_create_format import IssuesCreateFormat
+from .issues_get_format import IssuesGetFormat
+from .issues_transition_format import IssuesTransitionFormat
+from .issues_update_comment_format import IssuesUpdateCommentFormat
+from .issues_update_format import IssuesUpdateFormat
+from .issues_upload_body import IssuesUploadBody
+from .jira_import_request import JiraImportRequest
+from .label_count import LabelCount
+from .labelled_page import LabelledPage
+from .labelled_page_space import LabelledPageSpace
+from .ldap_config import LdapConfig
+from .linked_issue import LinkedIssue
+from .login_request import LoginRequest
+from .mail_handler import MailHandler
+from .mail_receipt import MailReceipt
+from .maintenance_mode import MaintenanceMode
+from .maintenance_mode_input import MaintenanceModeInput
+from .mark_notifications_read import MarkNotificationsRead
+from .me import Me
+from .me_authenticated_via import MeAuthenticatedVia
+from .move_card_request import MoveCardRequest
+from .move_issue_request import MoveIssueRequest
+from .move_page_request import MovePageRequest
+from .move_to_sprint_request import MoveToSprintRequest
+from .notification import Notification
+from .notification_category import NotificationCategory
+from .notification_details import NotificationDetails
+from .notification_details_items_item import NotificationDetailsItemsItem
+from .notification_details_kind import NotificationDetailsKind
+from .notification_event import NotificationEvent
+from .notification_issue_type_0 import NotificationIssueType0
+from .notification_list import NotificationList
+from .notification_page_type_0 import NotificationPageType0
+from .notification_recipient import NotificationRecipient
+from .notification_rule import NotificationRule
+from .notification_rule_group_type_0 import NotificationRuleGroupType0
+from .notification_rule_input_type_0 import NotificationRuleInputType0
+from .notification_rule_input_type_0_recipient import NotificationRuleInputType0Recipient
+from .notification_rule_input_type_1 import NotificationRuleInputType1
+from .notification_rule_input_type_2 import NotificationRuleInputType2
+from .notification_rule_input_type_3 import NotificationRuleInputType3
+from .notification_scheme import NotificationScheme
+from .notification_scheme_projects_item import NotificationSchemeProjectsItem
+from .notification_scheme_summary import NotificationSchemeSummary
+from .notification_scheme_summary_projects_item import NotificationSchemeSummaryProjectsItem
+from .notification_settings import NotificationSettings
+from .o_auth_app import OAuthApp
+from .o_auth_app_created import OAuthAppCreated
+from .o_auth_client_info import OAuthClientInfo
+from .o_auth_consent_request import OAuthConsentRequest
+from .o_auth_consent_result import OAuthConsentResult
+from .o_auth_grant import OAuthGrant
+from .o_auth_grant_client import OAuthGrantClient
+from .o_auth_grant_user import OAuthGrantUser
+from .o_auth_settings import OAuthSettings
+from .o_auth_settings_input import OAuthSettingsInput
+from .onboarding_request import OnboardingRequest
+from .onboarding_request_start import OnboardingRequestStart
+from .onboarding_request_start_method import OnboardingRequestStartMethod
+from .onboarding_result import OnboardingResult
+from .page_analytics import PageAnalytics
+from .page_analytics_daily_item import PageAnalyticsDailyItem
+from .page_analytics_reader_list_type_0_item import PageAnalyticsReaderListType0Item
+from .page_approval import PageApproval
+from .page_approval_mode import PageApprovalMode
+from .page_approval_pending_type_0 import PageApprovalPendingType0
+from .page_approval_rejected_type_0 import PageApprovalRejectedType0
+from .page_comment import PageComment
+from .page_comment_resolved_type_0 import PageCommentResolvedType0
+from .page_diff import PageDiff
+from .page_hit import PageHit
+from .page_hit_space import PageHitSpace
+from .page_properties_report import PagePropertiesReport
+from .page_properties_report_rows_item import PagePropertiesReportRowsItem
+from .page_properties_report_rows_item_page import PagePropertiesReportRowsItemPage
+from .page_properties_report_rows_item_values import PagePropertiesReportRowsItemValues
+from .page_ref import PageRef
+from .page_restrictions_edit import PageRestrictionsEdit
+from .page_restrictions_edit_groups_item import PageRestrictionsEditGroupsItem
+from .page_restrictions_view import PageRestrictionsView
+from .page_restrictions_view_groups_item import PageRestrictionsViewGroupsItem
+from .page_status import PageStatus
+from .page_template import PageTemplate
+from .page_template_kind import PageTemplateKind
+from .page_template_summary import PageTemplateSummary
+from .page_template_summary_kind import PageTemplateSummaryKind
+from .page_tree_entry import PageTreeEntry
+from .page_version import PageVersion
+from .page_version_summary import PageVersionSummary
+from .page_watch_state import PageWatchState
+from .page_watch_state_inherited_type_0 import PageWatchStateInheritedType0
+from .pages_attach_body import PagesAttachBody
+from .pages_get_format import PagesGetFormat
+from .pages_page_children import PagesPageChildren
+from .pages_page_locale import PagesPageLocale
+from .pages_unwatch_scope import PagesUnwatchScope
+from .pages_version_format import PagesVersionFormat
+from .password_changed import PasswordChanged
+from .pending_approval import PendingApproval
+from .period_request import PeriodRequest
+from .permission_grant import PermissionGrant
+from .permission_grant_group_type_0 import PermissionGrantGroupType0
+from .permission_grant_input_type_0 import PermissionGrantInputType0
+from .permission_grant_input_type_1 import PermissionGrantInputType1
+from .permission_grant_input_type_2 import PermissionGrantInputType2
+from .permission_grant_input_type_3 import PermissionGrantInputType3
+from .permission_grant_input_type_3_grantee import PermissionGrantInputType3Grantee
+from .permission_grant_input_type_3_permission import PermissionGrantInputType3Permission
+from .permission_grantee import PermissionGrantee
+from .permission_scheme import PermissionScheme
+from .permission_scheme_projects_item import PermissionSchemeProjectsItem
+from .permission_scheme_summary import PermissionSchemeSummary
+from .permission_scheme_summary_projects_item import PermissionSchemeSummaryProjectsItem
+from .plan import Plan
+from .plan_projects_item import PlanProjectsItem
+from .plan_scenario import PlanScenario
+from .plan_scenario_changes_item import PlanScenarioChangesItem
+from .plan_summary import PlanSummary
+from .plan_summary_projects_item import PlanSummaryProjectsItem
+from .plan_view import PlanView
+from .plan_view_capacity_item import PlanViewCapacityItem
+from .plan_view_projects_item import PlanViewProjectsItem
+from .portal_comment_request import PortalCommentRequest
+from .portal_desk import PortalDesk
+from .portal_request import PortalRequest
+from .portal_request_detail import PortalRequestDetail
+from .portal_request_detail_comments_item import PortalRequestDetailCommentsItem
+from .portal_request_detail_project import PortalRequestDetailProject
+from .portal_request_project import PortalRequestProject
+from .print_template import PrintTemplate
+from .print_template_input import PrintTemplateInput
+from .print_template_summary import PrintTemplateSummary
+from .priority_info import PriorityInfo
+from .problem import Problem
+from .problem_errors import ProblemErrors
+from .project_custom_fields_request import ProjectCustomFieldsRequest
+from .project_custom_fields_request_settings import ProjectCustomFieldsRequestSettings
+from .project_details import ProjectDetails
+from .project_details_notification_scheme import ProjectDetailsNotificationScheme
+from .project_details_permission_scheme import ProjectDetailsPermissionScheme
+from .project_details_security_levels_item import ProjectDetailsSecurityLevelsItem
+from .project_details_security_scheme_type_0 import ProjectDetailsSecuritySchemeType0
+from .project_field_config import ProjectFieldConfig
+from .project_field_setting import ProjectFieldSetting
+from .project_member import ProjectMember
+from .project_member_group_type_0 import ProjectMemberGroupType0
+from .project_permission import ProjectPermission
+from .project_role import ProjectRole
+from .project_summary import ProjectSummary
+from .project_template import ProjectTemplate
+from .project_wiki_pages import ProjectWikiPages
+from .project_wiki_pages_input import ProjectWikiPagesInput
+from .project_workflow import ProjectWorkflow
+from .project_workflow_mode import ProjectWorkflowMode
+from .project_workflow_rules import ProjectWorkflowRules
+from .project_workflow_transitions_item import ProjectWorkflowTransitionsItem
+from .project_workflow_usage import ProjectWorkflowUsage
+from .projects_get_mail_handler_response_200 import ProjectsGetMailHandlerResponse200
+from .projects_list_issues_status import ProjectsListIssuesStatus
+from .projects_save_mail_handler_response_200 import ProjectsSaveMailHandlerResponse200
+from .publish_page_request import PublishPageRequest
+from .publish_release_notes_request import PublishReleaseNotesRequest
+from .publish_workflow_request import PublishWorkflowRequest
+from .publish_workflow_request_input import PublishWorkflowRequestInput
+from .publish_workflow_request_input_migrate import PublishWorkflowRequestInputMigrate
+from .publish_workflow_request_input_mode import PublishWorkflowRequestInputMode
+from .publish_workflow_request_input_statuses_item import PublishWorkflowRequestInputStatusesItem
+from .publish_workflow_request_input_transitions_item import PublishWorkflowRequestInputTransitionsItem
+from .publish_workflow_request_migrate import PublishWorkflowRequestMigrate
+from .publish_workflow_request_mode import PublishWorkflowRequestMode
+from .publish_workflow_request_statuses_item import PublishWorkflowRequestStatusesItem
+from .publish_workflow_request_transitions_item import PublishWorkflowRequestTransitionsItem
+from .query_error import QueryError
+from .query_error_params import QueryErrorParams
+from .queue_entry import QueueEntry
+from .quick_filter import QuickFilter
+from .rank_issue_request import RankIssueRequest
+from .rate_limit_settings import RateLimitSettings
+from .rate_limit_settings_input import RateLimitSettingsInput
+from .recent_item import RecentItem
+from .recent_kind import RecentKind
+from .record_recent_request import RecordRecentRequest
+from .recovery_codes import RecoveryCodes
+from .refresh_app_request import RefreshAppRequest
+from .register_request import RegisterRequest
+from .registration_settings import RegistrationSettings
+from .registration_settings_input import RegistrationSettingsInput
+from .reject_submission_request import RejectSubmissionRequest
+from .release import Release
+from .release_notes import ReleaseNotes
+from .release_notes_page_type_0 import ReleaseNotesPageType0
+from .release_progress import ReleaseProgress
+from .release_version_request import ReleaseVersionRequest
+from .release_warning import ReleaseWarning
+from .release_warning_kind import ReleaseWarningKind
+from .remaining_adjustment_type_0 import RemainingAdjustmentType0
+from .remaining_adjustment_type_1 import RemainingAdjustmentType1
+from .remaining_adjustment_type_2 import RemainingAdjustmentType2
+from .report_config_input_type_0 import ReportConfigInputType0
+from .report_config_input_type_1 import ReportConfigInputType1
+from .report_config_input_type_10 import ReportConfigInputType10
+from .report_config_input_type_11 import ReportConfigInputType11
+from .report_config_input_type_11_group_by import ReportConfigInputType11GroupBy
+from .report_config_input_type_11_period import ReportConfigInputType11Period
+from .report_config_input_type_2 import ReportConfigInputType2
+from .report_config_input_type_3 import ReportConfigInputType3
+from .report_config_input_type_4 import ReportConfigInputType4
+from .report_config_input_type_5 import ReportConfigInputType5
+from .report_config_input_type_6 import ReportConfigInputType6
+from .report_config_input_type_7 import ReportConfigInputType7
+from .report_config_input_type_8 import ReportConfigInputType8
+from .report_config_input_type_9 import ReportConfigInputType9
+from .report_config_type_0 import ReportConfigType0
+from .report_config_type_1 import ReportConfigType1
+from .report_config_type_10 import ReportConfigType10
+from .report_config_type_11 import ReportConfigType11
+from .report_config_type_11_group_by import ReportConfigType11GroupBy
+from .report_config_type_11_period import ReportConfigType11Period
+from .report_config_type_2 import ReportConfigType2
+from .report_config_type_3 import ReportConfigType3
+from .report_config_type_4 import ReportConfigType4
+from .report_config_type_5 import ReportConfigType5
+from .report_config_type_6 import ReportConfigType6
+from .report_config_type_7 import ReportConfigType7
+from .report_config_type_8 import ReportConfigType8
+from .report_config_type_9 import ReportConfigType9
+from .request_type import RequestType
+from .request_type_issue_type import RequestTypeIssueType
+from .resolution_info import ResolutionInfo
+from .restore_result import RestoreResult
+from .restore_version_request import RestoreVersionRequest
+from .restricted_page import RestrictedPage
+from .retention_result import RetentionResult
+from .retention_settings import RetentionSettings
+from .retention_settings_input import RetentionSettingsInput
+from .rich_text import RichText
+from .rich_text_input_type_1 import RichTextInputType1
+from .running_timer import RunningTimer
+from .running_timer_issue import RunningTimerIssue
+from .saml_provider import SamlProvider
+from .save_directory_request import SaveDirectoryRequest
+from .save_mail_handler_request import SaveMailHandlerRequest
+from .save_o_auth_app_request import SaveOAuthAppRequest
+from .save_page_template_request import SavePageTemplateRequest
+from .save_request_type_request import SaveRequestTypeRequest
+from .save_saml_provider_request import SaveSamlProviderRequest
+from .saved_filter import SavedFilter
+from .scenario_change import ScenarioChange
+from .scenario_change_input import ScenarioChangeInput
+from .scim_token import ScimToken
+from .scope_progress import ScopeProgress
+from .scope_progress_estimation import ScopeProgressEstimation
+from .scope_progress_request import ScopeProgressRequest
+from .scope_progress_sprints_item import ScopeProgressSprintsItem
+from .search_match import SearchMatch
+from .search_match_in import SearchMatchIn
+from .search_request import SearchRequest
+from .search_result import SearchResult
+from .search_search_everything_type import SearchSearchEverythingType
+from .security_grant import SecurityGrant
+from .security_grant_group_type_0 import SecurityGrantGroupType0
+from .security_grant_input_type_0 import SecurityGrantInputType0
+from .security_grant_input_type_1 import SecurityGrantInputType1
+from .security_grant_input_type_2 import SecurityGrantInputType2
+from .security_grant_input_type_3 import SecurityGrantInputType3
+from .security_grant_input_type_3_grantee import SecurityGrantInputType3Grantee
+from .security_level import SecurityLevel
+from .security_scheme import SecurityScheme
+from .security_scheme_projects_item import SecuritySchemeProjectsItem
+from .security_scheme_summary import SecuritySchemeSummary
+from .security_scheme_summary_projects_item import SecuritySchemeSummaryProjectsItem
+from .security_settings import SecuritySettings
+from .security_settings_input import SecuritySettingsInput
+from .semantic_status import SemanticStatus
+from .series_field import SeriesField
+from .service_customer import ServiceCustomer
+from .service_customer_group_type_0 import ServiceCustomerGroupType0
+from .service_desk import ServiceDesk
+from .service_desk_issue_sla_response_200 import ServiceDeskIssueSlaResponse200
+from .service_desk_settings import ServiceDeskSettings
+from .service_desk_settings_customer_access import ServiceDeskSettingsCustomerAccess
+from .service_desk_settings_first_response_hours import ServiceDeskSettingsFirstResponseHours
+from .service_desk_settings_input import ServiceDeskSettingsInput
+from .service_desk_settings_input_customer_access import ServiceDeskSettingsInputCustomerAccess
+from .service_desk_settings_input_first_response_hours import ServiceDeskSettingsInputFirstResponseHours
+from .service_desk_settings_input_resolution_hours import ServiceDeskSettingsInputResolutionHours
+from .service_desk_settings_resolution_hours import ServiceDeskSettingsResolutionHours
+from .session_info import SessionInfo
+from .set_approval_mode_request import SetApprovalModeRequest
+from .set_approval_mode_request_mode import SetApprovalModeRequestMode
+from .set_capacity_request import SetCapacityRequest
+from .set_external_request import SetExternalRequest
+from .set_page_labels_request import SetPageLabelsRequest
+from .set_page_restrictions_request import SetPageRestrictionsRequest
+from .set_page_restrictions_request_edit import SetPageRestrictionsRequestEdit
+from .set_page_restrictions_request_view import SetPageRestrictionsRequestView
+from .set_page_status_request import SetPageStatusRequest
+from .set_project_permission_scheme_request import SetProjectPermissionSchemeRequest
+from .set_project_security_scheme_request import SetProjectSecuritySchemeRequest
+from .setup_request import SetupRequest
+from .setup_request_admin import SetupRequestAdmin
+from .setup_restore_body import SetupRestoreBody
+from .setup_status_response import SetupStatusResponse
+from .sla_metric import SlaMetric
+from .snippet_item import SnippetItem
+from .space import Space
+from .space_member import SpaceMember
+from .space_member_group_type_0 import SpaceMemberGroupType0
+from .space_permission import SpacePermission
+from .space_print_template import SpacePrintTemplate
+from .space_print_template_request import SpacePrintTemplateRequest
+from .space_project_type_0 import SpaceProjectType0
+from .space_role import SpaceRole
+from .space_summary import SpaceSummary
+from .space_summary_project_type_0 import SpaceSummaryProjectType0
+from .space_type import SpaceType
+from .spaces_space_locale import SpacesSpaceLocale
+from .sprint import Sprint
+from .sprint_capacity import SprintCapacity
+from .sprint_capacity_people_item import SprintCapacityPeopleItem
+from .sprint_ref import SprintRef
+from .sprint_ref_state import SprintRefState
+from .sprint_report import SprintReport
+from .sprint_report_entry import SprintReportEntry
+from .sprint_report_estimation import SprintReportEstimation
+from .sprint_state import SprintState
+from .sprints_list_state import SprintsListState
+from .start_sprint_request import StartSprintRequest
+from .statistic_field import StatisticField
+from .statistic_value import StatisticValue
+from .statistics import Statistics
+from .statistics_request import StatisticsRequest
+from .status_category import StatusCategory
+from .status_info import StatusInfo
+from .stop_timer_request import StopTimerRequest
+from .subscription_schedule import SubscriptionSchedule
+from .system_info import SystemInfo
+from .system_info_mode import SystemInfoMode
+from .text_anchor import TextAnchor
+from .text_anchor_input import TextAnchorInput
+from .time_pivot import TimePivot
+from .time_pivot_request import TimePivotRequest
+from .time_pivot_request_group_by import TimePivotRequestGroupBy
+from .time_pivot_request_period import TimePivotRequestPeriod
+from .time_pivot_rows_item import TimePivotRowsItem
+from .time_report import TimeReport
+from .time_report_issues_item import TimeReportIssuesItem
+from .time_report_people_item import TimeReportPeopleItem
+from .time_report_request import TimeReportRequest
+from .time_report_totals import TimeReportTotals
+from .time_tracking import TimeTracking
+from .timeline import Timeline
+from .timeline_conflict_type_0 import TimelineConflictType0
+from .timeline_conflict_type_1 import TimelineConflictType1
+from .timeline_dependency import TimelineDependency
+from .timeline_epic import TimelineEpic
+from .timeline_epic_progress import TimelineEpicProgress
+from .timeline_epic_progress_unit import TimelineEpicProgressUnit
+from .timeline_milestone import TimelineMilestone
+from .timeline_row import TimelineRow
+from .timeline_span import TimelineSpan
+from .timer_state import TimerState
+from .timesheet import Timesheet
+from .timesheet_cell_request import TimesheetCellRequest
+from .timesheet_rows_item import TimesheetRowsItem
+from .timesheet_rows_item_cells_item import TimesheetRowsItemCellsItem
+from .timesheet_rows_item_issue import TimesheetRowsItemIssue
+from .timesheet_rows_item_issue_project import TimesheetRowsItemIssueProject
+from .token_info import TokenInfo
+from .token_limits import TokenLimits
+from .token_limits_input import TokenLimitsInput
+from .token_scope import TokenScope
+from .tracking_meta import TrackingMeta
+from .transition import Transition
+from .transition_comment import TransitionComment
+from .transition_field_action import TransitionFieldAction
+from .transition_field_action_action import TransitionFieldActionAction
+from .transition_field_action_input import TransitionFieldActionInput
+from .transition_field_action_input_action import TransitionFieldActionInputAction
+from .transition_request import TransitionRequest
+from .transition_rules import TransitionRules
+from .transition_rules_assign import TransitionRulesAssign
+from .transition_rules_comment import TransitionRulesComment
+from .transition_rules_input import TransitionRulesInput
+from .transition_rules_input_assign import TransitionRulesInputAssign
+from .transition_rules_input_comment import TransitionRulesInputComment
+from .trashed_issue import TrashedIssue
+from .trashed_page import TrashedPage
+from .two_factor_code_request import TwoFactorCodeRequest
+from .two_factor_setup import TwoFactorSetup
+from .two_factor_status import TwoFactorStatus
+from .two_factor_status_pending_type_0 import TwoFactorStatusPendingType0
+from .unread_count import UnreadCount
+from .update_ai_settings_request import UpdateAiSettingsRequest
+from .update_app_request import UpdateAppRequest
+from .update_board_request import UpdateBoardRequest
+from .update_board_request_columns_item import UpdateBoardRequestColumnsItem
+from .update_board_request_estimation import UpdateBoardRequestEstimation
+from .update_board_request_quick_filters_item import UpdateBoardRequestQuickFiltersItem
+from .update_board_request_swimlanes import UpdateBoardRequestSwimlanes
+from .update_comment_request import UpdateCommentRequest
+from .update_component_request import UpdateComponentRequest
+from .update_custom_field_request import UpdateCustomFieldRequest
+from .update_custom_field_request_options_item import UpdateCustomFieldRequestOptionsItem
+from .update_dashboard_request import UpdateDashboardRequest
+from .update_filter_request import UpdateFilterRequest
+from .update_gadget_request import UpdateGadgetRequest
+from .update_issue_request import UpdateIssueRequest
+from .update_issue_request_custom_fields import UpdateIssueRequestCustomFields
+from .update_me_request import UpdateMeRequest
+from .update_me_request_locale import UpdateMeRequestLocale
+from .update_notification_scheme_request import UpdateNotificationSchemeRequest
+from .update_notification_settings import UpdateNotificationSettings
+from .update_page_comment_request import UpdatePageCommentRequest
+from .update_page_request import UpdatePageRequest
+from .update_permission_scheme_request import UpdatePermissionSchemeRequest
+from .update_plan_request import UpdatePlanRequest
+from .update_security_scheme_request import UpdateSecuritySchemeRequest
+from .update_security_scheme_request_levels_item import UpdateSecuritySchemeRequestLevelsItem
+from .update_space_request import UpdateSpaceRequest
+from .update_sprint_request import UpdateSprintRequest
+from .update_sprint_request_capacity import UpdateSprintRequestCapacity
+from .update_sprint_request_capacity_people_item import UpdateSprintRequestCapacityPeopleItem
+from .update_version_request import UpdateVersionRequest
+from .update_webhook_request import UpdateWebhookRequest
+from .update_webhook_request_locale import UpdateWebhookRequestLocale
+from .update_worklog_request import UpdateWorklogRequest
+from .user_lookup import UserLookup
+from .user_ref import UserRef
+from .user_summary import UserSummary
+from .user_summary_status import UserSummaryStatus
+from .value_suggestion import ValueSuggestion
+from .velocity import Velocity
+from .velocity_estimation import VelocityEstimation
+from .velocity_sprints_item import VelocitySprintsItem
+from .version import Version
+from .version_ref import VersionRef
+from .watch_page_request import WatchPageRequest
+from .watch_page_request_scope import WatchPageRequestScope
+from .webhook import Webhook
+from .webhook_delivery import WebhookDelivery
+from .webhook_delivery_status import WebhookDeliveryStatus
+from .webhook_event_type import WebhookEventType
+from .webhook_format import WebhookFormat
+from .webhook_last_delivery_type_0 import WebhookLastDeliveryType0
+from .webhook_last_delivery_type_0_status import WebhookLastDeliveryType0Status
+from .webhook_locale import WebhookLocale
+from .webhook_secret import WebhookSecret
+from .wiki_properties_assignee import WikiPropertiesAssignee
+from .wiki_recent_assignee import WikiRecentAssignee
+from .wiki_settings import WikiSettings
+from .wiki_settings_input import WikiSettingsInput
+from .wiki_task import WikiTask
+from .wiki_task_page import WikiTaskPage
+from .wiki_tasks_assignee import WikiTasksAssignee
+from .word_change import WordChange
+from .word_change_op import WordChangeOp
+from .workflow_draft import WorkflowDraft
+from .working_time import WorkingTime
+from .working_time_input import WorkingTimeInput
+from .worklog import Worklog
+
+__all__ = (
+    "AcceptInvitationRequest",
+    "AccessCheckRequest",
+    "AccessCheckResult",
+    "AccessCheckResultUser",
+    "AccessCheckStep",
+    "AccessCheckStepParams",
+    "ActivityEntry",
+    "ActivityEntryIssue",
+    "ActivityEntryItemsItem",
+    "ActivityEntryKind",
+    "ActivityEntryProject",
+    "ActivityPage",
+    "AddGadgetRequest",
+    "AddGroupMemberRequest",
+    "AddProjectMemberRequestType0",
+    "AddProjectMemberRequestType1",
+    "AddServiceCustomerRequestType0",
+    "AddServiceCustomerRequestType1",
+    "AddSpaceMemberRequestType0",
+    "AddSpaceMemberRequestType1",
+    "AdminToken",
+    "AdminTokenOwner",
+    "AiSettings",
+    "AiSettingsIndexed",
+    "AiTestResult",
+    "AiTestResultChat",
+    "AiTestResultEmbeddings",
+    "Announcement",
+    "AnnouncementInput",
+    "AnnouncementInputLevel",
+    "AnnouncementLevel",
+    "AnonymizeUserRequest",
+    "ApplyScenarioRequest",
+    "ApplyScenarioResult",
+    "ApplyScenarioResultSkippedItem",
+    "ApplyScenarioResultSkippedItemReason",
+    "AppManifest",
+    "AppManifestModules",
+    "AppManifestRequest",
+    "AppManifestScopesItem",
+    "AppModule",
+    "AppSummary",
+    "AppSummaryModules",
+    "AppToken",
+    "ArrangeGadgetsRequest",
+    "Attachment",
+    "AuthProviders",
+    "AuthProvidersOidc",
+    "AuthProvidersSamlItem",
+    "AutomationHookResponse202",
+    "AutomationRule",
+    "AutomationRuleLastRunType0",
+    "AutomationRuleLastRunType0Status",
+    "AutomationRuleOwnerType0",
+    "AutomationRuleProjectType0",
+    "AutomationRun",
+    "AutomationRunLogItem",
+    "AutomationRunLogItemLevel",
+    "AutomationRunStatus",
+    "AutomationTriggerInputType0",
+    "AutomationTriggerInputType1",
+    "AutomationTriggerInputType10",
+    "AutomationTriggerInputType10Event",
+    "AutomationTriggerInputType2",
+    "AutomationTriggerInputType3",
+    "AutomationTriggerInputType4",
+    "AutomationTriggerInputType5",
+    "AutomationTriggerInputType6",
+    "AutomationTriggerInputType7",
+    "AutomationTriggerInputType8",
+    "AutomationTriggerInputType9",
+    "AutomationTriggerType0",
+    "AutomationTriggerType1",
+    "AutomationTriggerType10",
+    "AutomationTriggerType10Event",
+    "AutomationTriggerType2",
+    "AutomationTriggerType3",
+    "AutomationTriggerType4",
+    "AutomationTriggerType5",
+    "AutomationTriggerType6",
+    "AutomationTriggerType7",
+    "AutomationTriggerType8",
+    "AutomationTriggerType9",
+    "AverageAge",
+    "AverageAgePointsItem",
+    "BacklogData",
+    "BacklogDataSprintsItem",
+    "Backup",
+    "BackupSettings",
+    "BackupSettingsInput",
+    "BackupState",
+    "BackupTrigger",
+    "Blog",
+    "BlogMonthsItem",
+    "BlogPost",
+    "Board",
+    "BoardColumn",
+    "BoardData",
+    "BoardDataReachable",
+    "BoardEstimation",
+    "BoardProject",
+    "BoardSummary",
+    "BoardSummaryProject",
+    "BoardSummaryType",
+    "BoardSwimlanes",
+    "BoardType",
+    "BulkActionType0",
+    "BulkActionType1",
+    "BulkActionType2",
+    "BulkActionType3",
+    "BulkActionType4",
+    "BulkActionType5",
+    "BulkActionType6",
+    "BulkCreateRequest",
+    "BulkItemsResult",
+    "BulkItemsResultResultsItem",
+    "BulkRequest",
+    "BulkResult",
+    "BulkResultResultsItem",
+    "BulkUpdateRequest",
+    "BulkUpdateRequestUpdatesItem",
+    "Burndown",
+    "BurndownEstimation",
+    "BurndownPoint",
+    "BurndownPointType",
+    "ChangeGroup",
+    "ChangeGroupItemsItem",
+    "ChangePasswordRequest",
+    "CloneIssueRequest",
+    "Comment",
+    "CompleteSprintRequest",
+    "Component",
+    "ComponentRef",
+    "ControlChart",
+    "ControlChartCycle",
+    "ControlChartLead",
+    "ControlChartPointsItem",
+    "CopyDashboardRequest",
+    "CreateBoardRequest",
+    "CreateBoardRequestType",
+    "CreateCommentRequest",
+    "CreateComponentRequest",
+    "CreateCustomFieldRequest",
+    "CreateCustomFieldRequestType",
+    "CreateDashboardRequest",
+    "CreatedGitConnection",
+    "CreatedResolved",
+    "CreatedResolvedPointsItem",
+    "CreatedResolvedRequest",
+    "CreatedScimToken",
+    "CreatedToken",
+    "CreatedWebhook",
+    "CreatedWebhookLastDeliveryType0",
+    "CreatedWebhookLastDeliveryType0Status",
+    "CreatedWebhookLocale",
+    "CreateFilterRequest",
+    "CreateFilterSubscription",
+    "CreateGitConnectionRequest",
+    "CreateGroupRequest",
+    "CreateInvitationRequest",
+    "CreateIssueLinkRequest",
+    "CreateIssueLinkRequestDirection",
+    "CreateIssueRequest",
+    "CreateIssueRequestCustomFields",
+    "CreateNotificationSchemeRequest",
+    "CreatePageCommentRequest",
+    "CreatePageRequest",
+    "CreatePageRequestKind",
+    "CreatePageRequestVariables",
+    "CreatePermissionSchemeRequest",
+    "CreatePlanRequest",
+    "CreatePortalRequest",
+    "CreatePortalRequestCustomFields",
+    "CreateProjectRequest",
+    "CreateScenarioRequest",
+    "CreateScimTokenRequest",
+    "CreateSecuritySchemeRequest",
+    "CreateSpaceRequest",
+    "CreateSpaceRequestType",
+    "CreateSprintRequest",
+    "CreateTokenRequest",
+    "CreateUserRequest",
+    "CreateVersionRequest",
+    "CreateWebhookRequest",
+    "CreateWebhookRequestLocale",
+    "CreateWorklogRequest",
+    "CustomField",
+    "CustomFieldOption",
+    "CustomFieldType",
+    "Dashboard",
+    "DashboardLayout",
+    "DashboardOwner",
+    "DashboardsListScope",
+    "DashboardSummary",
+    "DashboardSummaryOwner",
+    "DevelopmentSummary",
+    "DiffBlockContent",
+    "DiffBlockContentType",
+    "DiffBlockType0",
+    "DiffBlockType0Op",
+    "DiffBlockType1",
+    "DirectoriesTestResponse201",
+    "Directory",
+    "DirectoryConfigType0",
+    "DirectoryOrder",
+    "DirectorySyncResult",
+    "DirectoryType",
+    "EmailMode",
+    "EmbedHosts",
+    "EmbedHostsOutput",
+    "EstimateCard",
+    "EstimateVoteRequest",
+    "Estimation",
+    "EstimationState",
+    "EstimationVotesItem",
+    "EverythingResult",
+    "EverythingResultCounts",
+    "EverythingResultProjectsItem",
+    "EverythingResultSpacesItem",
+    "Favourite",
+    "FavouriteKind",
+    "FeatureFlags",
+    "FeatureFlagsInput",
+    "FeedToken",
+    "FieldSeries",
+    "FieldSeriesRequest",
+    "FilterShareInputType0",
+    "FilterShareInputType1",
+    "FilterShareInputType2",
+    "FilterShareInputType3",
+    "FilterShareType0",
+    "FilterShareType1Group",
+    "FilterShareType2Project",
+    "FilterShareType3",
+    "FiltersListScope",
+    "FilterSubscription",
+    "FilterSubscriptionGroupType0",
+    "FilterSubscriptionSubscriber",
+    "Gadget",
+    "GadgetConfigInputType0",
+    "GadgetConfigInputType1",
+    "GadgetConfigInputType10",
+    "GadgetConfigInputType11",
+    "GadgetConfigInputType2",
+    "GadgetConfigInputType3",
+    "GadgetConfigInputType4",
+    "GadgetConfigInputType5",
+    "GadgetConfigInputType6",
+    "GadgetConfigInputType7",
+    "GadgetConfigInputType8",
+    "GadgetConfigInputType9",
+    "GadgetConfigType0",
+    "GadgetConfigType1",
+    "GadgetConfigType10",
+    "GadgetConfigType11",
+    "GadgetConfigType2",
+    "GadgetConfigType3",
+    "GadgetConfigType4",
+    "GadgetConfigType5",
+    "GadgetConfigType6",
+    "GadgetConfigType7",
+    "GadgetConfigType8",
+    "GadgetConfigType9",
+    "GitConnection",
+    "GitProvider",
+    "GlobalPermission",
+    "GroupRef",
+    "GroupSummary",
+    "HealthStatus",
+    "HealthStatusDatabase",
+    "HealthStatusStatus",
+    "ImportArchiveBody",
+    "ImportArchiveDryRun",
+    "ImportConfluenceBody",
+    "ImportConfluenceDryRun",
+    "ImportJob",
+    "ImportJobCreatedByType0",
+    "ImportJobState",
+    "ImportReport",
+    "ImportReportCounts",
+    "ImportSource",
+    "IncomingWebhookRequest",
+    "InstallAppRequest",
+    "InstalledApp",
+    "InstalledAppModules",
+    "InstanceNotice",
+    "InstanceNoticeAnnouncementType0",
+    "InstanceNoticeAnnouncementType0Level",
+    "Invitation",
+    "InvitationInvitedByType0",
+    "InvitationPreview",
+    "InvitationPreviewProjectType0",
+    "InvitationProjectType0",
+    "InvitationsAcceptResponse200",
+    "Issue",
+    "IssueColumns",
+    "IssueColumnsColumnsItemType0",
+    "IssueColumnsInput",
+    "IssueColumnsInputColumnsItemType0",
+    "IssueCustomFields",
+    "IssueCustomFieldsAdditionalPropertyType3",
+    "IssueCustomFieldsAdditionalPropertyType4Item",
+    "IssueCustomFieldsAdditionalPropertyType5",
+    "IssueCustomFieldsAdditionalPropertyType6Item",
+    "IssueDevelopment",
+    "IssueDevelopmentBranchesItem",
+    "IssueDevelopmentBuildsItem",
+    "IssueDevelopmentBuildsItemState",
+    "IssueDevelopmentCommits",
+    "IssueDevelopmentCommitsLatestItem",
+    "IssueDevelopmentPullRequestsItem",
+    "IssueDevelopmentPullRequestsItemReviewType0",
+    "IssueDevelopmentPullRequestsItemState",
+    "IssueExportRequest",
+    "IssueExportRequestColumnsItemType0",
+    "IssueExportRequestFormat",
+    "IssueHit",
+    "IssueHitCustomFields",
+    "IssueHitCustomFieldsAdditionalPropertyType3",
+    "IssueHitCustomFieldsAdditionalPropertyType4Item",
+    "IssueHitCustomFieldsAdditionalPropertyType5",
+    "IssueHitCustomFieldsAdditionalPropertyType6Item",
+    "IssueHitProject",
+    "IssueLink",
+    "IssueLinkDirection",
+    "IssueLinkTypeInfo",
+    "IssueList",
+    "IssueLookup",
+    "IssueLookupRequest",
+    "IssuePageRef",
+    "IssuePageRefKind",
+    "IssuePageRefSpace",
+    "IssueProject",
+    "IssueRef",
+    "IssuesAddCommentFormat",
+    "IssuesCommentsFormat",
+    "IssuesCreateFormat",
+    "IssueSecurityLevelType0",
+    "IssuesGetFormat",
+    "IssueSla",
+    "IssuesTransitionFormat",
+    "IssueSummary",
+    "IssueSummaryCustomFields",
+    "IssueSummaryCustomFieldsAdditionalPropertyType3",
+    "IssueSummaryCustomFieldsAdditionalPropertyType4Item",
+    "IssueSummaryCustomFieldsAdditionalPropertyType5",
+    "IssueSummaryCustomFieldsAdditionalPropertyType6Item",
+    "IssueSummaryProject",
+    "IssuesUpdateCommentFormat",
+    "IssuesUpdateFormat",
+    "IssuesUploadBody",
+    "IssueTypeInfo",
+    "JiraImportRequest",
+    "LabelCount",
+    "LabelledPage",
+    "LabelledPageSpace",
+    "LdapConfig",
+    "LinkedIssue",
+    "LoginRequest",
+    "MailHandler",
+    "MailReceipt",
+    "MaintenanceMode",
+    "MaintenanceModeInput",
+    "MarkNotificationsRead",
+    "Me",
+    "MeAuthenticatedVia",
+    "MoveCardRequest",
+    "MoveIssueRequest",
+    "MovePageRequest",
+    "MoveToSprintRequest",
+    "Notification",
+    "NotificationCategory",
+    "NotificationDetails",
+    "NotificationDetailsItemsItem",
+    "NotificationDetailsKind",
+    "NotificationEvent",
+    "NotificationIssueType0",
+    "NotificationList",
+    "NotificationPageType0",
+    "NotificationRecipient",
+    "NotificationRule",
+    "NotificationRuleGroupType0",
+    "NotificationRuleInputType0",
+    "NotificationRuleInputType0Recipient",
+    "NotificationRuleInputType1",
+    "NotificationRuleInputType2",
+    "NotificationRuleInputType3",
+    "NotificationScheme",
+    "NotificationSchemeProjectsItem",
+    "NotificationSchemeSummary",
+    "NotificationSchemeSummaryProjectsItem",
+    "NotificationSettings",
+    "OAuthApp",
+    "OAuthAppCreated",
+    "OAuthClientInfo",
+    "OAuthConsentRequest",
+    "OAuthConsentResult",
+    "OAuthGrant",
+    "OAuthGrantClient",
+    "OAuthGrantUser",
+    "OAuthSettings",
+    "OAuthSettingsInput",
+    "OnboardingRequest",
+    "OnboardingRequestStart",
+    "OnboardingRequestStartMethod",
+    "OnboardingResult",
+    "PageAnalytics",
+    "PageAnalyticsDailyItem",
+    "PageAnalyticsReaderListType0Item",
+    "PageApproval",
+    "PageApprovalMode",
+    "PageApprovalPendingType0",
+    "PageApprovalRejectedType0",
+    "PageComment",
+    "PageCommentResolvedType0",
+    "PageDiff",
+    "PageHit",
+    "PageHitSpace",
+    "PagePropertiesReport",
+    "PagePropertiesReportRowsItem",
+    "PagePropertiesReportRowsItemPage",
+    "PagePropertiesReportRowsItemValues",
+    "PageRef",
+    "PageRestrictionsEdit",
+    "PageRestrictionsEditGroupsItem",
+    "PageRestrictionsView",
+    "PageRestrictionsViewGroupsItem",
+    "PagesAttachBody",
+    "PagesGetFormat",
+    "PagesPageChildren",
+    "PagesPageLocale",
+    "PageStatus",
+    "PagesUnwatchScope",
+    "PagesVersionFormat",
+    "PageTemplate",
+    "PageTemplateKind",
+    "PageTemplateSummary",
+    "PageTemplateSummaryKind",
+    "PageTreeEntry",
+    "PageVersion",
+    "PageVersionSummary",
+    "PageWatchState",
+    "PageWatchStateInheritedType0",
+    "PasswordChanged",
+    "PendingApproval",
+    "PeriodRequest",
+    "PermissionGrant",
+    "PermissionGrantee",
+    "PermissionGrantGroupType0",
+    "PermissionGrantInputType0",
+    "PermissionGrantInputType1",
+    "PermissionGrantInputType2",
+    "PermissionGrantInputType3",
+    "PermissionGrantInputType3Grantee",
+    "PermissionGrantInputType3Permission",
+    "PermissionScheme",
+    "PermissionSchemeProjectsItem",
+    "PermissionSchemeSummary",
+    "PermissionSchemeSummaryProjectsItem",
+    "Plan",
+    "PlanProjectsItem",
+    "PlanScenario",
+    "PlanScenarioChangesItem",
+    "PlanSummary",
+    "PlanSummaryProjectsItem",
+    "PlanView",
+    "PlanViewCapacityItem",
+    "PlanViewProjectsItem",
+    "PortalCommentRequest",
+    "PortalDesk",
+    "PortalRequest",
+    "PortalRequestDetail",
+    "PortalRequestDetailCommentsItem",
+    "PortalRequestDetailProject",
+    "PortalRequestProject",
+    "PrintTemplate",
+    "PrintTemplateInput",
+    "PrintTemplateSummary",
+    "PriorityInfo",
+    "Problem",
+    "ProblemErrors",
+    "ProjectCustomFieldsRequest",
+    "ProjectCustomFieldsRequestSettings",
+    "ProjectDetails",
+    "ProjectDetailsNotificationScheme",
+    "ProjectDetailsPermissionScheme",
+    "ProjectDetailsSecurityLevelsItem",
+    "ProjectDetailsSecuritySchemeType0",
+    "ProjectFieldConfig",
+    "ProjectFieldSetting",
+    "ProjectMember",
+    "ProjectMemberGroupType0",
+    "ProjectPermission",
+    "ProjectRole",
+    "ProjectsGetMailHandlerResponse200",
+    "ProjectsListIssuesStatus",
+    "ProjectsSaveMailHandlerResponse200",
+    "ProjectSummary",
+    "ProjectTemplate",
+    "ProjectWikiPages",
+    "ProjectWikiPagesInput",
+    "ProjectWorkflow",
+    "ProjectWorkflowMode",
+    "ProjectWorkflowRules",
+    "ProjectWorkflowTransitionsItem",
+    "ProjectWorkflowUsage",
+    "PublishPageRequest",
+    "PublishReleaseNotesRequest",
+    "PublishWorkflowRequest",
+    "PublishWorkflowRequestInput",
+    "PublishWorkflowRequestInputMigrate",
+    "PublishWorkflowRequestInputMode",
+    "PublishWorkflowRequestInputStatusesItem",
+    "PublishWorkflowRequestInputTransitionsItem",
+    "PublishWorkflowRequestMigrate",
+    "PublishWorkflowRequestMode",
+    "PublishWorkflowRequestStatusesItem",
+    "PublishWorkflowRequestTransitionsItem",
+    "QueryError",
+    "QueryErrorParams",
+    "QueueEntry",
+    "QuickFilter",
+    "RankIssueRequest",
+    "RateLimitSettings",
+    "RateLimitSettingsInput",
+    "RecentItem",
+    "RecentKind",
+    "RecordRecentRequest",
+    "RecoveryCodes",
+    "RefreshAppRequest",
+    "RegisterRequest",
+    "RegistrationSettings",
+    "RegistrationSettingsInput",
+    "RejectSubmissionRequest",
+    "Release",
+    "ReleaseNotes",
+    "ReleaseNotesPageType0",
+    "ReleaseProgress",
+    "ReleaseVersionRequest",
+    "ReleaseWarning",
+    "ReleaseWarningKind",
+    "RemainingAdjustmentType0",
+    "RemainingAdjustmentType1",
+    "RemainingAdjustmentType2",
+    "ReportConfigInputType0",
+    "ReportConfigInputType1",
+    "ReportConfigInputType10",
+    "ReportConfigInputType11",
+    "ReportConfigInputType11GroupBy",
+    "ReportConfigInputType11Period",
+    "ReportConfigInputType2",
+    "ReportConfigInputType3",
+    "ReportConfigInputType4",
+    "ReportConfigInputType5",
+    "ReportConfigInputType6",
+    "ReportConfigInputType7",
+    "ReportConfigInputType8",
+    "ReportConfigInputType9",
+    "ReportConfigType0",
+    "ReportConfigType1",
+    "ReportConfigType10",
+    "ReportConfigType11",
+    "ReportConfigType11GroupBy",
+    "ReportConfigType11Period",
+    "ReportConfigType2",
+    "ReportConfigType3",
+    "ReportConfigType4",
+    "ReportConfigType5",
+    "ReportConfigType6",
+    "ReportConfigType7",
+    "ReportConfigType8",
+    "ReportConfigType9",
+    "RequestType",
+    "RequestTypeIssueType",
+    "ResolutionInfo",
+    "RestoreResult",
+    "RestoreVersionRequest",
+    "RestrictedPage",
+    "RetentionResult",
+    "RetentionSettings",
+    "RetentionSettingsInput",
+    "RichText",
+    "RichTextInputType1",
+    "RunningTimer",
+    "RunningTimerIssue",
+    "SamlProvider",
+    "SavedFilter",
+    "SaveDirectoryRequest",
+    "SaveMailHandlerRequest",
+    "SaveOAuthAppRequest",
+    "SavePageTemplateRequest",
+    "SaveRequestTypeRequest",
+    "SaveSamlProviderRequest",
+    "ScenarioChange",
+    "ScenarioChangeInput",
+    "ScimToken",
+    "ScopeProgress",
+    "ScopeProgressEstimation",
+    "ScopeProgressRequest",
+    "ScopeProgressSprintsItem",
+    "SearchMatch",
+    "SearchMatchIn",
+    "SearchRequest",
+    "SearchResult",
+    "SearchSearchEverythingType",
+    "SecurityGrant",
+    "SecurityGrantGroupType0",
+    "SecurityGrantInputType0",
+    "SecurityGrantInputType1",
+    "SecurityGrantInputType2",
+    "SecurityGrantInputType3",
+    "SecurityGrantInputType3Grantee",
+    "SecurityLevel",
+    "SecurityScheme",
+    "SecuritySchemeProjectsItem",
+    "SecuritySchemeSummary",
+    "SecuritySchemeSummaryProjectsItem",
+    "SecuritySettings",
+    "SecuritySettingsInput",
+    "SemanticStatus",
+    "SeriesField",
+    "ServiceCustomer",
+    "ServiceCustomerGroupType0",
+    "ServiceDesk",
+    "ServiceDeskIssueSlaResponse200",
+    "ServiceDeskSettings",
+    "ServiceDeskSettingsCustomerAccess",
+    "ServiceDeskSettingsFirstResponseHours",
+    "ServiceDeskSettingsInput",
+    "ServiceDeskSettingsInputCustomerAccess",
+    "ServiceDeskSettingsInputFirstResponseHours",
+    "ServiceDeskSettingsInputResolutionHours",
+    "ServiceDeskSettingsResolutionHours",
+    "SessionInfo",
+    "SetApprovalModeRequest",
+    "SetApprovalModeRequestMode",
+    "SetCapacityRequest",
+    "SetExternalRequest",
+    "SetPageLabelsRequest",
+    "SetPageRestrictionsRequest",
+    "SetPageRestrictionsRequestEdit",
+    "SetPageRestrictionsRequestView",
+    "SetPageStatusRequest",
+    "SetProjectPermissionSchemeRequest",
+    "SetProjectSecuritySchemeRequest",
+    "SetupRequest",
+    "SetupRequestAdmin",
+    "SetupRestoreBody",
+    "SetupStatusResponse",
+    "SlaMetric",
+    "SnippetItem",
+    "Space",
+    "SpaceMember",
+    "SpaceMemberGroupType0",
+    "SpacePermission",
+    "SpacePrintTemplate",
+    "SpacePrintTemplateRequest",
+    "SpaceProjectType0",
+    "SpaceRole",
+    "SpacesSpaceLocale",
+    "SpaceSummary",
+    "SpaceSummaryProjectType0",
+    "SpaceType",
+    "Sprint",
+    "SprintCapacity",
+    "SprintCapacityPeopleItem",
+    "SprintRef",
+    "SprintRefState",
+    "SprintReport",
+    "SprintReportEntry",
+    "SprintReportEstimation",
+    "SprintsListState",
+    "SprintState",
+    "StartSprintRequest",
+    "StatisticField",
+    "Statistics",
+    "StatisticsRequest",
+    "StatisticValue",
+    "StatusCategory",
+    "StatusInfo",
+    "StopTimerRequest",
+    "SubscriptionSchedule",
+    "SystemInfo",
+    "SystemInfoMode",
+    "TextAnchor",
+    "TextAnchorInput",
+    "Timeline",
+    "TimelineConflictType0",
+    "TimelineConflictType1",
+    "TimelineDependency",
+    "TimelineEpic",
+    "TimelineEpicProgress",
+    "TimelineEpicProgressUnit",
+    "TimelineMilestone",
+    "TimelineRow",
+    "TimelineSpan",
+    "TimePivot",
+    "TimePivotRequest",
+    "TimePivotRequestGroupBy",
+    "TimePivotRequestPeriod",
+    "TimePivotRowsItem",
+    "TimeReport",
+    "TimeReportIssuesItem",
+    "TimeReportPeopleItem",
+    "TimeReportRequest",
+    "TimeReportTotals",
+    "TimerState",
+    "Timesheet",
+    "TimesheetCellRequest",
+    "TimesheetRowsItem",
+    "TimesheetRowsItemCellsItem",
+    "TimesheetRowsItemIssue",
+    "TimesheetRowsItemIssueProject",
+    "TimeTracking",
+    "TokenInfo",
+    "TokenLimits",
+    "TokenLimitsInput",
+    "TokenScope",
+    "TrackingMeta",
+    "Transition",
+    "TransitionComment",
+    "TransitionFieldAction",
+    "TransitionFieldActionAction",
+    "TransitionFieldActionInput",
+    "TransitionFieldActionInputAction",
+    "TransitionRequest",
+    "TransitionRules",
+    "TransitionRulesAssign",
+    "TransitionRulesComment",
+    "TransitionRulesInput",
+    "TransitionRulesInputAssign",
+    "TransitionRulesInputComment",
+    "TrashedIssue",
+    "TrashedPage",
+    "TwoFactorCodeRequest",
+    "TwoFactorSetup",
+    "TwoFactorStatus",
+    "TwoFactorStatusPendingType0",
+    "UnreadCount",
+    "UpdateAiSettingsRequest",
+    "UpdateAppRequest",
+    "UpdateBoardRequest",
+    "UpdateBoardRequestColumnsItem",
+    "UpdateBoardRequestEstimation",
+    "UpdateBoardRequestQuickFiltersItem",
+    "UpdateBoardRequestSwimlanes",
+    "UpdateCommentRequest",
+    "UpdateComponentRequest",
+    "UpdateCustomFieldRequest",
+    "UpdateCustomFieldRequestOptionsItem",
+    "UpdateDashboardRequest",
+    "UpdateFilterRequest",
+    "UpdateGadgetRequest",
+    "UpdateIssueRequest",
+    "UpdateIssueRequestCustomFields",
+    "UpdateMeRequest",
+    "UpdateMeRequestLocale",
+    "UpdateNotificationSchemeRequest",
+    "UpdateNotificationSettings",
+    "UpdatePageCommentRequest",
+    "UpdatePageRequest",
+    "UpdatePermissionSchemeRequest",
+    "UpdatePlanRequest",
+    "UpdateSecuritySchemeRequest",
+    "UpdateSecuritySchemeRequestLevelsItem",
+    "UpdateSpaceRequest",
+    "UpdateSprintRequest",
+    "UpdateSprintRequestCapacity",
+    "UpdateSprintRequestCapacityPeopleItem",
+    "UpdateVersionRequest",
+    "UpdateWebhookRequest",
+    "UpdateWebhookRequestLocale",
+    "UpdateWorklogRequest",
+    "UserLookup",
+    "UserRef",
+    "UserSummary",
+    "UserSummaryStatus",
+    "ValueSuggestion",
+    "Velocity",
+    "VelocityEstimation",
+    "VelocitySprintsItem",
+    "Version",
+    "VersionRef",
+    "WatchPageRequest",
+    "WatchPageRequestScope",
+    "Webhook",
+    "WebhookDelivery",
+    "WebhookDeliveryStatus",
+    "WebhookEventType",
+    "WebhookFormat",
+    "WebhookLastDeliveryType0",
+    "WebhookLastDeliveryType0Status",
+    "WebhookLocale",
+    "WebhookSecret",
+    "WikiPropertiesAssignee",
+    "WikiRecentAssignee",
+    "WikiSettings",
+    "WikiSettingsInput",
+    "WikiTask",
+    "WikiTaskPage",
+    "WikiTasksAssignee",
+    "WordChange",
+    "WordChangeOp",
+    "WorkflowDraft",
+    "WorkingTime",
+    "WorkingTimeInput",
+    "Worklog",
+)

@@ -15,3 +15,8 @@ pnpm sdk:generate
 ```
 
 Anmeldung bei beiden mit einem persönlichen Zugriffstoken als `Authorization: Bearer lp_pat_…`.
+
+## Bekannte Lücken
+
+- **Python:** Automatisierungsregeln anlegen und ändern (`POST /api/v1/automation/rules`, `PUT /api/v1/automation/rules/{id}`) erzeugt der Generator nicht, weil die Bausteine einer Regel ineinander verschachtelt sind (Wenn/Sonst, Verzweigungen). Diese beiden Aufrufe gehen mit dem mitgelieferten `httpx`-Client direkt (`client.get_httpx_client().post(...)`).
+- **Go:** Die Antwort-Typen heißen `…HTTPResponse` (z. B. `GetIssueHTTPResponse`), weil die API ein Schema `SetupStatusResponse` hat, mit dem die übliche Endung `…Response` kollidieren würde.
