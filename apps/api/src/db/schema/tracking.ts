@@ -731,3 +731,32 @@ export const presence = pgTable('presence', {
   note: text().notNull().default(''),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Who works on an issue right now (TL-94, E-146): a lease that heartbeats extend and that ends
+ * by itself; expired rows count as absent. Branch and paths are the work area.
+ */
+export const issueClaims = pgTable(
+  'issue_claims',
+  {
+    issueId: uuid()
+      .primaryKey()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    branch: text(),
+    paths: text().array().notNull().default(sql`'{}'::text[]`),
+    /** Claimed despite overlapping work areas. */
+    forced: boolean().notNull().default(false),
+    claimedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index('issue_claims_project_idx').on(table.projectId, table.expiresAt),
+    index('issue_claims_user_idx').on(table.userId),
+  ],
+);

@@ -27,6 +27,8 @@ export const Agent = z
     vendor: z.string(),
     model: z.string(),
     owner: UserRef.nullable(),
+    /** TQL for what the agent may take with claim-next; empty: anything (TL-94, E-146). */
+    taskFilter: z.string(),
     status: z.enum(['active', 'deactivated']),
     createdAt: z.iso.datetime(),
   })
@@ -38,6 +40,7 @@ export const CreateAgentRequest = z
     displayName: DisplayName,
     vendor: Vendor,
     model: Model.default(''),
+    taskFilter: z.string().trim().max(2000).default(''),
     /** The responsible person; the creating administrator when left out. */
     ownerId: Id.optional(),
     /** Groups to join; agents are not in "users" and get projects one by one. */
@@ -51,6 +54,7 @@ export const UpdateAgentRequest = z
     displayName: DisplayName.optional(),
     vendor: Vendor.optional(),
     model: Model.optional(),
+    taskFilter: z.string().trim().max(2000).optional(),
     ownerId: Id.nullable().optional(),
   })
   .meta({ id: 'UpdateAgentRequest' });
@@ -103,3 +107,46 @@ export const TeamMember = Presence.extend({
   openIssues: z.number().int(),
 }).meta({ id: 'TeamMember' });
 export type TeamMember = z.infer<typeof TeamMember>;
+
+// ---------------------------------------------------------------- claims (TL-94, E-146)
+
+/** A claim lasts this long and every heartbeat extends it. */
+export const CLAIM_MINUTES = 30;
+
+const WorkPath = z.string().trim().min(1).max(300);
+
+export const ClaimRequest = z
+  .object({
+    /** The branch the work happens on. */
+    branch: z.string().trim().max(200).optional(),
+    /** Files or folders the work changes, e.g. `apps/web/src/features/` or `packages/shared/**`. */
+    paths: z.array(WorkPath).max(50).default([]),
+    /** Claim despite overlapping work areas; recorded on the claim. */
+    force: z.boolean().default(false),
+  })
+  .meta({ id: 'ClaimRequest' });
+export type ClaimRequest = z.infer<typeof ClaimRequest>;
+
+export const ClaimNextRequest = ClaimRequest.extend({
+  /** TQL narrowing the candidates further, besides the agent's own filter. */
+  filter: z.string().trim().max(2000).optional(),
+}).meta({ id: 'ClaimNextRequest' });
+export type ClaimNextRequest = z.infer<typeof ClaimNextRequest>;
+
+export const Claim = z
+  .object({
+    issue: IssueBrief,
+    user: UserRef,
+    branch: z.string().nullable(),
+    paths: z.array(z.string()),
+    /** Claimed despite overlapping work areas. */
+    forced: z.boolean(),
+    claimedAt: z.iso.datetime(),
+    expiresAt: z.iso.datetime(),
+  })
+  .meta({ id: 'Claim' });
+export type Claim = z.infer<typeof Claim>;
+
+/** A claim, or null when there is none (or nothing fit claim-next). */
+export const ClaimResult = z.object({ claim: Claim.nullable() }).meta({ id: 'ClaimResult' });
+export type ClaimResult = z.infer<typeof ClaimResult>;

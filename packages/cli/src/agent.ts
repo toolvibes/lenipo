@@ -7,7 +7,8 @@ import { CliError, type Io, openSession, type Session, unwrap } from './session.
  * The sprint agent (TL-88, E-132): a coding agent such as Claude Code works through the active
  * sprint of one project. `lenipo agent init` writes the setup into the repository, `next` says
  * which issue to take, `ask` puts a question and waits for a human answer. `status` sends a
- * heartbeat and `team` shows who works in the project (TL-93).
+ * heartbeat and `team` shows who works in the project (TL-93). `claim` and `release` take and give
+ * back an issue, with branch and paths as the work area (TL-94).
  */
 
 /** What `.lenipo/agent.json` holds; the instance comes from the profile or LENIPO_URL. */
@@ -58,8 +59,12 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return status(rest, io);
     case 'team':
       return team(rest, io);
+    case 'claim':
+      return claim(rest, io);
+    case 'release':
+      return release(rest, io);
     default:
-      throw new CliError('lenipo agent init|next|ask|status|team', 2);
+      throw new CliError('lenipo agent init|next|ask|status|team|claim|release', 2);
   }
 }
 
@@ -116,15 +121,15 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
 3. Ist \`answered\` wahr, das Label \`${config.questionLabel}\` entfernen (\`lenipo issue edit <KEY> --labels …\` ohne das Label) und die Antwort beachten.
 4. Ist etwas unklar oder fehlt eine Entscheidung: \`lenipo agent ask <KEY> "<Frage>"\` (meldet dich als wartend) und Durchgang beenden. Nicht raten.
 5. Sonst umsetzen:
-   - mit \`lenipo agent team\` prüfen, dass niemand sonst an dem Vorgang arbeitet
    - eigener Branch \`agent/<KEY>-<kurzer-name>\`, nie direkt auf main
-   - \`lenipo agent status active --issue <KEY> --branch <Branch>\` melden, bei längerer Arbeit alle 15 Minuten wiederholen
+   - den Vorgang beanspruchen: \`lenipo agent claim <KEY> --branch <Branch> --path <Ordner> …\` mit den Ordnern oder Dateien, die du ändern wirst. Scheitert das (jemand anderes arbeitet daran oder in denselben Dateien), den Vorgang nicht anfassen und den Durchgang beenden
+   - \`lenipo agent status active --issue <KEY> --branch <Branch>\` melden und bei längerer Arbeit alle 15 Minuten wiederholen; das hält auch den Anspruch
    - kommst du nicht weiter: \`lenipo agent status blocked --issue <KEY> --note "<Grund>"\`
    - Tests und Prüfungen des Repositorys laufen lassen; erst bei Erfolg pushen
    - Pull Request öffnen
    - Kommentar am Vorgang mit Zusammenfassung, getroffenen Entscheidungen und Link zum Pull Request
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
-   - \`lenipo agent status offline\`
+   - \`lenipo agent release <KEY>\` und \`lenipo agent status offline\`
 
 ## Leitplanken
 
@@ -169,7 +174,8 @@ export async function nextTask(session: Session, config: AgentConfig): Promise<A
   for (const issue of active.issues) {
     if (issue.status.category === 'done') continue;
     const mine = issue.labels.includes(config.label) || issue.assignee?.id === me.id;
-    if (!mine) continue;
+    // Taken by someone else, e.g. another agent's claim (TL-94).
+    if (!mine || (issue.assignee && issue.assignee.id !== me.id)) continue;
     let answered = false;
     if (issue.labels.includes(config.questionLabel)) {
       const comments = await unwrap(
@@ -298,4 +304,64 @@ async function team(args: string[], io: Io) {
       })
       .join('\n') || 'Niemand hat zuletzt in diesem Projekt gearbeitet.',
   );
+}
+
+/** Claims an issue, or with no key the next fitting one of the project (TL-94). */
+async function claim(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      ...COMMON,
+      branch: { type: 'string' },
+      path: { type: 'string', multiple: true },
+      force: { type: 'boolean' },
+      filter: { type: 'string' },
+      project: { type: 'string' },
+      output: { type: 'string', short: 'o' },
+    },
+    allowPositionals: true,
+  });
+  const { client } = await openSession(io, values.profile);
+  const body = {
+    ...(values.branch ? { branch: values.branch } : {}),
+    paths: values.path ?? [],
+    force: values.force ?? false,
+  };
+  const key = positionals[0]?.toUpperCase();
+  const claimed = key
+    ? await unwrap(client.POST('/api/v1/issues/{key}/claim', { params: { path: { key } }, body }))
+    : (
+        await unwrap(
+          client.POST('/api/v1/projects/{key}/claim-next', {
+            params: {
+              path: {
+                key:
+                  values.project?.toUpperCase() ??
+                  (
+                    await readAgentConfig(values.dir ?? process.cwd())
+                  ).project,
+              },
+            },
+            body: { ...body, ...(values.filter ? { filter: values.filter } : {}) },
+          }),
+        )
+      ).claim;
+  if (values.output === 'json') {
+    io.out(JSON.stringify({ claim: claimed }, null, 2));
+    return;
+  }
+  io.out(
+    claimed
+      ? `${claimed.issue.key} · ${claimed.issue.summary} – beansprucht bis ${new Date(claimed.expiresAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}${claimed.forced ? ' (trotz Überschneidung)' : ''}`
+      : 'Kein passender Vorgang frei.',
+  );
+}
+
+async function release(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({ args, options: COMMON, allowPositionals: true });
+  const key = positionals[0]?.toUpperCase();
+  if (!key) throw new CliError('lenipo agent release <KEY>', 2);
+  const { client } = await openSession(io, values.profile);
+  await unwrap(client.DELETE('/api/v1/issues/{key}/claim', { params: { path: { key } } }));
+  io.out(`${key}: freigegeben.`);
 }

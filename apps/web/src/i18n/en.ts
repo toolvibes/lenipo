@@ -2147,6 +2147,14 @@ export const en: Messages = {
     spaceHelp: 'Pages of the space print with this template.',
     useDefault: 'Instance default',
   },
+  claims: {
+    label: 'In progress',
+    until: '{{name}}, claimed until {{time}}',
+    title: 'Claimed',
+    intro:
+      'Issues being worked on right now. A claim lasts 30 minutes and every heartbeat extends it; branch and paths are the work area.',
+    forced: 'despite overlap',
+  },
   team: {
     title: 'Team',
     intro:
@@ -2181,6 +2189,9 @@ export const en: Messages = {
     signInHint: 'Agent, does not sign in',
     mine: 'My agents',
     mineIntro: 'You answer for these agents and create their tokens.',
+    taskFilter: 'May take (TQL)',
+    taskFilterHelp:
+      'Which issues the agent takes with "claim next task", e.g. one component only. Empty: all in the project.',
   },
   ai: {
     title: 'AI',

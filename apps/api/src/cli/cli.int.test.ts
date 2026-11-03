@@ -280,6 +280,10 @@ describe('tl, the command line (TL-37)', () => {
     expect((await tl(['agent', 'team', '--dir', repo])).out).toContain(`wartet – ${mine}`);
     expect((await tl(['agent', 'status', 'offline'])).out).toBe('Status: offline');
     expect((await tl(['agent', 'status', 'schläft'])).code).toBe(2);
+    // Claiming makes the issue the caller's; releasing keeps the assignment (TL-94).
+    const claimed = await tl(['agent', 'claim', mine, '--branch', 'agent/x', '--path', 'apps/web']);
+    expect(claimed.out).toContain(`${mine} · Für den Agenten – beansprucht bis`);
+    expect((await tl(['agent', 'release', mine])).out).toBe(`${mine}: freigegeben.`);
     const human = new TestClient(test.baseUrl);
     await admin.request('POST', '/admin/users', {
       email: 'mensch@example.org',

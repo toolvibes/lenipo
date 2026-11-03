@@ -774,6 +774,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/{key}/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the active claim on an issue */
+    get: operations['Agents.getClaim'];
+    put?: never;
+    /**
+     * Claim an issue
+     * @description Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+     */
+    post: operations['Agents.claimIssue'];
+    /**
+     * Release a claim
+     * @description One’s own, or any as project administrator. The assignee stays.
+     */
+    delete: operations['Agents.releaseClaim'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/claims': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the active claims of a project */
+    get: operations['Agents.listClaims'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/claim-next': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Claim the next fitting issue of a project
+     * @description One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+     */
+    post: operations['Agents.claimNext'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me/presence': {
     parameters: {
       query?: never;
@@ -6050,6 +6112,7 @@ export interface components {
         [key: string]: string[];
       };
       queryErrors?: components['schemas']['QueryError'][];
+      claimConflicts?: components['schemas']['ClaimConflict'][];
     };
     QueryError: {
       code: string;
@@ -6059,6 +6122,15 @@ export interface components {
       params: {
         [key: string]: string;
       };
+    };
+    ClaimConflict: {
+      issueKey: string;
+      user: {
+        id: string;
+        displayName: string;
+      };
+      branch: string | null;
+      paths: string[];
     };
     SystemInfo: {
       version: string;
@@ -6576,6 +6648,7 @@ export interface components {
       vendor: string;
       model: string;
       owner: components['schemas']['UserRef'] | null;
+      taskFilter: string;
       /** @enum {string} */
       status: 'active' | 'deactivated';
       /** Format: date-time */
@@ -6586,6 +6659,8 @@ export interface components {
       vendor: string;
       /** @default  */
       model?: string;
+      /** @default  */
+      taskFilter?: string;
       /** Format: uuid */
       ownerId?: string;
       /** @default [] */
@@ -6595,6 +6670,7 @@ export interface components {
       displayName?: string;
       vendor?: string;
       model?: string;
+      taskFilter?: string;
       ownerId?: string | null;
     };
     TokenInfo: {
@@ -6628,6 +6704,38 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
       secret: string;
+    };
+    ClaimResult: {
+      claim: components['schemas']['Claim'] | null;
+    };
+    Claim: {
+      issue: {
+        key: string;
+        summary: string;
+      };
+      user: components['schemas']['UserRef'];
+      branch: string | null;
+      paths: string[];
+      forced: boolean;
+      /** Format: date-time */
+      claimedAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    ClaimRequest: {
+      branch?: string;
+      /** @default [] */
+      paths?: string[];
+      /** @default false */
+      force?: boolean;
+    };
+    ClaimNextRequest: {
+      branch?: string;
+      /** @default [] */
+      paths?: string[];
+      /** @default false */
+      force?: boolean;
+      filter?: string;
     };
     UpdatePresenceRequest: {
       state: components['schemas']['PresenceState'];
@@ -12696,6 +12804,167 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.getClaim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClaimResult'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.claimIssue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClaimRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Claim'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.releaseClaim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.listClaims': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Claim'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.claimNext': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClaimNextRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClaimResult'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

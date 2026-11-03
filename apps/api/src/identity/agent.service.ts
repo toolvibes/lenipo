@@ -49,6 +49,7 @@ export class AgentService {
         userId: id,
         vendor: request.vendor,
         model: request.model,
+        taskFilter: request.taskFilter,
         ownerId: request.ownerId ?? ownerId,
       });
       await db.insert(notificationSettings).values({ userId: id, emailEnabled: false });
@@ -70,6 +71,7 @@ export class AgentService {
       const profile = {
         ...(request.vendor !== undefined ? { vendor: request.vendor } : {}),
         ...(request.model !== undefined ? { model: request.model } : {}),
+        ...(request.taskFilter !== undefined ? { taskFilter: request.taskFilter } : {}),
         ...(request.ownerId !== undefined ? { ownerId: request.ownerId } : {}),
       };
       if (Object.keys(profile).length > 0) {
@@ -105,6 +107,7 @@ export class AgentService {
         status: users.status,
         vendor: agentProfiles.vendor,
         model: agentProfiles.model,
+        taskFilter: agentProfiles.taskFilter,
         createdAt: agentProfiles.createdAt,
         ownerId: owners.id,
         ownerName: owners.displayName,
@@ -120,6 +123,7 @@ export class AgentService {
       status: row.status,
       vendor: row.vendor,
       model: row.model,
+      taskFilter: row.taskFilter,
       createdAt: row.createdAt.toISOString(),
       owner: row.ownerId ? { id: row.ownerId, displayName: row.ownerName ?? '' } : null,
     }));

@@ -2,6 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { HttpException } from '@nestjs/common';
 import {
+  type Claim,
+  type ClaimConflict,
   CreateIssueLinkRequest,
   CreateIssueRequest,
   CreateProjectRequest,
@@ -25,6 +27,7 @@ import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import type { UserService } from '../identity/user.service.js';
+import type { ClaimService } from '../presence/claim.service.js';
 import type { PresenceService } from '../presence/presence.service.js';
 import { QueryException } from '../search/query-exception.js';
 import type { SearchService } from '../search/search.service.js';
@@ -59,6 +62,7 @@ export interface ToolServices extends WikiToolServices {
   users: UserService;
   audit: AuditService;
   presence: PresenceService;
+  claims: ClaimService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
@@ -104,7 +108,18 @@ function failure(error: unknown): CallToolResult {
       typeof response === 'object' && response && 'message' in response
         ? String((response as { message: unknown }).message)
         : error.message;
-    return { isError: true, content: [{ type: 'text', text: `${error.getStatus()}: ${message}` }] };
+    // Overlapping work areas name the other claims (TL-94).
+    const conflicts =
+      typeof response === 'object' && response && 'claimConflicts' in response
+        ? (response as { claimConflicts: ClaimConflict[] }).claimConflicts.map(
+            (conflict) =>
+              `\n- ${conflict.issueKey} by ${conflict.user.displayName}${conflict.branch ? `, branch ${conflict.branch}` : ''}${conflict.paths.length > 0 ? `, paths ${conflict.paths.join(', ')}` : ''}`,
+          )
+        : [];
+    return {
+      isError: true,
+      content: [{ type: 'text', text: `${error.getStatus()}: ${message}${conflicts.join('')}` }],
+    };
   }
   throw error;
 }
@@ -311,6 +326,82 @@ export function registerTools(
     async ({ project }) => {
       const team = await services.presence.team(principal, project);
       return text(teamMarkdown(team), { team });
+    },
+  );
+
+  // ---------------------------------------------------------------- claims (TL-94)
+
+  const WorkArea = {
+    branch: z.string().max(200).optional().describe('The branch you work on'),
+    paths: z
+      .array(z.string().max(300))
+      .max(50)
+      .optional()
+      .describe('Files or folders you will change, e.g. apps/web/src/features/'),
+    force: z
+      .boolean()
+      .optional()
+      .describe('Claim despite overlapping work areas; only after agreeing with the others'),
+  };
+  const claimLine = (claim: Claim) =>
+    `${claim.issue.key} ${claim.issue.summary} – yours until ${claim.expiresAt}${claim.branch ? `, branch ${claim.branch}` : ''}${claim.forced ? ' (forced despite overlaps)' : ''}. Heartbeats with set_status extend it.`;
+
+  tool(
+    'claim_task',
+    {
+      title: 'Claim an issue',
+      description:
+        'Take an issue before working on it, so no one else does: makes you the assignee and holds it for 30 minutes, extended by every set_status. Fails if someone else is assigned or works on it, or if your branch or paths overlap with other claims in the project (the conflicts are listed).',
+      inputSchema: { issue: IssueKey, ...WorkArea },
+    },
+    async ({ issue, branch, paths, force }) => {
+      const claim = await services.claims.claim(principal, issue, {
+        ...(branch ? { branch } : {}),
+        paths: paths ?? [],
+        force: force ?? false,
+      });
+      await audited('claim_task', claim.issue.key);
+      return text(`Claimed ${claimLine(claim)}`, claim);
+    },
+  );
+
+  tool(
+    'claim_next_task',
+    {
+      title: 'Claim the next task',
+      description:
+        'Claims the next fitting issue of a project for you: your open claim first, then active sprints, then the backlog, in rank order; only unassigned or yours, not claimed by others, not blocked by an open issue, within your agent task filter and the optional TQL filter. Returns nothing when no issue fits.',
+      inputSchema: {
+        project: ProjectKey,
+        filter: z.string().max(2000).optional().describe('TQL to narrow the candidates'),
+        ...WorkArea,
+      },
+    },
+    async ({ project, filter, branch, paths, force }) => {
+      const { claim } = await services.claims.claimNext(principal, project, {
+        ...(filter ? { filter } : {}),
+        ...(branch ? { branch } : {}),
+        paths: paths ?? [],
+        force: force ?? false,
+      });
+      if (!claim) return text('No fitting issue to claim.', { claim: null });
+      await audited('claim_next_task', claim.issue.key);
+      return text(`Claimed ${claimLine(claim)}`, { claim });
+    },
+  );
+
+  tool(
+    'release_task',
+    {
+      title: 'Release a claimed issue',
+      description:
+        'Ends your claim, e.g. when handing over or giving up. The assignee stays; a claim also ends by itself 30 minutes after your last heartbeat.',
+      inputSchema: { issue: IssueKey },
+    },
+    async ({ issue }) => {
+      await services.claims.release(principal, issue);
+      await audited('release_task', issue);
+      return text(`Released ${issue}.`);
     },
   );
 

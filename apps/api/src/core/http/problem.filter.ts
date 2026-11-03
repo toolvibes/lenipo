@@ -61,12 +61,17 @@ export function toProblem(exception: unknown): Problem {
       typeof body === 'object' && body !== null && 'queryErrors' in body
         ? (body as Pick<Problem, 'queryErrors'>).queryErrors
         : undefined;
+    const claimConflicts =
+      typeof body === 'object' && body !== null && 'claimConflicts' in body
+        ? (body as Pick<Problem, 'claimConflicts'>).claimConflicts
+        : undefined;
     return {
       type,
       title: titleFor(status),
       status,
       detail: message,
       ...(queryErrors ? { queryErrors } : {}),
+      ...(claimConflicts ? { claimConflicts } : {}),
     };
   }
   return { type: 'about:blank', title: titleFor(500), status: 500 };

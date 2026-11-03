@@ -18,6 +18,7 @@ import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
+import { ClaimService } from './claim.service.js';
 
 /** How far back changes in a project make someone part of its team. */
 const TEAM_DAYS = 30;
@@ -51,6 +52,7 @@ export class PresenceService {
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
+    @Inject(ClaimService) private readonly claims: ClaimService,
   ) {}
 
   /** A heartbeat: the state, and the issue and branch if given; an issue must be visible. */
@@ -73,6 +75,8 @@ export class PresenceService {
       .insert(presence)
       .values({ userId: principal.userId, ...changes })
       .onConflictDoUpdate({ target: presence.userId, set: changes });
+    // A heartbeat also keeps the claims of a working agent (TL-94).
+    if (request.state !== 'offline') await this.claims.extend(principal.userId);
     return this.mine(principal);
   }
 

@@ -2155,6 +2155,226 @@
         }
       }
     },
+    "/api/v1/issues/{key}/claim": {
+      "get": {
+        "operationId": "Agents.getClaim",
+        "summary": "Get the active claim on an issue",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "Agents.claimIssue",
+        "summary": "Claim an issue",
+        "description": "Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Claim"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Agents.releaseClaim",
+        "summary": "Release a claim",
+        "description": "One’s own, or any as project administrator. The assignee stays.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/claims": {
+      "get": {
+        "operationId": "Agents.listClaims",
+        "summary": "List the active claims of a project",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Claim"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{key}/claim-next": {
+      "post": {
+        "operationId": "Agents.claimNext",
+        "summary": "Claim the next fitting issue of a project",
+        "description": "One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.",
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimNextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/presence": {
       "put": {
         "operationId": "Agents.beat",
@@ -18395,6 +18615,12 @@
             "items": {
               "$ref": "#/components/schemas/QueryError"
             }
+          },
+          "claimConflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClaimConflict"
+            }
           }
         },
         "required": [
@@ -18439,6 +18665,49 @@
           "start",
           "end",
           "params"
+        ],
+        "additionalProperties": false
+      },
+      "ClaimConflict": {
+        "type": "object",
+        "properties": {
+          "issueKey": {
+            "type": "string"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "displayName"
+            ],
+            "additionalProperties": false
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "issueKey",
+          "user",
+          "branch",
+          "paths"
         ],
         "additionalProperties": false
       },
@@ -20485,6 +20754,9 @@
               }
             ]
           },
+          "taskFilter": {
+            "type": "string"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -20504,6 +20776,7 @@
           "vendor",
           "model",
           "owner",
+          "taskFilter",
           "status",
           "createdAt"
         ],
@@ -20526,6 +20799,11 @@
             "default": "",
             "type": "string",
             "maxLength": 80
+          },
+          "taskFilter": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
           },
           "ownerId": {
             "type": "string",
@@ -20562,6 +20840,10 @@
           "model": {
             "type": "string",
             "maxLength": 80
+          },
+          "taskFilter": {
+            "type": "string",
+            "maxLength": 2000
           },
           "ownerId": {
             "anyOf": [
@@ -20725,6 +21007,134 @@
           "secret"
         ],
         "additionalProperties": false
+      },
+      "ClaimResult": {
+        "type": "object",
+        "properties": {
+          "claim": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Claim"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "claim"
+        ],
+        "additionalProperties": false
+      },
+      "Claim": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "summary"
+            ],
+            "additionalProperties": false
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forced": {
+            "type": "boolean"
+          },
+          "claimedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "issue",
+          "user",
+          "branch",
+          "paths",
+          "forced",
+          "claimedAt",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "ClaimRequest": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "paths": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "force": {
+            "default": false,
+            "type": "boolean"
+          }
+        }
+      },
+      "ClaimNextRequest": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "paths": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "force": {
+            "default": false,
+            "type": "boolean"
+          },
+          "filter": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
       },
       "UpdatePresenceRequest": {
         "type": "object",

@@ -71,6 +71,8 @@ export const agentProfiles = pgTable(
     /** The tool, e.g. "Claude Code" or "Codex CLI". */
     vendor: text().notNull(),
     model: text().notNull().default(''),
+    /** TQL for what the agent may take with claim-next; empty: anything (TL-94). */
+    taskFilter: text().notNull().default(''),
     /** The responsible person. */
     ownerId: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

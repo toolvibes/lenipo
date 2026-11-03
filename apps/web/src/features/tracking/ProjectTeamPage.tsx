@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import type { PresenceState } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
-import { formatRelative } from '../../lib/format';
+import { formatDateTime, formatRelative } from '../../lib/format';
 import { projectQuery } from '../../lib/tracking';
 import { FormError } from '../../ui/FormError';
 import { TopBar } from '../../ui/TopBar';
@@ -28,6 +28,14 @@ export function ProjectTeamPage({ projectKey }: { projectKey: string }) {
     queryFn: () =>
       unwrap(client.GET('/api/v1/projects/{key}/team', { params: { path: { key: projectKey } } })),
     // Heartbeats come every few minutes; no realtime signal for them.
+    refetchInterval: 60_000,
+  });
+  const claims = useQuery({
+    queryKey: ['project', projectKey, 'claims'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/projects/{key}/claims', { params: { path: { key: projectKey } } }),
+      ),
     refetchInterval: 60_000,
   });
   return (
@@ -105,6 +113,38 @@ export function ProjectTeamPage({ projectKey }: { projectKey: string }) {
               ))}
             </tbody>
           </table>
+        )}
+        {claims.data && claims.data.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="m-0 text-base font-semibold">{t('claims.title')}</h2>
+            <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('claims.intro')}</p>
+            <ul className="m-0 flex list-none flex-col p-0 text-[13px]">
+              {claims.data.map((claim) => (
+                <li key={claim.issue.key} className="border-t border-[var(--border)] py-2">
+                  <Link
+                    to="/issues/$key"
+                    params={{ key: claim.issue.key }}
+                    className="text-[var(--accent)]"
+                  >
+                    {claim.issue.key}
+                  </Link>{' '}
+                  {claim.issue.summary} ·{' '}
+                  {t('claims.until', {
+                    name: claim.user.displayName,
+                    time: formatDateTime(claim.expiresAt),
+                  })}
+                  {claim.forced && (
+                    <span className="text-[var(--warning)]"> · {t('claims.forced')}</span>
+                  )}
+                  {(claim.branch || claim.paths.length > 0) && (
+                    <span className="block text-xs text-[var(--ink-muted)]">
+                      {[claim.branch, claim.paths.join(', ')].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
     </>

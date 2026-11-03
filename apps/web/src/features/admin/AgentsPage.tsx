@@ -20,6 +20,7 @@ interface Draft {
   displayName: string;
   vendor: string;
   model: string;
+  taskFilter: string;
   ownerId: string;
 }
 
@@ -33,6 +34,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
     displayName: agent?.displayName ?? '',
     vendor: agent?.vendor ?? AGENT_VENDORS[0],
     model: agent?.model ?? '',
+    taskFilter: agent?.taskFilter ?? '',
     ownerId: agent?.owner?.id ?? me.data?.id ?? '',
   });
   const save = useMutation({
@@ -91,6 +93,14 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
           />
         </div>
       </div>
+      <TextField
+        label={t('agents.taskFilter')}
+        help={t('agents.taskFilterHelp')}
+        value={draft.taskFilter}
+        placeholder="component = Frontend AND labels != security"
+        maxLength={2000}
+        onChange={(event) => set({ taskFilter: event.target.value })}
+      />
       <Select
         label={t('agents.owner')}
         help={t('agents.ownerHelp')}

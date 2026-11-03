@@ -2182,6 +2182,14 @@ export const de = {
     spaceHelp: 'Mit dieser Vorlage werden Seiten des Bereichs gedruckt.',
     useDefault: 'Standard der Instanz',
   },
+  claims: {
+    label: 'In Arbeit',
+    until: '{{name}}, beansprucht bis {{time}}',
+    title: 'Beansprucht',
+    intro:
+      'Vorgänge, an denen gerade gearbeitet wird. Ein Anspruch hält 30 Minuten und verlängert sich mit jedem Herzschlag; Branch und Pfade sind der Arbeitsbereich.',
+    forced: 'trotz Überschneidung',
+  },
   team: {
     title: 'Team',
     intro:
@@ -2216,6 +2224,9 @@ export const de = {
     signInHint: 'Agent, meldet sich nicht an',
     mine: 'Meine Agenten',
     mineIntro: 'Du bist für diese Agenten verantwortlich und erstellst ihre Tokens.',
+    taskFilter: 'Darf nehmen (TQL)',
+    taskFilterHelp:
+      'Welche Vorgänge der Agent mit „nächste Aufgabe beanspruchen“ nimmt, z. B. nur eine Komponente. Leer: alle im Projekt.',
   },
   ai: {
     title: 'KI',

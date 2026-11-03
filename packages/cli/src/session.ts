@@ -35,10 +35,20 @@ export async function unwrap<T>(
   const { data, error, response } = await call;
   if (!response.ok) {
     const problem = error as
-      | { detail?: string; title?: string; queryErrors?: Array<{ message: string }> }
+      | {
+          detail?: string;
+          title?: string;
+          queryErrors?: Array<{ message: string }>;
+          claimConflicts?: Array<{ issueKey: string; user: { displayName: string } }>;
+        }
       | undefined;
+    // Overlapping claims name who works where (TL-94).
+    const conflicts = problem?.claimConflicts
+      ?.map((entry) => `${entry.issueKey} (${entry.user.displayName})`)
+      .join(', ');
     const detail =
       problem?.queryErrors?.map((entry) => entry.message).join('; ') ??
+      (conflicts ? `${problem?.detail}: ${conflicts}` : undefined) ??
       problem?.detail ??
       problem?.title ??
       response.statusText;

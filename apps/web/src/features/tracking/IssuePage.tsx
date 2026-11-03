@@ -58,6 +58,36 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** Who works on the issue right now, from an active claim (TL-94, E-146). */
+function ClaimField({ issueKey }: { issueKey: string }) {
+  const { t } = useTranslation();
+  const claim = useQuery({
+    queryKey: ['issue', issueKey, 'claim'],
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/claim', { params: { path: { key: issueKey } } })),
+    refetchInterval: 60_000,
+  }).data?.claim;
+  if (!claim) return null;
+  return (
+    <Field label={t('claims.label')}>
+      <span className="flex flex-col gap-0.5 px-1.5 pt-1.5 text-[13px]">
+        <span>
+          {t('claims.until', {
+            name: claim.user.displayName,
+            time: formatDateTime(claim.expiresAt),
+          })}
+        </span>
+        {claim.branch && (
+          <code className="truncate text-xs text-[var(--ink-muted)]">{claim.branch}</code>
+        )}
+        {claim.paths.length > 0 && (
+          <span className="truncate text-xs text-[var(--ink-muted)]">{claim.paths.join(', ')}</span>
+        )}
+      </span>
+    </Field>
+  );
+}
+
 /** One comment; own comments can be edited and deleted, administrators delete any (E-42). */
 function CommentItem({
   comment,
@@ -738,6 +768,7 @@ export function IssuePage({
                 )}
               </button>
             </Field>
+            <ClaimField issueKey={data.key} />
             <Field label={t('issues.reporter')}>
               <span className="flex h-[var(--control-sm)] items-center gap-2 px-1.5">
                 {data.reporter && <Avatar user={data.reporter} size={20} />}
