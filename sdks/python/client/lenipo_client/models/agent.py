@@ -14,6 +14,8 @@ from uuid import UUID
 import datetime
 
 if TYPE_CHECKING:
+  from ..models.agent_budget import AgentBudget
+  from ..models.agent_pause import AgentPause
   from ..models.user_ref import UserRef
 
 
@@ -36,6 +38,8 @@ class Agent:
             task_filter (str):
             webhook_url (None | str):
             status (AgentStatus):
+            paused (AgentPause | None):
+            budget (AgentBudget):
             created_at (datetime.datetime):
      """
 
@@ -47,6 +51,8 @@ class Agent:
     task_filter: str
     webhook_url: None | str
     status: AgentStatus
+    paused: AgentPause | None
+    budget: AgentBudget
     created_at: datetime.datetime
 
 
@@ -54,6 +60,8 @@ class Agent:
 
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.agent_budget import AgentBudget # noqa: PLC0415
+        from ..models.agent_pause import AgentPause # noqa: PLC0415
         from ..models.user_ref import UserRef # noqa: PLC0415
         id = str(self.id)
 
@@ -76,6 +84,14 @@ class Agent:
 
         status = self.status.value
 
+        paused: dict[str, Any] | None
+        if isinstance(self.paused, AgentPause):
+            paused = self.paused.to_dict()
+        else:
+            paused = self.paused
+
+        budget = self.budget.to_dict()
+
         created_at = self.created_at.isoformat()
 
 
@@ -90,6 +106,8 @@ class Agent:
             "taskFilter": task_filter,
             "webhookUrl": webhook_url,
             "status": status,
+            "paused": paused,
+            "budget": budget,
             "createdAt": created_at,
         })
 
@@ -99,6 +117,8 @@ class Agent:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.agent_budget import AgentBudget # noqa: PLC0415
+        from ..models.agent_pause import AgentPause # noqa: PLC0415
         from ..models.user_ref import UserRef # noqa: PLC0415
         d = dict(src_dict)
         id = UUID(d.pop("id"))
@@ -145,6 +165,29 @@ class Agent:
 
 
 
+        def _parse_paused(data: object) -> AgentPause | None:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                paused_type_0 = AgentPause.from_dict(data)
+
+
+
+                return paused_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(AgentPause | None, data)
+
+        paused = _parse_paused(d.pop("paused"))
+
+
+        budget = AgentBudget.from_dict(d.pop("budget"))
+
+
+
+
         created_at = datetime.datetime.fromisoformat(d.pop("createdAt"))
 
 
@@ -159,6 +202,8 @@ class Agent:
             task_filter=task_filter,
             webhook_url=webhook_url,
             status=status,
+            paused=paused,
+            budget=budget,
             created_at=created_at,
         )
 

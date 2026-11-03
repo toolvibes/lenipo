@@ -12,6 +12,8 @@ from ..types import UNSET, Unset
 from typing import cast
 from uuid import UUID
 
+if TYPE_CHECKING:
+  from ..models.agent_budget_input import AgentBudgetInput
 
 
 
@@ -30,6 +32,7 @@ class UpdateAgentRequest:
             model (str | Unset):
             task_filter (str | Unset):
             owner_id (None | Unset | UUID):
+            budget (AgentBudgetInput | Unset):
      """
 
     display_name: str | Unset = UNSET
@@ -37,6 +40,7 @@ class UpdateAgentRequest:
     model: str | Unset = UNSET
     task_filter: str | Unset = UNSET
     owner_id: None | Unset | UUID = UNSET
+    budget: AgentBudgetInput | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
 
@@ -44,6 +48,7 @@ class UpdateAgentRequest:
 
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.agent_budget_input import AgentBudgetInput # noqa: PLC0415
         display_name = self.display_name
 
         vendor = self.vendor
@@ -60,6 +65,10 @@ class UpdateAgentRequest:
         else:
             owner_id = self.owner_id
 
+        budget: dict[str, Any] | Unset = UNSET
+        if not isinstance(self.budget, Unset):
+            budget = self.budget.to_dict()
+
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -75,6 +84,8 @@ class UpdateAgentRequest:
             field_dict["taskFilter"] = task_filter
         if owner_id is not UNSET:
             field_dict["ownerId"] = owner_id
+        if budget is not UNSET:
+            field_dict["budget"] = budget
 
         return field_dict
 
@@ -82,6 +93,7 @@ class UpdateAgentRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.agent_budget_input import AgentBudgetInput # noqa: PLC0415
         d = dict(src_dict)
         display_name = d.pop("displayName", UNSET)
 
@@ -111,12 +123,23 @@ class UpdateAgentRequest:
         owner_id = _parse_owner_id(d.pop("ownerId", UNSET))
 
 
+        _budget = d.pop("budget", UNSET)
+        budget: AgentBudgetInput | Unset
+        if isinstance(_budget,  Unset):
+            budget = UNSET
+        else:
+            budget = AgentBudgetInput.from_dict(_budget)
+
+
+
+
         update_agent_request = cls(
             display_name=display_name,
             vendor=vendor,
             model=model,
             task_filter=task_filter,
             owner_id=owner_id,
+            budget=budget,
         )
 
 

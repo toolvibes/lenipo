@@ -16,6 +16,7 @@ if TYPE_CHECKING:
   from ..models.notification_details import NotificationDetails
   from ..models.notification_issue_type_0 import NotificationIssueType0
   from ..models.notification_page_type_0 import NotificationPageType0
+  from ..models.notification_sprint_type_0 import NotificationSprintType0
   from ..models.user_ref import UserRef
 
 
@@ -33,6 +34,8 @@ class Notification:
             id (int):
             issue (None | NotificationIssueType0):
             page (None | NotificationPageType0):
+            sprint (None | NotificationSprintType0):
+            agent (None | UserRef):
             actor (None | UserRef):
             category (NotificationCategory):
             details (NotificationDetails):
@@ -43,6 +46,8 @@ class Notification:
     id: int
     issue: None | NotificationIssueType0
     page: None | NotificationPageType0
+    sprint: None | NotificationSprintType0
+    agent: None | UserRef
     actor: None | UserRef
     category: NotificationCategory
     details: NotificationDetails
@@ -57,6 +62,7 @@ class Notification:
         from ..models.notification_details import NotificationDetails # noqa: PLC0415
         from ..models.notification_issue_type_0 import NotificationIssueType0 # noqa: PLC0415
         from ..models.notification_page_type_0 import NotificationPageType0 # noqa: PLC0415
+        from ..models.notification_sprint_type_0 import NotificationSprintType0 # noqa: PLC0415
         from ..models.user_ref import UserRef # noqa: PLC0415
         id = self.id
 
@@ -71,6 +77,18 @@ class Notification:
             page = self.page.to_dict()
         else:
             page = self.page
+
+        sprint: dict[str, Any] | None
+        if isinstance(self.sprint, NotificationSprintType0):
+            sprint = self.sprint.to_dict()
+        else:
+            sprint = self.sprint
+
+        agent: dict[str, Any] | None
+        if isinstance(self.agent, UserRef):
+            agent = self.agent.to_dict()
+        else:
+            agent = self.agent
 
         actor: dict[str, Any] | None
         if isinstance(self.actor, UserRef):
@@ -93,6 +111,8 @@ class Notification:
             "id": id,
             "issue": issue,
             "page": page,
+            "sprint": sprint,
+            "agent": agent,
             "actor": actor,
             "category": category,
             "details": details,
@@ -109,6 +129,7 @@ class Notification:
         from ..models.notification_details import NotificationDetails # noqa: PLC0415
         from ..models.notification_issue_type_0 import NotificationIssueType0 # noqa: PLC0415
         from ..models.notification_page_type_0 import NotificationPageType0 # noqa: PLC0415
+        from ..models.notification_sprint_type_0 import NotificationSprintType0 # noqa: PLC0415
         from ..models.user_ref import UserRef # noqa: PLC0415
         d = dict(src_dict)
         id = d.pop("id")
@@ -147,6 +168,42 @@ class Notification:
             return cast(None | NotificationPageType0, data)
 
         page = _parse_page(d.pop("page"))
+
+
+        def _parse_sprint(data: object) -> None | NotificationSprintType0:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                sprint_type_0 = NotificationSprintType0.from_dict(data)
+
+
+
+                return sprint_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | NotificationSprintType0, data)
+
+        sprint = _parse_sprint(d.pop("sprint"))
+
+
+        def _parse_agent(data: object) -> None | UserRef:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                agent_type_0 = UserRef.from_dict(data)
+
+
+
+                return agent_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | UserRef, data)
+
+        agent = _parse_agent(d.pop("agent"))
 
 
         def _parse_actor(data: object) -> None | UserRef:
@@ -188,6 +245,8 @@ class Notification:
             id=id,
             issue=issue,
             page=page,
+            sprint=sprint,
+            agent=agent,
             actor=actor,
             category=category,
             details=details,

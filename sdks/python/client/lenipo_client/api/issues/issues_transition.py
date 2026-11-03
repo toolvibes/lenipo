@@ -9,6 +9,7 @@ from ...types import Response, UNSET
 from ... import errors
 
 from ...models.issue import Issue
+from ...models.issue_approval import IssueApproval
 from ...models.issues_transition_format import IssuesTransitionFormat
 from ...models.problem import Problem
 from ...models.transition_request import TransitionRequest
@@ -56,13 +57,20 @@ def _get_kwargs(
 
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Issue | Problem:
+def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Issue | IssueApproval | Problem:
     if response.status_code == 200:
         response_200 = Issue.from_dict(response.json())
 
 
 
         return response_200
+
+    if response.status_code == 202:
+        response_202 = IssueApproval.from_dict(response.json())
+
+
+
+        return response_202
 
     response_default = Problem.from_dict(response.json())
 
@@ -72,7 +80,7 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[Issue | Problem]:
+def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[Issue | IssueApproval | Problem]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,8 +96,11 @@ def sync_detailed(
     body: TransitionRequest,
     format_: IssuesTransitionFormat | Unset = IssuesTransitionFormat.JSON,
 
-) -> Response[Issue | Problem]:
+) -> Response[Issue | IssueApproval | Problem]:
     """ Move an issue to another status
+
+     Where the project keeps the target status for people, an agent gets 202 with the waiting request
+    instead; the move happens once a person approves it.
 
     Args:
         key (str):
@@ -101,7 +112,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Issue | Problem]
+        Response[Issue | IssueApproval | Problem]
      """
 
 
@@ -125,8 +136,11 @@ def sync(
     body: TransitionRequest,
     format_: IssuesTransitionFormat | Unset = IssuesTransitionFormat.JSON,
 
-) -> Issue | Problem | None:
+) -> Issue | IssueApproval | Problem | None:
     """ Move an issue to another status
+
+     Where the project keeps the target status for people, an agent gets 202 with the waiting request
+    instead; the move happens once a person approves it.
 
     Args:
         key (str):
@@ -138,7 +152,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Issue | Problem
+        Issue | IssueApproval | Problem
      """
 
 
@@ -157,8 +171,11 @@ async def asyncio_detailed(
     body: TransitionRequest,
     format_: IssuesTransitionFormat | Unset = IssuesTransitionFormat.JSON,
 
-) -> Response[Issue | Problem]:
+) -> Response[Issue | IssueApproval | Problem]:
     """ Move an issue to another status
+
+     Where the project keeps the target status for people, an agent gets 202 with the waiting request
+    instead; the move happens once a person approves it.
 
     Args:
         key (str):
@@ -170,7 +187,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Issue | Problem]
+        Response[Issue | IssueApproval | Problem]
      """
 
 
@@ -194,8 +211,11 @@ async def asyncio(
     body: TransitionRequest,
     format_: IssuesTransitionFormat | Unset = IssuesTransitionFormat.JSON,
 
-) -> Issue | Problem | None:
+) -> Issue | IssueApproval | Problem | None:
     """ Move an issue to another status
+
+     Where the project keeps the target status for people, an agent gets 202 with the waiting request
+    instead; the move happens once a person approves it.
 
     Args:
         key (str):
@@ -207,7 +227,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Issue | Problem
+        Issue | IssueApproval | Problem
      """
 
 

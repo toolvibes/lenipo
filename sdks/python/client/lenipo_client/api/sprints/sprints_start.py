@@ -10,6 +10,7 @@ from ... import errors
 
 from ...models.problem import Problem
 from ...models.sprint import Sprint
+from ...models.sprint_approval import SprintApproval
 from ...models.start_sprint_request import StartSprintRequest
 from typing import cast
 
@@ -42,13 +43,20 @@ def _get_kwargs(
 
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Problem | Sprint:
+def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Problem | Sprint | SprintApproval:
     if response.status_code == 200:
         response_200 = Sprint.from_dict(response.json())
 
 
 
         return response_200
+
+    if response.status_code == 202:
+        response_202 = SprintApproval.from_dict(response.json())
+
+
+
+        return response_202
 
     response_default = Problem.from_dict(response.json())
 
@@ -58,7 +66,7 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[Problem | Sprint]:
+def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[Problem | Sprint | SprintApproval]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,10 +81,12 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: StartSprintRequest,
 
-) -> Response[Problem | Sprint]:
+) -> Response[Problem | Sprint | SprintApproval]:
     """ Start a planned sprint
 
-     One sprint runs per board. The estimates at this moment are the commitment.
+     One sprint runs per board. The estimates at this moment are the commitment. Agents need the role
+    planner; where the project wants approval, an agent gets 202 with the waiting request instead, and
+    the sprint starts once a person approves it.
 
     Args:
         id (str):
@@ -87,7 +97,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Problem | Sprint]
+        Response[Problem | Sprint | SprintApproval]
      """
 
 
@@ -109,10 +119,12 @@ def sync(
     client: AuthenticatedClient | Client,
     body: StartSprintRequest,
 
-) -> Problem | Sprint | None:
+) -> Problem | Sprint | SprintApproval | None:
     """ Start a planned sprint
 
-     One sprint runs per board. The estimates at this moment are the commitment.
+     One sprint runs per board. The estimates at this moment are the commitment. Agents need the role
+    planner; where the project wants approval, an agent gets 202 with the waiting request instead, and
+    the sprint starts once a person approves it.
 
     Args:
         id (str):
@@ -123,7 +135,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Problem | Sprint
+        Problem | Sprint | SprintApproval
      """
 
 
@@ -140,10 +152,12 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: StartSprintRequest,
 
-) -> Response[Problem | Sprint]:
+) -> Response[Problem | Sprint | SprintApproval]:
     """ Start a planned sprint
 
-     One sprint runs per board. The estimates at this moment are the commitment.
+     One sprint runs per board. The estimates at this moment are the commitment. Agents need the role
+    planner; where the project wants approval, an agent gets 202 with the waiting request instead, and
+    the sprint starts once a person approves it.
 
     Args:
         id (str):
@@ -154,7 +168,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Problem | Sprint]
+        Response[Problem | Sprint | SprintApproval]
      """
 
 
@@ -176,10 +190,12 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: StartSprintRequest,
 
-) -> Problem | Sprint | None:
+) -> Problem | Sprint | SprintApproval | None:
     """ Start a planned sprint
 
-     One sprint runs per board. The estimates at this moment are the commitment.
+     One sprint runs per board. The estimates at this moment are the commitment. Agents need the role
+    planner; where the project wants approval, an agent gets 202 with the waiting request instead, and
+    the sprint starts once a person approves it.
 
     Args:
         id (str):
@@ -190,7 +206,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Problem | Sprint
+        Problem | Sprint | SprintApproval
      """
 
 

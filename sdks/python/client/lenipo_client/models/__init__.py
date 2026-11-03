@@ -23,7 +23,23 @@ from .add_space_member_request_type_1 import AddSpaceMemberRequestType1
 from .admin_token import AdminToken
 from .admin_token_owner import AdminTokenOwner
 from .agent import Agent
+from .agent_activity import AgentActivity
+from .agent_activity_issue_type_0 import AgentActivityIssueType0
+from .agent_activity_kind import AgentActivityKind
+from .agent_activity_page import AgentActivityPage
+from .agent_budget import AgentBudget
+from .agent_budget_input import AgentBudgetInput
+from .agent_overview import AgentOverview
+from .agent_overview_question_type_0 import AgentOverviewQuestionType0
+from .agent_overview_question_type_0_issue_type_0 import AgentOverviewQuestionType0IssueType0
+from .agent_overview_question_type_0_state import AgentOverviewQuestionType0State
+from .agent_pause import AgentPause
+from .agent_rights import AgentRights
+from .agent_rights_projects_item import AgentRightsProjectsItem
+from .agent_rights_tokens_item import AgentRightsTokensItem
+from .agent_role import AgentRole
 from .agent_status import AgentStatus
+from .agent_usage import AgentUsage
 from .agent_webhook import AgentWebhook
 from .agent_webhook_request import AgentWebhookRequest
 from .ai_settings import AiSettings
@@ -111,6 +127,9 @@ from .board_summary_project import BoardSummaryProject
 from .board_summary_type import BoardSummaryType
 from .board_swimlanes import BoardSwimlanes
 from .board_type import BoardType
+from .budget_limits import BudgetLimits
+from .budget_limits_input import BudgetLimitsInput
+from .budget_usage import BudgetUsage
 from .bulk_action_type_0 import BulkActionType0
 from .bulk_action_type_1 import BulkActionType1
 from .bulk_action_type_2 import BulkActionType2
@@ -178,6 +197,7 @@ from .create_plan_request import CreatePlanRequest
 from .create_portal_request import CreatePortalRequest
 from .create_portal_request_custom_fields import CreatePortalRequestCustomFields
 from .create_project_request import CreateProjectRequest
+from .create_review_request import CreateReviewRequest
 from .create_scenario_request import CreateScenarioRequest
 from .create_scim_token_request import CreateScimTokenRequest
 from .create_security_scheme_request import CreateSecuritySchemeRequest
@@ -209,6 +229,7 @@ from .dashboard_owner import DashboardOwner
 from .dashboard_summary import DashboardSummary
 from .dashboard_summary_owner import DashboardSummaryOwner
 from .dashboards_list_scope import DashboardsListScope
+from .decide_approval_request import DecideApprovalRequest
 from .development_summary import DevelopmentSummary
 from .diff_block_content import DiffBlockContent
 from .diff_block_content_type import DiffBlockContentType
@@ -310,6 +331,10 @@ from .invitation_preview_project_type_0 import InvitationPreviewProjectType0
 from .invitation_project_type_0 import InvitationProjectType0
 from .invitations_accept_response_200 import InvitationsAcceptResponse200
 from .issue import Issue
+from .issue_approval import IssueApproval
+from .issue_approval_issue import IssueApprovalIssue
+from .issue_approval_status import IssueApprovalStatus
+from .issue_approval_to_status import IssueApprovalToStatus
 from .issue_columns import IssueColumns
 from .issue_columns_columns_item_type_0 import IssueColumnsColumnsItemType0
 from .issue_columns_input import IssueColumnsInput
@@ -407,6 +432,7 @@ from .notification_scheme_projects_item import NotificationSchemeProjectsItem
 from .notification_scheme_summary import NotificationSchemeSummary
 from .notification_scheme_summary_projects_item import NotificationSchemeSummaryProjectsItem
 from .notification_settings import NotificationSettings
+from .notification_sprint_type_0 import NotificationSprintType0
 from .o_auth_app import OAuthApp
 from .o_auth_app_created import OAuthAppCreated
 from .o_auth_client_info import OAuthClientInfo
@@ -459,7 +485,9 @@ from .pages_page_locale import PagesPageLocale
 from .pages_unwatch_scope import PagesUnwatchScope
 from .pages_version_format import PagesVersionFormat
 from .password_changed import PasswordChanged
+from .pause_request import PauseRequest
 from .pending_approval import PendingApproval
+from .pending_approvals import PendingApprovals
 from .period_request import PeriodRequest
 from .permission_grant import PermissionGrant
 from .permission_grant_group_type_0 import PermissionGrantGroupType0
@@ -499,6 +527,9 @@ from .print_template_summary import PrintTemplateSummary
 from .priority_info import PriorityInfo
 from .problem import Problem
 from .problem_errors import ProblemErrors
+from .project_agent import ProjectAgent
+from .project_agent_settings import ProjectAgentSettings
+from .project_agent_settings_review_statuses import ProjectAgentSettingsReviewStatuses
 from .project_custom_fields_request import ProjectCustomFieldsRequest
 from .project_custom_fields_request_settings import ProjectCustomFieldsRequestSettings
 from .project_details import ProjectDetails
@@ -590,6 +621,7 @@ from .report_config_type_6 import ReportConfigType6
 from .report_config_type_7 import ReportConfigType7
 from .report_config_type_8 import ReportConfigType8
 from .report_config_type_9 import ReportConfigType9
+from .report_usage_request import ReportUsageRequest
 from .request_type import RequestType
 from .request_type_issue_type import RequestTypeIssueType
 from .resolution_info import ResolutionInfo
@@ -599,6 +631,12 @@ from .restricted_page import RestrictedPage
 from .retention_result import RetentionResult
 from .retention_settings import RetentionSettings
 from .retention_settings_input import RetentionSettingsInput
+from .review_request import ReviewRequest
+from .review_request_issue import ReviewRequestIssue
+from .review_request_pull_request_type_0 import ReviewRequestPullRequestType0
+from .review_status import ReviewStatus
+from .review_verdict_request import ReviewVerdictRequest
+from .review_verdict_request_verdict import ReviewVerdictRequestVerdict
 from .rich_text import RichText
 from .rich_text_input_type_1 import RichTextInputType1
 from .running_timer import RunningTimer
@@ -652,6 +690,7 @@ from .service_desk_settings_input_first_response_hours import ServiceDeskSetting
 from .service_desk_settings_input_resolution_hours import ServiceDeskSettingsInputResolutionHours
 from .service_desk_settings_resolution_hours import ServiceDeskSettingsResolutionHours
 from .session_info import SessionInfo
+from .set_agent_roles_request import SetAgentRolesRequest
 from .set_approval_mode_request import SetApprovalModeRequest
 from .set_approval_mode_request_mode import SetApprovalModeRequestMode
 from .set_capacity_request import SetCapacityRequest
@@ -682,6 +721,10 @@ from .space_summary_project_type_0 import SpaceSummaryProjectType0
 from .space_type import SpaceType
 from .spaces_space_locale import SpacesSpaceLocale
 from .sprint import Sprint
+from .sprint_approval import SprintApproval
+from .sprint_approval_action import SprintApprovalAction
+from .sprint_approval_sprint import SprintApprovalSprint
+from .sprint_approval_status import SprintApprovalStatus
 from .sprint_capacity import SprintCapacity
 from .sprint_capacity_people_item import SprintCapacityPeopleItem
 from .sprint_ref import SprintRef
@@ -690,6 +733,7 @@ from .sprint_report import SprintReport
 from .sprint_report_entry import SprintReportEntry
 from .sprint_report_estimation import SprintReportEstimation
 from .sprint_state import SprintState
+from .sprints_list_approvals_status import SprintsListApprovalsStatus
 from .sprints_list_state import SprintsListState
 from .start_sprint_request import StartSprintRequest
 from .statistic_field import StatisticField
@@ -785,6 +829,8 @@ from .update_page_request import UpdatePageRequest
 from .update_permission_scheme_request import UpdatePermissionSchemeRequest
 from .update_plan_request import UpdatePlanRequest
 from .update_presence_request import UpdatePresenceRequest
+from .update_project_agent_settings import UpdateProjectAgentSettings
+from .update_project_agent_settings_review_statuses import UpdateProjectAgentSettingsReviewStatuses
 from .update_security_scheme_request import UpdateSecuritySchemeRequest
 from .update_security_scheme_request_levels_item import UpdateSecuritySchemeRequestLevelsItem
 from .update_space_request import UpdateSpaceRequest
@@ -854,7 +900,23 @@ __all__ = (
     "AdminToken",
     "AdminTokenOwner",
     "Agent",
+    "AgentActivity",
+    "AgentActivityIssueType0",
+    "AgentActivityKind",
+    "AgentActivityPage",
+    "AgentBudget",
+    "AgentBudgetInput",
+    "AgentOverview",
+    "AgentOverviewQuestionType0",
+    "AgentOverviewQuestionType0IssueType0",
+    "AgentOverviewQuestionType0State",
+    "AgentPause",
+    "AgentRights",
+    "AgentRightsProjectsItem",
+    "AgentRightsTokensItem",
+    "AgentRole",
     "AgentStatus",
+    "AgentUsage",
     "AgentWebhook",
     "AgentWebhookRequest",
     "AiSettings",
@@ -942,6 +1004,9 @@ __all__ = (
     "BoardSummaryType",
     "BoardSwimlanes",
     "BoardType",
+    "BudgetLimits",
+    "BudgetLimitsInput",
+    "BudgetUsage",
     "BulkActionType0",
     "BulkActionType1",
     "BulkActionType2",
@@ -1019,6 +1084,7 @@ __all__ = (
     "CreatePortalRequest",
     "CreatePortalRequestCustomFields",
     "CreateProjectRequest",
+    "CreateReviewRequest",
     "CreateScenarioRequest",
     "CreateScimTokenRequest",
     "CreateSecuritySchemeRequest",
@@ -1040,6 +1106,7 @@ __all__ = (
     "DashboardsListScope",
     "DashboardSummary",
     "DashboardSummaryOwner",
+    "DecideApprovalRequest",
     "DevelopmentSummary",
     "DiffBlockContent",
     "DiffBlockContentType",
@@ -1141,6 +1208,10 @@ __all__ = (
     "InvitationProjectType0",
     "InvitationsAcceptResponse200",
     "Issue",
+    "IssueApproval",
+    "IssueApprovalIssue",
+    "IssueApprovalStatus",
+    "IssueApprovalToStatus",
     "IssueColumns",
     "IssueColumnsColumnsItemType0",
     "IssueColumnsInput",
@@ -1238,6 +1309,7 @@ __all__ = (
     "NotificationSchemeSummary",
     "NotificationSchemeSummaryProjectsItem",
     "NotificationSettings",
+    "NotificationSprintType0",
     "OAuthApp",
     "OAuthAppCreated",
     "OAuthClientInfo",
@@ -1290,7 +1362,9 @@ __all__ = (
     "PageWatchState",
     "PageWatchStateInheritedType0",
     "PasswordChanged",
+    "PauseRequest",
     "PendingApproval",
+    "PendingApprovals",
     "PeriodRequest",
     "PermissionGrant",
     "PermissionGrantee",
@@ -1330,6 +1404,9 @@ __all__ = (
     "PriorityInfo",
     "Problem",
     "ProblemErrors",
+    "ProjectAgent",
+    "ProjectAgentSettings",
+    "ProjectAgentSettingsReviewStatuses",
     "ProjectCustomFieldsRequest",
     "ProjectCustomFieldsRequestSettings",
     "ProjectDetails",
@@ -1421,6 +1498,7 @@ __all__ = (
     "ReportConfigType7",
     "ReportConfigType8",
     "ReportConfigType9",
+    "ReportUsageRequest",
     "RequestType",
     "RequestTypeIssueType",
     "ResolutionInfo",
@@ -1430,6 +1508,12 @@ __all__ = (
     "RetentionResult",
     "RetentionSettings",
     "RetentionSettingsInput",
+    "ReviewRequest",
+    "ReviewRequestIssue",
+    "ReviewRequestPullRequestType0",
+    "ReviewStatus",
+    "ReviewVerdictRequest",
+    "ReviewVerdictRequestVerdict",
     "RichText",
     "RichTextInputType1",
     "RunningTimer",
@@ -1483,6 +1567,7 @@ __all__ = (
     "ServiceDeskSettingsInputResolutionHours",
     "ServiceDeskSettingsResolutionHours",
     "SessionInfo",
+    "SetAgentRolesRequest",
     "SetApprovalModeRequest",
     "SetApprovalModeRequestMode",
     "SetCapacityRequest",
@@ -1513,6 +1598,10 @@ __all__ = (
     "SpaceSummaryProjectType0",
     "SpaceType",
     "Sprint",
+    "SprintApproval",
+    "SprintApprovalAction",
+    "SprintApprovalSprint",
+    "SprintApprovalStatus",
     "SprintCapacity",
     "SprintCapacityPeopleItem",
     "SprintRef",
@@ -1520,6 +1609,7 @@ __all__ = (
     "SprintReport",
     "SprintReportEntry",
     "SprintReportEstimation",
+    "SprintsListApprovalsStatus",
     "SprintsListState",
     "SprintState",
     "StartSprintRequest",
@@ -1616,6 +1706,8 @@ __all__ = (
     "UpdatePermissionSchemeRequest",
     "UpdatePlanRequest",
     "UpdatePresenceRequest",
+    "UpdateProjectAgentSettings",
+    "UpdateProjectAgentSettingsReviewStatuses",
     "UpdateSecuritySchemeRequest",
     "UpdateSecuritySchemeRequestLevelsItem",
     "UpdateSpaceRequest",

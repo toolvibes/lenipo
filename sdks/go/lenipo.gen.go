@@ -57,6 +57,78 @@ func (e AgentStatus) Valid() bool {
 	}
 }
 
+// Defines values for AgentActivityKind.
+const (
+	AgentActivityKindApproval AgentActivityKind = "approval"
+	AgentActivityKindChange   AgentActivityKind = "change"
+	AgentActivityKindComment  AgentActivityKind = "comment"
+	AgentActivityKindRequest  AgentActivityKind = "request"
+	AgentActivityKindReview   AgentActivityKind = "review"
+)
+
+// Valid indicates whether the value is a known member of the AgentActivityKind enum.
+func (e AgentActivityKind) Valid() bool {
+	switch e {
+	case AgentActivityKindApproval:
+		return true
+	case AgentActivityKindChange:
+		return true
+	case AgentActivityKindComment:
+		return true
+	case AgentActivityKindRequest:
+		return true
+	case AgentActivityKindReview:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentOverviewQuestionState.
+const (
+	AgentOverviewQuestionStateBlocked AgentOverviewQuestionState = "blocked"
+	AgentOverviewQuestionStateWaiting AgentOverviewQuestionState = "waiting"
+)
+
+// Valid indicates whether the value is a known member of the AgentOverviewQuestionState enum.
+func (e AgentOverviewQuestionState) Valid() bool {
+	switch e {
+	case AgentOverviewQuestionStateBlocked:
+		return true
+	case AgentOverviewQuestionStateWaiting:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentRole.
+const (
+	Coordinator AgentRole = "coordinator"
+	Implementer AgentRole = "implementer"
+	Planner     AgentRole = "planner"
+	Reviewer    AgentRole = "reviewer"
+	Tester      AgentRole = "tester"
+)
+
+// Valid indicates whether the value is a known member of the AgentRole enum.
+func (e AgentRole) Valid() bool {
+	switch e {
+	case Coordinator:
+		return true
+	case Implementer:
+		return true
+	case Planner:
+		return true
+	case Reviewer:
+		return true
+	case Tester:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AnnouncementLevel.
 const (
 	AnnouncementLevelInfo    AnnouncementLevel = "info"
@@ -874,6 +946,7 @@ func (e BurndownPointType) Valid() bool {
 const (
 	CommentKindComment  CommentKind = "comment"
 	CommentKindHandover CommentKind = "handover"
+	CommentKindReview   CommentKind = "review"
 )
 
 // Valid indicates whether the value is a known member of the CommentKind enum.
@@ -882,6 +955,8 @@ func (e CommentKind) Valid() bool {
 	case CommentKindComment:
 		return true
 	case CommentKindHandover:
+		return true
+	case CommentKindReview:
 		return true
 	default:
 		return false
@@ -2019,6 +2094,27 @@ func (e InstanceNoticeAnnouncementLevel) Valid() bool {
 	}
 }
 
+// Defines values for IssueApprovalStatus.
+const (
+	IssueApprovalStatusApproved IssueApprovalStatus = "approved"
+	IssueApprovalStatusPending  IssueApprovalStatus = "pending"
+	IssueApprovalStatusRejected IssueApprovalStatus = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the IssueApprovalStatus enum.
+func (e IssueApprovalStatus) Valid() bool {
+	switch e {
+	case IssueApprovalStatusApproved:
+		return true
+	case IssueApprovalStatusPending:
+		return true
+	case IssueApprovalStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssueColumnsColumns0.
 const (
 	IssueColumnsColumns0Assignee          IssueColumnsColumns0 = "assignee"
@@ -2162,16 +2258,16 @@ func (e IssueDevelopmentBuildsState) Valid() bool {
 
 // Defines values for IssueDevelopmentPullRequestsReview.
 const (
-	Approved         IssueDevelopmentPullRequestsReview = "approved"
-	ChangesRequested IssueDevelopmentPullRequestsReview = "changes_requested"
+	IssueDevelopmentPullRequestsReviewApproved         IssueDevelopmentPullRequestsReview = "approved"
+	IssueDevelopmentPullRequestsReviewChangesRequested IssueDevelopmentPullRequestsReview = "changes_requested"
 )
 
 // Valid indicates whether the value is a known member of the IssueDevelopmentPullRequestsReview enum.
 func (e IssueDevelopmentPullRequestsReview) Valid() bool {
 	switch e {
-	case Approved:
+	case IssueDevelopmentPullRequestsReviewApproved:
 		return true
-	case ChangesRequested:
+	case IssueDevelopmentPullRequestsReviewChangesRequested:
 		return true
 	default:
 		return false
@@ -2369,20 +2465,29 @@ func (e NotificationCategory) Valid() bool {
 
 // Defines values for NotificationDetailsKind.
 const (
+	NotificationDetailsKindApproval  NotificationDetailsKind = "approval"
+	NotificationDetailsKindBudget    NotificationDetailsKind = "budget"
 	NotificationDetailsKindCommented NotificationDetailsKind = "commented"
 	NotificationDetailsKindCreated   NotificationDetailsKind = "created"
 	NotificationDetailsKindPublished NotificationDetailsKind = "published"
+	NotificationDetailsKindReview    NotificationDetailsKind = "review"
 	NotificationDetailsKindUpdated   NotificationDetailsKind = "updated"
 )
 
 // Valid indicates whether the value is a known member of the NotificationDetailsKind enum.
 func (e NotificationDetailsKind) Valid() bool {
 	switch e {
+	case NotificationDetailsKindApproval:
+		return true
+	case NotificationDetailsKindBudget:
+		return true
 	case NotificationDetailsKindCommented:
 		return true
 	case NotificationDetailsKindCreated:
 		return true
 	case NotificationDetailsKindPublished:
+		return true
+	case NotificationDetailsKindReview:
 		return true
 	case NotificationDetailsKindUpdated:
 		return true
@@ -3414,6 +3519,48 @@ func (e ReportConfigInput11Period) Valid() bool {
 	}
 }
 
+// Defines values for ReviewStatus.
+const (
+	ReviewStatusApproved         ReviewStatus = "approved"
+	ReviewStatusCancelled        ReviewStatus = "cancelled"
+	ReviewStatusChangesRequested ReviewStatus = "changes_requested"
+	ReviewStatusRequested        ReviewStatus = "requested"
+)
+
+// Valid indicates whether the value is a known member of the ReviewStatus enum.
+func (e ReviewStatus) Valid() bool {
+	switch e {
+	case ReviewStatusApproved:
+		return true
+	case ReviewStatusCancelled:
+		return true
+	case ReviewStatusChangesRequested:
+		return true
+	case ReviewStatusRequested:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ReviewVerdictRequestVerdict.
+const (
+	ReviewVerdictRequestVerdictApproved         ReviewVerdictRequestVerdict = "approved"
+	ReviewVerdictRequestVerdictChangesRequested ReviewVerdictRequestVerdict = "changes_requested"
+)
+
+// Valid indicates whether the value is a known member of the ReviewVerdictRequestVerdict enum.
+func (e ReviewVerdictRequestVerdict) Valid() bool {
+	switch e {
+	case ReviewVerdictRequestVerdictApproved:
+		return true
+	case ReviewVerdictRequestVerdictChangesRequested:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RichTextType.
 const (
 	Doc RichTextType = "doc"
@@ -3663,6 +3810,45 @@ func (e SprintState) Valid() bool {
 	case SprintStateClosed:
 		return true
 	case SprintStateFuture:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SprintApprovalAction.
+const (
+	SprintApprovalActionComplete SprintApprovalAction = "complete"
+	SprintApprovalActionStart    SprintApprovalAction = "start"
+)
+
+// Valid indicates whether the value is a known member of the SprintApprovalAction enum.
+func (e SprintApprovalAction) Valid() bool {
+	switch e {
+	case SprintApprovalActionComplete:
+		return true
+	case SprintApprovalActionStart:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SprintApprovalStatus.
+const (
+	SprintApprovalStatusApproved SprintApprovalStatus = "approved"
+	SprintApprovalStatusPending  SprintApprovalStatus = "pending"
+	SprintApprovalStatusRejected SprintApprovalStatus = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the SprintApprovalStatus enum.
+func (e SprintApprovalStatus) Valid() bool {
+	switch e {
+	case SprintApprovalStatusApproved:
+		return true
+	case SprintApprovalStatusPending:
+		return true
+	case SprintApprovalStatusRejected:
 		return true
 	default:
 		return false
@@ -5457,6 +5643,27 @@ func (e ProjectsListIssuesParamsStatus) Valid() bool {
 	}
 }
 
+// Defines values for SprintsListApprovalsParamsStatus.
+const (
+	SprintsListApprovalsParamsStatusApproved SprintsListApprovalsParamsStatus = "approved"
+	SprintsListApprovalsParamsStatusPending  SprintsListApprovalsParamsStatus = "pending"
+	SprintsListApprovalsParamsStatusRejected SprintsListApprovalsParamsStatus = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the SprintsListApprovalsParamsStatus enum.
+func (e SprintsListApprovalsParamsStatus) Valid() bool {
+	switch e {
+	case SprintsListApprovalsParamsStatusApproved:
+		return true
+	case SprintsListApprovalsParamsStatusPending:
+		return true
+	case SprintsListApprovalsParamsStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchSearchEverythingParamsType.
 const (
 	SearchSearchEverythingParamsTypeIssue   SearchSearchEverythingParamsType = "issue"
@@ -5701,11 +5908,13 @@ type AdminToken struct {
 
 // Agent defines model for Agent.
 type Agent struct {
+	Budget      AgentBudget        `json:"budget"`
 	CreatedAt   time.Time          `json:"createdAt"`
 	DisplayName string             `json:"displayName"`
 	Id          openapi_types.UUID `json:"id"`
 	Model       string             `json:"model"`
 	Owner       *UserRef           `json:"owner"`
+	Paused      *AgentPause        `json:"paused"`
 	Status      AgentStatus        `json:"status"`
 	TaskFilter  string             `json:"taskFilter"`
 	Vendor      string             `json:"vendor"`
@@ -5714,6 +5923,99 @@ type Agent struct {
 
 // AgentStatus defines model for Agent.Status.
 type AgentStatus string
+
+// AgentActivity defines model for AgentActivity.
+type AgentActivity struct {
+	At     time.Time `json:"at"`
+	Detail string    `json:"detail"`
+	Issue  *struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	Kind   AgentActivityKind `json:"kind"`
+	Ok     bool              `json:"ok"`
+	Status *int              `json:"status"`
+	Title  string            `json:"title"`
+}
+
+// AgentActivityKind defines model for AgentActivity.Kind.
+type AgentActivityKind string
+
+// AgentActivityPage defines model for AgentActivityPage.
+type AgentActivityPage struct {
+	Entries []AgentActivity `json:"entries"`
+	Next    *time.Time      `json:"next"`
+}
+
+// AgentBudget defines model for AgentBudget.
+type AgentBudget struct {
+	Day   BudgetLimits `json:"day"`
+	Month BudgetLimits `json:"month"`
+}
+
+// AgentBudgetInput defines model for AgentBudgetInput.
+type AgentBudgetInput struct {
+	Day   *BudgetLimitsInput `json:"day,omitempty"`
+	Month *BudgetLimitsInput `json:"month,omitempty"`
+}
+
+// AgentOverview defines model for AgentOverview.
+type AgentOverview struct {
+	Agent    Agent    `json:"agent"`
+	Failures int      `json:"failures"`
+	Presence Presence `json:"presence"`
+	Question *struct {
+		Issue *struct {
+			Key     string `json:"key"`
+			Summary string `json:"summary"`
+		} `json:"issue"`
+		Note  string                     `json:"note"`
+		Since time.Time                  `json:"since"`
+		State AgentOverviewQuestionState `json:"state"`
+	} `json:"question"`
+	Throughput int        `json:"throughput"`
+	Usage      AgentUsage `json:"usage"`
+}
+
+// AgentOverviewQuestionState defines model for AgentOverview.Question.State.
+type AgentOverviewQuestionState string
+
+// AgentPause defines model for AgentPause.
+type AgentPause struct {
+	At     time.Time `json:"at"`
+	By     *UserRef  `json:"by"`
+	Reason string    `json:"reason"`
+}
+
+// AgentRights defines model for AgentRights.
+type AgentRights struct {
+	Groups   []string `json:"groups"`
+	Projects []struct {
+		Key         string              `json:"key"`
+		Name        string              `json:"name"`
+		Paused      bool                `json:"paused"`
+		Permissions []ProjectPermission `json:"permissions"`
+		Roles       []AgentRole         `json:"roles"`
+	} `json:"projects"`
+	Tokens []struct {
+		ExpiresAt  *time.Time `json:"expiresAt"`
+		LastUsedAt *time.Time `json:"lastUsedAt"`
+		Name       string     `json:"name"`
+		Scopes     []string   `json:"scopes"`
+	} `json:"tokens"`
+}
+
+// AgentRole defines model for AgentRole.
+type AgentRole string
+
+// AgentUsage defines model for AgentUsage.
+type AgentUsage struct {
+	Budget   AgentBudget `json:"budget"`
+	Day      BudgetUsage `json:"day"`
+	Exceeded []string    `json:"exceeded"`
+	Month    BudgetUsage `json:"month"`
+	Paused   *AgentPause `json:"paused"`
+}
 
 // AgentWebhook defines model for AgentWebhook.
 type AgentWebhook struct {
@@ -6300,6 +6602,27 @@ type BoardSummary struct {
 // BoardSummaryType defines model for BoardSummary.Type.
 type BoardSummaryType string
 
+// BudgetLimits defines model for BudgetLimits.
+type BudgetLimits struct {
+	Cost    *float32 `json:"cost"`
+	Issues  *int     `json:"issues"`
+	Minutes *int     `json:"minutes"`
+}
+
+// BudgetLimitsInput defines model for BudgetLimitsInput.
+type BudgetLimitsInput struct {
+	Cost    *float32 `json:"cost,omitempty"`
+	Issues  *int     `json:"issues,omitempty"`
+	Minutes *int     `json:"minutes,omitempty"`
+}
+
+// BudgetUsage defines model for BudgetUsage.
+type BudgetUsage struct {
+	Cost    float32 `json:"cost"`
+	Issues  int     `json:"issues"`
+	Minutes int     `json:"minutes"`
+}
+
 // BulkAction defines model for BulkAction.
 type BulkAction struct {
 	union json.RawMessage
@@ -6783,6 +7106,11 @@ type CreateProjectRequest struct {
 	Template    ProjectTemplate `json:"template"`
 }
 
+// CreateReviewRequest defines model for CreateReviewRequest.
+type CreateReviewRequest struct {
+	Reviewer *string `json:"reviewer,omitempty"`
+}
+
 // CreateScenarioRequest defines model for CreateScenarioRequest.
 type CreateScenarioRequest struct {
 	Name string `json:"name"`
@@ -7004,6 +7332,12 @@ type DashboardSummary struct {
 	} `json:"owner"`
 	Shares    []FilterShare `json:"shares"`
 	UpdatedAt time.Time     `json:"updatedAt"`
+}
+
+// DecideApprovalRequest defines model for DecideApprovalRequest.
+type DecideApprovalRequest struct {
+	Approve bool    `json:"approve"`
+	Reason  *string `json:"reason,omitempty"`
 }
 
 // DevelopmentSummary defines model for DevelopmentSummary.
@@ -7815,6 +8149,29 @@ type Issue_CustomFields_AdditionalProperties struct {
 	union json.RawMessage
 }
 
+// IssueApproval defines model for IssueApproval.
+type IssueApproval struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	DecidedAt *time.Time         `json:"decidedAt"`
+	DecidedBy *UserRef           `json:"decidedBy"`
+	Id        openapi_types.UUID `json:"id"`
+	Issue     struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	ProjectKey  string              `json:"projectKey"`
+	Reason      string              `json:"reason"`
+	RequestedBy UserRef             `json:"requestedBy"`
+	Status      IssueApprovalStatus `json:"status"`
+	ToStatus    struct {
+		Id   openapi_types.UUID `json:"id"`
+		Name string             `json:"name"`
+	} `json:"toStatus"`
+}
+
+// IssueApprovalStatus defines model for IssueApproval.Status.
+type IssueApprovalStatus string
+
 // IssueColumns defines model for IssueColumns.
 type IssueColumns struct {
 	Columns []IssueColumns_Columns_Item `json:"columns"`
@@ -8296,6 +8653,7 @@ type MoveToSprintRequest struct {
 // Notification defines model for Notification.
 type Notification struct {
 	Actor     *UserRef             `json:"actor"`
+	Agent     *UserRef             `json:"agent"`
 	Category  NotificationCategory `json:"category"`
 	CreatedAt time.Time            `json:"createdAt"`
 	Details   NotificationDetails  `json:"details"`
@@ -8309,7 +8667,12 @@ type Notification struct {
 		SpaceKey string `json:"spaceKey"`
 		Title    string `json:"title"`
 	} `json:"page"`
-	Read bool `json:"read"`
+	Read   bool `json:"read"`
+	Sprint *struct {
+		BoardId string `json:"boardId"`
+		Id      string `json:"id"`
+		Name    string `json:"name"`
+	} `json:"sprint"`
 }
 
 // NotificationCategory defines model for NotificationCategory.
@@ -8740,12 +9103,23 @@ type PasswordChanged struct {
 	EndedSessions int `json:"endedSessions"`
 }
 
+// PauseRequest defines model for PauseRequest.
+type PauseRequest struct {
+	Reason *string `json:"reason,omitempty"`
+}
+
 // PendingApproval defines model for PendingApproval.
 type PendingApproval struct {
 	Author      *UserRef           `json:"author"`
 	PageId      openapi_types.UUID `json:"pageId"`
 	SubmittedAt time.Time          `json:"submittedAt"`
 	Title       string             `json:"title"`
+}
+
+// PendingApprovals defines model for PendingApprovals.
+type PendingApprovals struct {
+	Issues  []IssueApproval  `json:"issues"`
+	Sprints []SprintApproval `json:"sprints"`
 }
 
 // PeriodRequest defines model for PeriodRequest.
@@ -8999,6 +9373,25 @@ type Problem struct {
 	Status         int                  `json:"status"`
 	Title          string               `json:"title"`
 	Type           string               `json:"type"`
+}
+
+// ProjectAgent defines model for ProjectAgent.
+type ProjectAgent struct {
+	Agent  UserRef     `json:"agent"`
+	Roles  []AgentRole `json:"roles"`
+	Vendor string      `json:"vendor"`
+}
+
+// ProjectAgentSettings defines model for ProjectAgentSettings.
+type ProjectAgentSettings struct {
+	Agents           []ProjectAgent       `json:"agents"`
+	ApprovalStatuses []openapi_types.UUID `json:"approvalStatuses"`
+	Paused           *AgentPause          `json:"paused"`
+	ReviewStatuses   struct {
+		Approved         *openapi_types.UUID `json:"approved"`
+		ChangesRequested *openapi_types.UUID `json:"changesRequested"`
+	} `json:"reviewStatuses"`
+	SprintApproval bool `json:"sprintApproval"`
 }
 
 // ProjectCustomFieldsRequest defines model for ProjectCustomFieldsRequest.
@@ -9673,6 +10066,11 @@ type ReportConfigInput11Kind string
 // ReportConfigInput11Period defines model for ReportConfigInput.11.Period.
 type ReportConfigInput11Period string
 
+// ReportUsageRequest defines model for ReportUsageRequest.
+type ReportUsageRequest struct {
+	Cost float32 `json:"cost"`
+}
+
 // RequestType defines model for RequestType.
 type RequestType struct {
 	Description string             `json:"description"`
@@ -9736,6 +10134,39 @@ type RetentionSettingsInput struct {
 	TrashDays   *int `json:"trashDays,omitempty"`
 	VersionDays *int `json:"versionDays,omitempty"`
 }
+
+// ReviewRequest defines model for ReviewRequest.
+type ReviewRequest struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	DecidedAt *time.Time         `json:"decidedAt"`
+	Id        openapi_types.UUID `json:"id"`
+	Issue     struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	PullRequest *struct {
+		Review *string `json:"review"`
+		State  string  `json:"state"`
+		Title  string  `json:"title"`
+		Url    *string `json:"url"`
+	} `json:"pullRequest"`
+	Requester UserRef      `json:"requester"`
+	Reviewer  UserRef      `json:"reviewer"`
+	Status    ReviewStatus `json:"status"`
+	Verdict   string       `json:"verdict"`
+}
+
+// ReviewStatus defines model for ReviewStatus.
+type ReviewStatus string
+
+// ReviewVerdictRequest defines model for ReviewVerdictRequest.
+type ReviewVerdictRequest struct {
+	Body    string                      `json:"body"`
+	Verdict ReviewVerdictRequestVerdict `json:"verdict"`
+}
+
+// ReviewVerdictRequestVerdict defines model for ReviewVerdictRequest.Verdict.
+type ReviewVerdictRequestVerdict string
 
 // RichText defines model for RichText.
 type RichText struct {
@@ -10086,6 +10517,11 @@ type SessionInfo struct {
 	UserAgent  *string   `json:"userAgent"`
 }
 
+// SetAgentRolesRequest defines model for SetAgentRolesRequest.
+type SetAgentRolesRequest struct {
+	Roles []AgentRole `json:"roles"`
+}
+
 // SetApprovalModeRequest defines model for SetApprovalModeRequest.
 type SetApprovalModeRequest struct {
 	Mode SetApprovalModeRequestMode `json:"mode"`
@@ -10258,6 +10694,30 @@ type Sprint struct {
 
 // SprintState defines model for Sprint.State.
 type SprintState string
+
+// SprintApproval defines model for SprintApproval.
+type SprintApproval struct {
+	Action      SprintApprovalAction `json:"action"`
+	CreatedAt   time.Time            `json:"createdAt"`
+	DecidedAt   *time.Time           `json:"decidedAt"`
+	DecidedBy   *UserRef             `json:"decidedBy"`
+	Id          openapi_types.UUID   `json:"id"`
+	ProjectKey  string               `json:"projectKey"`
+	Reason      string               `json:"reason"`
+	RequestedBy UserRef              `json:"requestedBy"`
+	Sprint      struct {
+		BoardId openapi_types.UUID `json:"boardId"`
+		Id      openapi_types.UUID `json:"id"`
+		Name    string             `json:"name"`
+	} `json:"sprint"`
+	Status SprintApprovalStatus `json:"status"`
+}
+
+// SprintApprovalAction defines model for SprintApproval.Action.
+type SprintApprovalAction string
+
+// SprintApprovalStatus defines model for SprintApproval.Status.
+type SprintApprovalStatus string
 
 // SprintCapacity defines model for SprintCapacity.
 type SprintCapacity struct {
@@ -10782,6 +11242,7 @@ type UnreadCount struct {
 
 // UpdateAgentRequest defines model for UpdateAgentRequest.
 type UpdateAgentRequest struct {
+	Budget      *AgentBudgetInput   `json:"budget,omitempty"`
 	DisplayName *string             `json:"displayName,omitempty"`
 	Model       *string             `json:"model,omitempty"`
 	OwnerId     *openapi_types.UUID `json:"ownerId,omitempty"`
@@ -10990,6 +11451,16 @@ type UpdatePresenceRequest struct {
 	IssueKey *string       `json:"issueKey,omitempty"`
 	Note     *string       `json:"note,omitempty"`
 	State    PresenceState `json:"state"`
+}
+
+// UpdateProjectAgentSettings defines model for UpdateProjectAgentSettings.
+type UpdateProjectAgentSettings struct {
+	ApprovalStatuses *[]openapi_types.UUID `json:"approvalStatuses,omitempty"`
+	ReviewStatuses   *struct {
+		Approved         *openapi_types.UUID `json:"approved"`
+		ChangesRequested *openapi_types.UUID `json:"changesRequested"`
+	} `json:"reviewStatuses,omitempty"`
+	SprintApproval *bool `json:"sprintApproval,omitempty"`
 }
 
 // UpdateSecuritySchemeRequest defines model for UpdateSecuritySchemeRequest.
@@ -11578,6 +12049,13 @@ type WebhooksDeliveriesParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AgentsAgentActivityParams defines parameters for AgentsAgentActivity.
+type AgentsAgentActivityParams struct {
+	Before   *time.Time `form:"before,omitempty" json:"before,omitempty"`
+	Limit    *int       `form:"limit,omitempty" json:"limit,omitempty"`
+	Failures *string    `form:"failures,omitempty" json:"failures,omitempty"`
+}
+
 // AutomationListParams defines parameters for AutomationList.
 type AutomationListParams struct {
 	Project *string `form:"project,omitempty" json:"project,omitempty"`
@@ -11698,6 +12176,11 @@ type PersonalRecentParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// AgentsMyReviewsParams defines parameters for AgentsMyReviews.
+type AgentsMyReviewsParams struct {
+	Status *ReviewStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
 // OAuthClientParams defines parameters for OAuthClient.
 type OAuthClientParams struct {
 	ClientId    string  `form:"client_id" json:"client_id"`
@@ -11774,6 +12257,14 @@ type ProjectsListIssuesParams struct {
 
 // ProjectsListIssuesParamsStatus defines parameters for ProjectsListIssues.
 type ProjectsListIssuesParamsStatus string
+
+// SprintsListApprovalsParams defines parameters for SprintsListApprovals.
+type SprintsListApprovalsParams struct {
+	Status *SprintsListApprovalsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// SprintsListApprovalsParamsStatus defines parameters for SprintsListApprovals.
+type SprintsListApprovalsParamsStatus string
 
 // ProjectsUsersParams defines parameters for ProjectsUsers.
 type ProjectsUsersParams struct {
@@ -12033,6 +12524,12 @@ type AgentsCreateJSONRequestBody = CreateAgentRequest
 // AgentsUpdateJSONRequestBody defines body for AgentsUpdate for application/json ContentType.
 type AgentsUpdateJSONRequestBody = UpdateAgentRequest
 
+// AgentsSetBudgetJSONRequestBody defines body for AgentsSetBudget for application/json ContentType.
+type AgentsSetBudgetJSONRequestBody = AgentBudgetInput
+
+// AgentsPauseJSONRequestBody defines body for AgentsPause for application/json ContentType.
+type AgentsPauseJSONRequestBody = PauseRequest
+
 // AgentsCreateTokenJSONRequestBody defines body for AgentsCreateToken for application/json ContentType.
 type AgentsCreateTokenJSONRequestBody = CreateTokenRequest
 
@@ -12102,6 +12599,9 @@ type InvitationsInviteJSONRequestBody = CreateInvitationRequest
 // InvitationsAcceptJSONRequestBody defines body for InvitationsAccept for application/json ContentType.
 type InvitationsAcceptJSONRequestBody = AcceptInvitationRequest
 
+// AgentsDecideIssueApprovalJSONRequestBody defines body for AgentsDecideIssueApproval for application/json ContentType.
+type AgentsDecideIssueApprovalJSONRequestBody = DecideApprovalRequest
+
 // IssuesCreateJSONRequestBody defines body for IssuesCreate for application/json ContentType.
 type IssuesCreateJSONRequestBody = CreateIssueRequest
 
@@ -12153,6 +12653,9 @@ type IssuesMoveJSONRequestBody = MoveIssueRequest
 // IssuesRankJSONRequestBody defines body for IssuesRank for application/json ContentType.
 type IssuesRankJSONRequestBody = RankIssueRequest
 
+// AgentsRequestReviewJSONRequestBody defines body for AgentsRequestReview for application/json ContentType.
+type AgentsRequestReviewJSONRequestBody = CreateReviewRequest
+
 // IssuesTransitionJSONRequestBody defines body for IssuesTransition for application/json ContentType.
 type IssuesTransitionJSONRequestBody = TransitionRequest
 
@@ -12200,6 +12703,9 @@ type TimeTrackingStopJSONRequestBody = StopTimerRequest
 
 // MeCreateTokenJSONRequestBody defines body for MeCreateToken for application/json ContentType.
 type MeCreateTokenJSONRequestBody = CreateTokenRequest
+
+// AgentsReportUsageJSONRequestBody defines body for AgentsReportUsage for application/json ContentType.
+type AgentsReportUsageJSONRequestBody = ReportUsageRequest
 
 // OAuthConsentJSONRequestBody defines body for OAuthConsent for application/json ContentType.
 type OAuthConsentJSONRequestBody = OAuthConsentRequest
@@ -12275,6 +12781,15 @@ type PortalPortalCommentJSONRequestBody = PortalCommentRequest
 
 // ProjectsCreateJSONRequestBody defines body for ProjectsCreate for application/json ContentType.
 type ProjectsCreateJSONRequestBody = CreateProjectRequest
+
+// AgentsUpdateAgentSettingsJSONRequestBody defines body for AgentsUpdateAgentSettings for application/json ContentType.
+type AgentsUpdateAgentSettingsJSONRequestBody = UpdateProjectAgentSettings
+
+// AgentsPauseAgentsJSONRequestBody defines body for AgentsPauseAgents for application/json ContentType.
+type AgentsPauseAgentsJSONRequestBody = PauseRequest
+
+// AgentsSetAgentRolesJSONRequestBody defines body for AgentsSetAgentRoles for application/json ContentType.
+type AgentsSetAgentRolesJSONRequestBody = SetAgentRolesRequest
 
 // AgentsClaimNextJSONRequestBody defines body for AgentsClaimNext for application/json ContentType.
 type AgentsClaimNextJSONRequestBody = ClaimNextRequest
@@ -12360,6 +12875,9 @@ type ReportsTimePivotJSONRequestBody = TimePivotRequest
 // ReportsTimeReportJSONRequestBody defines body for ReportsTimeReport for application/json ContentType.
 type ReportsTimeReportJSONRequestBody = TimeReportRequest
 
+// AgentsReviewVerdictJSONRequestBody defines body for AgentsReviewVerdict for application/json ContentType.
+type AgentsReviewVerdictJSONRequestBody = ReviewVerdictRequest
+
 // SearchRunJSONRequestBody defines body for SearchRun for application/json ContentType.
 type SearchRunJSONRequestBody = SearchRequest
 
@@ -12389,6 +12907,9 @@ type WikiSetSpacePrintTemplateJSONRequestBody = SpacePrintTemplateRequest
 
 // TemplatesCreateInSpaceJSONRequestBody defines body for TemplatesCreateInSpace for application/json ContentType.
 type TemplatesCreateInSpaceJSONRequestBody = SavePageTemplateRequest
+
+// SprintsDecideJSONRequestBody defines body for SprintsDecide for application/json ContentType.
+type SprintsDecideJSONRequestBody = DecideApprovalRequest
 
 // SprintsMoveJSONRequestBody defines body for SprintsMove for application/json ContentType.
 type SprintsMoveJSONRequestBody = MoveToSprintRequest
@@ -19633,6 +20154,15 @@ type ClientInterface interface {
 	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
 	AgentsCreate(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsOverview The agents dashboard
+	//
+	// Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.
+	//
+	// Requires the global permission `browse-users`.
+	//
+	// Corresponds with GET /api/v1/agents/overview (the `AgentsOverview` operationId).
+	AgentsOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AgentsUpdateWithBody Change an AI agent
 	//
 	// Requires the global permission `admin`.
@@ -19650,6 +20180,61 @@ type ClientInterface interface {
 	//
 	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
 	AgentsUpdate(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsAgentActivity Get the history of an AI agent
+	//
+	// Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.
+	//
+	// Corresponds with GET /api/v1/agents/{id}/activity (the `AgentsAgentActivity` operationId).
+	AgentsAgentActivity(ctx context.Context, id string, params *AgentsAgentActivityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetBudgetWithBody Set the budget of an AI agent
+	//
+	// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+	AgentsSetBudgetWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetBudget Set the budget of an AI agent
+	//
+	// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+	AgentsSetBudget(ctx context.Context, id string, body AgentsSetBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsResume Let a paused AI agent work again
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/pause (the `AgentsResume` operationId).
+	AgentsResume(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsPauseWithBody Pause an AI agent (Not-Aus)
+	//
+	// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+	AgentsPauseWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsPause Pause an AI agent (Not-Aus)
+	//
+	// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+	AgentsPause(ctx context.Context, id string, body AgentsPauseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsAgentRights Get what an AI agent may do
+	//
+	// Its groups, the projects it sees with permissions and roles, and its live tokens.
+	//
+	// Corresponds with GET /api/v1/agents/{id}/rights (the `AgentsAgentRights` operationId).
+	AgentsAgentRights(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AgentsListTokens List the tokens of an AI agent
 	//
@@ -19681,6 +20266,13 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
 	AgentsRevokeToken(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsAgentUsage Get the budget use of an AI agent
+	//
+	// For the agent, its responsible person and administrators.
+	//
+	// Corresponds with GET /api/v1/agents/{id}/usage (the `AgentsAgentUsage` operationId).
+	AgentsAgentUsage(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AgentsRemoveWebhook Remove the webhook of an AI agent
 	//
 	// Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
@@ -19703,6 +20295,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
 	AgentsSetWebhook(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsPendingApprovals List what waits for the caller’s approval
+	//
+	// Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.
+	//
+	// Corresponds with GET /api/v1/approvals/pending (the `AgentsPendingApprovals` operationId).
+	AgentsPendingApprovals(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AppsListApps Enabled apps with their panels, macros and gadgets
 	//
@@ -20244,6 +20843,24 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/invitations/{id} (the `InvitationsRevoke` operationId).
 	InvitationsRevoke(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsDecideIssueApprovalWithBody Approve or reject a transition an agent asked for
+	//
+	// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+	AgentsDecideIssueApprovalWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsDecideIssueApproval Approve or reject a transition an agent asked for
+	//
+	// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+	AgentsDecideIssueApproval(ctx context.Context, id string, body AgentsDecideIssueApprovalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// IssuesCreateWithBody Create an issue
 	//
 	// Takes any type of body and a specified content type.
@@ -20355,6 +20972,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with PATCH /api/v1/issues/{key} (the `IssuesUpdate` operationId).
 	IssuesUpdate(ctx context.Context, key string, params *IssuesUpdateParams, body IssuesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsListIssueApprovals List the transition approval requests of an issue
+	//
+	// Corresponds with GET /api/v1/issues/{key}/approvals (the `AgentsListIssueApprovals` operationId).
+	AgentsListIssueApprovals(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// IssuesList List the attachments of an issue
 	//
@@ -20622,6 +21244,29 @@ type ClientInterface interface {
 	// Corresponds with POST /api/v1/issues/{key}/restore (the `IssuesRestore` operationId).
 	IssuesRestore(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsIssueReviews List the reviews of an issue
+	//
+	// Corresponds with GET /api/v1/issues/{key}/reviews (the `AgentsIssueReviews` operationId).
+	AgentsIssueReviews(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsRequestReviewWithBody Ask for a review of an issue’s work
+	//
+	// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+	AgentsRequestReviewWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsRequestReview Ask for a review of an issue’s work
+	//
+	// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+	AgentsRequestReview(ctx context.Context, key string, body AgentsRequestReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ServiceDeskIssueSla The SLA clocks of a request
 	//
 	// Corresponds with GET /api/v1/issues/{key}/sla (the `ServiceDeskIssueSla` operationId).
@@ -20639,12 +21284,16 @@ type ClientInterface interface {
 
 	// IssuesTransitionWithBody Move an issue to another status
 	//
+	// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /api/v1/issues/{key}/transitions (the `IssuesTransition` operationId).
 	IssuesTransitionWithBody(ctx context.Context, key string, params *IssuesTransitionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// IssuesTransition Move an issue to another status
+	//
+	// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20968,6 +21617,13 @@ type ClientInterface interface {
 	// Corresponds with POST /api/v1/me/recent (the `PersonalRecord` operationId).
 	PersonalRecord(ctx context.Context, body PersonalRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsMyReviews List the reviews the caller is asked for
+	//
+	// Waiting ones by default, oldest first.
+	//
+	// Corresponds with GET /api/v1/me/reviews (the `AgentsMyReviews` operationId).
+	AgentsMyReviews(ctx context.Context, params *AgentsMyReviewsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MeRevokeOtherSessions End all other sessions of the signed-in user
 	//
 	// Corresponds with DELETE /api/v1/me/sessions (the `MeRevokeOtherSessions` operationId).
@@ -21035,6 +21691,31 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /api/v1/me/tokens/{id} (the `MeRevokeToken` operationId).
 	MeRevokeToken(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsMyUsage Get the caller’s own budget use
+	//
+	// For agents: what counts against their budget today and this month.
+	//
+	// Corresponds with GET /api/v1/me/usage (the `AgentsMyUsage` operationId).
+	AgentsMyUsage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsReportUsageWithBody Report the cost of a run
+	//
+	// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+	AgentsReportUsageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsReportUsage Report the cost of a run
+	//
+	// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+	AgentsReportUsage(ctx context.Context, body AgentsReportUsageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// OAuthClient Describe a client asking for access
 	//
@@ -21622,6 +22303,72 @@ type ClientInterface interface {
 	// Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
 	ProjectsGet(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsGetAgentSettings Get the agent settings of a project
+	//
+	// Whether agents need approval to start and complete sprints, and the roles of agents in the project. An agent without roles counts as implementer.
+	//
+	// Corresponds with GET /api/v1/projects/{key}/agent-settings (the `AgentsGetAgentSettings` operationId).
+	AgentsGetAgentSettings(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsUpdateAgentSettingsWithBody Change the agent settings of a project
+	//
+	// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+	AgentsUpdateAgentSettingsWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsUpdateAgentSettings Change the agent settings of a project
+	//
+	// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+	AgentsUpdateAgentSettings(ctx context.Context, key string, body AgentsUpdateAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsResumeAgents Let the agents of the project work again
+	//
+	// Corresponds with DELETE /api/v1/projects/{key}/agent-settings/pause (the `AgentsResumeAgents` operationId).
+	AgentsResumeAgents(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsPauseAgentsWithBody Pause all agents in the project (Not-Aus)
+	//
+	// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+	AgentsPauseAgentsWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsPauseAgents Pause all agents in the project (Not-Aus)
+	//
+	// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+	AgentsPauseAgents(ctx context.Context, key string, body AgentsPauseAgentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetAgentRolesWithBody Set the roles of an agent in the project
+	//
+	// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+	AgentsSetAgentRolesWithBody(ctx context.Context, key string, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetAgentRoles Set the roles of an agent in the project
+	//
+	// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+	AgentsSetAgentRoles(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AgentsClaimNextWithBody Claim the next fitting issue of a project
 	//
 	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
@@ -21961,6 +22708,11 @@ type ClientInterface interface {
 	// Corresponds with GET /api/v1/projects/{key}/spaces (the `SpacesOfProject` operationId).
 	SpacesOfProject(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SprintsListApprovals List the sprint approval requests of agents in a project
+	//
+	// Corresponds with GET /api/v1/projects/{key}/sprint-approvals (the `SprintsListApprovals` operationId).
+	SprintsListApprovals(ctx context.Context, key string, params *SprintsListApprovalsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AgentsTeam Who works in the project
 	//
 	// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
@@ -22240,6 +22992,29 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/reports/time-tracking (the `ReportsTimeReport` operationId).
 	ReportsTimeReport(ctx context.Context, body ReportsTimeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsCancelReview Withdraw a waiting review request
+	//
+	// Corresponds with DELETE /api/v1/reviews/{id} (the `AgentsCancelReview` operationId).
+	AgentsCancelReview(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsReviewVerdictWithBody Give the verdict of a review
+	//
+	// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+	AgentsReviewVerdictWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsReviewVerdict Give the verdict of a review
+	//
+	// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+	AgentsReviewVerdict(ctx context.Context, id string, body AgentsReviewVerdictJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchRunWithBody Search issues with TQL
 	//
@@ -22527,6 +23302,24 @@ type ClientInterface interface {
 	// Corresponds with PUT /api/v1/spaces/{key}/watch (the `SpacesWatch` operationId).
 	SpacesWatch(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SprintsDecideWithBody Approve or reject an agent’s sprint request
+	//
+	// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+	SprintsDecideWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SprintsDecide Approve or reject an agent’s sprint request
+	//
+	// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+	SprintsDecide(ctx context.Context, id string, body SprintsDecideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SprintsMoveWithBody Move issues into a sprint or (sprintId null) to the backlog
 	//
 	// Each issue leaves its current open sprint; the change is in its history.
@@ -22594,7 +23387,7 @@ type ClientInterface interface {
 
 	// SprintsStartWithBody Start a planned sprint
 	//
-	// One sprint runs per board. The estimates at this moment are the commitment.
+	// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -22603,7 +23396,7 @@ type ClientInterface interface {
 
 	// SprintsStart Start a planned sprint
 	//
-	// One sprint runs per board. The estimates at this moment are the commitment.
+	// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -25789,6 +26582,25 @@ func (c *Client) AgentsCreate(ctx context.Context, body AgentsCreateJSONRequestB
 	return c.Client.Do(req)
 }
 
+// AgentsOverview The agents dashboard
+//
+// Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.
+//
+// Requires the global permission `browse-users`.
+//
+// Corresponds with GET /api/v1/agents/overview (the `AgentsOverview` operationId).
+func (c *Client) AgentsOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsOverviewRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AgentsUpdateWithBody Change an AI agent
 //
 // Requires the global permission `admin`.
@@ -25817,6 +26629,131 @@ func (c *Client) AgentsUpdateWithBody(ctx context.Context, id string, contentTyp
 // Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
 func (c *Client) AgentsUpdate(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAgentsUpdateRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsAgentActivity Get the history of an AI agent
+//
+// Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.
+//
+// Corresponds with GET /api/v1/agents/{id}/activity (the `AgentsAgentActivity` operationId).
+func (c *Client) AgentsAgentActivity(ctx context.Context, id string, params *AgentsAgentActivityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsAgentActivityRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetBudgetWithBody Set the budget of an AI agent
+//
+// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+func (c *Client) AgentsSetBudgetWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetBudgetRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetBudget Set the budget of an AI agent
+//
+// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+func (c *Client) AgentsSetBudget(ctx context.Context, id string, body AgentsSetBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetBudgetRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsResume Let a paused AI agent work again
+//
+// Corresponds with DELETE /api/v1/agents/{id}/pause (the `AgentsResume` operationId).
+func (c *Client) AgentsResume(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsResumeRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsPauseWithBody Pause an AI agent (Not-Aus)
+//
+// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+func (c *Client) AgentsPauseWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsPauseRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsPause Pause an AI agent (Not-Aus)
+//
+// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+func (c *Client) AgentsPause(ctx context.Context, id string, body AgentsPauseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsPauseRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsAgentRights Get what an AI agent may do
+//
+// Its groups, the projects it sees with permissions and roles, and its live tokens.
+//
+// Corresponds with GET /api/v1/agents/{id}/rights (the `AgentsAgentRights` operationId).
+func (c *Client) AgentsAgentRights(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsAgentRightsRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -25897,6 +26834,23 @@ func (c *Client) AgentsRevokeToken(ctx context.Context, id string, tokenId strin
 	return c.Client.Do(req)
 }
 
+// AgentsAgentUsage Get the budget use of an AI agent
+//
+// For the agent, its responsible person and administrators.
+//
+// Corresponds with GET /api/v1/agents/{id}/usage (the `AgentsAgentUsage` operationId).
+func (c *Client) AgentsAgentUsage(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsAgentUsageRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AgentsRemoveWebhook Remove the webhook of an AI agent
 //
 // Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
@@ -25940,6 +26894,23 @@ func (c *Client) AgentsSetWebhookWithBody(ctx context.Context, id string, conten
 // Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
 func (c *Client) AgentsSetWebhook(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAgentsSetWebhookRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsPendingApprovals List what waits for the caller’s approval
+//
+// Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.
+//
+// Corresponds with GET /api/v1/approvals/pending (the `AgentsPendingApprovals` operationId).
+func (c *Client) AgentsPendingApprovals(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsPendingApprovalsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -27290,6 +28261,44 @@ func (c *Client) InvitationsRevoke(ctx context.Context, id string, reqEditors ..
 	return c.Client.Do(req)
 }
 
+// AgentsDecideIssueApprovalWithBody Approve or reject a transition an agent asked for
+//
+// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+func (c *Client) AgentsDecideIssueApprovalWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsDecideIssueApprovalRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsDecideIssueApproval Approve or reject a transition an agent asked for
+//
+// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+func (c *Client) AgentsDecideIssueApproval(ctx context.Context, id string, body AgentsDecideIssueApprovalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsDecideIssueApprovalRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // IssuesCreateWithBody Create an issue
 //
 // Takes any type of body and a specified content type.
@@ -27532,6 +28541,21 @@ func (c *Client) IssuesUpdateWithBody(ctx context.Context, key string, params *I
 // Corresponds with PATCH /api/v1/issues/{key} (the `IssuesUpdate` operationId).
 func (c *Client) IssuesUpdate(ctx context.Context, key string, params *IssuesUpdateParams, body IssuesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewIssuesUpdateRequest(c.Server, key, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsListIssueApprovals List the transition approval requests of an issue
+//
+// Corresponds with GET /api/v1/issues/{key}/approvals (the `AgentsListIssueApprovals` operationId).
+func (c *Client) AgentsListIssueApprovals(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsListIssueApprovalsRequest(c.Server, key)
 	if err != nil {
 		return nil, err
 	}
@@ -28168,6 +29192,59 @@ func (c *Client) IssuesRestore(ctx context.Context, key string, reqEditors ...Re
 	return c.Client.Do(req)
 }
 
+// AgentsIssueReviews List the reviews of an issue
+//
+// Corresponds with GET /api/v1/issues/{key}/reviews (the `AgentsIssueReviews` operationId).
+func (c *Client) AgentsIssueReviews(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsIssueReviewsRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsRequestReviewWithBody Ask for a review of an issue’s work
+//
+// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+func (c *Client) AgentsRequestReviewWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsRequestReviewRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsRequestReview Ask for a review of an issue’s work
+//
+// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+func (c *Client) AgentsRequestReview(ctx context.Context, key string, body AgentsRequestReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsRequestReviewRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ServiceDeskIssueSla The SLA clocks of a request
 //
 // Corresponds with GET /api/v1/issues/{key}/sla (the `ServiceDeskIssueSla` operationId).
@@ -28215,6 +29292,8 @@ func (c *Client) IssuesTransitions(ctx context.Context, key string, reqEditors .
 
 // IssuesTransitionWithBody Move an issue to another status
 //
+// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /api/v1/issues/{key}/transitions (the `IssuesTransition` operationId).
@@ -28231,6 +29310,8 @@ func (c *Client) IssuesTransitionWithBody(ctx context.Context, key string, param
 }
 
 // IssuesTransition Move an issue to another status
+//
+// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -29034,6 +30115,23 @@ func (c *Client) PersonalRecord(ctx context.Context, body PersonalRecordJSONRequ
 	return c.Client.Do(req)
 }
 
+// AgentsMyReviews List the reviews the caller is asked for
+//
+// Waiting ones by default, oldest first.
+//
+// Corresponds with GET /api/v1/me/reviews (the `AgentsMyReviews` operationId).
+func (c *Client) AgentsMyReviews(ctx context.Context, params *AgentsMyReviewsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsMyReviewsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // MeRevokeOtherSessions End all other sessions of the signed-in user
 //
 // Corresponds with DELETE /api/v1/me/sessions (the `MeRevokeOtherSessions` operationId).
@@ -29212,6 +30310,61 @@ func (c *Client) MeCreateToken(ctx context.Context, body MeCreateTokenJSONReques
 // Corresponds with DELETE /api/v1/me/tokens/{id} (the `MeRevokeToken` operationId).
 func (c *Client) MeRevokeToken(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMeRevokeTokenRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsMyUsage Get the caller’s own budget use
+//
+// For agents: what counts against their budget today and this month.
+//
+// Corresponds with GET /api/v1/me/usage (the `AgentsMyUsage` operationId).
+func (c *Client) AgentsMyUsage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsMyUsageRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsReportUsageWithBody Report the cost of a run
+//
+// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+func (c *Client) AgentsReportUsageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsReportUsageRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsReportUsage Report the cost of a run
+//
+// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+func (c *Client) AgentsReportUsage(ctx context.Context, body AgentsReportUsageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsReportUsageRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -30648,6 +31801,152 @@ func (c *Client) ProjectsGet(ctx context.Context, key string, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
+// AgentsGetAgentSettings Get the agent settings of a project
+//
+// Whether agents need approval to start and complete sprints, and the roles of agents in the project. An agent without roles counts as implementer.
+//
+// Corresponds with GET /api/v1/projects/{key}/agent-settings (the `AgentsGetAgentSettings` operationId).
+func (c *Client) AgentsGetAgentSettings(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsGetAgentSettingsRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsUpdateAgentSettingsWithBody Change the agent settings of a project
+//
+// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+func (c *Client) AgentsUpdateAgentSettingsWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsUpdateAgentSettingsRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsUpdateAgentSettings Change the agent settings of a project
+//
+// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+func (c *Client) AgentsUpdateAgentSettings(ctx context.Context, key string, body AgentsUpdateAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsUpdateAgentSettingsRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsResumeAgents Let the agents of the project work again
+//
+// Corresponds with DELETE /api/v1/projects/{key}/agent-settings/pause (the `AgentsResumeAgents` operationId).
+func (c *Client) AgentsResumeAgents(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsResumeAgentsRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsPauseAgentsWithBody Pause all agents in the project (Not-Aus)
+//
+// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+func (c *Client) AgentsPauseAgentsWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsPauseAgentsRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsPauseAgents Pause all agents in the project (Not-Aus)
+//
+// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+func (c *Client) AgentsPauseAgents(ctx context.Context, key string, body AgentsPauseAgentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsPauseAgentsRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetAgentRolesWithBody Set the roles of an agent in the project
+//
+// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+func (c *Client) AgentsSetAgentRolesWithBody(ctx context.Context, key string, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetAgentRolesRequestWithBody(c.Server, key, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetAgentRoles Set the roles of an agent in the project
+//
+// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+func (c *Client) AgentsSetAgentRoles(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetAgentRolesRequest(c.Server, key, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AgentsClaimNextWithBody Claim the next fitting issue of a project
 //
 // One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
@@ -31457,6 +32756,21 @@ func (c *Client) SpacesOfProject(ctx context.Context, key string, reqEditors ...
 	return c.Client.Do(req)
 }
 
+// SprintsListApprovals List the sprint approval requests of agents in a project
+//
+// Corresponds with GET /api/v1/projects/{key}/sprint-approvals (the `SprintsListApprovals` operationId).
+func (c *Client) SprintsListApprovals(ctx context.Context, key string, params *SprintsListApprovalsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSprintsListApprovalsRequest(c.Server, key, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AgentsTeam Who works in the project
 //
 // People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
@@ -32107,6 +33421,59 @@ func (c *Client) ReportsTimeReportWithBody(ctx context.Context, contentType stri
 // Corresponds with POST /api/v1/reports/time-tracking (the `ReportsTimeReport` operationId).
 func (c *Client) ReportsTimeReport(ctx context.Context, body ReportsTimeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewReportsTimeReportRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsCancelReview Withdraw a waiting review request
+//
+// Corresponds with DELETE /api/v1/reviews/{id} (the `AgentsCancelReview` operationId).
+func (c *Client) AgentsCancelReview(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsCancelReviewRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsReviewVerdictWithBody Give the verdict of a review
+//
+// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+func (c *Client) AgentsReviewVerdictWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsReviewVerdictRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsReviewVerdict Give the verdict of a review
+//
+// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+func (c *Client) AgentsReviewVerdict(ctx context.Context, id string, body AgentsReviewVerdictJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsReviewVerdictRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -32803,6 +34170,44 @@ func (c *Client) SpacesWatch(ctx context.Context, key string, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
+// SprintsDecideWithBody Approve or reject an agent’s sprint request
+//
+// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+func (c *Client) SprintsDecideWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSprintsDecideRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SprintsDecide Approve or reject an agent’s sprint request
+//
+// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+func (c *Client) SprintsDecide(ctx context.Context, id string, body SprintsDecideJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSprintsDecideRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // SprintsMoveWithBody Move issues into a sprint or (sprintId null) to the backlog
 //
 // Each issue leaves its current open sprint; the change is in its history.
@@ -32960,7 +34365,7 @@ func (c *Client) ReportsReport(ctx context.Context, id string, reqEditors ...Req
 
 // SprintsStartWithBody Start a planned sprint
 //
-// One sprint runs per board. The estimates at this moment are the commitment.
+// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 //
 // Takes any type of body and a specified content type.
 //
@@ -32979,7 +34384,7 @@ func (c *Client) SprintsStartWithBody(ctx context.Context, id string, contentTyp
 
 // SprintsStart Start a planned sprint
 //
-// One sprint runs per board. The estimates at this moment are the commitment.
+// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -37509,6 +38914,33 @@ func NewAgentsCreateRequestWithBody(server string, contentType string, body io.R
 	return req, nil
 }
 
+// NewAgentsOverviewRequest constructs an http.Request for the AgentsOverview method
+func NewAgentsOverviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/overview")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAgentsUpdateRequest calls the generic AgentsUpdate builder with application/json body
 func NewAgentsUpdateRequest(server string, id string, body AgentsUpdateJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -37552,6 +38984,253 @@ func NewAgentsUpdateRequestWithBody(server string, id string, contentType string
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsAgentActivityRequest constructs an http.Request for the AgentsAgentActivity method
+func NewAgentsAgentActivityRequest(server string, id string, params *AgentsAgentActivityParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/activity", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Before != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before", *params.Before, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "date-time"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Failures != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "failures", *params.Failures, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsSetBudgetRequest calls the generic AgentsSetBudget builder with application/json body
+func NewAgentsSetBudgetRequest(server string, id string, body AgentsSetBudgetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsSetBudgetRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsSetBudgetRequestWithBody constructs an http.Request for the AgentsSetBudget method, with any body, and a specified content type
+func NewAgentsSetBudgetRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/budget", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsResumeRequest constructs an http.Request for the AgentsResume method
+func NewAgentsResumeRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsPauseRequest calls the generic AgentsPause builder with application/json body
+func NewAgentsPauseRequest(server string, id string, body AgentsPauseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsPauseRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsPauseRequestWithBody constructs an http.Request for the AgentsPause method, with any body, and a specified content type
+func NewAgentsPauseRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsAgentRightsRequest constructs an http.Request for the AgentsAgentRights method
+func NewAgentsAgentRightsRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/rights", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -37678,6 +39357,40 @@ func NewAgentsRevokeTokenRequest(server string, id string, tokenId string) (*htt
 	return req, nil
 }
 
+// NewAgentsAgentUsageRequest constructs an http.Request for the AgentsAgentUsage method
+func NewAgentsAgentUsageRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/usage", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAgentsRemoveWebhookRequest constructs an http.Request for the AgentsRemoveWebhook method
 func NewAgentsRemoveWebhookRequest(server string, id string) (*http.Request, error) {
 	var err error
@@ -37755,6 +39468,33 @@ func NewAgentsSetWebhookRequestWithBody(server string, id string, contentType st
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsPendingApprovalsRequest constructs an http.Request for the AgentsPendingApprovals method
+func NewAgentsPendingApprovalsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/approvals/pending")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -40072,6 +41812,53 @@ func NewInvitationsRevokeRequest(server string, id string) (*http.Request, error
 	return req, nil
 }
 
+// NewAgentsDecideIssueApprovalRequest calls the generic AgentsDecideIssueApproval builder with application/json body
+func NewAgentsDecideIssueApprovalRequest(server string, id string, body AgentsDecideIssueApprovalJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsDecideIssueApprovalRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsDecideIssueApprovalRequestWithBody constructs an http.Request for the AgentsDecideIssueApproval method, with any body, and a specified content type
+func NewAgentsDecideIssueApprovalRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issue-approvals/%s/decision", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewIssuesCreateRequest calls the generic IssuesCreate builder with application/json body
 func NewIssuesCreateRequest(server string, params *IssuesCreateParams, body IssuesCreateJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -40464,6 +42251,40 @@ func NewIssuesUpdateRequestWithBody(server string, key string, params *IssuesUpd
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsListIssueApprovalsRequest constructs an http.Request for the AgentsListIssueApprovals method
+func NewAgentsListIssueApprovalsRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/approvals", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -41589,6 +43410,87 @@ func NewIssuesRestoreRequest(server string, key string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewAgentsIssueReviewsRequest constructs an http.Request for the AgentsIssueReviews method
+func NewAgentsIssueReviewsRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/reviews", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsRequestReviewRequest calls the generic AgentsRequestReview builder with application/json body
+func NewAgentsRequestReviewRequest(server string, key string, body AgentsRequestReviewJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsRequestReviewRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsRequestReviewRequestWithBody constructs an http.Request for the AgentsRequestReview method, with any body, and a specified content type
+func NewAgentsRequestReviewRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/reviews", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -43083,6 +44985,60 @@ func NewPersonalRecordRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
+// NewAgentsMyReviewsRequest constructs an http.Request for the AgentsMyReviews method
+func NewAgentsMyReviewsRequest(server string, params *AgentsMyReviewsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/reviews")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMeRevokeOtherSessionsRequest constructs an http.Request for the MeRevokeOtherSessions method
 func NewMeRevokeOtherSessionsRequest(server string) (*http.Request, error) {
 	var err error
@@ -43389,6 +45345,73 @@ func NewMeRevokeTokenRequest(server string, id string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewAgentsMyUsageRequest constructs an http.Request for the AgentsMyUsage method
+func NewAgentsMyUsageRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/usage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsReportUsageRequest calls the generic AgentsReportUsage builder with application/json body
+func NewAgentsReportUsageRequest(server string, body AgentsReportUsageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsReportUsageRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAgentsReportUsageRequestWithBody constructs an http.Request for the AgentsReportUsage method, with any body, and a specified content type
+func NewAgentsReportUsageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/usage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -46002,6 +48025,222 @@ func NewProjectsGetRequest(server string, key string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewAgentsGetAgentSettingsRequest constructs an http.Request for the AgentsGetAgentSettings method
+func NewAgentsGetAgentSettingsRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/agent-settings", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsUpdateAgentSettingsRequest calls the generic AgentsUpdateAgentSettings builder with application/json body
+func NewAgentsUpdateAgentSettingsRequest(server string, key string, body AgentsUpdateAgentSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsUpdateAgentSettingsRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsUpdateAgentSettingsRequestWithBody constructs an http.Request for the AgentsUpdateAgentSettings method, with any body, and a specified content type
+func NewAgentsUpdateAgentSettingsRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/agent-settings", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsResumeAgentsRequest constructs an http.Request for the AgentsResumeAgents method
+func NewAgentsResumeAgentsRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/agent-settings/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsPauseAgentsRequest calls the generic AgentsPauseAgents builder with application/json body
+func NewAgentsPauseAgentsRequest(server string, key string, body AgentsPauseAgentsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsPauseAgentsRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsPauseAgentsRequestWithBody constructs an http.Request for the AgentsPauseAgents method, with any body, and a specified content type
+func NewAgentsPauseAgentsRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/agent-settings/pause", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsSetAgentRolesRequest calls the generic AgentsSetAgentRoles builder with application/json body
+func NewAgentsSetAgentRolesRequest(server string, key string, userId string, body AgentsSetAgentRolesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsSetAgentRolesRequestWithBody(server, key, userId, "application/json", bodyReader)
+}
+
+// NewAgentsSetAgentRolesRequestWithBody constructs an http.Request for the AgentsSetAgentRoles method, with any body, and a specified content type
+func NewAgentsSetAgentRolesRequestWithBody(server string, key string, userId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "userId", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/agent-settings/roles/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAgentsClaimNextRequest calls the generic AgentsClaimNext builder with application/json body
 func NewAgentsClaimNextRequest(server string, key string, body AgentsClaimNextJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -47463,6 +49702,67 @@ func NewSpacesOfProjectRequest(server string, key string) (*http.Request, error)
 	return req, nil
 }
 
+// NewSprintsListApprovalsRequest constructs an http.Request for the SprintsListApprovals method
+func NewSprintsListApprovalsRequest(server string, key string, params *SprintsListApprovalsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/sprint-approvals", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAgentsTeamRequest constructs an http.Request for the AgentsTeam method
 func NewAgentsTeamRequest(server string, key string) (*http.Request, error) {
 	var err error
@@ -48507,6 +50807,87 @@ func NewReportsTimeReportRequestWithBody(server string, contentType string, body
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/reports/time-tracking")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsCancelReviewRequest constructs an http.Request for the AgentsCancelReview method
+func NewAgentsCancelReviewRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/reviews/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsReviewVerdictRequest calls the generic AgentsReviewVerdict builder with application/json body
+func NewAgentsReviewVerdictRequest(server string, id string, body AgentsReviewVerdictJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsReviewVerdictRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsReviewVerdictRequestWithBody constructs an http.Request for the AgentsReviewVerdict method, with any body, and a specified content type
+func NewAgentsReviewVerdictRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/reviews/%s/verdict", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -49869,6 +52250,53 @@ func NewSpacesWatchRequest(server string, key string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSprintsDecideRequest calls the generic SprintsDecide builder with application/json body
+func NewSprintsDecideRequest(server string, id string, body SprintsDecideJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSprintsDecideRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewSprintsDecideRequestWithBody constructs an http.Request for the SprintsDecide method, with any body, and a specified content type
+func NewSprintsDecideRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/sprint-approvals/%s/decision", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -52285,6 +54713,17 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
 	AgentsCreateWithResponse(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsCreateHTTPResponse, error)
 
+	// AgentsOverviewWithResponse The agents dashboard
+	//
+	// Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.
+	//
+	// Requires the global permission `browse-users`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents/overview (the `AgentsOverview` operationId).
+	AgentsOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsOverviewHTTPResponse, error)
+
 	// AgentsUpdateWithBodyWithResponse Change an AI agent
 	//
 	// Requires the global permission `admin`.
@@ -52302,6 +54741,67 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
 	AgentsUpdateWithResponse(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsUpdateHTTPResponse, error)
+
+	// AgentsAgentActivityWithResponse Get the history of an AI agent
+	//
+	// Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents/{id}/activity (the `AgentsAgentActivity` operationId).
+	AgentsAgentActivityWithResponse(ctx context.Context, id string, params *AgentsAgentActivityParams, reqEditors ...RequestEditorFn) (*AgentsAgentActivityHTTPResponse, error)
+
+	// AgentsSetBudgetWithBodyWithResponse Set the budget of an AI agent
+	//
+	// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+	AgentsSetBudgetWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetBudgetHTTPResponse, error)
+
+	// AgentsSetBudgetWithResponse Set the budget of an AI agent
+	//
+	// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+	AgentsSetBudgetWithResponse(ctx context.Context, id string, body AgentsSetBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetBudgetHTTPResponse, error)
+
+	// AgentsResumeWithResponse Let a paused AI agent work again
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/pause (the `AgentsResume` operationId).
+	AgentsResumeWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsResumeHTTPResponse, error)
+
+	// AgentsPauseWithBodyWithResponse Pause an AI agent (Not-Aus)
+	//
+	// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+	AgentsPauseWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsPauseHTTPResponse, error)
+
+	// AgentsPauseWithResponse Pause an AI agent (Not-Aus)
+	//
+	// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+	AgentsPauseWithResponse(ctx context.Context, id string, body AgentsPauseJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsPauseHTTPResponse, error)
+
+	// AgentsAgentRightsWithResponse Get what an AI agent may do
+	//
+	// Its groups, the projects it sees with permissions and roles, and its live tokens.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents/{id}/rights (the `AgentsAgentRights` operationId).
+	AgentsAgentRightsWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsAgentRightsHTTPResponse, error)
 
 	// AgentsListTokensWithResponse List the tokens of an AI agent
 	//
@@ -52337,6 +54837,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
 	AgentsRevokeTokenWithResponse(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*AgentsRevokeTokenHTTPResponse, error)
 
+	// AgentsAgentUsageWithResponse Get the budget use of an AI agent
+	//
+	// For the agent, its responsible person and administrators.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents/{id}/usage (the `AgentsAgentUsage` operationId).
+	AgentsAgentUsageWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsAgentUsageHTTPResponse, error)
+
 	// AgentsRemoveWebhookWithResponse Remove the webhook of an AI agent
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52361,6 +54870,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
 	AgentsSetWebhookWithResponse(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetWebhookHTTPResponse, error)
+
+	// AgentsPendingApprovalsWithResponse List what waits for the caller’s approval
+	//
+	// Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/approvals/pending (the `AgentsPendingApprovals` operationId).
+	AgentsPendingApprovalsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsPendingApprovalsHTTPResponse, error)
 
 	// AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
 	//
@@ -52978,6 +55496,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/invitations/{id} (the `InvitationsRevoke` operationId).
 	InvitationsRevokeWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*InvitationsRevokeHTTPResponse, error)
 
+	// AgentsDecideIssueApprovalWithBodyWithResponse Approve or reject a transition an agent asked for
+	//
+	// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+	AgentsDecideIssueApprovalWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsDecideIssueApprovalHTTPResponse, error)
+
+	// AgentsDecideIssueApprovalWithResponse Approve or reject a transition an agent asked for
+	//
+	// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+	AgentsDecideIssueApprovalWithResponse(ctx context.Context, id string, body AgentsDecideIssueApprovalJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsDecideIssueApprovalHTTPResponse, error)
+
 	// IssuesCreateWithBodyWithResponse Create an issue
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -53093,6 +55629,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PATCH /api/v1/issues/{key} (the `IssuesUpdate` operationId).
 	IssuesUpdateWithResponse(ctx context.Context, key string, params *IssuesUpdateParams, body IssuesUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*IssuesUpdateHTTPResponse, error)
+
+	// AgentsListIssueApprovalsWithResponse List the transition approval requests of an issue
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/issues/{key}/approvals (the `AgentsListIssueApprovals` operationId).
+	AgentsListIssueApprovalsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsListIssueApprovalsHTTPResponse, error)
 
 	// IssuesListWithResponse List the attachments of an issue
 	//
@@ -53390,6 +55933,31 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/v1/issues/{key}/restore (the `IssuesRestore` operationId).
 	IssuesRestoreWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*IssuesRestoreHTTPResponse, error)
 
+	// AgentsIssueReviewsWithResponse List the reviews of an issue
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/issues/{key}/reviews (the `AgentsIssueReviews` operationId).
+	AgentsIssueReviewsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsIssueReviewsHTTPResponse, error)
+
+	// AgentsRequestReviewWithBodyWithResponse Ask for a review of an issue’s work
+	//
+	// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+	AgentsRequestReviewWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsRequestReviewHTTPResponse, error)
+
+	// AgentsRequestReviewWithResponse Ask for a review of an issue’s work
+	//
+	// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+	AgentsRequestReviewWithResponse(ctx context.Context, key string, body AgentsRequestReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsRequestReviewHTTPResponse, error)
+
 	// ServiceDeskIssueSlaWithResponse The SLA clocks of a request
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -53413,12 +55981,16 @@ type ClientWithResponsesInterface interface {
 
 	// IssuesTransitionWithBodyWithResponse Move an issue to another status
 	//
+	// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /api/v1/issues/{key}/transitions (the `IssuesTransition` operationId).
 	IssuesTransitionWithBodyWithResponse(ctx context.Context, key string, params *IssuesTransitionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*IssuesTransitionHTTPResponse, error)
 
 	// IssuesTransitionWithResponse Move an issue to another status
+	//
+	// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53784,6 +56356,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/v1/me/recent (the `PersonalRecord` operationId).
 	PersonalRecordWithResponse(ctx context.Context, body PersonalRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*PersonalRecordHTTPResponse, error)
 
+	// AgentsMyReviewsWithResponse List the reviews the caller is asked for
+	//
+	// Waiting ones by default, oldest first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/me/reviews (the `AgentsMyReviews` operationId).
+	AgentsMyReviewsWithResponse(ctx context.Context, params *AgentsMyReviewsParams, reqEditors ...RequestEditorFn) (*AgentsMyReviewsHTTPResponse, error)
+
 	// MeRevokeOtherSessionsWithResponse End all other sessions of the signed-in user
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -53867,6 +56448,33 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /api/v1/me/tokens/{id} (the `MeRevokeToken` operationId).
 	MeRevokeTokenWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*MeRevokeTokenHTTPResponse, error)
+
+	// AgentsMyUsageWithResponse Get the caller’s own budget use
+	//
+	// For agents: what counts against their budget today and this month.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/me/usage (the `AgentsMyUsage` operationId).
+	AgentsMyUsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsMyUsageHTTPResponse, error)
+
+	// AgentsReportUsageWithBodyWithResponse Report the cost of a run
+	//
+	// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+	AgentsReportUsageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsReportUsageHTTPResponse, error)
+
+	// AgentsReportUsageWithResponse Report the cost of a run
+	//
+	// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+	AgentsReportUsageWithResponse(ctx context.Context, body AgentsReportUsageJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsReportUsageHTTPResponse, error)
 
 	// OAuthClientWithResponse Describe a client asking for access
 	//
@@ -54524,6 +57132,76 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
 	ProjectsGetWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ProjectsGetHTTPResponse, error)
 
+	// AgentsGetAgentSettingsWithResponse Get the agent settings of a project
+	//
+	// Whether agents need approval to start and complete sprints, and the roles of agents in the project. An agent without roles counts as implementer.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/projects/{key}/agent-settings (the `AgentsGetAgentSettings` operationId).
+	AgentsGetAgentSettingsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsGetAgentSettingsHTTPResponse, error)
+
+	// AgentsUpdateAgentSettingsWithBodyWithResponse Change the agent settings of a project
+	//
+	// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+	AgentsUpdateAgentSettingsWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsUpdateAgentSettingsHTTPResponse, error)
+
+	// AgentsUpdateAgentSettingsWithResponse Change the agent settings of a project
+	//
+	// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+	AgentsUpdateAgentSettingsWithResponse(ctx context.Context, key string, body AgentsUpdateAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsUpdateAgentSettingsHTTPResponse, error)
+
+	// AgentsResumeAgentsWithResponse Let the agents of the project work again
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/projects/{key}/agent-settings/pause (the `AgentsResumeAgents` operationId).
+	AgentsResumeAgentsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsResumeAgentsHTTPResponse, error)
+
+	// AgentsPauseAgentsWithBodyWithResponse Pause all agents in the project (Not-Aus)
+	//
+	// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+	AgentsPauseAgentsWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsPauseAgentsHTTPResponse, error)
+
+	// AgentsPauseAgentsWithResponse Pause all agents in the project (Not-Aus)
+	//
+	// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+	AgentsPauseAgentsWithResponse(ctx context.Context, key string, body AgentsPauseAgentsJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsPauseAgentsHTTPResponse, error)
+
+	// AgentsSetAgentRolesWithBodyWithResponse Set the roles of an agent in the project
+	//
+	// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+	AgentsSetAgentRolesWithBodyWithResponse(ctx context.Context, key string, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetAgentRolesHTTPResponse, error)
+
+	// AgentsSetAgentRolesWithResponse Set the roles of an agent in the project
+	//
+	// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+	AgentsSetAgentRolesWithResponse(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetAgentRolesHTTPResponse, error)
+
 	// AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
 	//
 	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
@@ -54901,6 +57579,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /api/v1/projects/{key}/spaces (the `SpacesOfProject` operationId).
 	SpacesOfProjectWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*SpacesOfProjectHTTPResponse, error)
 
+	// SprintsListApprovalsWithResponse List the sprint approval requests of agents in a project
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/projects/{key}/sprint-approvals (the `SprintsListApprovals` operationId).
+	SprintsListApprovalsWithResponse(ctx context.Context, key string, params *SprintsListApprovalsParams, reqEditors ...RequestEditorFn) (*SprintsListApprovalsHTTPResponse, error)
+
 	// AgentsTeamWithResponse Who works in the project
 	//
 	// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
@@ -55200,6 +57885,31 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/reports/time-tracking (the `ReportsTimeReport` operationId).
 	ReportsTimeReportWithResponse(ctx context.Context, body ReportsTimeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*ReportsTimeReportHTTPResponse, error)
+
+	// AgentsCancelReviewWithResponse Withdraw a waiting review request
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/reviews/{id} (the `AgentsCancelReview` operationId).
+	AgentsCancelReviewWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsCancelReviewHTTPResponse, error)
+
+	// AgentsReviewVerdictWithBodyWithResponse Give the verdict of a review
+	//
+	// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+	AgentsReviewVerdictWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsReviewVerdictHTTPResponse, error)
+
+	// AgentsReviewVerdictWithResponse Give the verdict of a review
+	//
+	// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+	AgentsReviewVerdictWithResponse(ctx context.Context, id string, body AgentsReviewVerdictJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsReviewVerdictHTTPResponse, error)
 
 	// SearchRunWithBodyWithResponse Search issues with TQL
 	//
@@ -55529,6 +58239,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /api/v1/spaces/{key}/watch (the `SpacesWatch` operationId).
 	SpacesWatchWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*SpacesWatchHTTPResponse, error)
 
+	// SprintsDecideWithBodyWithResponse Approve or reject an agent’s sprint request
+	//
+	// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+	SprintsDecideWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SprintsDecideHTTPResponse, error)
+
+	// SprintsDecideWithResponse Approve or reject an agent’s sprint request
+	//
+	// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+	SprintsDecideWithResponse(ctx context.Context, id string, body SprintsDecideJSONRequestBody, reqEditors ...RequestEditorFn) (*SprintsDecideHTTPResponse, error)
+
 	// SprintsMoveWithBodyWithResponse Move issues into a sprint or (sprintId null) to the backlog
 	//
 	// Each issue leaves its current open sprint; the change is in its history.
@@ -55602,7 +58330,7 @@ type ClientWithResponsesInterface interface {
 
 	// SprintsStartWithBodyWithResponse Start a planned sprint
 	//
-	// One sprint runs per board. The estimates at this moment are the commitment.
+	// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -55611,7 +58339,7 @@ type ClientWithResponsesInterface interface {
 
 	// SprintsStartWithResponse Start a planned sprint
 	//
-	// One sprint runs per board. The estimates at this moment are the commitment.
+	// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -61254,6 +63982,54 @@ func (r AgentsCreateHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsOverviewHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]AgentOverview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsOverviewHTTPResponse) GetJSON200() *[]AgentOverview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsOverviewHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsOverviewHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsOverviewHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsOverviewHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsOverviewHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AgentsUpdateHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -61296,6 +64072,246 @@ func (r AgentsUpdateHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AgentsUpdateHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsAgentActivityHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentActivityPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsAgentActivityHTTPResponse) GetJSON200() *AgentActivityPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsAgentActivityHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsAgentActivityHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsAgentActivityHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsAgentActivityHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsAgentActivityHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsSetBudgetHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsSetBudgetHTTPResponse) GetJSON200() *Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsSetBudgetHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsSetBudgetHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsSetBudgetHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsSetBudgetHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsSetBudgetHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsResumeHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsResumeHTTPResponse) GetJSON200() *Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsResumeHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsResumeHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsResumeHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsResumeHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsResumeHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsPauseHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsPauseHTTPResponse) GetJSON200() *Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsPauseHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsPauseHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsPauseHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsPauseHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsPauseHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsAgentRightsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentRights
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsAgentRightsHTTPResponse) GetJSON200() *AgentRights {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsAgentRightsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsAgentRightsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsAgentRightsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsAgentRightsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsAgentRightsHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -61439,6 +64455,54 @@ func (r AgentsRevokeTokenHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsAgentUsageHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentUsage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsAgentUsageHTTPResponse) GetJSON200() *AgentUsage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsAgentUsageHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsAgentUsageHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsAgentUsageHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsAgentUsageHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsAgentUsageHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AgentsRemoveWebhookHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -61522,6 +64586,54 @@ func (r AgentsSetWebhookHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AgentsSetWebhookHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsPendingApprovalsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *PendingApprovals
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsPendingApprovalsHTTPResponse) GetJSON200() *PendingApprovals {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsPendingApprovalsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsPendingApprovalsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsPendingApprovalsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsPendingApprovalsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsPendingApprovalsHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64263,6 +67375,54 @@ func (r InvitationsRevokeHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsDecideIssueApprovalHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueApproval
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsDecideIssueApprovalHTTPResponse) GetJSON200() *IssueApproval {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsDecideIssueApprovalHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsDecideIssueApprovalHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsDecideIssueApprovalHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsDecideIssueApprovalHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsDecideIssueApprovalHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type IssuesCreateHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -64634,6 +67794,54 @@ func (r IssuesUpdateHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r IssuesUpdateHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsListIssueApprovalsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]IssueApproval
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsListIssueApprovalsHTTPResponse) GetJSON200() *[]IssueApproval {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsListIssueApprovalsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsListIssueApprovalsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsListIssueApprovalsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsListIssueApprovalsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsListIssueApprovalsHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -65846,6 +69054,102 @@ func (r IssuesRestoreHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsIssueReviewsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]ReviewRequest
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsIssueReviewsHTTPResponse) GetJSON200() *[]ReviewRequest {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsIssueReviewsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsIssueReviewsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsIssueReviewsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsIssueReviewsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsIssueReviewsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsRequestReviewHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *ReviewRequest
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AgentsRequestReviewHTTPResponse) GetJSON201() *ReviewRequest {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsRequestReviewHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsRequestReviewHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsRequestReviewHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsRequestReviewHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsRequestReviewHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ServiceDeskIssueSlaHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -65999,6 +69303,8 @@ type IssuesTransitionHTTPResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *Issue
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *IssueApproval
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 }
@@ -66006,6 +69312,11 @@ type IssuesTransitionHTTPResponse struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r IssuesTransitionHTTPResponse) GetJSON200() *Issue {
 	return r.JSON200
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r IssuesTransitionHTTPResponse) GetJSON202() *IssueApproval {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -67604,6 +70915,54 @@ func (r PersonalRecordHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsMyReviewsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]ReviewRequest
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsMyReviewsHTTPResponse) GetJSON200() *[]ReviewRequest {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsMyReviewsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsMyReviewsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsMyReviewsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsMyReviewsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsMyReviewsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type MeRevokeOtherSessionsHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -68050,6 +71409,102 @@ func (r MeRevokeTokenHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MeRevokeTokenHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsMyUsageHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentUsage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsMyUsageHTTPResponse) GetJSON200() *AgentUsage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsMyUsageHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsMyUsageHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsMyUsageHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsMyUsageHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsMyUsageHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsReportUsageHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentUsage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsReportUsageHTTPResponse) GetJSON200() *AgentUsage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsReportUsageHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsReportUsageHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsReportUsageHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsReportUsageHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsReportUsageHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -70873,6 +74328,246 @@ func (r ProjectsGetHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsGetAgentSettingsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectAgentSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsGetAgentSettingsHTTPResponse) GetJSON200() *ProjectAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsGetAgentSettingsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsGetAgentSettingsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsGetAgentSettingsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsGetAgentSettingsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsGetAgentSettingsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsUpdateAgentSettingsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectAgentSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsUpdateAgentSettingsHTTPResponse) GetJSON200() *ProjectAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsUpdateAgentSettingsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsUpdateAgentSettingsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsUpdateAgentSettingsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsUpdateAgentSettingsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsUpdateAgentSettingsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsResumeAgentsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectAgentSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsResumeAgentsHTTPResponse) GetJSON200() *ProjectAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsResumeAgentsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsResumeAgentsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsResumeAgentsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsResumeAgentsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsResumeAgentsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsPauseAgentsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectAgentSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsPauseAgentsHTTPResponse) GetJSON200() *ProjectAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsPauseAgentsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsPauseAgentsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsPauseAgentsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsPauseAgentsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsPauseAgentsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsSetAgentRolesHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectAgentSettings
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsSetAgentRolesHTTPResponse) GetJSON200() *ProjectAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsSetAgentRolesHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsSetAgentRolesHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsSetAgentRolesHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsSetAgentRolesHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsSetAgentRolesHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AgentsClaimNextHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -72402,6 +76097,54 @@ func (r SpacesOfProjectHTTPResponse) ContentType() string {
 	return ""
 }
 
+type SprintsListApprovalsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]SprintApproval
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SprintsListApprovalsHTTPResponse) GetJSON200() *[]SprintApproval {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SprintsListApprovalsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SprintsListApprovalsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SprintsListApprovalsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SprintsListApprovalsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SprintsListApprovalsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AgentsTeamHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -73534,6 +77277,95 @@ func (r ReportsTimeReportHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ReportsTimeReportHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsCancelReviewHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsCancelReviewHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsCancelReviewHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsCancelReviewHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsCancelReviewHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsCancelReviewHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsReviewVerdictHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReviewRequest
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsReviewVerdictHTTPResponse) GetJSON200() *ReviewRequest {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsReviewVerdictHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsReviewVerdictHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsReviewVerdictHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsReviewVerdictHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsReviewVerdictHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75000,6 +78832,54 @@ func (r SpacesWatchHTTPResponse) ContentType() string {
 	return ""
 }
 
+type SprintsDecideHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *SprintApproval
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SprintsDecideHTTPResponse) GetJSON200() *SprintApproval {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SprintsDecideHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SprintsDecideHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SprintsDecideHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SprintsDecideHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SprintsDecideHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type SprintsMoveHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -75183,6 +79063,8 @@ type SprintsCompleteHTTPResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *Sprint
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *SprintApproval
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 }
@@ -75190,6 +79072,11 @@ type SprintsCompleteHTTPResponse struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r SprintsCompleteHTTPResponse) GetJSON200() *Sprint {
 	return r.JSON200
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r SprintsCompleteHTTPResponse) GetJSON202() *SprintApproval {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -75279,6 +79166,8 @@ type SprintsStartHTTPResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *Sprint
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *SprintApproval
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 }
@@ -75286,6 +79175,11 @@ type SprintsStartHTTPResponse struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r SprintsStartHTTPResponse) GetJSON200() *Sprint {
 	return r.JSON200
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r SprintsStartHTTPResponse) GetJSON202() *SprintApproval {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -78297,6 +82191,23 @@ func (c *ClientWithResponses) AgentsCreateWithResponse(ctx context.Context, body
 	return ParseAgentsCreateHTTPResponse(rsp)
 }
 
+// AgentsOverviewWithResponse The agents dashboard
+//
+// Every agent with its state and issue, budget use, issues resolved and failures (rejected writes, reviews with changes requested) in the last 7 days, and what it waits for.
+//
+// Requires the global permission `browse-users`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents/overview (the `AgentsOverview` operationId).
+func (c *ClientWithResponses) AgentsOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsOverviewHTTPResponse, error) {
+	rsp, err := c.AgentsOverview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsOverviewHTTPResponse(rsp)
+}
+
 // AgentsUpdateWithBodyWithResponse Change an AI agent
 //
 // Requires the global permission `admin`.
@@ -78325,6 +82236,109 @@ func (c *ClientWithResponses) AgentsUpdateWithResponse(ctx context.Context, id s
 		return nil, err
 	}
 	return ParseAgentsUpdateHTTPResponse(rsp)
+}
+
+// AgentsAgentActivityWithResponse Get the history of an AI agent
+//
+// Its writing and rejected requests (kept 90 days), changes, comments, reviews and approval requests, newest first; changes and comments only on issues the caller can see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents/{id}/activity (the `AgentsAgentActivity` operationId).
+func (c *ClientWithResponses) AgentsAgentActivityWithResponse(ctx context.Context, id string, params *AgentsAgentActivityParams, reqEditors ...RequestEditorFn) (*AgentsAgentActivityHTTPResponse, error) {
+	rsp, err := c.AgentsAgentActivity(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsAgentActivityHTTPResponse(rsp)
+}
+
+// AgentsSetBudgetWithBodyWithResponse Set the budget of an AI agent
+//
+// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+func (c *ClientWithResponses) AgentsSetBudgetWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetBudgetHTTPResponse, error) {
+	rsp, err := c.AgentsSetBudgetWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetBudgetHTTPResponse(rsp)
+}
+
+// AgentsSetBudgetWithResponse Set the budget of an AI agent
+//
+// Limits per day and month (UTC) for newly claimed issues, minutes holding claims and reported cost; null means none. The responsible person hears at 80 % and 100 %; while a limit is reached, new claims answer 409.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/budget (the `AgentsSetBudget` operationId).
+func (c *ClientWithResponses) AgentsSetBudgetWithResponse(ctx context.Context, id string, body AgentsSetBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetBudgetHTTPResponse, error) {
+	rsp, err := c.AgentsSetBudget(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetBudgetHTTPResponse(rsp)
+}
+
+// AgentsResumeWithResponse Let a paused AI agent work again
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/agents/{id}/pause (the `AgentsResume` operationId).
+func (c *ClientWithResponses) AgentsResumeWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsResumeHTTPResponse, error) {
+	rsp, err := c.AgentsResume(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsResumeHTTPResponse(rsp)
+}
+
+// AgentsPauseWithBodyWithResponse Pause an AI agent (Not-Aus)
+//
+// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+func (c *ClientWithResponses) AgentsPauseWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsPauseHTTPResponse, error) {
+	rsp, err := c.AgentsPauseWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsPauseHTTPResponse(rsp)
+}
+
+// AgentsPauseWithResponse Pause an AI agent (Not-Aus)
+//
+// For its responsible person and administrators. The agent then only reads: writing answers 423 with the reason, its claims end, its webhook rests and it takes no new work. Its tokens stay valid.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/pause (the `AgentsPause` operationId).
+func (c *ClientWithResponses) AgentsPauseWithResponse(ctx context.Context, id string, body AgentsPauseJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsPauseHTTPResponse, error) {
+	rsp, err := c.AgentsPause(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsPauseHTTPResponse(rsp)
+}
+
+// AgentsAgentRightsWithResponse Get what an AI agent may do
+//
+// Its groups, the projects it sees with permissions and roles, and its live tokens.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents/{id}/rights (the `AgentsAgentRights` operationId).
+func (c *ClientWithResponses) AgentsAgentRightsWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsAgentRightsHTTPResponse, error) {
+	rsp, err := c.AgentsAgentRights(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsAgentRightsHTTPResponse(rsp)
 }
 
 // AgentsListTokensWithResponse List the tokens of an AI agent
@@ -78385,6 +82399,21 @@ func (c *ClientWithResponses) AgentsRevokeTokenWithResponse(ctx context.Context,
 	return ParseAgentsRevokeTokenHTTPResponse(rsp)
 }
 
+// AgentsAgentUsageWithResponse Get the budget use of an AI agent
+//
+// For the agent, its responsible person and administrators.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents/{id}/usage (the `AgentsAgentUsage` operationId).
+func (c *ClientWithResponses) AgentsAgentUsageWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsAgentUsageHTTPResponse, error) {
+	rsp, err := c.AgentsAgentUsage(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsAgentUsageHTTPResponse(rsp)
+}
+
 // AgentsRemoveWebhookWithResponse Remove the webhook of an AI agent
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78426,6 +82455,21 @@ func (c *ClientWithResponses) AgentsSetWebhookWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseAgentsSetWebhookHTTPResponse(rsp)
+}
+
+// AgentsPendingApprovalsWithResponse List what waits for the caller’s approval
+//
+// Sprint starts and completions (where the caller has `edit-issues`) and transitions (with `transition-issues`) agents asked for.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/approvals/pending (the `AgentsPendingApprovals` operationId).
+func (c *ClientWithResponses) AgentsPendingApprovalsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsPendingApprovalsHTTPResponse, error) {
+	rsp, err := c.AgentsPendingApprovals(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsPendingApprovalsHTTPResponse(rsp)
 }
 
 // AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
@@ -79524,6 +83568,36 @@ func (c *ClientWithResponses) InvitationsRevokeWithResponse(ctx context.Context,
 	return ParseInvitationsRevokeHTTPResponse(rsp)
 }
 
+// AgentsDecideIssueApprovalWithBodyWithResponse Approve or reject a transition an agent asked for
+//
+// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+func (c *ClientWithResponses) AgentsDecideIssueApprovalWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsDecideIssueApprovalHTTPResponse, error) {
+	rsp, err := c.AgentsDecideIssueApprovalWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsDecideIssueApprovalHTTPResponse(rsp)
+}
+
+// AgentsDecideIssueApprovalWithResponse Approve or reject a transition an agent asked for
+//
+// For people who may move issues in the project. Approving moves the issue in the agent’s name; rejecting needs a reason, which the agent is told.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issue-approvals/{id}/decision (the `AgentsDecideIssueApproval` operationId).
+func (c *ClientWithResponses) AgentsDecideIssueApprovalWithResponse(ctx context.Context, id string, body AgentsDecideIssueApprovalJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsDecideIssueApprovalHTTPResponse, error) {
+	rsp, err := c.AgentsDecideIssueApproval(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsDecideIssueApprovalHTTPResponse(rsp)
+}
+
 // IssuesCreateWithBodyWithResponse Create an issue
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -79722,6 +83796,19 @@ func (c *ClientWithResponses) IssuesUpdateWithResponse(ctx context.Context, key 
 		return nil, err
 	}
 	return ParseIssuesUpdateHTTPResponse(rsp)
+}
+
+// AgentsListIssueApprovalsWithResponse List the transition approval requests of an issue
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/issues/{key}/approvals (the `AgentsListIssueApprovals` operationId).
+func (c *ClientWithResponses) AgentsListIssueApprovalsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsListIssueApprovalsHTTPResponse, error) {
+	rsp, err := c.AgentsListIssueApprovals(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsListIssueApprovalsHTTPResponse(rsp)
 }
 
 // IssuesListWithResponse List the attachments of an issue
@@ -80236,6 +84323,49 @@ func (c *ClientWithResponses) IssuesRestoreWithResponse(ctx context.Context, key
 	return ParseIssuesRestoreHTTPResponse(rsp)
 }
 
+// AgentsIssueReviewsWithResponse List the reviews of an issue
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/issues/{key}/reviews (the `AgentsIssueReviews` operationId).
+func (c *ClientWithResponses) AgentsIssueReviewsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsIssueReviewsHTTPResponse, error) {
+	rsp, err := c.AgentsIssueReviews(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsIssueReviewsHTTPResponse(rsp)
+}
+
+// AgentsRequestReviewWithBodyWithResponse Ask for a review of an issue’s work
+//
+// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+func (c *ClientWithResponses) AgentsRequestReviewWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsRequestReviewHTTPResponse, error) {
+	rsp, err := c.AgentsRequestReviewWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsRequestReviewHTTPResponse(rsp)
+}
+
+// AgentsRequestReviewWithResponse Ask for a review of an issue’s work
+//
+// Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/reviews (the `AgentsRequestReview` operationId).
+func (c *ClientWithResponses) AgentsRequestReviewWithResponse(ctx context.Context, key string, body AgentsRequestReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsRequestReviewHTTPResponse, error) {
+	rsp, err := c.AgentsRequestReview(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsRequestReviewHTTPResponse(rsp)
+}
+
 // ServiceDeskIssueSlaWithResponse The SLA clocks of a request
 //
 // Returns a wrapper object for the known response body format(s).
@@ -80277,6 +84407,8 @@ func (c *ClientWithResponses) IssuesTransitionsWithResponse(ctx context.Context,
 
 // IssuesTransitionWithBodyWithResponse Move an issue to another status
 //
+// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /api/v1/issues/{key}/transitions (the `IssuesTransition` operationId).
@@ -80289,6 +84421,8 @@ func (c *ClientWithResponses) IssuesTransitionWithBodyWithResponse(ctx context.C
 }
 
 // IssuesTransitionWithResponse Move an issue to another status
+//
+// Where the project keeps the target status for people, an agent gets 202 with the waiting request instead; the move happens once a person approves it.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -80942,6 +85076,21 @@ func (c *ClientWithResponses) PersonalRecordWithResponse(ctx context.Context, bo
 	return ParsePersonalRecordHTTPResponse(rsp)
 }
 
+// AgentsMyReviewsWithResponse List the reviews the caller is asked for
+//
+// Waiting ones by default, oldest first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/me/reviews (the `AgentsMyReviews` operationId).
+func (c *ClientWithResponses) AgentsMyReviewsWithResponse(ctx context.Context, params *AgentsMyReviewsParams, reqEditors ...RequestEditorFn) (*AgentsMyReviewsHTTPResponse, error) {
+	rsp, err := c.AgentsMyReviews(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsMyReviewsHTTPResponse(rsp)
+}
+
 // MeRevokeOtherSessionsWithResponse End all other sessions of the signed-in user
 //
 // Returns a wrapper object for the known response body format(s).
@@ -81096,6 +85245,51 @@ func (c *ClientWithResponses) MeRevokeTokenWithResponse(ctx context.Context, id 
 		return nil, err
 	}
 	return ParseMeRevokeTokenHTTPResponse(rsp)
+}
+
+// AgentsMyUsageWithResponse Get the caller’s own budget use
+//
+// For agents: what counts against their budget today and this month.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/me/usage (the `AgentsMyUsage` operationId).
+func (c *ClientWithResponses) AgentsMyUsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsMyUsageHTTPResponse, error) {
+	rsp, err := c.AgentsMyUsage(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsMyUsageHTTPResponse(rsp)
+}
+
+// AgentsReportUsageWithBodyWithResponse Report the cost of a run
+//
+// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+func (c *ClientWithResponses) AgentsReportUsageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsReportUsageHTTPResponse, error) {
+	rsp, err := c.AgentsReportUsageWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsReportUsageHTTPResponse(rsp)
+}
+
+// AgentsReportUsageWithResponse Report the cost of a run
+//
+// Agents report what a run cost, in the currency of their budget; Lenipo counts claims and claimed time itself.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/me/usage (the `AgentsReportUsage` operationId).
+func (c *ClientWithResponses) AgentsReportUsageWithResponse(ctx context.Context, body AgentsReportUsageJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsReportUsageHTTPResponse, error) {
+	rsp, err := c.AgentsReportUsage(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsReportUsageHTTPResponse(rsp)
 }
 
 // OAuthClientWithResponse Describe a client asking for access
@@ -82258,6 +86452,124 @@ func (c *ClientWithResponses) ProjectsGetWithResponse(ctx context.Context, key s
 	return ParseProjectsGetHTTPResponse(rsp)
 }
 
+// AgentsGetAgentSettingsWithResponse Get the agent settings of a project
+//
+// Whether agents need approval to start and complete sprints, and the roles of agents in the project. An agent without roles counts as implementer.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/projects/{key}/agent-settings (the `AgentsGetAgentSettings` operationId).
+func (c *ClientWithResponses) AgentsGetAgentSettingsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsGetAgentSettingsHTTPResponse, error) {
+	rsp, err := c.AgentsGetAgentSettings(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsGetAgentSettingsHTTPResponse(rsp)
+}
+
+// AgentsUpdateAgentSettingsWithBodyWithResponse Change the agent settings of a project
+//
+// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+func (c *ClientWithResponses) AgentsUpdateAgentSettingsWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsUpdateAgentSettingsHTTPResponse, error) {
+	rsp, err := c.AgentsUpdateAgentSettingsWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsUpdateAgentSettingsHTTPResponse(rsp)
+}
+
+// AgentsUpdateAgentSettingsWithResponse Change the agent settings of a project
+//
+// Approval for sprints, the statuses agents do not set themselves (a person approves the transition) and where reviews move the issue. Requires the project permission `administer`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings (the `AgentsUpdateAgentSettings` operationId).
+func (c *ClientWithResponses) AgentsUpdateAgentSettingsWithResponse(ctx context.Context, key string, body AgentsUpdateAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsUpdateAgentSettingsHTTPResponse, error) {
+	rsp, err := c.AgentsUpdateAgentSettings(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsUpdateAgentSettingsHTTPResponse(rsp)
+}
+
+// AgentsResumeAgentsWithResponse Let the agents of the project work again
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/projects/{key}/agent-settings/pause (the `AgentsResumeAgents` operationId).
+func (c *ClientWithResponses) AgentsResumeAgentsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsResumeAgentsHTTPResponse, error) {
+	rsp, err := c.AgentsResumeAgents(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsResumeAgentsHTTPResponse(rsp)
+}
+
+// AgentsPauseAgentsWithBodyWithResponse Pause all agents in the project (Not-Aus)
+//
+// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+func (c *ClientWithResponses) AgentsPauseAgentsWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsPauseAgentsHTTPResponse, error) {
+	rsp, err := c.AgentsPauseAgentsWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsPauseAgentsHTTPResponse(rsp)
+}
+
+// AgentsPauseAgentsWithResponse Pause all agents in the project (Not-Aus)
+//
+// They then only read here: writing answers 423 with the reason and their claims in the project end. Requires `administer`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/pause (the `AgentsPauseAgents` operationId).
+func (c *ClientWithResponses) AgentsPauseAgentsWithResponse(ctx context.Context, key string, body AgentsPauseAgentsJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsPauseAgentsHTTPResponse, error) {
+	rsp, err := c.AgentsPauseAgents(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsPauseAgentsHTTPResponse(rsp)
+}
+
+// AgentsSetAgentRolesWithBodyWithResponse Set the roles of an agent in the project
+//
+// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+func (c *ClientWithResponses) AgentsSetAgentRolesWithBodyWithResponse(ctx context.Context, key string, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetAgentRolesHTTPResponse, error) {
+	rsp, err := c.AgentsSetAgentRolesWithBody(ctx, key, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetAgentRolesHTTPResponse(rsp)
+}
+
+// AgentsSetAgentRolesWithResponse Set the roles of an agent in the project
+//
+// planner: plan, fill and start sprints; coordinator: complete them; implementer and tester: claim work; reviewer: review. No roles: implementer. Requires `administer`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
+func (c *ClientWithResponses) AgentsSetAgentRolesWithResponse(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetAgentRolesHTTPResponse, error) {
+	rsp, err := c.AgentsSetAgentRoles(ctx, key, userId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetAgentRolesHTTPResponse(rsp)
+}
+
 // AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
 //
 // One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
@@ -82917,6 +87229,19 @@ func (c *ClientWithResponses) SpacesOfProjectWithResponse(ctx context.Context, k
 	return ParseSpacesOfProjectHTTPResponse(rsp)
 }
 
+// SprintsListApprovalsWithResponse List the sprint approval requests of agents in a project
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/projects/{key}/sprint-approvals (the `SprintsListApprovals` operationId).
+func (c *ClientWithResponses) SprintsListApprovalsWithResponse(ctx context.Context, key string, params *SprintsListApprovalsParams, reqEditors ...RequestEditorFn) (*SprintsListApprovalsHTTPResponse, error) {
+	rsp, err := c.SprintsListApprovals(ctx, key, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSprintsListApprovalsHTTPResponse(rsp)
+}
+
 // AgentsTeamWithResponse Who works in the project
 //
 // People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
@@ -83443,6 +87768,49 @@ func (c *ClientWithResponses) ReportsTimeReportWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseReportsTimeReportHTTPResponse(rsp)
+}
+
+// AgentsCancelReviewWithResponse Withdraw a waiting review request
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/reviews/{id} (the `AgentsCancelReview` operationId).
+func (c *ClientWithResponses) AgentsCancelReviewWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsCancelReviewHTTPResponse, error) {
+	rsp, err := c.AgentsCancelReview(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsCancelReviewHTTPResponse(rsp)
+}
+
+// AgentsReviewVerdictWithBodyWithResponse Give the verdict of a review
+//
+// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+func (c *ClientWithResponses) AgentsReviewVerdictWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsReviewVerdictHTTPResponse, error) {
+	rsp, err := c.AgentsReviewVerdictWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsReviewVerdictHTTPResponse(rsp)
+}
+
+// AgentsReviewVerdictWithResponse Give the verdict of a review
+//
+// Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/reviews/{id}/verdict (the `AgentsReviewVerdict` operationId).
+func (c *ClientWithResponses) AgentsReviewVerdictWithResponse(ctx context.Context, id string, body AgentsReviewVerdictJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsReviewVerdictHTTPResponse, error) {
+	rsp, err := c.AgentsReviewVerdict(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsReviewVerdictHTTPResponse(rsp)
 }
 
 // SearchRunWithBodyWithResponse Search issues with TQL
@@ -84013,6 +88381,36 @@ func (c *ClientWithResponses) SpacesWatchWithResponse(ctx context.Context, key s
 	return ParseSpacesWatchHTTPResponse(rsp)
 }
 
+// SprintsDecideWithBodyWithResponse Approve or reject an agent’s sprint request
+//
+// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+func (c *ClientWithResponses) SprintsDecideWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SprintsDecideHTTPResponse, error) {
+	rsp, err := c.SprintsDecideWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSprintsDecideHTTPResponse(rsp)
+}
+
+// SprintsDecideWithResponse Approve or reject an agent’s sprint request
+//
+// For people with `edit-issues`. Approving starts or completes the sprint in the agent’s name; the agent is notified either way, a rejection with its reason.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/sprint-approvals/{id}/decision (the `SprintsDecide` operationId).
+func (c *ClientWithResponses) SprintsDecideWithResponse(ctx context.Context, id string, body SprintsDecideJSONRequestBody, reqEditors ...RequestEditorFn) (*SprintsDecideHTTPResponse, error) {
+	rsp, err := c.SprintsDecide(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSprintsDecideHTTPResponse(rsp)
+}
+
 // SprintsMoveWithBodyWithResponse Move issues into a sprint or (sprintId null) to the backlog
 //
 // Each issue leaves its current open sprint; the change is in its history.
@@ -84140,7 +88538,7 @@ func (c *ClientWithResponses) ReportsReportWithResponse(ctx context.Context, id 
 
 // SprintsStartWithBodyWithResponse Start a planned sprint
 //
-// One sprint runs per board. The estimates at this moment are the commitment.
+// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84155,7 +88553,7 @@ func (c *ClientWithResponses) SprintsStartWithBodyWithResponse(ctx context.Conte
 
 // SprintsStartWithResponse Start a planned sprint
 //
-// One sprint runs per board. The estimates at this moment are the commitment.
+// One sprint runs per board. The estimates at this moment are the commitment. Agents need the role planner; where the project wants approval, an agent gets 202 with the waiting request instead, and the sprint starts once a person approves it.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -88126,6 +92524,39 @@ func ParseAgentsCreateHTTPResponse(rsp *http.Response) (*AgentsCreateHTTPRespons
 	return response, nil
 }
 
+// ParseAgentsOverviewHTTPResponse parses an HTTP response from a AgentsOverviewWithResponse call
+func ParseAgentsOverviewHTTPResponse(rsp *http.Response) (*AgentsOverviewHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsOverviewHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []AgentOverview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAgentsUpdateHTTPResponse parses an HTTP response from a AgentsUpdateWithResponse call
 func ParseAgentsUpdateHTTPResponse(rsp *http.Response) (*AgentsUpdateHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -88142,6 +92573,171 @@ func ParseAgentsUpdateHTTPResponse(rsp *http.Response) (*AgentsUpdateHTTPRespons
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsAgentActivityHTTPResponse parses an HTTP response from a AgentsAgentActivityWithResponse call
+func ParseAgentsAgentActivityHTTPResponse(rsp *http.Response) (*AgentsAgentActivityHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsAgentActivityHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentActivityPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsSetBudgetHTTPResponse parses an HTTP response from a AgentsSetBudgetWithResponse call
+func ParseAgentsSetBudgetHTTPResponse(rsp *http.Response) (*AgentsSetBudgetHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsSetBudgetHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsResumeHTTPResponse parses an HTTP response from a AgentsResumeWithResponse call
+func ParseAgentsResumeHTTPResponse(rsp *http.Response) (*AgentsResumeHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsResumeHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsPauseHTTPResponse parses an HTTP response from a AgentsPauseWithResponse call
+func ParseAgentsPauseHTTPResponse(rsp *http.Response) (*AgentsPauseHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsPauseHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsAgentRightsHTTPResponse parses an HTTP response from a AgentsAgentRightsWithResponse call
+func ParseAgentsAgentRightsHTTPResponse(rsp *http.Response) (*AgentsAgentRightsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsAgentRightsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentRights
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -88254,6 +92850,39 @@ func ParseAgentsRevokeTokenHTTPResponse(rsp *http.Response) (*AgentsRevokeTokenH
 	return response, nil
 }
 
+// ParseAgentsAgentUsageHTTPResponse parses an HTTP response from a AgentsAgentUsageWithResponse call
+func ParseAgentsAgentUsageHTTPResponse(rsp *http.Response) (*AgentsAgentUsageHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsAgentUsageHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentUsage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAgentsRemoveWebhookHTTPResponse parses an HTTP response from a AgentsRemoveWebhookWithResponse call
 func ParseAgentsRemoveWebhookHTTPResponse(rsp *http.Response) (*AgentsRemoveWebhookHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -88299,6 +92928,39 @@ func ParseAgentsSetWebhookHTTPResponse(rsp *http.Response) (*AgentsSetWebhookHTT
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest AgentWebhook
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsPendingApprovalsHTTPResponse parses an HTTP response from a AgentsPendingApprovalsWithResponse call
+func ParseAgentsPendingApprovalsHTTPResponse(rsp *http.Response) (*AgentsPendingApprovalsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsPendingApprovalsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PendingApprovals
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -90201,6 +94863,39 @@ func ParseInvitationsRevokeHTTPResponse(rsp *http.Response) (*InvitationsRevokeH
 	return response, nil
 }
 
+// ParseAgentsDecideIssueApprovalHTTPResponse parses an HTTP response from a AgentsDecideIssueApprovalWithResponse call
+func ParseAgentsDecideIssueApprovalHTTPResponse(rsp *http.Response) (*AgentsDecideIssueApprovalHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsDecideIssueApprovalHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseIssuesCreateHTTPResponse parses an HTTP response from a IssuesCreateWithResponse call
 func ParseIssuesCreateHTTPResponse(rsp *http.Response) (*IssuesCreateHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -90444,6 +95139,39 @@ func ParseIssuesUpdateHTTPResponse(rsp *http.Response) (*IssuesUpdateHTTPRespons
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Issue
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsListIssueApprovalsHTTPResponse parses an HTTP response from a AgentsListIssueApprovalsWithResponse call
+func ParseAgentsListIssueApprovalsHTTPResponse(rsp *http.Response) (*AgentsListIssueApprovalsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsListIssueApprovalsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []IssueApproval
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -91295,6 +96023,72 @@ func ParseIssuesRestoreHTTPResponse(rsp *http.Response) (*IssuesRestoreHTTPRespo
 	return response, nil
 }
 
+// ParseAgentsIssueReviewsHTTPResponse parses an HTTP response from a AgentsIssueReviewsWithResponse call
+func ParseAgentsIssueReviewsHTTPResponse(rsp *http.Response) (*AgentsIssueReviewsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsIssueReviewsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ReviewRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsRequestReviewHTTPResponse parses an HTTP response from a AgentsRequestReviewWithResponse call
+func ParseAgentsRequestReviewHTTPResponse(rsp *http.Response) (*AgentsRequestReviewHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsRequestReviewHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ReviewRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseServiceDeskIssueSlaHTTPResponse parses an HTTP response from a ServiceDeskIssueSlaWithResponse call
 func ParseServiceDeskIssueSlaHTTPResponse(rsp *http.Response) (*ServiceDeskIssueSlaHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -91416,6 +96210,13 @@ func ParseIssuesTransitionHTTPResponse(rsp *http.Response) (*IssuesTransitionHTT
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest IssueApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -92511,6 +97312,39 @@ func ParsePersonalRecordHTTPResponse(rsp *http.Response) (*PersonalRecordHTTPRes
 	return response, nil
 }
 
+// ParseAgentsMyReviewsHTTPResponse parses an HTTP response from a AgentsMyReviewsWithResponse call
+func ParseAgentsMyReviewsHTTPResponse(rsp *http.Response) (*AgentsMyReviewsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsMyReviewsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ReviewRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseMeRevokeOtherSessionsHTTPResponse parses an HTTP response from a MeRevokeOtherSessionsWithResponse call
 func ParseMeRevokeOtherSessionsHTTPResponse(rsp *http.Response) (*MeRevokeOtherSessionsHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -92812,6 +97646,72 @@ func ParseMeRevokeTokenHTTPResponse(rsp *http.Response) (*MeRevokeTokenHTTPRespo
 	switch {
 	case rsp.StatusCode == 204:
 		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsMyUsageHTTPResponse parses an HTTP response from a AgentsMyUsageWithResponse call
+func ParseAgentsMyUsageHTTPResponse(rsp *http.Response) (*AgentsMyUsageHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsMyUsageHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentUsage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsReportUsageHTTPResponse parses an HTTP response from a AgentsReportUsageWithResponse call
+func ParseAgentsReportUsageHTTPResponse(rsp *http.Response) (*AgentsReportUsageHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsReportUsageHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentUsage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -94763,6 +99663,171 @@ func ParseProjectsGetHTTPResponse(rsp *http.Response) (*ProjectsGetHTTPResponse,
 	return response, nil
 }
 
+// ParseAgentsGetAgentSettingsHTTPResponse parses an HTTP response from a AgentsGetAgentSettingsWithResponse call
+func ParseAgentsGetAgentSettingsHTTPResponse(rsp *http.Response) (*AgentsGetAgentSettingsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsGetAgentSettingsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsUpdateAgentSettingsHTTPResponse parses an HTTP response from a AgentsUpdateAgentSettingsWithResponse call
+func ParseAgentsUpdateAgentSettingsHTTPResponse(rsp *http.Response) (*AgentsUpdateAgentSettingsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsUpdateAgentSettingsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsResumeAgentsHTTPResponse parses an HTTP response from a AgentsResumeAgentsWithResponse call
+func ParseAgentsResumeAgentsHTTPResponse(rsp *http.Response) (*AgentsResumeAgentsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsResumeAgentsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsPauseAgentsHTTPResponse parses an HTTP response from a AgentsPauseAgentsWithResponse call
+func ParseAgentsPauseAgentsHTTPResponse(rsp *http.Response) (*AgentsPauseAgentsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsPauseAgentsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsSetAgentRolesHTTPResponse parses an HTTP response from a AgentsSetAgentRolesWithResponse call
+func ParseAgentsSetAgentRolesHTTPResponse(rsp *http.Response) (*AgentsSetAgentRolesHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsSetAgentRolesHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAgentsClaimNextHTTPResponse parses an HTTP response from a AgentsClaimNextWithResponse call
 func ParseAgentsClaimNextHTTPResponse(rsp *http.Response) (*AgentsClaimNextHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -95820,6 +100885,39 @@ func ParseSpacesOfProjectHTTPResponse(rsp *http.Response) (*SpacesOfProjectHTTPR
 	return response, nil
 }
 
+// ParseSprintsListApprovalsHTTPResponse parses an HTTP response from a SprintsListApprovalsWithResponse call
+func ParseSprintsListApprovalsHTTPResponse(rsp *http.Response) (*SprintsListApprovalsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SprintsListApprovalsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []SprintApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAgentsTeamHTTPResponse parses an HTTP response from a AgentsTeamWithResponse call
 func ParseAgentsTeamHTTPResponse(rsp *http.Response) (*AgentsTeamHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -96587,6 +101685,68 @@ func ParseReportsTimeReportHTTPResponse(rsp *http.Response) (*ReportsTimeReportH
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest TimeReport
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsCancelReviewHTTPResponse parses an HTTP response from a AgentsCancelReviewWithResponse call
+func ParseAgentsCancelReviewHTTPResponse(rsp *http.Response) (*AgentsCancelReviewHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsCancelReviewHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsReviewVerdictHTTPResponse parses an HTTP response from a AgentsReviewVerdictWithResponse call
+func ParseAgentsReviewVerdictHTTPResponse(rsp *http.Response) (*AgentsReviewVerdictHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsReviewVerdictHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -97605,6 +102765,39 @@ func ParseSpacesWatchHTTPResponse(rsp *http.Response) (*SpacesWatchHTTPResponse,
 	return response, nil
 }
 
+// ParseSprintsDecideHTTPResponse parses an HTTP response from a SprintsDecideWithResponse call
+func ParseSprintsDecideHTTPResponse(rsp *http.Response) (*SprintsDecideHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SprintsDecideHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SprintApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSprintsMoveHTTPResponse parses an HTTP response from a SprintsMoveWithResponse call
 func ParseSprintsMoveHTTPResponse(rsp *http.Response) (*SprintsMoveHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -97750,6 +102943,13 @@ func ParseSprintsCompleteHTTPResponse(rsp *http.Response) (*SprintsCompleteHTTPR
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest SprintApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -97815,6 +103015,13 @@ func ParseSprintsStartHTTPResponse(rsp *http.Response) (*SprintsStartHTTPRespons
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest SprintApproval
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
