@@ -79,8 +79,6 @@ jobs:
   sdks:
     name: Python and Go SDKs are up to date
     runs-on: ubuntu-latest
-    # Until the SDKs were generated once and committed, there is nothing to compare.
-    if: ${{ hashFiles('sdks/go/lenipo.gen.go') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -88,7 +86,14 @@ jobs:
           go-version: "1.24"
       - uses: astral-sh/setup-uv@v6
       - run: node scripts/generate-sdks.mjs
-      - run: git diff --exit-code sdks
+      - name: Generated code matches the committed SDKs
+        # Status, not diff: new files (e.g. a new Python module) count too.
+        run: |
+          if [ -n "$(git status --porcelain sdks)" ]; then
+            git status --short sdks
+            echo "::error::The SDKs are out of date; run pnpm sdk:generate and commit sdks/."
+            exit 1
+          fi
       - name: Go SDK builds
         working-directory: sdks/go
         run: go build ./...
