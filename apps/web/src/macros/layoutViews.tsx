@@ -17,6 +17,7 @@ import { client, unwrap } from '../lib/api';
 import { formatDate, formatRelative } from '../lib/format';
 import { everythingQuery } from '../lib/search';
 import { labelPagesQuery, pageAttachmentsQuery, pageQuery } from '../lib/wiki';
+import { DiagramView } from './DiagramView';
 
 /** Wiki macros of TL-26 (E-107): live with the reader's permissions, nothing copied. */
 
@@ -836,6 +837,7 @@ export const layoutViews = {
   embed: ReactNodeViewRenderer(EmbedView),
   liveSearch: ReactNodeViewRenderer(LiveSearchView),
   appMacro: ReactNodeViewRenderer(AppMacroView),
+  diagram: ReactNodeViewRenderer(DiagramView),
   chart: ReactNodeViewRenderer(ChartView),
 };
 

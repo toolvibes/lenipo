@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=8 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=9 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -107,6 +107,14 @@ Das **Protokoll** läuft über `postMessage`, beide Seiten prüfen die Herkunft:
 Die Tokens gehören zu einer Verbindung je Person, die im Profil unter den verbundenen Apps steht und dort widerrufen werden kann. Eine lauffähige Beispiel-App liegt unter `examples/lenipo-app`.
 
 In Automatisierungsregeln führt die Aktion **„Skript ausführen“** JavaScript abgeschottet aus (QuickJS in WebAssembly, höchstens 1 Sekunde und 32 MB, ohne Netz, Dateien und Zeitgeber). Das Skript bekommt `issue`, `data` und `rule`; was es mit `return` zurückgibt, steht den folgenden Aktionen als `{{script.result}}` zur Verfügung. Das Skript selbst ändert nichts.
+
+## E-Mail-Eingang
+
+Projekteinstellungen → Service Desk → E-Mail-Eingang verbindet ein IMAP-Postfach (Server, Port, TLS, Benutzer, Passwort, Ordner, Vorgangstyp). Der Worker liest es jede Minute: Neue Mails werden Vorgänge (Betreff → Zusammenfassung, Text → Beschreibung, Anhänge), Antworten mit einem Vorgangsschlüssel des Projekts im Betreff werden Kommentare ohne das zitierte Original. Absender müssen aktive Konten sein und handeln mit ihren eigenen Rechten; Kunden eines Service Desks stellen so Anfragen. Mails unbekannter Absender, automatische Antworten und eigene Benachrichtigungen bleiben unbearbeitet. Verarbeitete Mails wandern in den „Ordner für Erledigtes“ oder werden als gelesen markiert; jede Message-ID wird nur einmal behandelt. Die letzten Mails und was aus ihnen wurde, stehen unter den Einstellungen.
+
+## PDF-Vorlagen
+
+Administration → PDF-Vorlagen: Titelseite mit Logo (PNG, JPEG oder WebP bis 200 KB), Untertitel, Kopf- und Fußzeile mit den Platzhaltern `{{title}}`, `{{space}}`, `{{date}}`, `{{page}}` und `{{pages}}` sowie eigenes CSS (ohne `@import` und `url()`). Eine Vorlage kann Standard sein; Bereichsadministratoren wählen in den Bereichseinstellungen eine eigene. Gedruckt wird weiterhin im Browser; Kopf- und Fußzeilen erscheinen in Chromium-Browsern (Chrome, Edge).
 
 ## Rechte
 

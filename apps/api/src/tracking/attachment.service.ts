@@ -1,6 +1,15 @@
-import { rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Readable } from 'node:stream';
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import type { Attachment, ProjectPermission, UserRef } from '@toolvibes/shared';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import type { Request } from 'express';
@@ -12,7 +21,7 @@ import { CONFIG, DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { issueAttachments, issues, users } from '../db/schema/index.js';
 import { FileNotFoundError, type FileStore } from '../storage/file-store.js';
-import { contentTypeOf, receiveUpload } from '../storage/upload.js';
+import { contentTypeOf, receiveUpload, type SpooledUpload } from '../storage/upload.js';
 import { recordChanges } from './history.js';
 import { IssueService } from './issue.service.js';
 
@@ -85,6 +94,38 @@ export class AttachmentService {
   async upload(principal: Principal, key: string, request: Request): Promise<Attachment> {
     const { issue, permissions } = await this.issues.authorize(principal, key, 'comment');
     const upload = await receiveUpload(request, this.maxBytes);
+    return this.keep(principal, issue, permissions, upload);
+  }
+
+  /** A file that did not come as an upload, e.g. from a mail (TL-53); same checks and limit. */
+  async attachBuffer(
+    principal: Principal,
+    key: string,
+    file: { fileName: string; contentType: string; data: Buffer },
+  ): Promise<Attachment> {
+    const { issue, permissions } = await this.issues.authorize(principal, key, 'comment');
+    if (file.data.length > this.maxBytes) {
+      throw new PayloadTooLargeException('The file is larger than the server accepts');
+    }
+    const directory = await mkdtemp(join(tmpdir(), 'lenipo-mail-'));
+    const path = join(directory, 'file');
+    await writeFile(path, file.data);
+    return this.keep(principal, issue, permissions, {
+      path,
+      fileName: file.fileName.slice(0, 255) || 'anhang',
+      declaredType: file.contentType,
+      head: file.data.subarray(0, 64),
+      size: file.data.length,
+      sha256: createHash('sha256').update(file.data).digest('hex'),
+    }).finally(() => rm(directory, { recursive: true, force: true }));
+  }
+
+  private async keep(
+    principal: Principal,
+    issue: Awaited<ReturnType<IssueService['authorize']>>['issue'],
+    permissions: Awaited<ReturnType<IssueService['authorize']>>['permissions'],
+    upload: SpooledUpload,
+  ): Promise<Attachment> {
     const id = uuidv7();
     const storageKey = `attachments/${id}`;
     const { type, image } = contentTypeOf(upload.head, upload.declaredType);

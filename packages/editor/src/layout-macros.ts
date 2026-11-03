@@ -25,6 +25,8 @@ export const LEAF_MACROS = {
   liveSearch: { directive: 'search', attrs: { space: '' } },
   /** A macro module of an installed app, by app and module key (TL-50, E-140). */
   appMacro: { directive: 'app', attrs: { app: '', module: '', config: '', height: 300 } },
+  /** An Excalidraw drawing: scene and SVG as page attachments (TL-53, E-142). */
+  diagram: { directive: 'diagram', attrs: { scene: '', svg: '' } },
 } as const satisfies Record<string, { directive: string; attrs: Record<string, AttrValue> }>;
 export type LeafMacroName = keyof typeof LEAF_MACROS;
 export const LEAF_MACRO_NAMES = Object.keys(LEAF_MACROS) as LeafMacroName[];

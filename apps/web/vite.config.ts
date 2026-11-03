@@ -1,11 +1,51 @@
+import { cpSync, createReadStream, existsSync, statSync } from 'node:fs';
+import { join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/**
+ * Excalidraw's fonts from our own origin (the CSP allows no font CDN): served in development,
+ * copied into the build. The 12 MB Chinese font stays out; text falls back to a system font.
+ */
+function excalidrawFonts(): Plugin {
+  const source = fileURLToPath(
+    new URL('./node_modules/@excalidraw/excalidraw/dist/prod/fonts', import.meta.url),
+  );
+  const wanted = (path: string) => !path.includes('Xiaolai');
+  return {
+    name: 'lenipo-excalidraw-fonts',
+    configureServer(server) {
+      server.middlewares.use('/excalidraw/fonts', (request, response, next) => {
+        const file = normalize(
+          join(source, decodeURIComponent((request.url ?? '').split('?')[0] ?? '')),
+        );
+        if (
+          !file.startsWith(source) ||
+          !wanted(file) ||
+          !existsSync(file) ||
+          !statSync(file).isFile()
+        ) {
+          next();
+          return;
+        }
+        response.setHeader('Content-Type', 'font/woff2');
+        createReadStream(file).pipe(response);
+      });
+    },
+    writeBundle(options) {
+      if (!options.dir || !existsSync(source)) return;
+      cpSync(source, join(options.dir, 'excalidraw/fonts'), { recursive: true, filter: wanted });
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    excalidrawFonts(),
     tailwindcss(),
     // Installable app (P-GEN-04, TL-43, E-124): the app shell is cached, data never is.
     VitePWA({

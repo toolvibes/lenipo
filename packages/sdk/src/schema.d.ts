@@ -264,50 +264,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/admin/scim-tokens': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List SCIM tokens
-     * @description Requires the global permission `admin`.
-     */
-    get: operations['Admin.listScimTokens'];
-    put?: never;
-    /**
-     * Create a SCIM token for an identity provider; the secret is shown once
-     * @description Requires the global permission `admin`.
-     */
-    post: operations['Admin.createScimToken'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/admin/scim-tokens/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /**
-     * Revoke a SCIM token
-     * @description Requires the global permission `admin`.
-     */
-    delete: operations['Admin.revokeScimToken'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/admin/ai': {
     parameters: {
       query?: never;
@@ -444,6 +400,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/print-templates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a print template
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Admin.createPrintTemplate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/print-templates/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Change a print template
+     * @description Requires the global permission `admin`.
+     */
+    put: operations['Admin.updatePrintTemplate'];
+    post?: never;
+    /**
+     * Delete a print template
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Admin.deletePrintTemplate'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/embed-hosts': {
     parameters: {
       query?: never;
@@ -456,6 +456,50 @@ export interface paths {
     put: operations['Admin.setEmbedHosts'];
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/scim-tokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List SCIM tokens
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.listScimTokens'];
+    put?: never;
+    /**
+     * Create a SCIM token for an identity provider; the secret is shown once
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Admin.createScimToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/scim-tokens/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Revoke a SCIM token
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Admin.revokeScimToken'];
     options?: never;
     head?: never;
     patch?: never;
@@ -4314,6 +4358,42 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/mail-handler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The IMAP mailbox whose mails become issues and comments */
+    get: operations['Projects.getMailHandler'];
+    /** Set up the mailbox of a project */
+    put: operations['Projects.saveMailHandler'];
+    post?: never;
+    /** Remove the mailbox of a project */
+    delete: operations['Projects.removeMailHandler'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/mail-handler/receipts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The last mails the mailbox took in and what became of them */
+    get: operations['Projects.mailReceipts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/boards/{id}/velocity': {
     parameters: {
       query?: never;
@@ -5639,6 +5719,58 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/print-templates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List print templates */
+    get: operations['Wiki.listPrintTemplates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/print-templates/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a print template */
+    get: operations['Wiki.getPrintTemplate'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/print-template': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The print template of a space: its own or the default */
+    get: operations['Wiki.spacePrintTemplate'];
+    /** Choose the print template of a space; null: the default */
+    put: operations['Wiki.setSpacePrintTemplate'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/wiki/recent-pages': {
     parameters: {
       query?: never;
@@ -5875,28 +6007,6 @@ export interface components {
       /** Format: uuid */
       userId: string;
     };
-    ScimToken: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      prefix: string;
-      /** Format: date-time */
-      createdAt: string;
-      lastUsedAt: string | null;
-    };
-    CreateScimTokenRequest: {
-      name: string;
-    };
-    CreatedScimToken: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      prefix: string;
-      /** Format: date-time */
-      createdAt: string;
-      lastUsedAt: string | null;
-      secret: string;
-    };
     AiSettings: {
       baseUrl: string;
       hasApiKey: boolean;
@@ -6009,11 +6119,71 @@ export interface components {
     WikiSettingsInput: {
       outdatedAfterDays: number | null;
     };
+    PrintTemplateInput: {
+      name: string;
+      /** @default true */
+      titlePage?: boolean;
+      /** @default null */
+      logo?: string | null;
+      /** @default  */
+      subtitle?: string;
+      /** @default {{space}} · {{title}} */
+      header?: string;
+      /** @default {{date}} · {{page}} / {{pages}} */
+      footer?: string;
+      /** @default  */
+      css?: string;
+      /** @default false */
+      isDefault?: boolean;
+    };
+    PrintTemplate: {
+      name: string;
+      /** @default true */
+      titlePage: boolean;
+      /** @default null */
+      logo: string | null;
+      /** @default  */
+      subtitle: string;
+      /** @default {{space}} · {{title}} */
+      header: string;
+      /** @default {{date}} · {{page}} / {{pages}} */
+      footer: string;
+      /** @default  */
+      css: string;
+      /** @default false */
+      isDefault: boolean;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
     EmbedHosts: {
       hosts: string[];
     };
     EmbedHostsOutput: {
       hosts: string[];
+    };
+    ScimToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+    };
+    CreateScimTokenRequest: {
+      name: string;
+    };
+    CreatedScimToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+      secret: string;
     };
     PermissionSchemeSummary: {
       /** Format: uuid */
@@ -9500,6 +9670,42 @@ export interface components {
       reportOnSprintEnd: boolean;
       notesOnRelease: boolean;
     };
+    MailHandler: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      secure: boolean;
+      username: string;
+      hasPassword: boolean;
+      folder: string;
+      doneFolder: string;
+      issueType: string;
+      lastRunAt: string | null;
+      lastResult: string | null;
+    };
+    SaveMailHandlerRequest: {
+      /** @default true */
+      enabled?: boolean;
+      host: string;
+      /** @default 993 */
+      port?: number;
+      /** @default true */
+      secure?: boolean;
+      username: string;
+      password?: string;
+      /** @default INBOX */
+      folder?: string;
+      /** @default  */
+      doneFolder?: string;
+      issueType: string;
+    };
+    MailReceipt: {
+      messageId: string;
+      issueKey: string | null;
+      outcome: string;
+      /** Format: date-time */
+      receivedAt: string;
+    };
     Velocity: {
       /** @enum {string} */
       estimation: 'storyPoints' | 'originalEstimate' | 'issueCount';
@@ -10410,6 +10616,19 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    PrintTemplateSummary: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      isDefault: boolean;
+    };
+    SpacePrintTemplate: {
+      template: components['schemas']['PrintTemplate'] | null;
+      own: boolean;
+    };
+    SpacePrintTemplateRequest: {
+      templateId: string | null;
+    };
     PagePropertiesReport: {
       keys: string[];
       rows: {
@@ -11060,97 +11279,6 @@ export interface operations {
       };
     };
   };
-  'Admin.listScimTokens': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Success */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ScimToken'][];
-        };
-      };
-      /** @description Error (RFC 9457 problem details) */
-      default: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['Problem'];
-        };
-      };
-    };
-  };
-  'Admin.createScimToken': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateScimTokenRequest'];
-      };
-    };
-    responses: {
-      /** @description Success */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CreatedScimToken'];
-        };
-      };
-      /** @description Error (RFC 9457 problem details) */
-      default: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['Problem'];
-        };
-      };
-    };
-  };
-  'Admin.revokeScimToken': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Success, no content */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Error (RFC 9457 problem details) */
-      default: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['Problem'];
-        };
-      };
-    };
-  };
   'Admin.getAiSettings': {
     parameters: {
       query?: never;
@@ -11463,6 +11591,103 @@ export interface operations {
       };
     };
   };
+  'Admin.createPrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PrintTemplateInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PrintTemplate'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.updatePrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PrintTemplateInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PrintTemplate'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.deletePrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Admin.setEmbedHosts': {
     parameters: {
       query?: never;
@@ -11484,6 +11709,97 @@ export interface operations {
         content: {
           'application/json': components['schemas']['EmbedHostsOutput'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.listScimTokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ScimToken'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.createScimToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateScimTokenRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedScimToken'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.revokeScimToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
@@ -20187,6 +20503,136 @@ export interface operations {
       };
     };
   };
+  'Projects.getMailHandler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            handler: components['schemas']['MailHandler'] | null;
+          };
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.saveMailHandler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveMailHandlerRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            handler: components['schemas']['MailHandler'] | null;
+          };
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.removeMailHandler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.mailReceipts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MailReceipt'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Reports.velocity': {
     parameters: {
       query?: never;
@@ -23030,6 +23476,132 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['WebhookDelivery'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.listPrintTemplates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PrintTemplateSummary'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.getPrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PrintTemplate'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.spacePrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpacePrintTemplate'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Wiki.setSpacePrintTemplate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SpacePrintTemplateRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpacePrintTemplate'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

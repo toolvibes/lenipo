@@ -8,7 +8,9 @@ export type Principal =
   | { userId: string; via: 'session'; sessionId: string; stage?: string }
   | { userId: string; via: 'token' | 'mcp'; tokenId: string; scopes: readonly TokenScope[] }
   /** Automation rules act as their built-in actor (TL-22, E-103). */
-  | { userId: string; via: 'automation'; ruleId: string };
+  | { userId: string; via: 'automation'; ruleId: string }
+  /** The sender of a mail to a project's mailbox, with that person's rights (TL-53, E-142). */
+  | { userId: string; via: 'mail'; projectId: string };
 
 declare global {
   namespace Express {

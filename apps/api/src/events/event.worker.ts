@@ -17,6 +17,7 @@ import { BackupService } from '../maintenance/backup.service.js';
 import { RetentionService } from '../maintenance/retention.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
+import { MailHandlerService } from '../servicedesk/mail-handler.service.js';
 import { WebhookService } from '../webhooks/webhook.service.js';
 import { wikiSettings } from '../wiki/blog.controller.js';
 import { PageService } from '../wiki/page.service.js';
@@ -46,6 +47,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(BackupService) private readonly backups: BackupService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(SemanticService) private readonly semantic: SemanticService,
+    @Inject(MailHandlerService) private readonly mail: MailHandlerService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -64,6 +66,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
       while ((await this.automation.runDue()) > 0);
     });
     this.every('schedules', 30_000, () => this.automation.tickSchedules());
+    // Project mailboxes become issues and comments (TL-53).
+    this.every('mail', 60_000, () => this.mail.pollAll());
     // Embeddings for semantic search, a batch at a time while there is something new (TL-49).
     this.every('embeddings', 30_000, async () => {
       while ((await this.semantic.indexPending()) > 0);

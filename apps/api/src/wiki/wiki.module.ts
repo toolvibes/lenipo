@@ -15,6 +15,11 @@ import { PageAttachmentsController } from './page-attachments.controller.js';
 import { PageCommentService } from './page-comment.service.js';
 import { PageCommentsController } from './page-comments.controller.js';
 import { PagesController, RestrictedPagesController } from './pages.controller.js';
+import { PrintTemplateService } from './print-template.service.js';
+import {
+  PrintTemplatesAdminController,
+  PrintTemplatesController,
+} from './print-templates.controller.js';
 import { ProjectSpacesController } from './project-spaces.controller.js';
 import { SpaceService } from './space.service.js';
 import { SpaceAccessService } from './space-access.service.js';
@@ -27,6 +32,8 @@ import { WikiMacrosService } from './wiki-macros.service.js';
 @Module({
   imports: [IdentityModule, TrackingModule],
   controllers: [
+    PrintTemplatesController,
+    PrintTemplatesAdminController,
     BlogController,
     WikiMacrosController,
     AccessCheckController,
@@ -42,6 +49,7 @@ import { WikiMacrosService } from './wiki-macros.service.js';
     LabelsController,
   ],
   providers: [
+    PrintTemplateService,
     WikiMacrosService,
     AccessCheckService,
     SpaceAccessService,

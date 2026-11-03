@@ -1,9 +1,10 @@
 import { Printer } from '@phosphor-icons/react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import type { Page, PageTreeEntry, RichText } from '@toolvibes/shared';
-import { useEffect, useMemo } from 'react';
+import type { Page, PageTreeEntry, PrintTemplate, RichText } from '@toolvibes/shared';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { client, unwrap } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 import { pageQuery, pageTreeQuery } from '../../lib/wiki';
 import { PrintModeContext } from '../../macros/views';
@@ -21,20 +22,78 @@ const cssString = (text: string) => `"${text.replace(/[\\"]/g, '\\$&').replace(/
  * Running header and footer on every sheet (W-EXP-01, E-111): CSS page margin boxes, which
  * Chromium-based browsers fill in when saving as PDF; other browsers leave the margins empty.
  */
-function usePageFrame(header: string | null, footer: string) {
+function usePageFrame(
+  header: string | null,
+  footer: string,
+  template?: PrintTemplate | null,
+  values?: Record<string, string>,
+) {
   useEffect(() => {
     if (header === null) return;
     const style = document.createElement('style');
     style.dataset.printFrame = '';
     const box = 'font: 8pt var(--font-sans, sans-serif); color: #6b7280;';
-    style.textContent = `@page {
+    style.textContent = template
+      ? `@page {
+  @top-left { content: ${frameContent(template.header, values ?? {})}; ${box} }
+  @bottom-left { content: ${frameContent(template.footer, values ?? {})}; ${box} }
+}`
+      : `@page {
   @top-left { content: ${cssString(header)}; ${box} }
   @bottom-left { content: ${cssString(footer)}; ${box} }
   @bottom-right { content: counter(page) " / " counter(pages); ${box} }
 }`;
     document.head.append(style);
     return () => style.remove();
-  }, [header, footer]);
+  }, [header, footer, template, values]);
+}
+
+/** Header or footer text of a template as CSS content: {{page}} and {{pages}} become counters. */
+function frameContent(text: string, values: Record<string, string>): string {
+  const parts = text.split(/(\{\{\w+\}\})/).filter(Boolean);
+  if (parts.length === 0) return '""';
+  return parts
+    .map((part) => {
+      const name = /^\{\{(\w+)\}\}$/.exec(part)?.[1];
+      if (name === 'page' || name === 'pages') return `counter(${name})`;
+      return cssString(name ? (values[name] ?? '') : part);
+    })
+    .join(' ');
+}
+
+function fill(text: string, values: Record<string, string>): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => values[name] ?? '');
+}
+
+/** The title page of a print template (TL-53, E-142). */
+function TitlePage({
+  template,
+  values,
+}: {
+  template: PrintTemplate;
+  values: Record<string, string>;
+}) {
+  return (
+    <section
+      className="flex min-h-[80vh] flex-col justify-center gap-4"
+      style={{ breakAfter: 'page' }}
+    >
+      {template.logo && (
+        <img
+          src={template.logo}
+          alt=""
+          className="max-h-24 max-w-[240px] self-start object-contain"
+        />
+      )}
+      <h1 className="m-0 font-[family-name:var(--font-prose)] text-[40px] leading-tight font-medium">
+        {values.title}
+      </h1>
+      {template.subtitle && (
+        <p className="m-0 text-lg text-[var(--ink-muted)]">{fill(template.subtitle, values)}</p>
+      )}
+      <p className="m-0 text-sm text-[var(--ink-muted)]">{values.date}</p>
+    </section>
+  );
 }
 
 /** The published pages below `id`, depth first in tree order. */
@@ -106,15 +165,51 @@ export function PrintPage({
   );
   const shown = below.slice(0, CHILD_LIMIT);
   const childPages = useQueries({ queries: shown.map((entry) => pageQuery(entry.id)) });
+  const [templateId, setTemplateId] = useState<string | undefined>(undefined);
   const ready =
     !!page.data && (!children || (!!tree.data && childPages.every((query) => query.data)));
 
   useEffect(() => {
     if (page.data) document.title = page.data.title;
   }, [page.data]);
+  const templates = useQuery({
+    queryKey: ['print-templates'],
+    queryFn: () => unwrap(client.GET('/api/v1/print-templates')),
+  });
+  const spaceTemplate = useQuery({
+    queryKey: ['spaces', spaceKey, 'print-template'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/spaces/{key}/print-template', { params: { path: { key: spaceKey } } }),
+      ),
+  });
+  const chosen = useQuery({
+    queryKey: ['print-templates', templateId],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/print-templates/{id}', { params: { path: { id: templateId ?? '' } } }),
+      ),
+    enabled: !!templateId && templateId !== 'none',
+  });
+  const template =
+    templateId === 'none'
+      ? null
+      : templateId
+        ? (chosen.data ?? null)
+        : (spaceTemplate.data?.template ?? null);
+  const values = useMemo(
+    () => ({
+      title: page.data?.title ?? '',
+      space: page.data?.space.name ?? '',
+      date: formatDateTime(new Date().toISOString()),
+    }),
+    [page.data],
+  );
   usePageFrame(
     page.data ? `${page.data.space.name} · ${page.data.title}` : null,
     t('print.footer', { date: formatDateTime(new Date().toISOString()) }),
+    template,
+    values,
   );
   useEffect(() => {
     if (!auto || !ready) return;
@@ -170,6 +265,22 @@ export function PrintPage({
           />
           {t('print.withContents')}
         </label>
+        {(templates.data?.length ?? 0) > 0 && (
+          <select
+            aria-label={t('print.template')}
+            value={templateId ?? ''}
+            onChange={(event) => setTemplateId(event.target.value || undefined)}
+            className="h-7 rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-1.5 text-[13px]"
+          >
+            <option value="">{t('print.spaceTemplate')}</option>
+            <option value="none">{t('print.noTemplate')}</option>
+            {templates.data?.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.name}
+              </option>
+            ))}
+          </select>
+        )}
         <span className="text-xs text-[var(--ink-muted)]">{t('print.pdfHint')}</span>
         <Button size="sm" variant="primary" disabled={!ready} onClick={() => window.print()}>
           <Printer size={16} aria-hidden />
@@ -177,6 +288,11 @@ export function PrintPage({
         </Button>
       </div>
       <main className="tl-print mx-auto flex max-w-[720px] flex-col gap-10 px-8 py-10">
+        {/* Checked by the API: no @import, url() or script. */}
+        {template?.css && <style>{template.css}</style>}
+        {template?.titlePage && page.data.version > 0 && (
+          <TitlePage template={template} values={values} />
+        )}
         {page.data.version === 0 ? (
           <p className="m-0 text-[var(--ink-muted)]">{t('print.draft')}</p>
         ) : (

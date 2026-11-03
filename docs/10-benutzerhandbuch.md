@@ -62,12 +62,13 @@ Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Fi
 - **Bereiche** enthalten Seiten in einem Baum. Ein Bereich ist allgemein (für das ganze Team) oder gehört zu einem Projekt; das wählt man beim Anlegen.
 - **Bearbeiten** geschieht gemeinsam in Echtzeit: Mehrere Personen schreiben gleichzeitig, jede sieht die anderen. „Veröffentlichen“ macht den Entwurf zur neuen Version.
 - **Makros** über `/` im Editor: Inhaltsverzeichnis, Info-Kästen, Vorgangslisten per TQL, Diagramme (Mermaid), Seitenbäume, Einbettungen und mehr.
+- **Zeichnungen:** `/` → „Diagramm (Zeichnung)“ und dann „Diagramm bearbeiten“ öffnet Excalidraw im Vollbild. Gespeichert wird die Zeichnung als Anhang der Seite; Lesende und der PDF-Export sehen sie als Bild.
 - **Vorlagen** und Blueprints (Besprechungsnotizen, Entscheidungen, Retrospektive …) beim Anlegen einer Seite.
 - **Versionen** vergleichen und eine ältere wiederherstellen; **Inline-Kommentare** an markiertem Text.
 - **Freigabe:** In Bereichen mit Freigabe wartet eine neue Version, bis jemand mit der Rolle „Freigeben“ oder der Administration sie freigibt; bis dahin sehen alle die letzte freigegebene Fassung. „Zur Freigabe einreichen“ ersetzt dann „Veröffentlichen“; eine zurückgewiesene Fassung zeigt die Begründung. Freigebende stellen je Seite ein, ob sie dem Bereich folgt.
 - **Seitenanalyse:** „Analyse“ an jeder Seite zeigt Aufrufe und Leser über einen Zeitraum; wer gelesen hat, sieht nur die Bereichsadministration. Namen bleiben 90 Tage gespeichert, danach nur anonyme Zahlen.
 - **Gelöschte Seiten** liegen mit ihren Unterseiten im Papierkorb des Bereichs und lassen sich dort wiederherstellen, bis die Aufbewahrungsfrist abläuft.
-- **Export** als Word, Markdown, HTML oder PDF (über die Druckansicht).
+- **Export** als Word, Markdown, HTML oder PDF (über die Druckansicht). In der Druckansicht wählt man eine PDF-Vorlage mit Titelseite, Kopf- und Fußzeile; ohne Auswahl gilt die Vorlage des Bereichs oder der Standard der Instanz.
 
 ## Benachrichtigungen
 

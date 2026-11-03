@@ -119,6 +119,54 @@ function Approval({ space }: { space: Space }) {
   );
 }
 
+/** Which PDF template pages of the space print with (TL-53, E-142). */
+function PrintTemplateChoice({ spaceKey }: { spaceKey: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const templates = useQuery({
+    queryKey: ['print-templates'],
+    queryFn: () => unwrap(client.GET('/api/v1/print-templates')),
+  });
+  const current = useQuery({
+    queryKey: ['spaces', spaceKey, 'print-template'],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/v1/spaces/{key}/print-template', { params: { path: { key: spaceKey } } }),
+      ),
+  });
+  const choose = useMutation({
+    mutationFn: (templateId: string | null) =>
+      unwrap(
+        client.PUT('/api/v1/spaces/{key}/print-template', {
+          params: { path: { key: spaceKey } },
+          body: { templateId },
+        }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['spaces', spaceKey] }),
+  });
+  if (!templates.data || templates.data.length === 0) return null;
+  const own = current.data?.own ? current.data.template?.id : undefined;
+  return (
+    <Section title={t('printTemplates.space')} help={t('printTemplates.spaceHelp')}>
+      {choose.error && <FormError message={choose.error.message} />}
+      <select
+        aria-label={t('printTemplates.space')}
+        value={own ?? ''}
+        disabled={choose.isPending}
+        onChange={(event) => choose.mutate(event.target.value || null)}
+        className="h-8 max-w-sm rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-sm"
+      >
+        <option value="">{t('printTemplates.useDefault')}</option>
+        {templates.data.map((entry) => (
+          <option key={entry.id} value={entry.id}>
+            {entry.name}
+          </option>
+        ))}
+      </select>
+    </Section>
+  );
+}
+
 /** Link with a tracking project; the server checks administer on both sides (E-60). */
 function ProjectLink({ space }: { space: Space }) {
   const { t } = useTranslation();
@@ -275,6 +323,7 @@ export function SpaceSettingsPage({ spaceKey }: { spaceKey: string }) {
       <General space={space.data} />
       <ProjectLink space={space.data} />
       <Approval space={space.data} />
+      <PrintTemplateChoice spaceKey={space.data.key} />
       <Roles spaceKey={spaceKey} />
       <RestrictedPages spaceKey={spaceKey} />
       <Section title={t('templates.title')} help={t('templates.help')}>

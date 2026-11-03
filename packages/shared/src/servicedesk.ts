@@ -162,3 +162,48 @@ export const QueueEntry = z
   })
   .meta({ id: 'QueueEntry' });
 export type QueueEntry = z.infer<typeof QueueEntry>;
+
+/** The IMAP mailbox of a project (TL-53, E-142); the password is never sent back. */
+export const MailHandler = z
+  .object({
+    enabled: z.boolean(),
+    host: z.string(),
+    port: z.number().int(),
+    secure: z.boolean(),
+    username: z.string(),
+    hasPassword: z.boolean(),
+    folder: z.string(),
+    doneFolder: z.string(),
+    issueType: z.string(),
+    lastRunAt: z.iso.datetime().nullable(),
+    lastResult: z.string().nullable(),
+  })
+  .meta({ id: 'MailHandler' });
+export type MailHandler = z.infer<typeof MailHandler>;
+
+export const SaveMailHandlerRequest = z
+  .object({
+    enabled: z.boolean().default(true),
+    host: z.string().trim().min(1).max(255),
+    port: z.number().int().min(1).max(65535).default(993),
+    secure: z.boolean().default(true),
+    username: z.string().trim().min(1).max(255),
+    /** Left out: unchanged. */
+    password: z.string().min(1).max(500).optional(),
+    folder: z.string().trim().min(1).max(200).default('INBOX'),
+    doneFolder: z.string().trim().max(200).default(''),
+    issueType: z.string().min(1).max(40),
+  })
+  .meta({ id: 'SaveMailHandlerRequest' });
+export type SaveMailHandlerRequest = z.infer<typeof SaveMailHandlerRequest>;
+
+/** A mail the handler took in, and what became of it. */
+export const MailReceipt = z
+  .object({
+    messageId: z.string(),
+    issueKey: z.string().nullable(),
+    outcome: z.string(),
+    receivedAt: z.iso.datetime(),
+  })
+  .meta({ id: 'MailReceipt' });
+export type MailReceipt = z.infer<typeof MailReceipt>;

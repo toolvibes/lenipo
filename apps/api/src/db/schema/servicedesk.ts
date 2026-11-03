@@ -1,4 +1,14 @@
-import { integer, jsonb, pgTable, real, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  real,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { groups, users } from './identity.js';
 import { issueTypes, projects } from './tracking.js';
 
@@ -49,3 +59,40 @@ export const requestTypes = pgTable('request_types', {
   fields: text().array().notNull().default([]),
   position: real().notNull().default(0),
 });
+
+/**
+ * Mail handlers (TL-53, E-142): one IMAP mailbox per project; new mails become issues or
+ * requests, replies naming an issue key become comments. The password is never sent back.
+ */
+export const mailHandlers = pgTable('mail_handlers', {
+  projectId: uuid()
+    .primaryKey()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  enabled: boolean().notNull().default(true),
+  host: text().notNull(),
+  port: integer().notNull().default(993),
+  secure: boolean().notNull().default(true),
+  username: text().notNull(),
+  password: text().notNull(),
+  folder: text().notNull().default('INBOX'),
+  /** Where processed mails go; empty: they stay, marked as seen. */
+  doneFolder: text().notNull().default(''),
+  issueTypeId: uuid().notNull(),
+  lastRunAt: timestamp({ withTimezone: true }),
+  lastResult: text(),
+});
+
+/** Message-IDs already handled, so a mail that could not be moved is not handled twice. */
+export const mailReceipts = pgTable(
+  'mail_receipts',
+  {
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    messageId: text().notNull(),
+    issueKey: text(),
+    outcome: text().notNull(),
+    receivedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.messageId] })],
+);

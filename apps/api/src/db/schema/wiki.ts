@@ -48,6 +48,8 @@ export const spaces = pgTable(
     approvalRequired: boolean().notNull().default(false),
     /** The tracking project this space documents; a project may have several (E-60). */
     projectId: uuid().references(() => projects.id, { onDelete: 'set null' }),
+    /** Print template for PDFs of the space's pages; null: the instance default (TL-53). */
+    printTemplateId: uuid(),
   },
   (table) => [
     uniqueIndex('spaces_key_unique').on(table.key),
@@ -354,3 +356,22 @@ export const pageViewCounts = pgTable(
   },
   (table) => [primaryKey({ columns: [table.pageId, table.day] })],
 );
+
+/**
+ * Templates for printing pages as PDF (TL-53, E-142): title page with logo, running header and
+ * footer with placeholders, extra CSS. One may be the default of the instance.
+ */
+export const printTemplates = pgTable('print_templates', {
+  id: uuid().primaryKey(),
+  name: text().notNull(),
+  titlePage: boolean().notNull().default(true),
+  /** A small PNG, JPEG or WebP as data URL. */
+  logo: text(),
+  subtitle: text().notNull().default(''),
+  header: text().notNull().default(''),
+  footer: text().notNull().default(''),
+  css: text().notNull().default(''),
+  isDefault: boolean().notNull().default(false),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

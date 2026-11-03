@@ -547,6 +547,20 @@
       "when": 1793692927338,
       "tag": "0077_scim",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1793693919924,
+      "tag": "0078_mail_handlers",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1793694077657,
+      "tag": "0079_print_templates",
+      "breakpoints": true
     }
   ]
 }

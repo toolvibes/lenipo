@@ -93,7 +93,7 @@ export class McpController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    if (principal.via === 'session' || principal.via === 'automation') {
+    if (principal.via === 'session' || principal.via === 'automation' || principal.via === 'mail') {
       throw new UnauthorizedException('MCP clients sign in with a Personal Access Token');
     }
     const server = new McpServer({ name: 'lenipo', version: '1.0.0' });

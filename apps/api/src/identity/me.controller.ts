@@ -63,7 +63,7 @@ export class MeController {
   me(@CurrentPrincipal() principal: Principal): Promise<Me> {
     return this.users.me(
       principal.userId,
-      principal.via === 'automation' ? 'token' : principal.via,
+      principal.via === 'automation' || principal.via === 'mail' ? 'token' : principal.via,
       principal.via === 'session' ? principal.stage : undefined,
     );
   }
@@ -150,7 +150,7 @@ export class MeController {
     await this.users.updateProfile(principal.userId, body);
     return this.users.me(
       principal.userId,
-      principal.via === 'automation' ? 'token' : principal.via,
+      principal.via === 'automation' || principal.via === 'mail' ? 'token' : principal.via,
     );
   }
 

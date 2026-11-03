@@ -617,3 +617,49 @@ export const WikiSettings = z
   })
   .meta({ id: 'WikiSettings' });
 export type WikiSettings = z.infer<typeof WikiSettings>;
+
+/** Placeholders in header, footer and subtitle of a print template (TL-53, E-142). */
+export const PRINT_PLACEHOLDERS = ['title', 'space', 'date', 'page', 'pages'] as const;
+
+const PrintText = z.string().max(300);
+/** No external loads or script from template CSS; the logo is the only image. */
+const PrintCss = z
+  .string()
+  .max(20_000)
+  .refine((css) => !/@import|url\s*\(|expression\s*\(|javascript:|<\/?style/i.test(css), {
+    message: 'CSS must not load anything (@import, url()) or contain script',
+  });
+const Logo = z
+  .string()
+  .max(300_000)
+  .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, 'PNG, JPEG or WebP as data URL');
+
+export const PrintTemplateInput = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    titlePage: z.boolean().default(true),
+    logo: Logo.nullable().default(null),
+    subtitle: PrintText.default(''),
+    header: PrintText.default('{{space}} · {{title}}'),
+    footer: PrintText.default('{{date}} · {{page}} / {{pages}}'),
+    css: PrintCss.default(''),
+    isDefault: z.boolean().default(false),
+  })
+  .meta({ id: 'PrintTemplateInput' });
+export type PrintTemplateInput = z.infer<typeof PrintTemplateInput>;
+
+export const PrintTemplate = PrintTemplateInput.extend({
+  id: Id,
+  updatedAt: z.iso.datetime(),
+}).meta({ id: 'PrintTemplate' });
+export type PrintTemplate = z.infer<typeof PrintTemplate>;
+
+export const PrintTemplateSummary = z
+  .object({ id: Id, name: z.string(), isDefault: z.boolean() })
+  .meta({ id: 'PrintTemplateSummary' });
+export type PrintTemplateSummary = z.infer<typeof PrintTemplateSummary>;
+
+export const SpacePrintTemplateRequest = z
+  .object({ templateId: Id.nullable() })
+  .meta({ id: 'SpacePrintTemplateRequest' });
+export type SpacePrintTemplateRequest = z.infer<typeof SpacePrintTemplateRequest>;

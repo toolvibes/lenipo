@@ -25,6 +25,7 @@ import {
 } from './features/admin/NotificationSchemes';
 import { OperationsPage } from './features/admin/OperationsPage';
 import { PermissionSchemeEditor, PermissionSchemesPage } from './features/admin/PermissionSchemes';
+import { PrintTemplatesPage } from './features/admin/PrintTemplatesPage';
 import { SecuritySchemeEditor, SecuritySchemesPage } from './features/admin/SecuritySchemes';
 import { SignInSettingsPage } from './features/admin/SignInSettingsPage';
 import { TimeTrackingSettingsPage } from './features/admin/TimeTrackingSettingsPage';
@@ -887,6 +888,12 @@ const gitConnectionsRoute = createRoute({
   component: GitConnectionsPage,
 });
 
+const printTemplatesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/admin/print-templates',
+  component: PrintTemplatesPage,
+});
+
 const appsAdminRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/admin/apps',
@@ -1041,6 +1048,7 @@ const routeTree = rootRoute.addChildren([
       embedHostsRoute,
       aiSettingsRoute,
       appsAdminRoute,
+      printTemplatesRoute,
       gitConnectionsRoute,
       importRoute,
       maintenancePageRoute,

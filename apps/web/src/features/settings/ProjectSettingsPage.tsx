@@ -30,6 +30,7 @@ import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { IssueTrash } from '../tracking/IssueTrash';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
 import { VersionsDialog } from '../tracking/VersionsDialog';
+import { MailHandlerSettings } from './MailHandlerSettings';
 import { RoleMembers } from './RoleMembers';
 import { ServiceDeskSettings } from './ServiceDeskSettings';
 import { WikiPagesSettings } from './WikiPagesSettings';
@@ -459,7 +460,12 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
           {view === 'trash' && mayDelete && <IssueTrash projectKey={projectKey} />}
-          {view === 'serviceDesk' && administer && <ServiceDeskSettings projectKey={projectKey} />}
+          {view === 'serviceDesk' && administer && (
+            <div className="flex flex-col gap-6">
+              <ServiceDeskSettings projectKey={projectKey} />
+              <MailHandlerSettings projectKey={projectKey} />
+            </div>
+          )}
           {view === 'workflow' && workflow.data && project.data && (
             <WorkflowEditor
               key={`${workflowType}:${workflow.data.versionId}`}

@@ -24,6 +24,7 @@ import {
   MagnifyingGlass,
   Minus,
   Paperclip,
+  PencilLine,
   PuzzlePiece,
   Quotes,
   Rectangle,
@@ -440,6 +441,18 @@ export function slashItems(t: TFunction, onImage?: () => void): SlashItem[] {
           .chain()
           .focus()
           .insertContent({ type: 'documentPreview', attrs: { attachment: '' } })
+          .run(),
+    },
+    {
+      id: 'diagram',
+      label: t('editor.diagram'),
+      keywords: 'diagramm zeichnung excalidraw skizze drawing sketch',
+      icon: PencilLine,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .insertContent({ type: 'diagram', attrs: { scene: '', svg: '' } })
           .run(),
     },
     {
