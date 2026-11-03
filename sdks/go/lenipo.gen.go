@@ -2436,6 +2436,33 @@ func (e MeAuthenticatedVia) Valid() bool {
 	}
 }
 
+// Defines values for ModuleName.
+const (
+	ModuleNameAutomation   ModuleName = "automation"
+	ModuleNameBoards       ModuleName = "boards"
+	ModuleNameDashboards   ModuleName = "dashboards"
+	ModuleNameTimeTracking ModuleName = "time-tracking"
+	ModuleNameWiki         ModuleName = "wiki"
+)
+
+// Valid indicates whether the value is a known member of the ModuleName enum.
+func (e ModuleName) Valid() bool {
+	switch e {
+	case ModuleNameAutomation:
+		return true
+	case ModuleNameBoards:
+		return true
+	case ModuleNameDashboards:
+		return true
+	case ModuleNameTimeTracking:
+		return true
+	case ModuleNameWiki:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NotificationCategory.
 const (
 	NotificationCategoryAssigned NotificationCategory = "assigned"
@@ -8062,6 +8089,7 @@ type InvitationPreview struct {
 		Name string `json:"name"`
 	} `json:"project"`
 	Registration bool `json:"registration"`
+	Setup        bool `json:"setup"`
 }
 
 // Issue defines model for Issue.
@@ -8620,6 +8648,9 @@ type Me struct {
 
 // MeAuthenticatedVia defines model for Me.AuthenticatedVia.
 type MeAuthenticatedVia string
+
+// ModuleName defines model for ModuleName.
+type ModuleName string
 
 // MoveCardRequest defines model for MoveCardRequest.
 type MoveCardRequest struct {
@@ -9572,6 +9603,62 @@ type ProjectWorkflow struct {
 
 // ProjectWorkflowMode defines model for ProjectWorkflow.Mode.
 type ProjectWorkflowMode string
+
+// ProviderLimits defines model for ProviderLimits.
+type ProviderLimits struct {
+	Agents      *int          `json:"agents,omitempty"`
+	Modules     *[]ModuleName `json:"modules,omitempty"`
+	Persons     *int          `json:"persons,omitempty"`
+	Plan        *string       `json:"plan,omitempty"`
+	ServiceDesk *bool         `json:"serviceDesk,omitempty"`
+	StorageMb   *int          `json:"storageMb,omitempty"`
+}
+
+// ProviderLimitsOutput defines model for ProviderLimitsOutput.
+type ProviderLimitsOutput struct {
+	Agents      *int          `json:"agents"`
+	Modules     *[]ModuleName `json:"modules"`
+	Persons     *int          `json:"persons"`
+	Plan        string        `json:"plan"`
+	ServiceDesk bool          `json:"serviceDesk"`
+	StorageMb   *int          `json:"storageMb"`
+}
+
+// ProviderUsage defines model for ProviderUsage.
+type ProviderUsage struct {
+	Agents       int                   `json:"agents"`
+	Limits       *ProviderLimitsOutput `json:"limits"`
+	MeasuredAt   time.Time             `json:"measuredAt"`
+	Modules      []ModuleName          `json:"modules"`
+	Persons      int                   `json:"persons"`
+	ServiceDesks int                   `json:"serviceDesks"`
+	StorageMb    float32               `json:"storageMb"`
+}
+
+// ProviderUsageOutput defines model for ProviderUsageOutput.
+type ProviderUsageOutput struct {
+	Agents       int                   `json:"agents"`
+	Limits       *ProviderLimitsOutput `json:"limits"`
+	MeasuredAt   time.Time             `json:"measuredAt"`
+	Modules      []ModuleName          `json:"modules"`
+	Persons      int                   `json:"persons"`
+	ServiceDesks int                   `json:"serviceDesks"`
+	StorageMb    float32               `json:"storageMb"`
+}
+
+// ProvisionRequest defines model for ProvisionRequest.
+type ProvisionRequest struct {
+	Admin struct {
+		Email openapi_types.Email `json:"email"`
+	} `json:"admin"`
+	InstanceName string `json:"instanceName"`
+}
+
+// ProvisionResult defines model for ProvisionResult.
+type ProvisionResult struct {
+	ExpiresAt time.Time `json:"expiresAt"`
+	Link      string    `json:"link"`
+}
 
 // PublishPageRequest defines model for PublishPageRequest.
 type PublishPageRequest struct {
@@ -12851,6 +12938,9 @@ type WorkflowsPublishWorkflowJSONRequestBody = PublishWorkflowRequestInput
 // WorkflowsSaveWorkflowDraftJSONRequestBody defines body for WorkflowsSaveWorkflowDraft for application/json ContentType.
 type WorkflowsSaveWorkflowDraftJSONRequestBody = PublishWorkflowRequestInput
 
+// OperationsSetLimitsJSONRequestBody defines body for OperationsSetLimits for application/json ContentType.
+type OperationsSetLimitsJSONRequestBody = ProviderLimits
+
 // ReportsAverageAgeJSONRequestBody defines body for ReportsAverageAge for application/json ContentType.
 type ReportsAverageAgeJSONRequestBody = PeriodRequest
 
@@ -12886,6 +12976,9 @@ type SearchSearchJSONRequestBody = IssueExportRequest
 
 // SetupCompleteJSONRequestBody defines body for SetupComplete for application/json ContentType.
 type SetupCompleteJSONRequestBody = SetupRequest
+
+// SetupProvisionJSONRequestBody defines body for SetupProvision for application/json ContentType.
+type SetupProvisionJSONRequestBody = ProvisionRequest
 
 // SetupRestoreMultipartRequestBody defines body for SetupRestore for multipart/form-data ContentType.
 type SetupRestoreMultipartRequestBody SetupRestoreMultipartBody
@@ -19555,6 +19648,15 @@ type ClientInterface interface {
 	// Corresponds with PATCH /api/v1/admin/permission-schemes/{id} (the `AdministrationUpdatePermissionScheme` operationId).
 	AdministrationUpdatePermissionScheme(ctx context.Context, id string, body AdministrationUpdatePermissionSchemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// OperationsPlan The plan of the instance and what it uses
+	//
+	// `limits` is null without a provider: then nothing is limited.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Corresponds with GET /api/v1/admin/plan (the `OperationsPlan` operationId).
+	OperationsPlan(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AdminCreatePrintTemplateWithBody Create a print template
 	//
 	// Requires the global permission `admin`.
@@ -22881,6 +22983,36 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/projects/{key}/workflow/types/{issueType} (the `WorkflowsUseStandardWorkflow` operationId).
 	WorkflowsUseStandardWorkflow(ctx context.Context, key string, issueType string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// OperationsRemoveLimits Remove the limits of the plan
+	//
+	// Corresponds with DELETE /api/v1/provider/limits (the `OperationsRemoveLimits` operationId).
+	OperationsRemoveLimits(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsSetLimitsWithBody Set the limits of the plan
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+	OperationsSetLimitsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsSetLimits Set the limits of the plan
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+	OperationsSetLimits(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsUsage What the instance uses
+	//
+	// Seats taken, agents, storage, service desks and modules, for billing.
+	//
+	// Corresponds with GET /api/v1/provider/usage (the `OperationsUsage` operationId).
+	OperationsUsage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ReportsAverageAgeWithBody Open issues and their average age per day
 	//
 	// Takes any type of body and a specified content type.
@@ -23084,6 +23216,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/setup (the `SetupComplete` operationId).
 	SetupComplete(ctx context.Context, body SetupCompleteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetupProvisionWithBody Set up the instance as its provider
+	//
+	// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+	SetupProvisionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetupProvision Set up the instance as its provider
+	//
+	// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+	SetupProvision(ctx context.Context, body SetupProvisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetupRestoreWithBody Restore a backup into this fresh instance
 	//
@@ -25283,6 +25433,25 @@ func (c *Client) AdministrationUpdatePermissionSchemeWithBody(ctx context.Contex
 // Corresponds with PATCH /api/v1/admin/permission-schemes/{id} (the `AdministrationUpdatePermissionScheme` operationId).
 func (c *Client) AdministrationUpdatePermissionScheme(ctx context.Context, id string, body AdministrationUpdatePermissionSchemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdministrationUpdatePermissionSchemeRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsPlan The plan of the instance and what it uses
+//
+// `limits` is null without a provider: then nothing is limited.
+//
+// Requires the global permission `admin`.
+//
+// Corresponds with GET /api/v1/admin/plan (the `OperationsPlan` operationId).
+func (c *Client) OperationsPlan(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsPlanRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -33159,6 +33328,76 @@ func (c *Client) WorkflowsUseStandardWorkflow(ctx context.Context, key string, i
 	return c.Client.Do(req)
 }
 
+// OperationsRemoveLimits Remove the limits of the plan
+//
+// Corresponds with DELETE /api/v1/provider/limits (the `OperationsRemoveLimits` operationId).
+func (c *Client) OperationsRemoveLimits(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsRemoveLimitsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsSetLimitsWithBody Set the limits of the plan
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+func (c *Client) OperationsSetLimitsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetLimitsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsSetLimits Set the limits of the plan
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+func (c *Client) OperationsSetLimits(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetLimitsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsUsage What the instance uses
+//
+// Seats taken, agents, storage, service desks and modules, for billing.
+//
+// Corresponds with GET /api/v1/provider/usage (the `OperationsUsage` operationId).
+func (c *Client) OperationsUsage(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsUsageRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ReportsAverageAgeWithBody Open issues and their average age per day
 //
 // Takes any type of body and a specified content type.
@@ -33633,6 +33872,44 @@ func (c *Client) SetupCompleteWithBody(ctx context.Context, contentType string, 
 // Corresponds with POST /api/v1/setup (the `SetupComplete` operationId).
 func (c *Client) SetupComplete(ctx context.Context, body SetupCompleteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetupCompleteRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetupProvisionWithBody Set up the instance as its provider
+//
+// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+func (c *Client) SetupProvisionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetupProvisionRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetupProvision Set up the instance as its provider
+//
+// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+func (c *Client) SetupProvision(ctx context.Context, body SetupProvisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetupProvisionRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -37139,6 +37416,33 @@ func NewAdministrationUpdatePermissionSchemeRequestWithBody(server string, id st
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewOperationsPlanRequest constructs an http.Request for the OperationsPlan method
+func NewOperationsPlanRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/plan")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -50506,6 +50810,100 @@ func NewWorkflowsUseStandardWorkflowRequest(server string, key string, issueType
 	return req, nil
 }
 
+// NewOperationsRemoveLimitsRequest constructs an http.Request for the OperationsRemoveLimits method
+func NewOperationsRemoveLimitsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/provider/limits")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOperationsSetLimitsRequest calls the generic OperationsSetLimits builder with application/json body
+func NewOperationsSetLimitsRequest(server string, body OperationsSetLimitsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewOperationsSetLimitsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewOperationsSetLimitsRequestWithBody constructs an http.Request for the OperationsSetLimits method, with any body, and a specified content type
+func NewOperationsSetLimitsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/provider/limits")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewOperationsUsageRequest constructs an http.Request for the OperationsUsage method
+func NewOperationsUsageRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/provider/usage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewReportsAverageAgeRequest calls the generic ReportsAverageAge builder with application/json body
 func NewReportsAverageAgeRequest(server string, body ReportsAverageAgeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -51207,6 +51605,46 @@ func NewSetupCompleteRequestWithBody(server string, contentType string, body io.
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/setup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSetupProvisionRequest calls the generic SetupProvision builder with application/json body
+func NewSetupProvisionRequest(server string, body SetupProvisionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetupProvisionRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSetupProvisionRequestWithBody constructs an http.Request for the SetupProvision method, with any body, and a specified content type
+func NewSetupProvisionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/setup/provision")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -54055,6 +54493,17 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PATCH /api/v1/admin/permission-schemes/{id} (the `AdministrationUpdatePermissionScheme` operationId).
 	AdministrationUpdatePermissionSchemeWithResponse(ctx context.Context, id string, body AdministrationUpdatePermissionSchemeJSONRequestBody, reqEditors ...RequestEditorFn) (*AdministrationUpdatePermissionSchemeHTTPResponse, error)
+
+	// OperationsPlanWithResponse The plan of the instance and what it uses
+	//
+	// `limits` is null without a provider: then nothing is limited.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/admin/plan (the `OperationsPlan` operationId).
+	OperationsPlanWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsPlanHTTPResponse, error)
 
 	// AdminCreatePrintTemplateWithBodyWithResponse Create a print template
 	//
@@ -57774,6 +58223,40 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/projects/{key}/workflow/types/{issueType} (the `WorkflowsUseStandardWorkflow` operationId).
 	WorkflowsUseStandardWorkflowWithResponse(ctx context.Context, key string, issueType string, reqEditors ...RequestEditorFn) (*WorkflowsUseStandardWorkflowHTTPResponse, error)
 
+	// OperationsRemoveLimitsWithResponse Remove the limits of the plan
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/provider/limits (the `OperationsRemoveLimits` operationId).
+	OperationsRemoveLimitsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsRemoveLimitsHTTPResponse, error)
+
+	// OperationsSetLimitsWithBodyWithResponse Set the limits of the plan
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+	OperationsSetLimitsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetLimitsHTTPResponse, error)
+
+	// OperationsSetLimitsWithResponse Set the limits of the plan
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+	OperationsSetLimitsWithResponse(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetLimitsHTTPResponse, error)
+
+	// OperationsUsageWithResponse What the instance uses
+	//
+	// Seats taken, agents, storage, service desks and modules, for billing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/provider/usage (the `OperationsUsage` operationId).
+	OperationsUsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsUsageHTTPResponse, error)
+
 	// ReportsAverageAgeWithBodyWithResponse Open issues and their average age per day
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -57985,6 +58468,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/setup (the `SetupComplete` operationId).
 	SetupCompleteWithResponse(ctx context.Context, body SetupCompleteJSONRequestBody, reqEditors ...RequestEditorFn) (*SetupCompleteHTTPResponse, error)
+
+	// SetupProvisionWithBodyWithResponse Set up the instance as its provider
+	//
+	// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+	SetupProvisionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetupProvisionHTTPResponse, error)
+
+	// SetupProvisionWithResponse Set up the instance as its provider
+	//
+	// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+	SetupProvisionWithResponse(ctx context.Context, body SetupProvisionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetupProvisionHTTPResponse, error)
 
 	// SetupRestoreWithBodyWithResponse Restore a backup into this fresh instance
 	//
@@ -61694,6 +62195,54 @@ func (r AdministrationUpdatePermissionSchemeHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AdministrationUpdatePermissionSchemeHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type OperationsPlanHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProviderUsageOutput
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsPlanHTTPResponse) GetJSON200() *ProviderUsageOutput {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsPlanHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsPlanHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsPlanHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsPlanHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsPlanHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76899,6 +77448,143 @@ func (r WorkflowsUseStandardWorkflowHTTPResponse) ContentType() string {
 	return ""
 }
 
+type OperationsRemoveLimitsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsRemoveLimitsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsRemoveLimitsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsRemoveLimitsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsRemoveLimitsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsRemoveLimitsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type OperationsSetLimitsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProviderUsage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsSetLimitsHTTPResponse) GetJSON200() *ProviderUsage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsSetLimitsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsSetLimitsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsSetLimitsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsSetLimitsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsSetLimitsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type OperationsUsageHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProviderUsageOutput
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsUsageHTTPResponse) GetJSON200() *ProviderUsageOutput {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsUsageHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsUsageHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsUsageHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsUsageHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsUsageHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ReportsAverageAgeHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -77647,6 +78333,54 @@ func (r SetupCompleteHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SetupCompleteHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetupProvisionHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *ProvisionResult
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r SetupProvisionHTTPResponse) GetJSON201() *ProvisionResult {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetupProvisionHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetupProvisionHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetupProvisionHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetupProvisionHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetupProvisionHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -81118,6 +81852,23 @@ func (c *ClientWithResponses) AdministrationUpdatePermissionSchemeWithResponse(c
 		return nil, err
 	}
 	return ParseAdministrationUpdatePermissionSchemeHTTPResponse(rsp)
+}
+
+// OperationsPlanWithResponse The plan of the instance and what it uses
+//
+// `limits` is null without a provider: then nothing is limited.
+//
+// Requires the global permission `admin`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/admin/plan (the `OperationsPlan` operationId).
+func (c *ClientWithResponses) OperationsPlanWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsPlanHTTPResponse, error) {
+	rsp, err := c.OperationsPlan(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsPlanHTTPResponse(rsp)
 }
 
 // AdminCreatePrintTemplateWithBodyWithResponse Create a print template
@@ -87562,6 +88313,64 @@ func (c *ClientWithResponses) WorkflowsUseStandardWorkflowWithResponse(ctx conte
 	return ParseWorkflowsUseStandardWorkflowHTTPResponse(rsp)
 }
 
+// OperationsRemoveLimitsWithResponse Remove the limits of the plan
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/provider/limits (the `OperationsRemoveLimits` operationId).
+func (c *ClientWithResponses) OperationsRemoveLimitsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsRemoveLimitsHTTPResponse, error) {
+	rsp, err := c.OperationsRemoveLimits(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsRemoveLimitsHTTPResponse(rsp)
+}
+
+// OperationsSetLimitsWithBodyWithResponse Set the limits of the plan
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+func (c *ClientWithResponses) OperationsSetLimitsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetLimitsHTTPResponse, error) {
+	rsp, err := c.OperationsSetLimitsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetLimitsHTTPResponse(rsp)
+}
+
+// OperationsSetLimitsWithResponse Set the limits of the plan
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
+func (c *ClientWithResponses) OperationsSetLimitsWithResponse(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetLimitsHTTPResponse, error) {
+	rsp, err := c.OperationsSetLimits(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetLimitsHTTPResponse(rsp)
+}
+
+// OperationsUsageWithResponse What the instance uses
+//
+// Seats taken, agents, storage, service desks and modules, for billing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/provider/usage (the `OperationsUsage` operationId).
+func (c *ClientWithResponses) OperationsUsageWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsUsageHTTPResponse, error) {
+	rsp, err := c.OperationsUsage(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsUsageHTTPResponse(rsp)
+}
+
 // ReportsAverageAgeWithBodyWithResponse Open issues and their average age per day
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -87940,6 +88749,36 @@ func (c *ClientWithResponses) SetupCompleteWithResponse(ctx context.Context, bod
 		return nil, err
 	}
 	return ParseSetupCompleteHTTPResponse(rsp)
+}
+
+// SetupProvisionWithBodyWithResponse Set up the instance as its provider
+//
+// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+func (c *ClientWithResponses) SetupProvisionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetupProvisionHTTPResponse, error) {
+	rsp, err := c.SetupProvisionWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetupProvisionHTTPResponse(rsp)
+}
+
+// SetupProvisionWithResponse Set up the instance as its provider
+//
+// For hosting services and deployment tools: with `Authorization: Bearer <SETUP_TOKEN>` (from the environment of the instance) names the instance and invites the first administrator. The answer holds the invitation link; the person sets name and password there. Only while setup is required.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/setup/provision (the `SetupProvision` operationId).
+func (c *ClientWithResponses) SetupProvisionWithResponse(ctx context.Context, body SetupProvisionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetupProvisionHTTPResponse, error) {
+	rsp, err := c.SetupProvision(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetupProvisionHTTPResponse(rsp)
 }
 
 // SetupRestoreWithBodyWithResponse Restore a backup into this fresh instance
@@ -90930,6 +91769,39 @@ func ParseAdministrationUpdatePermissionSchemeHTTPResponse(rsp *http.Response) (
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PermissionScheme
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsPlanHTTPResponse parses an HTTP response from a OperationsPlanWithResponse call
+func ParseOperationsPlanHTTPResponse(rsp *http.Response) (*OperationsPlanHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsPlanHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProviderUsageOutput
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -101438,6 +102310,101 @@ func ParseWorkflowsUseStandardWorkflowHTTPResponse(rsp *http.Response) (*Workflo
 	return response, nil
 }
 
+// ParseOperationsRemoveLimitsHTTPResponse parses an HTTP response from a OperationsRemoveLimitsWithResponse call
+func ParseOperationsRemoveLimitsHTTPResponse(rsp *http.Response) (*OperationsRemoveLimitsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsRemoveLimitsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsSetLimitsHTTPResponse parses an HTTP response from a OperationsSetLimitsWithResponse call
+func ParseOperationsSetLimitsHTTPResponse(rsp *http.Response) (*OperationsSetLimitsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsSetLimitsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProviderUsage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsUsageHTTPResponse parses an HTTP response from a OperationsUsageWithResponse call
+func ParseOperationsUsageHTTPResponse(rsp *http.Response) (*OperationsUsageHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsUsageHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProviderUsageOutput
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseReportsAverageAgeHTTPResponse parses an HTTP response from a ReportsAverageAgeWithResponse call
 func ParseReportsAverageAgeHTTPResponse(rsp *http.Response) (*ReportsAverageAgeHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -101938,6 +102905,39 @@ func ParseSetupCompleteHTTPResponse(rsp *http.Response) (*SetupCompleteHTTPRespo
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Me
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetupProvisionHTTPResponse parses an HTTP response from a SetupProvisionWithResponse call
+func ParseSetupProvisionHTTPResponse(rsp *http.Response) (*SetupProvisionHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetupProvisionHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ProvisionResult
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

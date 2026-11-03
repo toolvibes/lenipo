@@ -30,6 +30,7 @@ class InvitationPreview:
             project (InvitationPreviewProjectType0 | None):
             invited_by (None | str):
             registration (bool):
+            setup (bool):
      """
 
     email: str
@@ -37,6 +38,7 @@ class InvitationPreview:
     project: InvitationPreviewProjectType0 | None
     invited_by: None | str
     registration: bool
+    setup: bool
 
 
 
@@ -59,6 +61,8 @@ class InvitationPreview:
 
         registration = self.registration
 
+        setup = self.setup
+
 
         field_dict: dict[str, Any] = {}
 
@@ -68,6 +72,7 @@ class InvitationPreview:
             "project": project,
             "invitedBy": invited_by,
             "registration": registration,
+            "setup": setup,
         })
 
         return field_dict
@@ -110,12 +115,15 @@ class InvitationPreview:
 
         registration = d.pop("registration")
 
+        setup = d.pop("setup")
+
         invitation_preview = cls(
             email=email,
             instance_name=instance_name,
             project=project,
             invited_by=invited_by,
             registration=registration,
+            setup=setup,
         )
 
         return invitation_preview

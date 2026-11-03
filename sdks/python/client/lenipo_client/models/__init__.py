@@ -406,6 +406,7 @@ from .maintenance_mode_input import MaintenanceModeInput
 from .mark_notifications_read import MarkNotificationsRead
 from .me import Me
 from .me_authenticated_via import MeAuthenticatedVia
+from .module_name import ModuleName
 from .move_card_request import MoveCardRequest
 from .move_issue_request import MoveIssueRequest
 from .move_page_request import MovePageRequest
@@ -555,6 +556,13 @@ from .project_workflow_usage import ProjectWorkflowUsage
 from .projects_get_mail_handler_response_200 import ProjectsGetMailHandlerResponse200
 from .projects_list_issues_status import ProjectsListIssuesStatus
 from .projects_save_mail_handler_response_200 import ProjectsSaveMailHandlerResponse200
+from .provider_limits import ProviderLimits
+from .provider_limits_output import ProviderLimitsOutput
+from .provider_usage import ProviderUsage
+from .provider_usage_output import ProviderUsageOutput
+from .provision_request import ProvisionRequest
+from .provision_request_admin import ProvisionRequestAdmin
+from .provision_result import ProvisionResult
 from .publish_page_request import PublishPageRequest
 from .publish_release_notes_request import PublishReleaseNotesRequest
 from .publish_workflow_request import PublishWorkflowRequest
@@ -1283,6 +1291,7 @@ __all__ = (
     "MarkNotificationsRead",
     "Me",
     "MeAuthenticatedVia",
+    "ModuleName",
     "MoveCardRequest",
     "MoveIssueRequest",
     "MovePageRequest",
@@ -1432,6 +1441,13 @@ __all__ = (
     "ProjectWorkflowRules",
     "ProjectWorkflowTransitionsItem",
     "ProjectWorkflowUsage",
+    "ProviderLimits",
+    "ProviderLimitsOutput",
+    "ProviderUsage",
+    "ProviderUsageOutput",
+    "ProvisionRequest",
+    "ProvisionRequestAdmin",
+    "ProvisionResult",
     "PublishPageRequest",
     "PublishReleaseNotesRequest",
     "PublishWorkflowRequest",
