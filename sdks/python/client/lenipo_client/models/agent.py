@@ -34,6 +34,7 @@ class Agent:
             model (str):
             owner (None | UserRef):
             task_filter (str):
+            webhook_url (None | str):
             status (AgentStatus):
             created_at (datetime.datetime):
      """
@@ -44,6 +45,7 @@ class Agent:
     model: str
     owner: None | UserRef
     task_filter: str
+    webhook_url: None | str
     status: AgentStatus
     created_at: datetime.datetime
 
@@ -69,6 +71,9 @@ class Agent:
 
         task_filter = self.task_filter
 
+        webhook_url: None | str
+        webhook_url = self.webhook_url
+
         status = self.status.value
 
         created_at = self.created_at.isoformat()
@@ -83,6 +88,7 @@ class Agent:
             "model": model,
             "owner": owner,
             "taskFilter": task_filter,
+            "webhookUrl": webhook_url,
             "status": status,
             "createdAt": created_at,
         })
@@ -126,6 +132,14 @@ class Agent:
 
         task_filter = d.pop("taskFilter")
 
+        def _parse_webhook_url(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        webhook_url = _parse_webhook_url(d.pop("webhookUrl"))
+
+
         status = AgentStatus(d.pop("status"))
 
 
@@ -143,6 +157,7 @@ class Agent:
             model=model,
             owner=owner,
             task_filter=task_filter,
+            webhook_url=webhook_url,
             status=status,
             created_at=created_at,
         )

@@ -8,6 +8,7 @@ from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
+from ..models.comment_kind import CommentKind
 from typing import cast
 from uuid import UUID
 import datetime
@@ -35,6 +36,7 @@ class Comment:
             updated_at (datetime.datetime):
             edited (bool):
             internal (bool):
+            kind (CommentKind):
             can_edit (bool):
             can_delete (bool):
      """
@@ -46,6 +48,7 @@ class Comment:
     updated_at: datetime.datetime
     edited: bool
     internal: bool
+    kind: CommentKind
     can_edit: bool
     can_delete: bool
 
@@ -78,6 +81,8 @@ class Comment:
 
         internal = self.internal
 
+        kind = self.kind.value
+
         can_edit = self.can_edit
 
         can_delete = self.can_delete
@@ -93,6 +98,7 @@ class Comment:
             "updatedAt": updated_at,
             "edited": edited,
             "internal": internal,
+            "kind": kind,
             "canEdit": can_edit,
             "canDelete": can_delete,
         })
@@ -159,6 +165,11 @@ class Comment:
 
         internal = d.pop("internal")
 
+        kind = CommentKind(d.pop("kind"))
+
+
+
+
         can_edit = d.pop("canEdit")
 
         can_delete = d.pop("canDelete")
@@ -171,6 +182,7 @@ class Comment:
             updated_at=updated_at,
             edited=edited,
             internal=internal,
+            kind=kind,
             can_edit=can_edit,
             can_delete=can_delete,
         )

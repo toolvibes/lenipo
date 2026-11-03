@@ -24,6 +24,8 @@ from .admin_token import AdminToken
 from .admin_token_owner import AdminTokenOwner
 from .agent import Agent
 from .agent_status import AgentStatus
+from .agent_webhook import AgentWebhook
+from .agent_webhook_request import AgentWebhookRequest
 from .ai_settings import AiSettings
 from .ai_settings_indexed import AiSettingsIndexed
 from .ai_test_result import AiTestResult
@@ -94,6 +96,7 @@ from .backup_settings import BackupSettings
 from .backup_settings_input import BackupSettingsInput
 from .backup_state import BackupState
 from .backup_trigger import BackupTrigger
+from .blocker_request import BlockerRequest
 from .blog import Blog
 from .blog_months_item import BlogMonthsItem
 from .blog_post import BlogPost
@@ -139,6 +142,7 @@ from .claim_request import ClaimRequest
 from .claim_result import ClaimResult
 from .clone_issue_request import CloneIssueRequest
 from .comment import Comment
+from .comment_kind import CommentKind
 from .complete_sprint_request import CompleteSprintRequest
 from .component import Component
 from .component_ref import ComponentRef
@@ -278,6 +282,7 @@ from .git_provider import GitProvider
 from .global_permission import GlobalPermission
 from .group_ref import GroupRef
 from .group_summary import GroupSummary
+from .handover_request import HandoverRequest
 from .health_status import HealthStatus
 from .health_status_database import HealthStatusDatabase
 from .health_status_status import HealthStatusStatus
@@ -850,6 +855,8 @@ __all__ = (
     "AdminTokenOwner",
     "Agent",
     "AgentStatus",
+    "AgentWebhook",
+    "AgentWebhookRequest",
     "AiSettings",
     "AiSettingsIndexed",
     "AiTestResult",
@@ -920,6 +927,7 @@ __all__ = (
     "BackupSettingsInput",
     "BackupState",
     "BackupTrigger",
+    "BlockerRequest",
     "Blog",
     "BlogMonthsItem",
     "BlogPost",
@@ -965,6 +973,7 @@ __all__ = (
     "ClaimResult",
     "CloneIssueRequest",
     "Comment",
+    "CommentKind",
     "CompleteSprintRequest",
     "Component",
     "ComponentRef",
@@ -1104,6 +1113,7 @@ __all__ = (
     "GlobalPermission",
     "GroupRef",
     "GroupSummary",
+    "HandoverRequest",
     "HealthStatus",
     "HealthStatusDatabase",
     "HealthStatusStatus",

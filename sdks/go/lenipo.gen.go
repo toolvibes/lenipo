@@ -870,6 +870,24 @@ func (e BurndownPointType) Valid() bool {
 	}
 }
 
+// Defines values for CommentKind.
+const (
+	CommentKindComment  CommentKind = "comment"
+	CommentKindHandover CommentKind = "handover"
+)
+
+// Valid indicates whether the value is a known member of the CommentKind enum.
+func (e CommentKind) Valid() bool {
+	switch e {
+	case CommentKindComment:
+		return true
+	case CommentKindHandover:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CompleteSprintRequestMoveTo0.
 const (
 	Backlog CompleteSprintRequestMoveTo0 = "backlog"
@@ -5691,10 +5709,22 @@ type Agent struct {
 	Status      AgentStatus        `json:"status"`
 	TaskFilter  string             `json:"taskFilter"`
 	Vendor      string             `json:"vendor"`
+	WebhookUrl  *string            `json:"webhookUrl"`
 }
 
 // AgentStatus defines model for Agent.Status.
 type AgentStatus string
+
+// AgentWebhook defines model for AgentWebhook.
+type AgentWebhook struct {
+	Secret string `json:"secret"`
+	Url    string `json:"url"`
+}
+
+// AgentWebhookRequest defines model for AgentWebhookRequest.
+type AgentWebhookRequest struct {
+	Url string `json:"url"`
+}
 
 // AiSettings defines model for AiSettings.
 type AiSettings struct {
@@ -6182,6 +6212,12 @@ type BackupSettingsInput struct {
 	Keep    *int  `json:"keep,omitempty"`
 }
 
+// BlockerRequest defines model for BlockerRequest.
+type BlockerRequest struct {
+	BlockedBy *string `json:"blockedBy,omitempty"`
+	Note      string  `json:"note"`
+}
+
 // Blog defines model for Blog.
 type Blog struct {
 	Months []struct {
@@ -6479,8 +6515,12 @@ type Comment struct {
 	Edited    bool               `json:"edited"`
 	Id        openapi_types.UUID `json:"id"`
 	Internal  bool               `json:"internal"`
+	Kind      CommentKind        `json:"kind"`
 	UpdatedAt time.Time          `json:"updatedAt"`
 }
+
+// CommentKind defines model for Comment.Kind.
+type CommentKind string
 
 // CompleteSprintRequest defines model for CompleteSprintRequest.
 type CompleteSprintRequest struct {
@@ -7556,6 +7596,14 @@ type GroupSummary struct {
 	Id                openapi_types.UUID `json:"id"`
 	MemberCount       int                `json:"memberCount"`
 	Name              string             `json:"name"`
+}
+
+// HandoverRequest defines model for HandoverRequest.
+type HandoverRequest struct {
+	Done  string  `json:"done"`
+	Notes *string `json:"notes,omitempty"`
+	Open  *string `json:"open,omitempty"`
+	To    *string `json:"to,omitempty"`
 }
 
 // HealthStatus defines model for HealthStatus.
@@ -11642,6 +11690,7 @@ type NotificationsListParams struct {
 	Category *NotificationCategory `form:"category,omitempty" json:"category,omitempty"`
 	Limit    *int                  `form:"limit,omitempty" json:"limit,omitempty"`
 	Before   *int                  `form:"before,omitempty" json:"before,omitempty"`
+	After    *int                  `form:"after,omitempty" json:"after,omitempty"`
 }
 
 // PersonalRecentParams defines parameters for PersonalRecent.
@@ -11987,6 +12036,9 @@ type AgentsUpdateJSONRequestBody = UpdateAgentRequest
 // AgentsCreateTokenJSONRequestBody defines body for AgentsCreateToken for application/json ContentType.
 type AgentsCreateTokenJSONRequestBody = CreateTokenRequest
 
+// AgentsSetWebhookJSONRequestBody defines body for AgentsSetWebhook for application/json ContentType.
+type AgentsSetWebhookJSONRequestBody = AgentWebhookRequest
+
 // AuthSecondFactorJSONRequestBody defines body for AuthSecondFactor for application/json ContentType.
 type AuthSecondFactorJSONRequestBody = TwoFactorCodeRequest
 
@@ -12071,6 +12123,9 @@ type IssuesUpdateJSONRequestBody = UpdateIssueRequest
 // IssuesUploadMultipartRequestBody defines body for IssuesUpload for multipart/form-data ContentType.
 type IssuesUploadMultipartRequestBody IssuesUploadMultipartBody
 
+// AgentsBlockerJSONRequestBody defines body for AgentsBlocker for application/json ContentType.
+type AgentsBlockerJSONRequestBody = BlockerRequest
+
 // AgentsClaimIssueJSONRequestBody defines body for AgentsClaimIssue for application/json ContentType.
 type AgentsClaimIssueJSONRequestBody = ClaimRequest
 
@@ -12085,6 +12140,9 @@ type IssuesUpdateCommentJSONRequestBody = UpdateCommentRequest
 
 // IssuesVoteEstimateJSONRequestBody defines body for IssuesVoteEstimate for application/json ContentType.
 type IssuesVoteEstimateJSONRequestBody = EstimateVoteRequest
+
+// AgentsHandoverJSONRequestBody defines body for AgentsHandover for application/json ContentType.
+type AgentsHandoverJSONRequestBody = HandoverRequest
 
 // IssuesAddLinkJSONRequestBody defines body for IssuesAddLink for application/json ContentType.
 type IssuesAddLinkJSONRequestBody = CreateIssueLinkRequest
@@ -19623,6 +19681,29 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
 	AgentsRevokeToken(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsRemoveWebhook Remove the webhook of an AI agent
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
+	AgentsRemoveWebhook(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetWebhookWithBody Set the webhook of an AI agent; the secret is returned only once
+	//
+	// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+	AgentsSetWebhookWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsSetWebhook Set the webhook of an AI agent; the secret is returned only once
+	//
+	// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+	AgentsSetWebhook(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AppsListApps Enabled apps with their panels, macros and gadgets
 	//
 	// Corresponds with GET /api/v1/apps (the `AppsListApps` operationId).
@@ -20294,6 +20375,24 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/issues/{key}/attachments/{id} (the `IssuesDelete` operationId).
 	IssuesDelete(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsBlockerWithBody Report a blocker
+	//
+	// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+	AgentsBlockerWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsBlocker Report a blocker
+	//
+	// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+	AgentsBlocker(ctx context.Context, key string, body AgentsBlockerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AgentsReleaseClaim Release a claim
 	//
 	// One’s own, or any as project administrator. The assignee stays.
@@ -20426,6 +20525,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /api/v1/issues/{key}/estimation/vote (the `IssuesVoteEstimate` operationId).
 	IssuesVoteEstimate(ctx context.Context, key string, body IssuesVoteEstimateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsHandoverWithBody Hand an issue over
+	//
+	// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+	AgentsHandoverWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsHandover Hand an issue over
+	//
+	// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+	AgentsHandover(ctx context.Context, key string, body AgentsHandoverJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// IssuesHistory List the change history of an issue, newest first
 	//
@@ -20658,6 +20775,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/me/2fa/setup (the `MeSetupTwoFactor` operationId).
 	MeSetupTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// NotificationsEvents Stream the caller’s new notifications (Server-Sent Events)
+	//
+	// Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.
+	//
+	// Corresponds with GET /api/v1/me/events (the `NotificationsEvents` operationId).
+	NotificationsEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PersonalFavourites List the caller’s favourites
 	//
@@ -25773,6 +25897,59 @@ func (c *Client) AgentsRevokeToken(ctx context.Context, id string, tokenId strin
 	return c.Client.Do(req)
 }
 
+// AgentsRemoveWebhook Remove the webhook of an AI agent
+//
+// Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
+func (c *Client) AgentsRemoveWebhook(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsRemoveWebhookRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetWebhookWithBody Set the webhook of an AI agent; the secret is returned only once
+//
+// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+func (c *Client) AgentsSetWebhookWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetWebhookRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsSetWebhook Set the webhook of an AI agent; the secret is returned only once
+//
+// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+func (c *Client) AgentsSetWebhook(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsSetWebhookRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AppsListApps Enabled apps with their panels, macros and gadgets
 //
 // Corresponds with GET /api/v1/apps (the `AppsListApps` operationId).
@@ -27414,6 +27591,44 @@ func (c *Client) IssuesDelete(ctx context.Context, key string, id string, reqEdi
 	return c.Client.Do(req)
 }
 
+// AgentsBlockerWithBody Report a blocker
+//
+// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+func (c *Client) AgentsBlockerWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsBlockerRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsBlocker Report a blocker
+//
+// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+func (c *Client) AgentsBlocker(ctx context.Context, key string, body AgentsBlockerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsBlockerRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AgentsReleaseClaim Release a claim
 //
 // One’s own, or any as project administrator. The assignee stays.
@@ -27727,6 +27942,44 @@ func (c *Client) IssuesVoteEstimateWithBody(ctx context.Context, key string, con
 // Corresponds with PUT /api/v1/issues/{key}/estimation/vote (the `IssuesVoteEstimate` operationId).
 func (c *Client) IssuesVoteEstimate(ctx context.Context, key string, body IssuesVoteEstimateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewIssuesVoteEstimateRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsHandoverWithBody Hand an issue over
+//
+// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+func (c *Client) AgentsHandoverWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsHandoverRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsHandover Hand an issue over
+//
+// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+func (c *Client) AgentsHandover(ctx context.Context, key string, body AgentsHandoverJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsHandoverRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
 	}
@@ -28299,6 +28552,23 @@ func (c *Client) MeRecoveryCodes(ctx context.Context, body MeRecoveryCodesJSONRe
 // Corresponds with POST /api/v1/me/2fa/setup (the `MeSetupTwoFactor` operationId).
 func (c *Client) MeSetupTwoFactor(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMeSetupTwoFactorRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NotificationsEvents Stream the caller’s new notifications (Server-Sent Events)
+//
+// Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.
+//
+// Corresponds with GET /api/v1/me/events (the `NotificationsEvents` operationId).
+func (c *Client) NotificationsEvents(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewNotificationsEventsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -37408,6 +37678,87 @@ func NewAgentsRevokeTokenRequest(server string, id string, tokenId string) (*htt
 	return req, nil
 }
 
+// NewAgentsRemoveWebhookRequest constructs an http.Request for the AgentsRemoveWebhook method
+func NewAgentsRemoveWebhookRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/webhook", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsSetWebhookRequest calls the generic AgentsSetWebhook builder with application/json body
+func NewAgentsSetWebhookRequest(server string, id string, body AgentsSetWebhookJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsSetWebhookRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsSetWebhookRequestWithBody constructs an http.Request for the AgentsSetWebhook method, with any body, and a specified content type
+func NewAgentsSetWebhookRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/webhook", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAppsListAppsRequest constructs an http.Request for the AppsListApps method
 func NewAppsListAppsRequest(server string) (*http.Request, error) {
 	var err error
@@ -40228,6 +40579,53 @@ func NewIssuesDeleteRequest(server string, key string, id string) (*http.Request
 	return req, nil
 }
 
+// NewAgentsBlockerRequest calls the generic AgentsBlocker builder with application/json body
+func NewAgentsBlockerRequest(server string, key string, body AgentsBlockerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsBlockerRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsBlockerRequestWithBody constructs an http.Request for the AgentsBlocker method, with any body, and a specified content type
+func NewAgentsBlockerRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/blocker", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAgentsReleaseClaimRequest constructs an http.Request for the AgentsReleaseClaim method
 func NewAgentsReleaseClaimRequest(server string, key string) (*http.Request, error) {
 	var err error
@@ -40855,6 +41253,53 @@ func NewIssuesVoteEstimateRequestWithBody(server string, key string, contentType
 	}
 
 	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsHandoverRequest calls the generic AgentsHandover builder with application/json body
+func NewAgentsHandoverRequest(server string, key string, body AgentsHandoverJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsHandoverRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsHandoverRequestWithBody constructs an http.Request for the AgentsHandover method, with any body, and a specified content type
+func NewAgentsHandoverRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/handover", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -41843,6 +42288,33 @@ func NewMeSetupTwoFactorRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewNotificationsEventsRequest constructs an http.Request for the NotificationsEvents method
+func NewNotificationsEventsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/events")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPersonalFavouritesRequest constructs an http.Request for the PersonalFavourites method
 func NewPersonalFavouritesRequest(server string) (*http.Request, error) {
 	var err error
@@ -42207,6 +42679,18 @@ func NewNotificationsListRequest(server string, params *NotificationsListParams)
 		if params.Before != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "before", *params.Before, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -51853,6 +52337,31 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
 	AgentsRevokeTokenWithResponse(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*AgentsRevokeTokenHTTPResponse, error)
 
+	// AgentsRemoveWebhookWithResponse Remove the webhook of an AI agent
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
+	AgentsRemoveWebhookWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsRemoveWebhookHTTPResponse, error)
+
+	// AgentsSetWebhookWithBodyWithResponse Set the webhook of an AI agent; the secret is returned only once
+	//
+	// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+	AgentsSetWebhookWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetWebhookHTTPResponse, error)
+
+	// AgentsSetWebhookWithResponse Set the webhook of an AI agent; the secret is returned only once
+	//
+	// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+	AgentsSetWebhookWithResponse(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetWebhookHTTPResponse, error)
+
 	// AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52608,6 +53117,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/issues/{key}/attachments/{id} (the `IssuesDelete` operationId).
 	IssuesDeleteWithResponse(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*IssuesDeleteHTTPResponse, error)
 
+	// AgentsBlockerWithBodyWithResponse Report a blocker
+	//
+	// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+	AgentsBlockerWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsBlockerHTTPResponse, error)
+
+	// AgentsBlockerWithResponse Report a blocker
+	//
+	// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+	AgentsBlockerWithResponse(ctx context.Context, key string, body AgentsBlockerJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsBlockerHTTPResponse, error)
+
 	// AgentsReleaseClaimWithResponse Release a claim
 	//
 	// One’s own, or any as project administrator. The assignee stays.
@@ -52758,6 +53285,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /api/v1/issues/{key}/estimation/vote (the `IssuesVoteEstimate` operationId).
 	IssuesVoteEstimateWithResponse(ctx context.Context, key string, body IssuesVoteEstimateJSONRequestBody, reqEditors ...RequestEditorFn) (*IssuesVoteEstimateHTTPResponse, error)
+
+	// AgentsHandoverWithBodyWithResponse Hand an issue over
+	//
+	// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+	AgentsHandoverWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsHandoverHTTPResponse, error)
+
+	// AgentsHandoverWithResponse Hand an issue over
+	//
+	// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+	AgentsHandoverWithResponse(ctx context.Context, key string, body AgentsHandoverJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsHandoverHTTPResponse, error)
 
 	// IssuesHistoryWithResponse List the change history of an issue, newest first
 	//
@@ -53018,6 +53563,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/me/2fa/setup (the `MeSetupTwoFactor` operationId).
 	MeSetupTwoFactorWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*MeSetupTwoFactorHTTPResponse, error)
+
+	// NotificationsEventsWithResponse Stream the caller’s new notifications (Server-Sent Events)
+	//
+	// Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/me/events (the `NotificationsEvents` operationId).
+	NotificationsEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*NotificationsEventsHTTPResponse, error)
 
 	// PersonalFavouritesWithResponse List the caller’s favourites
 	//
@@ -60885,6 +61439,95 @@ func (r AgentsRevokeTokenHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsRemoveWebhookHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsRemoveWebhookHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsRemoveWebhookHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsRemoveWebhookHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsRemoveWebhookHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsRemoveWebhookHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsSetWebhookHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentWebhook
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsSetWebhookHTTPResponse) GetJSON200() *AgentWebhook {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsSetWebhookHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsSetWebhookHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsSetWebhookHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsSetWebhookHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsSetWebhookHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AppsListAppsHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -64134,6 +64777,54 @@ func (r IssuesDeleteHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsBlockerHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Comment
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AgentsBlockerHTTPResponse) GetJSON201() *Comment {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsBlockerHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsBlockerHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsBlockerHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsBlockerHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsBlockerHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AgentsReleaseClaimHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -64779,6 +65470,54 @@ func (r IssuesVoteEstimateHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r IssuesVoteEstimateHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsHandoverHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Comment
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AgentsHandoverHTTPResponse) GetJSON201() *Comment {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsHandoverHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsHandoverHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsHandoverHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsHandoverHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsHandoverHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -65893,6 +66632,47 @@ func (r MeSetupTwoFactorHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MeSetupTwoFactorHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type NotificationsEventsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r NotificationsEventsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r NotificationsEventsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r NotificationsEventsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r NotificationsEventsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r NotificationsEventsHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -77605,6 +78385,49 @@ func (c *ClientWithResponses) AgentsRevokeTokenWithResponse(ctx context.Context,
 	return ParseAgentsRevokeTokenHTTPResponse(rsp)
 }
 
+// AgentsRemoveWebhookWithResponse Remove the webhook of an AI agent
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/agents/{id}/webhook (the `AgentsRemoveWebhook` operationId).
+func (c *ClientWithResponses) AgentsRemoveWebhookWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsRemoveWebhookHTTPResponse, error) {
+	rsp, err := c.AgentsRemoveWebhook(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsRemoveWebhookHTTPResponse(rsp)
+}
+
+// AgentsSetWebhookWithBodyWithResponse Set the webhook of an AI agent; the secret is returned only once
+//
+// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+func (c *ClientWithResponses) AgentsSetWebhookWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsSetWebhookHTTPResponse, error) {
+	rsp, err := c.AgentsSetWebhookWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetWebhookHTTPResponse(rsp)
+}
+
+// AgentsSetWebhookWithResponse Set the webhook of an AI agent; the secret is returned only once
+//
+// Every new notification of the agent (mentions, assignments, comments …) is sent there as `notification.created`, signed like all webhooks (Standard Webhooks) and retried. Setting it again replaces URL and secret. For its responsible person and administrators, in the browser.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/agents/{id}/webhook (the `AgentsSetWebhook` operationId).
+func (c *ClientWithResponses) AgentsSetWebhookWithResponse(ctx context.Context, id string, body AgentsSetWebhookJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetWebhookHTTPResponse, error) {
+	rsp, err := c.AgentsSetWebhook(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsSetWebhookHTTPResponse(rsp)
+}
+
 // AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78942,6 +79765,36 @@ func (c *ClientWithResponses) IssuesDeleteWithResponse(ctx context.Context, key 
 	return ParseIssuesDeleteHTTPResponse(rsp)
 }
 
+// AgentsBlockerWithBodyWithResponse Report a blocker
+//
+// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+func (c *ClientWithResponses) AgentsBlockerWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsBlockerHTTPResponse, error) {
+	rsp, err := c.AgentsBlockerWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsBlockerHTTPResponse(rsp)
+}
+
+// AgentsBlockerWithResponse Report a blocker
+//
+// Links `blockedBy` as blocking issue, writes the note as comment and sets the caller’s heartbeat to blocked on this issue.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/blocker (the `AgentsBlocker` operationId).
+func (c *ClientWithResponses) AgentsBlockerWithResponse(ctx context.Context, key string, body AgentsBlockerJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsBlockerHTTPResponse, error) {
+	rsp, err := c.AgentsBlocker(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsBlockerHTTPResponse(rsp)
+}
+
 // AgentsReleaseClaimWithResponse Release a claim
 //
 // One’s own, or any as project administrator. The assignee stays.
@@ -79205,6 +80058,36 @@ func (c *ClientWithResponses) IssuesVoteEstimateWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseIssuesVoteEstimateHTTPResponse(rsp)
+}
+
+// AgentsHandoverWithBodyWithResponse Hand an issue over
+//
+// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+func (c *ClientWithResponses) AgentsHandoverWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsHandoverHTTPResponse, error) {
+	rsp, err := c.AgentsHandoverWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsHandoverHTTPResponse(rsp)
+}
+
+// AgentsHandoverWithResponse Hand an issue over
+//
+// Writes one comment marked as handover with what is done, what is open and notes. With `to` (id or e-mail) that person or agent becomes assignee, is mentioned and takes over the caller’s claim with its work area; without, the caller’s claim ends.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/handover (the `AgentsHandover` operationId).
+func (c *ClientWithResponses) AgentsHandoverWithResponse(ctx context.Context, key string, body AgentsHandoverJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsHandoverHTTPResponse, error) {
+	rsp, err := c.AgentsHandover(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsHandoverHTTPResponse(rsp)
 }
 
 // IssuesHistoryWithResponse List the change history of an issue, newest first
@@ -79669,6 +80552,21 @@ func (c *ClientWithResponses) MeSetupTwoFactorWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseMeSetupTwoFactorHTTPResponse(rsp)
+}
+
+// NotificationsEventsWithResponse Stream the caller’s new notifications (Server-Sent Events)
+//
+// Each notification comes as `event: notification` with the notification as JSON and its id as event id. After a broken connection, `Last-Event-ID` (or `?after=<id>`) sends what was missed. A comment line every 25 seconds keeps proxies from closing the stream.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/me/events (the `NotificationsEvents` operationId).
+func (c *ClientWithResponses) NotificationsEventsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*NotificationsEventsHTTPResponse, error) {
+	rsp, err := c.NotificationsEvents(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNotificationsEventsHTTPResponse(rsp)
 }
 
 // PersonalFavouritesWithResponse List the caller’s favourites
@@ -87356,6 +88254,68 @@ func ParseAgentsRevokeTokenHTTPResponse(rsp *http.Response) (*AgentsRevokeTokenH
 	return response, nil
 }
 
+// ParseAgentsRemoveWebhookHTTPResponse parses an HTTP response from a AgentsRemoveWebhookWithResponse call
+func ParseAgentsRemoveWebhookHTTPResponse(rsp *http.Response) (*AgentsRemoveWebhookHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsRemoveWebhookHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsSetWebhookHTTPResponse parses an HTTP response from a AgentsSetWebhookWithResponse call
+func ParseAgentsSetWebhookHTTPResponse(rsp *http.Response) (*AgentsSetWebhookHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsSetWebhookHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentWebhook
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAppsListAppsHTTPResponse parses an HTTP response from a AppsListAppsWithResponse call
 func ParseAppsListAppsHTTPResponse(rsp *http.Response) (*AppsListAppsHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -89596,6 +90556,39 @@ func ParseIssuesDeleteHTTPResponse(rsp *http.Response) (*IssuesDeleteHTTPRespons
 	return response, nil
 }
 
+// ParseAgentsBlockerHTTPResponse parses an HTTP response from a AgentsBlockerWithResponse call
+func ParseAgentsBlockerHTTPResponse(rsp *http.Response) (*AgentsBlockerHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsBlockerHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Comment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAgentsReleaseClaimHTTPResponse parses an HTTP response from a AgentsReleaseClaimWithResponse call
 func ParseAgentsReleaseClaimHTTPResponse(rsp *http.Response) (*AgentsReleaseClaimHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -90033,6 +91026,39 @@ func ParseIssuesVoteEstimateHTTPResponse(rsp *http.Response) (*IssuesVoteEstimat
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsHandoverHTTPResponse parses an HTTP response from a AgentsHandoverWithResponse call
+func ParseAgentsHandoverHTTPResponse(rsp *http.Response) (*AgentsHandoverHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsHandoverHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Comment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -90803,6 +91829,35 @@ func ParseMeSetupTwoFactorHTTPResponse(rsp *http.Response) (*MeSetupTwoFactorHTT
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseNotificationsEventsHTTPResponse parses an HTTP response from a NotificationsEventsWithResponse call
+func ParseNotificationsEventsHTTPResponse(rsp *http.Response) (*NotificationsEventsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &NotificationsEventsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem

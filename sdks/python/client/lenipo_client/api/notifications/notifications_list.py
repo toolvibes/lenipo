@@ -22,6 +22,7 @@ def _get_kwargs(
     category: NotificationCategory | Unset = UNSET,
     limit: int | Unset = 30,
     before: int | Unset = UNSET,
+    after: int | Unset = UNSET,
 
 ) -> dict[str, Any]:
     
@@ -41,6 +42,8 @@ def _get_kwargs(
     params["limit"] = limit
 
     params["before"] = before
+
+    params["after"] = after
 
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
@@ -89,6 +92,7 @@ def sync_detailed(
     category: NotificationCategory | Unset = UNSET,
     limit: int | Unset = 30,
     before: int | Unset = UNSET,
+    after: int | Unset = UNSET,
 
 ) -> Response[NotificationList | Problem]:
     """ List the caller’s notifications, newest first
@@ -98,6 +102,7 @@ def sync_detailed(
         category (NotificationCategory | Unset):
         limit (int | Unset):  Default: 30.
         before (int | Unset):
+        after (int | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -113,6 +118,7 @@ def sync_detailed(
 category=category,
 limit=limit,
 before=before,
+after=after,
 
     )
 
@@ -129,6 +135,7 @@ def sync(
     category: NotificationCategory | Unset = UNSET,
     limit: int | Unset = 30,
     before: int | Unset = UNSET,
+    after: int | Unset = UNSET,
 
 ) -> NotificationList | Problem | None:
     """ List the caller’s notifications, newest first
@@ -138,6 +145,7 @@ def sync(
         category (NotificationCategory | Unset):
         limit (int | Unset):  Default: 30.
         before (int | Unset):
+        after (int | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -154,6 +162,7 @@ unread=unread,
 category=category,
 limit=limit,
 before=before,
+after=after,
 
     ).parsed
 
@@ -164,6 +173,7 @@ async def asyncio_detailed(
     category: NotificationCategory | Unset = UNSET,
     limit: int | Unset = 30,
     before: int | Unset = UNSET,
+    after: int | Unset = UNSET,
 
 ) -> Response[NotificationList | Problem]:
     """ List the caller’s notifications, newest first
@@ -173,6 +183,7 @@ async def asyncio_detailed(
         category (NotificationCategory | Unset):
         limit (int | Unset):  Default: 30.
         before (int | Unset):
+        after (int | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -188,6 +199,7 @@ async def asyncio_detailed(
 category=category,
 limit=limit,
 before=before,
+after=after,
 
     )
 
@@ -204,6 +216,7 @@ async def asyncio(
     category: NotificationCategory | Unset = UNSET,
     limit: int | Unset = 30,
     before: int | Unset = UNSET,
+    after: int | Unset = UNSET,
 
 ) -> NotificationList | Problem | None:
     """ List the caller’s notifications, newest first
@@ -213,6 +226,7 @@ async def asyncio(
         category (NotificationCategory | Unset):
         limit (int | Unset):  Default: 30.
         before (int | Unset):
+        after (int | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -229,5 +243,6 @@ unread=unread,
 category=category,
 limit=limit,
 before=before,
+after=after,
 
     )).parsed
