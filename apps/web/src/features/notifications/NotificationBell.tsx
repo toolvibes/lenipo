@@ -42,6 +42,20 @@ export function useDescribe() {
         detail: details.excerpt ?? null,
       };
     }
+    if (details.kind === 'review') {
+      const outcome = details.items[0]?.to;
+      return {
+        title: t(
+          outcome === 'approved'
+            ? 'notifications.review.approved'
+            : outcome === 'changes_requested'
+              ? 'notifications.review.changes'
+              : 'notifications.review.requested',
+          { actor },
+        ),
+        detail: details.excerpt ?? null,
+      };
+    }
     if (category === 'mention') {
       return { title: t('notifications.mentioned', { actor }), detail: excerpt };
     }

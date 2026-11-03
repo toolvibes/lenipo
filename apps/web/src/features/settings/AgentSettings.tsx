@@ -3,7 +3,9 @@ import { AGENT_ROLES, type AgentRole, type ProjectAgentSettings } from '@toolvib
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
 import { agentsQuery } from '../../lib/queries';
+import { projectQuery } from '../../lib/tracking';
 import { FormError } from '../../ui/FormError';
+import { Select } from '../../ui/Select';
 import { Avatar } from '../tracking/UserPicker';
 
 /** Roles of agents in the project and whether sprints need a person's approval (TL-96, E-148). */
@@ -21,6 +23,22 @@ export function AgentSettings({ projectKey }: { projectKey: string }) {
       ),
   });
   const agents = useQuery(agentsQuery);
+  const project = useQuery(projectQuery(projectKey));
+  const statusOptions = [
+    { value: '', label: t('agentSettings.reviewStay') },
+    ...(project.data?.statuses ?? []).map((status) => ({ value: status.id, label: status.name })),
+  ];
+  const reviewRule = useMutation({
+    mutationFn: (reviewStatuses: { approved: string | null; changesRequested: string | null }) =>
+      unwrap(
+        client.PUT('/api/v1/projects/{key}/agent-settings', {
+          params: { path: { key: projectKey } },
+          body: { reviewStatuses },
+        }),
+      ),
+    onSuccess: (data) => queryClient.setQueryData(queryKey, data),
+  });
+  const rule = settings.data?.reviewStatuses ?? { approved: null, changesRequested: null };
   const saved = (data: ProjectAgentSettings) => queryClient.setQueryData(queryKey, data);
   const approval = useMutation({
     mutationFn: (sprintApproval: boolean) =>
@@ -44,7 +62,7 @@ export function AgentSettings({ projectKey }: { projectKey: string }) {
   });
   const rolesOf = (id: string) =>
     settings.data?.agents.find((entry) => entry.agent.id === id)?.roles ?? [];
-  const error = settings.error ?? approval.error ?? roles.error;
+  const error = settings.error ?? approval.error ?? roles.error ?? reviewRule.error;
   return (
     <section className="flex flex-col gap-4">
       <h2 className="m-0 text-base font-semibold">{t('agentSettings.title')}</h2>
@@ -65,6 +83,24 @@ export function AgentSettings({ projectKey }: { projectKey: string }) {
           </span>
         </span>
       </label>
+      <div className="flex flex-wrap gap-3">
+        <Select
+          label={t('agentSettings.reviewApproved')}
+          value={rule.approved ?? ''}
+          disabled={!settings.data || reviewRule.isPending}
+          options={statusOptions}
+          onChange={(event) => reviewRule.mutate({ ...rule, approved: event.target.value || null })}
+        />
+        <Select
+          label={t('agentSettings.reviewChanges')}
+          value={rule.changesRequested ?? ''}
+          disabled={!settings.data || reviewRule.isPending}
+          options={statusOptions}
+          onChange={(event) =>
+            reviewRule.mutate({ ...rule, changesRequested: event.target.value || null })
+          }
+        />
+      </div>
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr className="text-left text-[var(--ink-muted)]">

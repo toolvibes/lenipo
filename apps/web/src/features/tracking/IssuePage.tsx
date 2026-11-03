@@ -88,6 +88,61 @@ function ClaimField({ issueKey }: { issueKey: string }) {
   );
 }
 
+/** Reviews of the issue's work and a button to ask for one (TL-97, E-149). */
+function ReviewsField({ issueKey, canAsk }: { issueKey: string; canAsk: boolean }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const queryKey = ['issue', issueKey, 'reviews'];
+  const reviews = useQuery({
+    queryKey,
+    queryFn: () =>
+      unwrap(client.GET('/api/v1/issues/{key}/reviews', { params: { path: { key: issueKey } } })),
+  });
+  const ask = useMutation({
+    mutationFn: () =>
+      unwrap(
+        client.POST('/api/v1/issues/{key}/reviews', {
+          params: { path: { key: issueKey } },
+          body: {},
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+  });
+  const shown = (reviews.data ?? []).filter((entry) => entry.status !== 'cancelled');
+  if (shown.length === 0 && !canAsk) return null;
+  return (
+    <Field label={t('reviews.label')}>
+      <span className="flex flex-col gap-1 px-1.5 pt-1.5 text-[13px]">
+        {shown.map((entry) => (
+          <span key={entry.id} className="flex flex-wrap items-center gap-1.5">
+            <Avatar user={entry.reviewer} size={18} />
+            <span className="truncate">{entry.reviewer.displayName}</span>
+            <span
+              className={`rounded-[4px] px-1.5 text-xs font-medium ${
+                entry.status === 'approved'
+                  ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                  : entry.status === 'changes_requested'
+                    ? 'bg-[var(--warning-soft)] text-[var(--warning)]'
+                    : 'bg-[var(--surface-1)] text-[var(--ink-muted)]'
+              }`}
+            >
+              {t(`reviews.status.${entry.status}`)}
+            </span>
+          </span>
+        ))}
+        {ask.error && <span className="text-xs text-[var(--danger)]">{ask.error.message}</span>}
+        {canAsk && (
+          <span>
+            <Button size="sm" disabled={ask.isPending} onClick={() => ask.mutate()}>
+              {t('reviews.ask')}
+            </Button>
+          </span>
+        )}
+      </span>
+    </Field>
+  );
+}
+
 /** One comment; own comments can be edited and deleted, administrators delete any (E-42). */
 function CommentItem({
   comment,
@@ -125,7 +180,7 @@ function CommentItem({
   return (
     <article
       className={`flex gap-3 ${
-        comment.kind === 'handover'
+        comment.kind !== 'comment'
           ? 'rounded-[var(--radius-md)] border-l-[3px] border-[var(--accent)] bg-[var(--accent-soft)] py-2 pr-2 pl-3'
           : ''
       }`}
@@ -148,9 +203,9 @@ function CommentItem({
               {t('issues.edited')}
             </span>
           )}
-          {comment.kind === 'handover' && (
+          {comment.kind !== 'comment' && (
             <span className="rounded-[4px] bg-[var(--surface-1)] px-1.5 text-xs font-medium text-[var(--accent)]">
-              {t('handover.badge')}
+              {t(comment.kind === 'review' ? 'reviews.badge' : 'handover.badge')}
             </span>
           )}
           {comment.internal && (
@@ -780,6 +835,7 @@ export function IssuePage({
               </button>
             </Field>
             <ClaimField issueKey={data.key} />
+            <ReviewsField issueKey={data.key} canAsk={permissions.has('comment')} />
             <Field label={t('issues.reporter')}>
               <span className="flex h-[var(--control-sm)] items-center gap-2 px-1.5">
                 {data.reporter && <Avatar user={data.reporter} size={20} />}

@@ -2583,6 +2583,221 @@
         }
       }
     },
+    "/api/v1/issues/{key}/reviews": {
+      "post": {
+        "operationId": "Agents.requestReview",
+        "summary": "Ask for a review of an issue’s work",
+        "description": "Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRequest"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Agents.issueReviews",
+        "summary": "List the reviews of an issue",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewRequest"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/reviews": {
+      "get": {
+        "operationId": "Agents.myReviews",
+        "summary": "List the reviews the caller is asked for",
+        "description": "Waiting ones by default, oldest first.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReviewStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewRequest"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reviews/{id}/verdict": {
+      "post": {
+        "operationId": "Agents.reviewVerdict",
+        "summary": "Give the verdict of a review",
+        "description": "Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewVerdictRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRequest"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reviews/{id}": {
+      "delete": {
+        "operationId": "Agents.cancelReview",
+        "summary": "Withdraw a waiting review request",
+        "tags": ["Agents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/presence": {
       "put": {
         "operationId": "Agents.beat",
@@ -20218,6 +20433,37 @@
           "sprintApproval": {
             "type": "boolean"
           },
+          "reviewStatuses": {
+            "type": "object",
+            "properties": {
+              "approved": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "changesRequested": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["approved", "changesRequested"],
+            "additionalProperties": false
+          },
           "agents": {
             "type": "array",
             "items": {
@@ -20225,7 +20471,7 @@
             }
           }
         },
-        "required": ["sprintApproval", "agents"],
+        "required": ["sprintApproval", "reviewStatuses", "agents"],
         "additionalProperties": false
       },
       "ProjectAgent": {
@@ -20256,9 +20502,38 @@
         "properties": {
           "sprintApproval": {
             "type": "boolean"
+          },
+          "reviewStatuses": {
+            "type": "object",
+            "properties": {
+              "approved": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "changesRequested": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["approved", "changesRequested"]
           }
-        },
-        "required": ["sprintApproval"]
+        }
       },
       "SetAgentRolesRequest": {
         "type": "object",
@@ -20474,7 +20749,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["comment", "handover"]
+            "enum": ["comment", "handover", "review"]
           },
           "canEdit": {
             "type": "boolean"
@@ -20537,6 +20812,125 @@
           }
         },
         "required": ["note"]
+      },
+      "CreateReviewRequest": {
+        "type": "object",
+        "properties": {
+          "reviewer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          }
+        }
+      },
+      "ReviewRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "issue": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "summary"],
+            "additionalProperties": false
+          },
+          "requester": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "pullRequest": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": ["string", "null"]
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "review": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["title", "url", "state", "review"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "issue",
+          "requester",
+          "reviewer",
+          "status",
+          "verdict",
+          "pullRequest",
+          "createdAt",
+          "decidedAt"
+        ],
+        "additionalProperties": false
+      },
+      "ReviewStatus": {
+        "type": "string",
+        "enum": ["requested", "approved", "changes_requested", "cancelled"]
+      },
+      "ReviewVerdictRequest": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": ["approved", "changes_requested"]
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          }
+        },
+        "required": ["verdict", "body"]
       },
       "UpdatePresenceRequest": {
         "type": "object",
@@ -28424,7 +28818,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["created", "updated", "commented", "published", "approval"]
+            "enum": ["created", "updated", "commented", "published", "approval", "review"]
           },
           "items": {
             "type": "array",

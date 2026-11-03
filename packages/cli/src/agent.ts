@@ -9,7 +9,8 @@ import { CliError, type Io, openSession, type Session, unwrap } from './session.
  * which issue to take, `ask` puts a question and waits for a human answer. `status` sends a
  * heartbeat and `team` shows who works in the project (TL-93). `claim` and `release` take and give
  * back an issue, with branch and paths as the work area (TL-94). `handover`, `blocked`, `inbox` and
- * `watch` are the messages between people and agents (TL-95).
+ * `watch` are the messages between people and agents (TL-95); `review-request`, `reviews` and
+ * `review` the code review between them (TL-97).
  */
 
 /** What `.lenipo/agent.json` holds; the instance comes from the profile or LENIPO_URL. */
@@ -72,9 +73,15 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return inbox(rest, io);
     case 'watch':
       return watch(rest, io);
+    case 'review-request':
+      return reviewRequest(rest, io);
+    case 'reviews':
+      return reviews(rest, io);
+    case 'review':
+      return review(rest, io);
     default:
       throw new CliError(
-        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch',
+        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch|review-request|reviews|review',
         2,
       );
   }
@@ -138,7 +145,8 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
    - \`lenipo agent status active --issue <KEY> --branch <Branch>\` melden und bei längerer Arbeit alle 15 Minuten wiederholen; das hält auch den Anspruch
    - kommst du nicht weiter: \`lenipo agent blocked <KEY> --note "<Grund>" [--by <blockierender Vorgang>]\` und Durchgang beenden
    - Tests und Prüfungen des Repositorys laufen lassen; erst bei Erfolg pushen
-   - Pull Request öffnen
+   - Pull Request öffnen (den Vorgangsschlüssel in Titel oder Branch, damit Lenipo ihn verknüpft)
+   - Review anfordern: \`lenipo agent review-request <KEY>\` (Lenipo wählt einen Reviewer, bevorzugt eines anderen Herstellers)
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
    - Übergabe schreiben: \`lenipo agent handover <KEY> --done "<Zusammenfassung, Entscheidungen, Link zum Pull Request>" --open "<was noch fehlt>"\`; das beendet auch deinen Anspruch. Soll jemand Bestimmtes weitermachen, mit \`--to <E-Mail>\`
    - \`lenipo agent status offline\`
@@ -505,4 +513,78 @@ async function watch(args: string[], io: Io) {
     // The stream ended (restart, proxy): wait a moment and pick up where it broke.
     await new Promise((resolve) => setTimeout(resolve, 3000));
   }
+}
+
+/** Asks for a review; without --reviewer Lenipo picks one (TL-97). */
+async function reviewRequest(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: { ...COMMON, reviewer: { type: 'string' } },
+    allowPositionals: true,
+  });
+  const key = positionals[0]?.toUpperCase();
+  if (!key) throw new CliError('lenipo agent review-request <KEY> [--reviewer <E-Mail|Id>]', 2);
+  const { client } = await openSession(io, values.profile);
+  const asked = await unwrap(
+    client.POST('/api/v1/issues/{key}/reviews', {
+      params: { path: { key } },
+      body: values.reviewer ? { reviewer: values.reviewer } : {},
+    }),
+  );
+  io.out(`${key}: Review angefragt bei ${asked.reviewer.displayName}.`);
+}
+
+/** Reviews waiting for the caller, with their pull requests (TL-97). */
+async function reviews(args: string[], io: Io) {
+  const { values } = parseArgs({
+    args,
+    options: { ...COMMON, output: { type: 'string', short: 'o' } },
+  });
+  const { client } = await openSession(io, values.profile);
+  const queue = await unwrap(client.GET('/api/v1/me/reviews'));
+  if (values.output === 'json') {
+    io.out(JSON.stringify({ reviews: queue }, null, 2));
+    return;
+  }
+  io.out(
+    queue
+      .map(
+        (entry) =>
+          `${entry.issue.key} · ${entry.issue.summary} · von ${entry.requester.displayName}${entry.pullRequest?.url ? `\n  ${entry.pullRequest.url}` : ''}`,
+      )
+      .join('\n') || 'Keine Reviews offen.',
+  );
+}
+
+/** The verdict on a waiting review, by issue key or review id (TL-97). */
+async function review(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      ...COMMON,
+      approve: { type: 'boolean' },
+      changes: { type: 'boolean' },
+      body: { type: 'string' },
+    },
+    allowPositionals: true,
+  });
+  const target = positionals[0];
+  if (!target || !values.body || values.approve === values.changes) {
+    throw new CliError('lenipo agent review <KEY|Id> --approve|--changes --body <Text>', 2);
+  }
+  const { client } = await openSession(io, values.profile);
+  let id = target;
+  if (!/^[0-9a-f-]{36}$/i.test(target)) {
+    const queue = await unwrap(client.GET('/api/v1/me/reviews'));
+    const match = queue.find((entry) => entry.issue.key === target.toUpperCase());
+    if (!match) throw new CliError(`Kein offenes Review für ${target.toUpperCase()}.`, 1);
+    id = match.id;
+  }
+  const decided = await unwrap(
+    client.POST('/api/v1/reviews/{id}/verdict', {
+      params: { path: { id } },
+      body: { verdict: values.approve ? 'approved' : 'changes_requested', body: values.body },
+    }),
+  );
+  io.out(`${decided.issue.key}: ${values.approve ? 'freigegeben' : 'Änderungen nötig'}.`);
 }

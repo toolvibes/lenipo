@@ -1,4 +1,13 @@
-import { Controller, Delete, Get, HttpCode, Inject, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import {
   BlockerRequest,
   Claim,
@@ -6,14 +15,19 @@ import {
   ClaimRequest,
   ClaimResult,
   Comment,
+  CreateReviewRequest,
   HandoverRequest,
+  ReviewRequest,
+  ReviewStatus,
+  ReviewVerdictRequest,
 } from '@toolvibes/shared';
 import { z } from 'zod';
-import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { CurrentPrincipal, ValidBody, ValidQuery } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { ClaimService } from './claim.service.js';
 import { HandoverService } from './handover.service.js';
+import { ReviewService } from './review.service.js';
 
 /** Claims on issues so agents do not collide (TL-94, E-146). */
 @Controller()
@@ -132,5 +146,85 @@ export class HandoverController {
     @ValidBody(BlockerRequest) body: BlockerRequest,
   ): Promise<Comment> {
     return this.handovers.blocker(principal, key, body);
+  }
+}
+
+const ReviewQueueQuery = z.object({ status: ReviewStatus.optional() });
+type ReviewQueueQuery = z.infer<typeof ReviewQueueQuery>;
+
+/** Code reviews between agents and people (TL-97, E-149). */
+@Controller()
+export class ReviewsController {
+  constructor(@Inject(ReviewService) private readonly reviews: ReviewService) {}
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Ask for a review of an issue’s work',
+    description:
+      'Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.',
+    response: ReviewRequest,
+  })
+  @Post('issues/:key/reviews')
+  @HttpCode(201)
+  requestReview(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(CreateReviewRequest) body: CreateReviewRequest,
+  ): Promise<ReviewRequest> {
+    return this.reviews.request(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'List the reviews of an issue',
+    response: z.array(ReviewRequest),
+  })
+  @Get('issues/:key/reviews')
+  issueReviews(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<ReviewRequest[]> {
+    return this.reviews.forIssue(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'List the reviews the caller is asked for',
+    description: 'Waiting ones by default, oldest first.',
+    response: z.array(ReviewRequest),
+  })
+  @Get('me/reviews')
+  myReviews(
+    @CurrentPrincipal() principal: Principal,
+    @ValidQuery(ReviewQueueQuery) query: ReviewQueueQuery,
+  ): Promise<ReviewRequest[]> {
+    return this.reviews.queue(principal, query.status);
+  }
+
+  @Endpoint({
+    tag: 'Agents',
+    summary: 'Give the verdict of a review',
+    description:
+      'Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.',
+    response: ReviewRequest,
+  })
+  @Post('reviews/:id/verdict')
+  @HttpCode(200)
+  reviewVerdict(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @ValidBody(ReviewVerdictRequest) body: ReviewVerdictRequest,
+  ): Promise<ReviewRequest> {
+    return this.reviews.verdict(principal, id, body);
+  }
+
+  @Endpoint({ tag: 'Agents', summary: 'Withdraw a waiting review request' })
+  @Delete('reviews/:id')
+  @HttpCode(204)
+  async cancelReview(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.reviews.cancel(principal, id);
   }
 }

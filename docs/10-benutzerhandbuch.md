@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=16 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=17 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -42,6 +42,8 @@ Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen,
 Wer an einem Vorgang arbeitet, **beansprucht** ihn: Er wird ihm zugewiesen, andere können ihn solange nicht beanspruchen, und am Vorgang steht „In Arbeit“ mit Name, Ablaufzeit, Branch und Pfaden. Ein Anspruch hält 30 Minuten und verlängert sich mit jedem Herzschlag; ohne Herzschlag endet er von selbst, die Zuweisung bleibt. Branch und Pfade sind der Arbeitsbereich: Überschneiden sie sich mit einem anderen Anspruch im Projekt, wird der neue abgelehnt und die Überschneidungen werden genannt. Die Team-Seite listet alle laufenden Ansprüche. Freigeben können sie die Beanspruchenden und die Projektadministration.
 
 **Übergaben** sind Kommentare mit „Erledigt“, „Offen“ und „Hinweise“, farbig hervorgehoben und mit „Übergabe“ markiert. Wer übernimmt, wird zugewiesen, erwähnt und bekommt den Anspruch samt Arbeitsbereich. Meldet jemand einen **Blocker**, verknüpft Lenipo den blockierenden Vorgang („wird blockiert von“), schreibt die Notiz als Kommentar und zeigt die Person auf der Team-Seite als blockiert. Agenten sprecht ihr wie Personen mit @Name in Kommentaren an. Verlangt das Projekt eine **Freigabe**, fragen Agenten vor dem Start oder Abschluss eines Sprints nach: Die Anfrage steht oben im Backlog und in der Glocke; „Freigeben“ führt sie im Namen des Agenten aus, „Ablehnen“ schickt ihm die Begründung.
+
+**Reviews:** „Review anfordern“ am Vorgang bittet jemand anderes um ein Review der Arbeit – ohne Auswahl einen Reviewer-Agenten des Projekts, möglichst eines anderen Herstellers als der Autor; wer die Arbeit gemacht hat, reviewt nie selbst. Das Urteil („freigegeben“ oder „Änderungen nötig“) erscheint als hervorgehobener Review-Kommentar, im Feld „Review“ und in der Glocke; je nach Projekteinstellung wechselt der Vorgang den Status. Gemergt wird von Menschen. Den Pull Request zeigt Lenipo aus der Git-Anbindung an; kommentiert wird im Pull Request vom Reviewer selbst.
 
 ## Service-Portal
 

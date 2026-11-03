@@ -15,7 +15,7 @@ export type NotificationCategory = z.infer<typeof NotificationCategory>;
 
 export const NotificationDetails = z
   .object({
-    kind: z.enum(['created', 'updated', 'commented', 'published', 'approval']),
+    kind: z.enum(['created', 'updated', 'commented', 'published', 'approval', 'review']),
     items: z.array(
       z.object({ field: z.string(), from: z.string().nullable(), to: z.string().nullable() }),
     ),

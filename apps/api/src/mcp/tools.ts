@@ -12,6 +12,7 @@ import {
   type FeatureFlags,
   type ModuleName,
   PRESENCE_STATES,
+  type ReviewRequest,
   SearchRequest,
   type TeamMember,
   TransitionRequest,
@@ -33,6 +34,7 @@ import type { NotificationService } from '../notifications/notification.service.
 import type { ClaimService } from '../presence/claim.service.js';
 import type { HandoverService } from '../presence/handover.service.js';
 import type { PresenceService } from '../presence/presence.service.js';
+import type { ReviewService } from '../presence/review.service.js';
 import { QueryException } from '../search/query-exception.js';
 import type { SearchService } from '../search/search.service.js';
 import type { ComponentService } from '../tracking/component.service.js';
@@ -72,6 +74,7 @@ export interface ToolServices extends WikiToolServices {
   notifications: NotificationService;
   approvals: SprintApprovalService;
   estimation: EstimationService;
+  reviews: ReviewService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
@@ -613,6 +616,76 @@ export function registerTools(
       );
       if (end) await services.estimation.end(principal, issue);
       return text(lines.join('\n') || 'No round open.', { votes: round?.votes ?? [] });
+    },
+  );
+
+  // ---------------------------------------------------------------- reviews (TL-97)
+
+  const reviewLine = (review: ReviewRequest) =>
+    `- ${review.issue.key} ${review.issue.summary} (review ${review.id}), asked by ${review.requester.displayName}${
+      review.pullRequest
+        ? `; PR: ${review.pullRequest.title} ${review.pullRequest.url ?? ''} [${review.pullRequest.state}${review.pullRequest.review ? `, ${review.pullRequest.review}` : ''}]`
+        : '; no pull request linked'
+    }`;
+
+  tool(
+    'request_review',
+    {
+      title: 'Ask for a code review',
+      description:
+        'Asks someone else to review the work on an issue (four-eyes principle). Without reviewer, Lenipo picks a reviewer agent of the project, of another vendor than you first. The reviewer is notified.',
+      inputSchema: {
+        issue: IssueKey,
+        reviewer: z.string().max(254).optional().describe('Id or e-mail; left out: picked'),
+      },
+    },
+    async ({ issue, reviewer }) => {
+      const review = await services.reviews.request(principal, issue, {
+        ...(reviewer ? { reviewer } : {}),
+      });
+      await audited('request_review', review.issue.key);
+      return text(`Review of ${issue} asked from ${review.reviewer.displayName}.`, review);
+    },
+  );
+
+  tool(
+    'get_review_queue',
+    {
+      title: 'Reviews waiting for you',
+      description:
+        'The reviews you are asked for, oldest first, with the linked pull request. Review the code in the PR with your own git tools, comment there, then give the verdict with submit_review.',
+      inputSchema: {},
+      readOnly: true,
+    },
+    async () => {
+      const queue = await services.reviews.queue(principal);
+      return text(queue.map(reviewLine).join('\n') || 'No reviews waiting.', { reviews: queue });
+    },
+  );
+
+  tool(
+    'submit_review',
+    {
+      title: 'Give a review verdict',
+      description:
+        'approved or changes_requested, with your findings as Markdown. Becomes a review comment on the issue, tells the requester and moves the issue if the project says so. Merging stays with a person.',
+      inputSchema: {
+        review: z.string().min(1).describe('Review id, or the issue key of your waiting review'),
+        verdict: z.enum(['approved', 'changes_requested']),
+        body: z.string().min(1).max(20_000),
+      },
+    },
+    async ({ review, verdict, body }) => {
+      let id = review;
+      if (!/^[0-9a-f-]{36}$/i.test(review)) {
+        const waiting = await services.reviews.queue(principal);
+        const match = waiting.find((entry) => entry.issue.key === review.toUpperCase());
+        if (!match) return text(`No review of ${review} waits for you.`);
+        id = match.id;
+      }
+      const decided = await services.reviews.verdict(principal, id, { verdict, body });
+      await audited('submit_review', decided.issue.key);
+      return text(`Review of ${decided.issue.key}: ${verdict}.`, decided);
     },
   );
 

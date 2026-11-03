@@ -453,6 +453,11 @@ export const en: Messages = {
     },
   },
   notifications: {
+    review: {
+      requested: '{{actor}} asks for a review',
+      approved: '{{actor}} approved the review',
+      changes: '{{actor}} requests changes',
+    },
     approval: {
       requested: '{{actor}} wants to {{action}} the sprint "{{sprint}}"',
       approved: '{{actor}} approved to {{action}} the sprint "{{sprint}}"',
@@ -2177,6 +2182,20 @@ export const en: Messages = {
       coordinator: 'Coordinator',
     },
     default: 'An agent without a role counts as implementer.',
+    reviewApproved: 'After "approved" move to',
+    reviewChanges: 'After "changes requested" move to',
+    reviewStay: 'stays where it is',
+  },
+  reviews: {
+    label: 'Review',
+    badge: 'Review',
+    ask: 'Ask for review',
+    status: {
+      requested: 'requested',
+      approved: 'approved',
+      changes_requested: 'changes requested',
+      cancelled: 'withdrawn',
+    },
   },
   handover: { badge: 'Handover' },
   claims: {

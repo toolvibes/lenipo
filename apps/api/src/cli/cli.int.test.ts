@@ -292,6 +292,11 @@ describe('tl, the command line (TL-37)', () => {
       `${mine}: als blockiert gemeldet.`,
     );
     expect((await tl(['agent', 'inbox'])).code).toBe(0);
+    // Without reviewer agents in the project there is nobody to pick (TL-97).
+    const asked = await tl(['agent', 'review-request', mine]);
+    expect(asked.code).toBe(1);
+    expect(asked.err).toContain('No reviewer agent');
+    expect((await tl(['agent', 'reviews'])).out).toBe('Keine Reviews offen.');
     const human = new TestClient(test.baseUrl);
     await admin.request('POST', '/admin/users', {
       email: 'mensch@example.org',

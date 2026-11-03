@@ -214,6 +214,8 @@ export const ProjectAgentSettings = z
   .object({
     /** Agents start and complete sprints only after a person approved it. */
     sprintApproval: z.boolean(),
+    /** Where an issue moves after a review verdict; null: it stays (TL-97, E-149). */
+    reviewStatuses: z.object({ approved: Id.nullable(), changesRequested: Id.nullable() }),
     /** Agents with a role in the project. */
     agents: z.array(ProjectAgent),
   })
@@ -221,7 +223,12 @@ export const ProjectAgentSettings = z
 export type ProjectAgentSettings = z.infer<typeof ProjectAgentSettings>;
 
 export const UpdateProjectAgentSettings = z
-  .object({ sprintApproval: z.boolean() })
+  .object({
+    sprintApproval: z.boolean().optional(),
+    reviewStatuses: z
+      .object({ approved: Id.nullable(), changesRequested: Id.nullable() })
+      .optional(),
+  })
   .meta({ id: 'UpdateProjectAgentSettings' });
 export type UpdateProjectAgentSettings = z.infer<typeof UpdateProjectAgentSettings>;
 
@@ -254,3 +261,49 @@ export const DecideApprovalRequest = z
   })
   .meta({ id: 'DecideApprovalRequest' });
 export type DecideApprovalRequest = z.infer<typeof DecideApprovalRequest>;
+
+// ---------------------------------------------------------------- reviews (TL-97, E-149)
+
+export const REVIEW_STATUSES = ['requested', 'approved', 'changes_requested', 'cancelled'] as const;
+export const ReviewStatus = z.enum(REVIEW_STATUSES).meta({ id: 'ReviewStatus' });
+export type ReviewStatus = z.infer<typeof ReviewStatus>;
+
+export const ReviewRequest = z
+  .object({
+    id: Id,
+    issue: IssueBrief,
+    requester: UserRef,
+    reviewer: UserRef,
+    status: ReviewStatus,
+    /** The reviewer's findings, Markdown. */
+    verdict: z.string(),
+    /** The latest pull request of the issue from the git integration, with the host's review state. */
+    pullRequest: z
+      .object({
+        title: z.string(),
+        url: z.string().nullable(),
+        state: z.string(),
+        review: z.string().nullable(),
+      })
+      .nullable(),
+    createdAt: z.iso.datetime(),
+    decidedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'ReviewRequest' });
+export type ReviewRequest = z.infer<typeof ReviewRequest>;
+
+export const CreateReviewRequest = z
+  .object({
+    /** Id or e-mail of the reviewer; left out: a reviewer agent of the project, another vendor first. */
+    reviewer: z.string().trim().min(1).max(254).optional(),
+  })
+  .meta({ id: 'CreateReviewRequest' });
+export type CreateReviewRequest = z.infer<typeof CreateReviewRequest>;
+
+export const ReviewVerdictRequest = z
+  .object({
+    verdict: z.enum(['approved', 'changes_requested']),
+    body: z.string().trim().min(1).max(20_000),
+  })
+  .meta({ id: 'ReviewVerdictRequest' });
+export type ReviewVerdictRequest = z.infer<typeof ReviewVerdictRequest>;

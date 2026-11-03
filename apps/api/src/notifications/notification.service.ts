@@ -752,20 +752,50 @@ export class NotificationService {
     /** What happened: `start` or `complete` as field, `requested`/`approved`/`rejected` as value. */
     item: NotificationDetails['items'][number],
   ): Promise<void> {
+    await this.notifyDirect(tx, recipients, { sprintId }, actorId, {
+      kind: 'approval',
+      items: [item],
+      ...(excerpt ? { excerpt } : {}),
+    });
+  }
+
+  /**
+   * Review requests and verdicts (TL-97, E-149): about the issue, with `review` as field and
+   * `requested`, `approved` or `changes_requested` as value; never by e-mail.
+   */
+  async notifyReview(
+    tx: Executor,
+    recipients: string[],
+    issueId: string,
+    actorId: string,
+    outcome: string,
+    excerpt: string,
+  ): Promise<void> {
+    await this.notifyDirect(tx, recipients, { issueId }, actorId, {
+      kind: 'review',
+      items: [{ field: 'review', from: null, to: outcome }],
+      ...(excerpt ? { excerpt: excerpt.slice(0, 500) } : {}),
+    });
+  }
+
+  /** Notifications outside the event stream: bell, event stream and agent webhooks. */
+  private async notifyDirect(
+    tx: Executor,
+    recipients: string[],
+    subject: { sprintId: string } | { issueId: string },
+    actorId: string | null,
+    details: NotificationDetails,
+  ): Promise<void> {
     if (recipients.length === 0) return;
     const inserted = await tx
       .insert(notifications)
       .values(
         recipients.map((userId) => ({
           userId,
-          sprintId,
+          ...subject,
           category: 'other' as const,
           actorId,
-          details: {
-            kind: 'approval',
-            items: [item],
-            ...(excerpt ? { excerpt } : {}),
-          } satisfies NotificationDetails,
+          details,
           emailPending: false,
         })),
       )

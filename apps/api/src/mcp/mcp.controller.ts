@@ -26,6 +26,7 @@ import { OperationsService } from '../operations/operations.service.js';
 import { ClaimService } from '../presence/claim.service.js';
 import { HandoverService } from '../presence/handover.service.js';
 import { PresenceService } from '../presence/presence.service.js';
+import { ReviewService } from '../presence/review.service.js';
 import { EverythingService } from '../search/everything.service.js';
 import { SearchService } from '../search/search.service.js';
 import { ComponentService } from '../tracking/component.service.js';
@@ -76,6 +77,7 @@ export class McpController {
     @Inject(NotificationService) notifications: NotificationService,
     @Inject(SprintApprovalService) approvals: SprintApprovalService,
     @Inject(EstimationService) estimation: EstimationService,
+    @Inject(ReviewService) reviews: ReviewService,
   ) {
     this.services = {
       database,
@@ -102,6 +104,7 @@ export class McpController {
       notifications,
       approvals,
       estimation,
+      reviews,
     };
   }
 

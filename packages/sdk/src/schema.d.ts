@@ -941,6 +941,84 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/issues/{key}/reviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the reviews of an issue */
+    get: operations['Agents.issueReviews'];
+    put?: never;
+    /**
+     * Ask for a review of an issue’s work
+     * @description Without `reviewer` Lenipo picks a reviewer agent of the project (role reviewer), never the requester or assignee, another vendor first, then the least busy. The reviewer is notified and finds the pull request in the answer.
+     */
+    post: operations['Agents.requestReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/reviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the reviews the caller is asked for
+     * @description Waiting ones by default, oldest first.
+     */
+    get: operations['Agents.myReviews'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reviews/{id}/verdict': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Give the verdict of a review
+     * @description Writes a review comment on the issue, tells the requester and moves the issue to the status the project set for this verdict, if any. Post in the pull request yourself; Lenipo does not write to the git host.
+     */
+    post: operations['Agents.reviewVerdict'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/reviews/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Withdraw a waiting review request */
+    delete: operations['Agents.cancelReview'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me/presence': {
     parameters: {
       query?: never;
@@ -6870,6 +6948,10 @@ export interface components {
     };
     ProjectAgentSettings: {
       sprintApproval: boolean;
+      reviewStatuses: {
+        approved: string | null;
+        changesRequested: string | null;
+      };
       agents: components['schemas']['ProjectAgent'][];
     };
     ProjectAgent: {
@@ -6880,7 +6962,11 @@ export interface components {
     /** @enum {string} */
     AgentRole: 'planner' | 'implementer' | 'reviewer' | 'tester' | 'coordinator';
     UpdateProjectAgentSettings: {
-      sprintApproval: boolean;
+      sprintApproval?: boolean;
+      reviewStatuses?: {
+        approved: string | null;
+        changesRequested: string | null;
+      };
     };
     SetAgentRolesRequest: {
       roles: components['schemas']['AgentRole'][];
@@ -6945,7 +7031,7 @@ export interface components {
       edited: boolean;
       internal: boolean;
       /** @enum {string} */
-      kind: 'comment' | 'handover';
+      kind: 'comment' | 'handover' | 'review';
       canEdit: boolean;
       canDelete: boolean;
     };
@@ -6960,6 +7046,37 @@ export interface components {
     BlockerRequest: {
       blockedBy?: string;
       note: string;
+    };
+    CreateReviewRequest: {
+      reviewer?: string;
+    };
+    ReviewRequest: {
+      /** Format: uuid */
+      id: string;
+      issue: {
+        key: string;
+        summary: string;
+      };
+      requester: components['schemas']['UserRef'];
+      reviewer: components['schemas']['UserRef'];
+      status: components['schemas']['ReviewStatus'];
+      verdict: string;
+      pullRequest: {
+        title: string;
+        url: string | null;
+        state: string;
+        review: string | null;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      decidedAt: string | null;
+    };
+    /** @enum {string} */
+    ReviewStatus: 'requested' | 'approved' | 'changes_requested' | 'cancelled';
+    ReviewVerdictRequest: {
+      /** @enum {string} */
+      verdict: 'approved' | 'changes_requested';
+      body: string;
     };
     UpdatePresenceRequest: {
       state: components['schemas']['PresenceState'];
@@ -9182,7 +9299,7 @@ export interface components {
     };
     NotificationDetails: {
       /** @enum {string} */
-      kind: 'created' | 'updated' | 'commented' | 'published' | 'approval';
+      kind: 'created' | 'updated' | 'commented' | 'published' | 'approval' | 'review';
       items: {
         field: string;
         from: string | null;
@@ -13435,6 +13552,167 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Comment'];
         };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.issueReviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewRequest'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.requestReview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateReviewRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewRequest'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.myReviews': {
+    parameters: {
+      query?: {
+        status?: components['schemas']['ReviewStatus'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewRequest'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.reviewVerdict': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewVerdictRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewRequest'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.cancelReview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

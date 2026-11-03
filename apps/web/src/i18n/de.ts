@@ -469,6 +469,11 @@ export const de = {
     },
   },
   notifications: {
+    review: {
+      requested: '{{actor}} bittet um ein Review',
+      approved: '{{actor}} hat das Review freigegeben',
+      changes: '{{actor}} wünscht Änderungen',
+    },
     approval: {
       requested: '{{actor}} möchte den Sprint „{{sprint}}“ {{action}}',
       approved: '{{actor}} hat erlaubt, den Sprint „{{sprint}}“ zu {{action}}',
@@ -2212,6 +2217,20 @@ export const de = {
       coordinator: 'Koordinator',
     },
     default: 'Ein Agent ohne Rolle gilt als Umsetzer.',
+    reviewApproved: 'Nach „freigegeben“ in den Status',
+    reviewChanges: 'Nach „Änderungen nötig“ in den Status',
+    reviewStay: 'bleibt, wo er ist',
+  },
+  reviews: {
+    label: 'Review',
+    badge: 'Review',
+    ask: 'Review anfordern',
+    status: {
+      requested: 'angefragt',
+      approved: 'freigegeben',
+      changes_requested: 'Änderungen nötig',
+      cancelled: 'zurückgezogen',
+    },
   },
   handover: { badge: 'Übergabe' },
   claims: {

@@ -135,6 +135,9 @@ export const projects = pgTable(
     wikiPages: jsonb(),
     /** Agents start and complete sprints only after a person approved it (TL-96, E-148). */
     agentSprintApproval: boolean().notNull().default(false),
+    /** Where an issue moves after a review verdict; null: it stays (TL-97, E-149). */
+    reviewApprovedStatusId: uuid(),
+    reviewChangesStatusId: uuid(),
   },
   (table) => [uniqueIndex('projects_key_unique').on(table.key)],
 );
@@ -778,4 +781,33 @@ export const projectAgentRoles = pgTable(
     roles: text().array().notNull(),
   },
   (table) => [primaryKey({ columns: [table.projectId, table.userId] })],
+);
+
+/** A request to review an issue's work, and the reviewer's verdict (TL-97, E-149). */
+export const reviewRequests = pgTable(
+  'review_requests',
+  {
+    id: uuid().primaryKey(),
+    issueId: uuid()
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    requesterId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reviewerId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** requested, approved, changes_requested or cancelled. */
+    status: text().notNull().default('requested'),
+    verdict: text().notNull().default(''),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    index('review_requests_issue_idx').on(table.issueId),
+    index('review_requests_reviewer_idx').on(table.reviewerId, table.status),
+  ],
 );

@@ -5,11 +5,11 @@ import type {
   SetAgentRolesRequest,
   UpdateProjectAgentSettings,
 } from '@toolvibes/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
-import { agentProfiles, projectAgentRoles, projects, users } from '../db/schema/index.js';
+import { agentProfiles, projectAgentRoles, projects, statuses, users } from '../db/schema/index.js';
 import { ProjectService } from './project.service.js';
 import { ProjectAccessService } from './project-access.service.js';
 
@@ -62,7 +62,11 @@ export class AgentRoleService {
     const project = await this.projects.findBrowsable(principal, projectKey);
     await this.projectAccess.require(principal, project.id, 'browse');
     const [row] = await this.database.db
-      .select({ sprintApproval: projects.agentSprintApproval })
+      .select({
+        sprintApproval: projects.agentSprintApproval,
+        approved: projects.reviewApprovedStatusId,
+        changesRequested: projects.reviewChangesStatusId,
+      })
       .from(projects)
       .where(eq(projects.id, project.id));
     const agents = await this.database.db
@@ -79,6 +83,10 @@ export class AgentRoleService {
       .orderBy(users.displayName);
     return {
       sprintApproval: row?.sprintApproval ?? false,
+      reviewStatuses: {
+        approved: row?.approved ?? null,
+        changesRequested: row?.changesRequested ?? null,
+      },
       agents: agents.map((agent) => ({
         agent: { id: agent.id, displayName: agent.displayName },
         vendor: agent.vendor,
@@ -94,10 +102,32 @@ export class AgentRoleService {
   ): Promise<ProjectAgentSettings> {
     const project = await this.projects.findBrowsable(principal, projectKey);
     await this.projectAccess.require(principal, project.id, 'administer');
-    await this.database.db
-      .update(projects)
-      .set({ agentSprintApproval: request.sprintApproval })
-      .where(eq(projects.id, project.id));
+    const statusIds = Object.values(request.reviewStatuses ?? {}).filter(
+      (id): id is string => id !== null,
+    );
+    if (statusIds.length > 0) {
+      const known = await this.database.db
+        .select({ id: statuses.id })
+        .from(statuses)
+        .where(inArray(statuses.id, statusIds));
+      if (known.length !== new Set(statusIds).size) {
+        throw new NotFoundException('Status not found');
+      }
+    }
+    const patch = {
+      ...(request.sprintApproval !== undefined
+        ? { agentSprintApproval: request.sprintApproval }
+        : {}),
+      ...(request.reviewStatuses
+        ? {
+            reviewApprovedStatusId: request.reviewStatuses.approved,
+            reviewChangesStatusId: request.reviewStatuses.changesRequested,
+          }
+        : {}),
+    };
+    if (Object.keys(patch).length > 0) {
+      await this.database.db.update(projects).set(patch).where(eq(projects.id, project.id));
+    }
     return this.settings(principal, projectKey);
   }
 

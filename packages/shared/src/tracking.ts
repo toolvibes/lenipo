@@ -704,7 +704,7 @@ export const Comment = z
     /** An internal note: customers of a service desk never see it (TL-47, E-137). */
     internal: z.boolean(),
     /** A handover between people or agents: done, open, notes (TL-95, E-147). */
-    kind: z.enum(['comment', 'handover']),
+    kind: z.enum(['comment', 'handover', 'review']),
     canEdit: z.boolean(),
     canDelete: z.boolean(),
   })
