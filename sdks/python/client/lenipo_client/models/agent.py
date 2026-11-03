@@ -33,6 +33,7 @@ class Agent:
             vendor (str):
             model (str):
             owner (None | UserRef):
+            task_filter (str):
             status (AgentStatus):
             created_at (datetime.datetime):
      """
@@ -42,6 +43,7 @@ class Agent:
     vendor: str
     model: str
     owner: None | UserRef
+    task_filter: str
     status: AgentStatus
     created_at: datetime.datetime
 
@@ -65,6 +67,8 @@ class Agent:
         else:
             owner = self.owner
 
+        task_filter = self.task_filter
+
         status = self.status.value
 
         created_at = self.created_at.isoformat()
@@ -78,6 +82,7 @@ class Agent:
             "vendor": vendor,
             "model": model,
             "owner": owner,
+            "taskFilter": task_filter,
             "status": status,
             "createdAt": created_at,
         })
@@ -119,6 +124,8 @@ class Agent:
         owner = _parse_owner(d.pop("owner"))
 
 
+        task_filter = d.pop("taskFilter")
+
         status = AgentStatus(d.pop("status"))
 
 
@@ -135,6 +142,7 @@ class Agent:
             vendor=vendor,
             model=model,
             owner=owner,
+            task_filter=task_filter,
             status=status,
             created_at=created_at,
         )

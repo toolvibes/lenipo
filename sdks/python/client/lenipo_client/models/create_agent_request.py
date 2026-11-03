@@ -28,6 +28,7 @@ class CreateAgentRequest:
             display_name (str):
             vendor (str):
             model (str | Unset):  Default: ''.
+            task_filter (str | Unset):  Default: ''.
             owner_id (UUID | Unset):
             groups (list[str] | Unset):
      """
@@ -35,6 +36,7 @@ class CreateAgentRequest:
     display_name: str
     vendor: str
     model: str | Unset = ''
+    task_filter: str | Unset = ''
     owner_id: UUID | Unset = UNSET
     groups: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -49,6 +51,8 @@ class CreateAgentRequest:
         vendor = self.vendor
 
         model = self.model
+
+        task_filter = self.task_filter
 
         owner_id: str | Unset = UNSET
         if not isinstance(self.owner_id, Unset):
@@ -69,6 +73,8 @@ class CreateAgentRequest:
         })
         if model is not UNSET:
             field_dict["model"] = model
+        if task_filter is not UNSET:
+            field_dict["taskFilter"] = task_filter
         if owner_id is not UNSET:
             field_dict["ownerId"] = owner_id
         if groups is not UNSET:
@@ -87,6 +93,8 @@ class CreateAgentRequest:
 
         model = d.pop("model", UNSET)
 
+        task_filter = d.pop("taskFilter", UNSET)
+
         _owner_id = d.pop("ownerId", UNSET)
         owner_id: UUID | Unset
         if isinstance(_owner_id,  Unset):
@@ -104,6 +112,7 @@ class CreateAgentRequest:
             display_name=display_name,
             vendor=vendor,
             model=model,
+            task_filter=task_filter,
             owner_id=owner_id,
             groups=groups,
         )

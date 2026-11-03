@@ -12,6 +12,7 @@ from ..types import UNSET, Unset
 from typing import cast
 
 if TYPE_CHECKING:
+  from ..models.claim_conflict import ClaimConflict
   from ..models.problem_errors import ProblemErrors
   from ..models.query_error import QueryError
 
@@ -33,6 +34,7 @@ class Problem:
             detail (str | Unset):
             errors (ProblemErrors | Unset):
             query_errors (list[QueryError] | Unset):
+            claim_conflicts (list[ClaimConflict] | Unset):
      """
 
     type_: str
@@ -41,12 +43,14 @@ class Problem:
     detail: str | Unset = UNSET
     errors: ProblemErrors | Unset = UNSET
     query_errors: list[QueryError] | Unset = UNSET
+    claim_conflicts: list[ClaimConflict] | Unset = UNSET
 
 
 
 
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.claim_conflict import ClaimConflict # noqa: PLC0415
         from ..models.problem_errors import ProblemErrors # noqa: PLC0415
         from ..models.query_error import QueryError # noqa: PLC0415
         type_ = self.type_
@@ -70,6 +74,15 @@ class Problem:
 
 
 
+        claim_conflicts: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.claim_conflicts, Unset):
+            claim_conflicts = []
+            for claim_conflicts_item_data in self.claim_conflicts:
+                claim_conflicts_item = claim_conflicts_item_data.to_dict()
+                claim_conflicts.append(claim_conflicts_item)
+
+
+
 
         field_dict: dict[str, Any] = {}
 
@@ -84,6 +97,8 @@ class Problem:
             field_dict["errors"] = errors
         if query_errors is not UNSET:
             field_dict["queryErrors"] = query_errors
+        if claim_conflicts is not UNSET:
+            field_dict["claimConflicts"] = claim_conflicts
 
         return field_dict
 
@@ -91,6 +106,7 @@ class Problem:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.claim_conflict import ClaimConflict # noqa: PLC0415
         from ..models.problem_errors import ProblemErrors # noqa: PLC0415
         from ..models.query_error import QueryError # noqa: PLC0415
         d = dict(src_dict)
@@ -124,6 +140,18 @@ class Problem:
                 query_errors.append(query_errors_item)
 
 
+        _claim_conflicts = d.pop("claimConflicts", UNSET)
+        claim_conflicts: list[ClaimConflict] | Unset = UNSET
+        if _claim_conflicts is not UNSET:
+            claim_conflicts = []
+            for claim_conflicts_item_data in _claim_conflicts:
+                claim_conflicts_item = ClaimConflict.from_dict(claim_conflicts_item_data)
+
+
+
+                claim_conflicts.append(claim_conflicts_item)
+
+
         problem = cls(
             type_=type_,
             title=title,
@@ -131,6 +159,7 @@ class Problem:
             detail=detail,
             errors=errors,
             query_errors=query_errors,
+            claim_conflicts=claim_conflicts,
         )
 
         return problem

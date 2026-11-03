@@ -130,6 +130,13 @@ from .burndown_point_type import BurndownPointType
 from .change_group import ChangeGroup
 from .change_group_items_item import ChangeGroupItemsItem
 from .change_password_request import ChangePasswordRequest
+from .claim import Claim
+from .claim_conflict import ClaimConflict
+from .claim_conflict_user import ClaimConflictUser
+from .claim_issue import ClaimIssue
+from .claim_next_request import ClaimNextRequest
+from .claim_request import ClaimRequest
+from .claim_result import ClaimResult
 from .clone_issue_request import CloneIssueRequest
 from .comment import Comment
 from .complete_sprint_request import CompleteSprintRequest
@@ -478,6 +485,9 @@ from .portal_request_detail import PortalRequestDetail
 from .portal_request_detail_comments_item import PortalRequestDetailCommentsItem
 from .portal_request_detail_project import PortalRequestDetailProject
 from .portal_request_project import PortalRequestProject
+from .presence import Presence
+from .presence_issue_type_0 import PresenceIssueType0
+from .presence_state import PresenceState
 from .print_template import PrintTemplate
 from .print_template_input import PrintTemplateInput
 from .print_template_summary import PrintTemplateSummary
@@ -687,6 +697,8 @@ from .stop_timer_request import StopTimerRequest
 from .subscription_schedule import SubscriptionSchedule
 from .system_info import SystemInfo
 from .system_info_mode import SystemInfoMode
+from .team_member import TeamMember
+from .team_member_issue_type_0 import TeamMemberIssueType0
 from .text_anchor import TextAnchor
 from .text_anchor_input import TextAnchorInput
 from .time_pivot import TimePivot
@@ -767,6 +779,7 @@ from .update_page_comment_request import UpdatePageCommentRequest
 from .update_page_request import UpdatePageRequest
 from .update_permission_scheme_request import UpdatePermissionSchemeRequest
 from .update_plan_request import UpdatePlanRequest
+from .update_presence_request import UpdatePresenceRequest
 from .update_security_scheme_request import UpdateSecuritySchemeRequest
 from .update_security_scheme_request_levels_item import UpdateSecuritySchemeRequestLevelsItem
 from .update_space_request import UpdateSpaceRequest
@@ -943,6 +956,13 @@ __all__ = (
     "ChangeGroup",
     "ChangeGroupItemsItem",
     "ChangePasswordRequest",
+    "Claim",
+    "ClaimConflict",
+    "ClaimConflictUser",
+    "ClaimIssue",
+    "ClaimNextRequest",
+    "ClaimRequest",
+    "ClaimResult",
     "CloneIssueRequest",
     "Comment",
     "CompleteSprintRequest",
@@ -1291,6 +1311,9 @@ __all__ = (
     "PortalRequestDetailCommentsItem",
     "PortalRequestDetailProject",
     "PortalRequestProject",
+    "Presence",
+    "PresenceIssueType0",
+    "PresenceState",
     "PrintTemplate",
     "PrintTemplateInput",
     "PrintTemplateSummary",
@@ -1500,6 +1523,8 @@ __all__ = (
     "SubscriptionSchedule",
     "SystemInfo",
     "SystemInfoMode",
+    "TeamMember",
+    "TeamMemberIssueType0",
     "TextAnchor",
     "TextAnchorInput",
     "Timeline",
@@ -1580,6 +1605,7 @@ __all__ = (
     "UpdatePageRequest",
     "UpdatePermissionSchemeRequest",
     "UpdatePlanRequest",
+    "UpdatePresenceRequest",
     "UpdateSecuritySchemeRequest",
     "UpdateSecuritySchemeRequestLevelsItem",
     "UpdateSpaceRequest",

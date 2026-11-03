@@ -2685,6 +2685,30 @@ func (e PermissionGrantee) Valid() bool {
 	}
 }
 
+// Defines values for PresenceState.
+const (
+	PresenceStateActive  PresenceState = "active"
+	PresenceStateBlocked PresenceState = "blocked"
+	PresenceStateOffline PresenceState = "offline"
+	PresenceStateWaiting PresenceState = "waiting"
+)
+
+// Valid indicates whether the value is a known member of the PresenceState enum.
+func (e PresenceState) Valid() bool {
+	switch e {
+	case PresenceStateActive:
+		return true
+	case PresenceStateBlocked:
+		return true
+	case PresenceStateOffline:
+		return true
+	case PresenceStateWaiting:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProjectPermission.
 const (
 	ProjectPermissionAdminister       ProjectPermission = "administer"
@@ -5665,6 +5689,7 @@ type Agent struct {
 	Model       string             `json:"model"`
 	Owner       *UserRef           `json:"owner"`
 	Status      AgentStatus        `json:"status"`
+	TaskFilter  string             `json:"taskFilter"`
 	Vendor      string             `json:"vendor"`
 }
 
@@ -6393,6 +6418,51 @@ type ChangePasswordRequest struct {
 	NewPassword     string `json:"newPassword"`
 }
 
+// Claim defines model for Claim.
+type Claim struct {
+	Branch    *string   `json:"branch"`
+	ClaimedAt time.Time `json:"claimedAt"`
+	ExpiresAt time.Time `json:"expiresAt"`
+	Forced    bool      `json:"forced"`
+	Issue     struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	Paths []string `json:"paths"`
+	User  UserRef  `json:"user"`
+}
+
+// ClaimConflict defines model for ClaimConflict.
+type ClaimConflict struct {
+	Branch   *string  `json:"branch"`
+	IssueKey string   `json:"issueKey"`
+	Paths    []string `json:"paths"`
+	User     struct {
+		DisplayName string `json:"displayName"`
+		Id          string `json:"id"`
+	} `json:"user"`
+}
+
+// ClaimNextRequest defines model for ClaimNextRequest.
+type ClaimNextRequest struct {
+	Branch *string   `json:"branch,omitempty"`
+	Filter *string   `json:"filter,omitempty"`
+	Force  *bool     `json:"force,omitempty"`
+	Paths  *[]string `json:"paths,omitempty"`
+}
+
+// ClaimRequest defines model for ClaimRequest.
+type ClaimRequest struct {
+	Branch *string   `json:"branch,omitempty"`
+	Force  *bool     `json:"force,omitempty"`
+	Paths  *[]string `json:"paths,omitempty"`
+}
+
+// ClaimResult defines model for ClaimResult.
+type ClaimResult struct {
+	Claim *Claim `json:"claim"`
+}
+
 // CloneIssueRequest defines model for CloneIssueRequest.
 type CloneIssueRequest struct {
 	IncludeSubtasks *bool   `json:"includeSubtasks,omitempty"`
@@ -6480,6 +6550,7 @@ type CreateAgentRequest struct {
 	Groups      *[]string           `json:"groups,omitempty"`
 	Model       *string             `json:"model,omitempty"`
 	OwnerId     *openapi_types.UUID `json:"ownerId,omitempty"`
+	TaskFilter  *string             `json:"taskFilter,omitempty"`
 	Vendor      string              `json:"vendor"`
 }
 
@@ -8814,6 +8885,21 @@ type PortalRequestDetail struct {
 	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
+// Presence defines model for Presence.
+type Presence struct {
+	Branch      *string    `json:"branch"`
+	HeartbeatAt *time.Time `json:"heartbeatAt"`
+	Issue       *struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	Note  string        `json:"note"`
+	State PresenceState `json:"state"`
+}
+
+// PresenceState defines model for PresenceState.
+type PresenceState string
+
 // PrintTemplate defines model for PrintTemplate.
 type PrintTemplate struct {
 	Css       string             `json:"css"`
@@ -8858,12 +8944,13 @@ type PriorityInfo struct {
 
 // Problem defines model for Problem.
 type Problem struct {
-	Detail      *string              `json:"detail,omitempty"`
-	Errors      *map[string][]string `json:"errors,omitempty"`
-	QueryErrors *[]QueryError        `json:"queryErrors,omitempty"`
-	Status      int                  `json:"status"`
-	Title       string               `json:"title"`
-	Type        string               `json:"type"`
+	ClaimConflicts *[]ClaimConflict     `json:"claimConflicts,omitempty"`
+	Detail         *string              `json:"detail,omitempty"`
+	Errors         *map[string][]string `json:"errors,omitempty"`
+	QueryErrors    *[]QueryError        `json:"queryErrors,omitempty"`
+	Status         int                  `json:"status"`
+	Title          string               `json:"title"`
+	Type           string               `json:"type"`
 }
 
 // ProjectCustomFieldsRequest defines model for ProjectCustomFieldsRequest.
@@ -10229,6 +10316,22 @@ type SystemInfo struct {
 // SystemInfoMode defines model for SystemInfo.Mode.
 type SystemInfoMode string
 
+// TeamMember defines model for TeamMember.
+type TeamMember struct {
+	Agent       bool       `json:"agent"`
+	Branch      *string    `json:"branch"`
+	HeartbeatAt *time.Time `json:"heartbeatAt"`
+	Issue       *struct {
+		Key     string `json:"key"`
+		Summary string `json:"summary"`
+	} `json:"issue"`
+	LastActivityAt *time.Time    `json:"lastActivityAt"`
+	Note           string        `json:"note"`
+	OpenIssues     int           `json:"openIssues"`
+	State          PresenceState `json:"state"`
+	User           UserRef       `json:"user"`
+}
+
 // TextAnchor defines model for TextAnchor.
 type TextAnchor struct {
 	Block  int    `json:"block"`
@@ -10634,6 +10737,7 @@ type UpdateAgentRequest struct {
 	DisplayName *string             `json:"displayName,omitempty"`
 	Model       *string             `json:"model,omitempty"`
 	OwnerId     *openapi_types.UUID `json:"ownerId,omitempty"`
+	TaskFilter  *string             `json:"taskFilter,omitempty"`
 	Vendor      *string             `json:"vendor,omitempty"`
 }
 
@@ -10830,6 +10934,14 @@ type UpdatePlanRequest struct {
 	Name        *string   `json:"name,omitempty"`
 	ProjectKeys *[]string `json:"projectKeys,omitempty"`
 	Tql         *string   `json:"tql,omitempty"`
+}
+
+// UpdatePresenceRequest defines model for UpdatePresenceRequest.
+type UpdatePresenceRequest struct {
+	Branch   *string       `json:"branch,omitempty"`
+	IssueKey *string       `json:"issueKey,omitempty"`
+	Note     *string       `json:"note,omitempty"`
+	State    PresenceState `json:"state"`
 }
 
 // UpdateSecuritySchemeRequest defines model for UpdateSecuritySchemeRequest.
@@ -11959,6 +12071,9 @@ type IssuesUpdateJSONRequestBody = UpdateIssueRequest
 // IssuesUploadMultipartRequestBody defines body for IssuesUpload for multipart/form-data ContentType.
 type IssuesUploadMultipartRequestBody IssuesUploadMultipartBody
 
+// AgentsClaimIssueJSONRequestBody defines body for AgentsClaimIssue for application/json ContentType.
+type AgentsClaimIssueJSONRequestBody = ClaimRequest
+
 // IssuesCloneJSONRequestBody defines body for IssuesClone for application/json ContentType.
 type IssuesCloneJSONRequestBody = CloneIssueRequest
 
@@ -12015,6 +12130,9 @@ type MeFinishJSONRequestBody = OnboardingRequest
 
 // MeChangePasswordJSONRequestBody defines body for MeChangePassword for application/json ContentType.
 type MeChangePasswordJSONRequestBody = ChangePasswordRequest
+
+// AgentsBeatJSONRequestBody defines body for AgentsBeat for application/json ContentType.
+type AgentsBeatJSONRequestBody = UpdatePresenceRequest
 
 // PersonalRecordJSONRequestBody defines body for PersonalRecord for application/json ContentType.
 type PersonalRecordJSONRequestBody = RecordRecentRequest
@@ -12099,6 +12217,9 @@ type PortalPortalCommentJSONRequestBody = PortalCommentRequest
 
 // ProjectsCreateJSONRequestBody defines body for ProjectsCreate for application/json ContentType.
 type ProjectsCreateJSONRequestBody = CreateProjectRequest
+
+// AgentsClaimNextJSONRequestBody defines body for AgentsClaimNext for application/json ContentType.
+type AgentsClaimNextJSONRequestBody = ClaimNextRequest
 
 // ProjectsCreateComponentJSONRequestBody defines body for ProjectsCreateComponent for application/json ContentType.
 type ProjectsCreateComponentJSONRequestBody = CreateComponentRequest
@@ -20173,6 +20294,36 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/issues/{key}/attachments/{id} (the `IssuesDelete` operationId).
 	IssuesDelete(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsReleaseClaim Release a claim
+	//
+	// One’s own, or any as project administrator. The assignee stays.
+	//
+	// Corresponds with DELETE /api/v1/issues/{key}/claim (the `AgentsReleaseClaim` operationId).
+	AgentsReleaseClaim(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsGetClaim Get the active claim on an issue
+	//
+	// Corresponds with GET /api/v1/issues/{key}/claim (the `AgentsGetClaim` operationId).
+	AgentsGetClaim(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsClaimIssueWithBody Claim an issue
+	//
+	// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+	AgentsClaimIssueWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsClaimIssue Claim an issue
+	//
+	// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+	AgentsClaimIssue(ctx context.Context, key string, body AgentsClaimIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// IssuesCloneWithBody Copy an issue
 	//
 	// Copies fields, custom fields and the security level, links the copy to the original ("clones"), and optionally the subtasks. Needs create-issues.
@@ -20646,6 +20797,29 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/me/password (the `MeChangePassword` operationId).
 	MeChangePassword(ctx context.Context, body MeChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsMine Get the own state from the last heartbeat
+	//
+	// Corresponds with GET /api/v1/me/presence (the `AgentsMine` operationId).
+	AgentsMine(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsBeatWithBody Send a heartbeat: state and what one is working on
+	//
+	// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+	AgentsBeatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsBeat Send a heartbeat: state and what one is working on
+	//
+	// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+	AgentsBeat(ctx context.Context, body AgentsBeatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PersonalRecent List recently opened issues, projects, spaces and pages, newest first
 	//
@@ -21324,6 +21498,29 @@ type ClientInterface interface {
 	// Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
 	ProjectsGet(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsClaimNextWithBody Claim the next fitting issue of a project
+	//
+	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+	AgentsClaimNextWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsClaimNext Claim the next fitting issue of a project
+	//
+	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+	AgentsClaimNext(ctx context.Context, key string, body AgentsClaimNextJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsListClaims List the active claims of a project
+	//
+	// Corresponds with GET /api/v1/projects/{key}/claims (the `AgentsListClaims` operationId).
+	AgentsListClaims(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ProjectsListComponents List the components of a project
 	//
 	// Corresponds with GET /api/v1/projects/{key}/components (the `ProjectsListComponents` operationId).
@@ -21639,6 +21836,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /api/v1/projects/{key}/spaces (the `SpacesOfProject` operationId).
 	SpacesOfProject(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsTeam Who works in the project
+	//
+	// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
+	//
+	// Corresponds with GET /api/v1/projects/{key}/team (the `AgentsTeam` operationId).
+	AgentsTeam(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ProjectsTimeline Epics with their children and milestones for the timeline
 	//
@@ -27210,6 +27414,76 @@ func (c *Client) IssuesDelete(ctx context.Context, key string, id string, reqEdi
 	return c.Client.Do(req)
 }
 
+// AgentsReleaseClaim Release a claim
+//
+// One’s own, or any as project administrator. The assignee stays.
+//
+// Corresponds with DELETE /api/v1/issues/{key}/claim (the `AgentsReleaseClaim` operationId).
+func (c *Client) AgentsReleaseClaim(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsReleaseClaimRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsGetClaim Get the active claim on an issue
+//
+// Corresponds with GET /api/v1/issues/{key}/claim (the `AgentsGetClaim` operationId).
+func (c *Client) AgentsGetClaim(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsGetClaimRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsClaimIssueWithBody Claim an issue
+//
+// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+func (c *Client) AgentsClaimIssueWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsClaimIssueRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsClaimIssue Claim an issue
+//
+// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+func (c *Client) AgentsClaimIssue(ctx context.Context, key string, body AgentsClaimIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsClaimIssueRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // IssuesCloneWithBody Copy an issue
 //
 // Copies fields, custom fields and the security level, links the copy to the original ("clones"), and optionally the subtasks. Needs create-issues.
@@ -28374,6 +28648,59 @@ func (c *Client) MeChangePasswordWithBody(ctx context.Context, contentType strin
 // Corresponds with POST /api/v1/me/password (the `MeChangePassword` operationId).
 func (c *Client) MeChangePassword(ctx context.Context, body MeChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMeChangePasswordRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsMine Get the own state from the last heartbeat
+//
+// Corresponds with GET /api/v1/me/presence (the `AgentsMine` operationId).
+func (c *Client) AgentsMine(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsMineRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsBeatWithBody Send a heartbeat: state and what one is working on
+//
+// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+func (c *Client) AgentsBeatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsBeatRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsBeat Send a heartbeat: state and what one is working on
+//
+// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+func (c *Client) AgentsBeat(ctx context.Context, body AgentsBeatJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsBeatRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -30051,6 +30378,59 @@ func (c *Client) ProjectsGet(ctx context.Context, key string, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
+// AgentsClaimNextWithBody Claim the next fitting issue of a project
+//
+// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+func (c *Client) AgentsClaimNextWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsClaimNextRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsClaimNext Claim the next fitting issue of a project
+//
+// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+func (c *Client) AgentsClaimNext(ctx context.Context, key string, body AgentsClaimNextJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsClaimNextRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsListClaims List the active claims of a project
+//
+// Corresponds with GET /api/v1/projects/{key}/claims (the `AgentsListClaims` operationId).
+func (c *Client) AgentsListClaims(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsListClaimsRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ProjectsListComponents List the components of a project
 //
 // Corresponds with GET /api/v1/projects/{key}/components (the `ProjectsListComponents` operationId).
@@ -30797,6 +31177,23 @@ func (c *Client) ServiceDeskUpdateRequestType(ctx context.Context, key string, i
 // Corresponds with GET /api/v1/projects/{key}/spaces (the `SpacesOfProject` operationId).
 func (c *Client) SpacesOfProject(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSpacesOfProjectRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsTeam Who works in the project
+//
+// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
+//
+// Corresponds with GET /api/v1/projects/{key}/team (the `AgentsTeam` operationId).
+func (c *Client) AgentsTeam(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsTeamRequest(c.Server, key)
 	if err != nil {
 		return nil, err
 	}
@@ -39831,6 +40228,121 @@ func NewIssuesDeleteRequest(server string, key string, id string) (*http.Request
 	return req, nil
 }
 
+// NewAgentsReleaseClaimRequest constructs an http.Request for the AgentsReleaseClaim method
+func NewAgentsReleaseClaimRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/claim", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsGetClaimRequest constructs an http.Request for the AgentsGetClaim method
+func NewAgentsGetClaimRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/claim", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsClaimIssueRequest calls the generic AgentsClaimIssue builder with application/json body
+func NewAgentsClaimIssueRequest(server string, key string, body AgentsClaimIssueJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsClaimIssueRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsClaimIssueRequestWithBody constructs an http.Request for the AgentsClaimIssue method, with any body, and a specified content type
+func NewAgentsClaimIssueRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/issues/%s/claim", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewIssuesCloneRequest calls the generic IssuesClone builder with application/json body
 func NewIssuesCloneRequest(server string, key string, body IssuesCloneJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -41917,6 +42429,73 @@ func NewMeChangePasswordRequestWithBody(server string, contentType string, body 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsMineRequest constructs an http.Request for the AgentsMine method
+func NewAgentsMineRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/presence")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsBeatRequest calls the generic AgentsBeat builder with application/json body
+func NewAgentsBeatRequest(server string, body AgentsBeatJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsBeatRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAgentsBeatRequestWithBody constructs an http.Request for the AgentsBeat method, with any body, and a specified content type
+func NewAgentsBeatRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/me/presence")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -44939,6 +45518,87 @@ func NewProjectsGetRequest(server string, key string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewAgentsClaimNextRequest calls the generic AgentsClaimNext builder with application/json body
+func NewAgentsClaimNextRequest(server string, key string, body AgentsClaimNextJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsClaimNextRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewAgentsClaimNextRequestWithBody constructs an http.Request for the AgentsClaimNext method, with any body, and a specified content type
+func NewAgentsClaimNextRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/claim-next", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsListClaimsRequest constructs an http.Request for the AgentsListClaims method
+func NewAgentsListClaimsRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/claims", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewProjectsListComponentsRequest constructs an http.Request for the ProjectsListComponents method
 func NewProjectsListComponentsRequest(server string, key string) (*http.Request, error) {
 	var err error
@@ -46302,6 +46962,40 @@ func NewSpacesOfProjectRequest(server string, key string) (*http.Request, error)
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/projects/%s/spaces", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsTeamRequest constructs an http.Request for the AgentsTeam method
+func NewAgentsTeamRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/team", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -51914,6 +52608,40 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/issues/{key}/attachments/{id} (the `IssuesDelete` operationId).
 	IssuesDeleteWithResponse(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*IssuesDeleteHTTPResponse, error)
 
+	// AgentsReleaseClaimWithResponse Release a claim
+	//
+	// One’s own, or any as project administrator. The assignee stays.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/issues/{key}/claim (the `AgentsReleaseClaim` operationId).
+	AgentsReleaseClaimWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsReleaseClaimHTTPResponse, error)
+
+	// AgentsGetClaimWithResponse Get the active claim on an issue
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/issues/{key}/claim (the `AgentsGetClaim` operationId).
+	AgentsGetClaimWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsGetClaimHTTPResponse, error)
+
+	// AgentsClaimIssueWithBodyWithResponse Claim an issue
+	//
+	// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+	AgentsClaimIssueWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsClaimIssueHTTPResponse, error)
+
+	// AgentsClaimIssueWithResponse Claim an issue
+	//
+	// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+	AgentsClaimIssueWithResponse(ctx context.Context, key string, body AgentsClaimIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsClaimIssueHTTPResponse, error)
+
 	// IssuesCloneWithBodyWithResponse Copy an issue
 	//
 	// Copies fields, custom fields and the security level, links the copy to the original ("clones"), and optionally the subtasks. Needs create-issues.
@@ -52451,6 +53179,31 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/me/password (the `MeChangePassword` operationId).
 	MeChangePasswordWithResponse(ctx context.Context, body MeChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*MeChangePasswordHTTPResponse, error)
+
+	// AgentsMineWithResponse Get the own state from the last heartbeat
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/me/presence (the `AgentsMine` operationId).
+	AgentsMineWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsMineHTTPResponse, error)
+
+	// AgentsBeatWithBodyWithResponse Send a heartbeat: state and what one is working on
+	//
+	// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+	AgentsBeatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsBeatHTTPResponse, error)
+
+	// AgentsBeatWithResponse Send a heartbeat: state and what one is working on
+	//
+	// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+	AgentsBeatWithResponse(ctx context.Context, body AgentsBeatJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsBeatHTTPResponse, error)
 
 	// PersonalRecentWithResponse List recently opened issues, projects, spaces and pages, newest first
 	//
@@ -53217,6 +53970,31 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
 	ProjectsGetWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ProjectsGetHTTPResponse, error)
 
+	// AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
+	//
+	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+	AgentsClaimNextWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsClaimNextHTTPResponse, error)
+
+	// AgentsClaimNextWithResponse Claim the next fitting issue of a project
+	//
+	// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+	AgentsClaimNextWithResponse(ctx context.Context, key string, body AgentsClaimNextJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsClaimNextHTTPResponse, error)
+
+	// AgentsListClaimsWithResponse List the active claims of a project
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/projects/{key}/claims (the `AgentsListClaims` operationId).
+	AgentsListClaimsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsListClaimsHTTPResponse, error)
+
 	// ProjectsListComponentsWithResponse List the components of a project
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -53568,6 +54346,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /api/v1/projects/{key}/spaces (the `SpacesOfProject` operationId).
 	SpacesOfProjectWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*SpacesOfProjectHTTPResponse, error)
+
+	// AgentsTeamWithResponse Who works in the project
+	//
+	// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/projects/{key}/team (the `AgentsTeam` operationId).
+	AgentsTeamWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsTeamHTTPResponse, error)
 
 	// ProjectsTimelineWithResponse Epics with their children and milestones for the timeline
 	//
@@ -63347,6 +64134,143 @@ func (r IssuesDeleteHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsReleaseClaimHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsReleaseClaimHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsReleaseClaimHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsReleaseClaimHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsReleaseClaimHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsReleaseClaimHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsGetClaimHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ClaimResult
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsGetClaimHTTPResponse) GetJSON200() *ClaimResult {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsGetClaimHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsGetClaimHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsGetClaimHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsGetClaimHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsGetClaimHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsClaimIssueHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Claim
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsClaimIssueHTTPResponse) GetJSON200() *Claim {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsClaimIssueHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsClaimIssueHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsClaimIssueHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsClaimIssueHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsClaimIssueHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type IssuesCloneHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -65709,6 +66633,102 @@ func (r MeChangePasswordHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MeChangePasswordHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsMineHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Presence
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsMineHTTPResponse) GetJSON200() *Presence {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsMineHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsMineHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsMineHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsMineHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsMineHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsBeatHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Presence
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsBeatHTTPResponse) GetJSON200() *Presence {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsBeatHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsBeatHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsBeatHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsBeatHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsBeatHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -69073,6 +70093,102 @@ func (r ProjectsGetHTTPResponse) ContentType() string {
 	return ""
 }
 
+type AgentsClaimNextHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ClaimResult
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsClaimNextHTTPResponse) GetJSON200() *ClaimResult {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsClaimNextHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsClaimNextHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsClaimNextHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsClaimNextHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsClaimNextHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsListClaimsHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]Claim
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsListClaimsHTTPResponse) GetJSON200() *[]Claim {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsListClaimsHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsListClaimsHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsListClaimsHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsListClaimsHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsListClaimsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ProjectsListComponentsHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -70500,6 +71616,54 @@ func (r SpacesOfProjectHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SpacesOfProjectHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsTeamHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]TeamMember
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsTeamHTTPResponse) GetJSON200() *[]TeamMember {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsTeamHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsTeamHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsTeamHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsTeamHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsTeamHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -77778,6 +78942,64 @@ func (c *ClientWithResponses) IssuesDeleteWithResponse(ctx context.Context, key 
 	return ParseIssuesDeleteHTTPResponse(rsp)
 }
 
+// AgentsReleaseClaimWithResponse Release a claim
+//
+// One’s own, or any as project administrator. The assignee stays.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/issues/{key}/claim (the `AgentsReleaseClaim` operationId).
+func (c *ClientWithResponses) AgentsReleaseClaimWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsReleaseClaimHTTPResponse, error) {
+	rsp, err := c.AgentsReleaseClaim(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsReleaseClaimHTTPResponse(rsp)
+}
+
+// AgentsGetClaimWithResponse Get the active claim on an issue
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/issues/{key}/claim (the `AgentsGetClaim` operationId).
+func (c *ClientWithResponses) AgentsGetClaimWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsGetClaimHTTPResponse, error) {
+	rsp, err := c.AgentsGetClaim(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsGetClaimHTTPResponse(rsp)
+}
+
+// AgentsClaimIssueWithBodyWithResponse Claim an issue
+//
+// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+func (c *ClientWithResponses) AgentsClaimIssueWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsClaimIssueHTTPResponse, error) {
+	rsp, err := c.AgentsClaimIssueWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsClaimIssueHTTPResponse(rsp)
+}
+
+// AgentsClaimIssueWithResponse Claim an issue
+//
+// Atomic: makes the caller the assignee of an unassigned issue and holds it for 30 minutes; every heartbeat (`PUT /me/presence`) extends the claims. 409 when someone else is assigned or works on it, and with `claimConflicts` when branch or paths overlap with other claims in the project, unless `force` is set. Claiming again renews and changes the work area.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/issues/{key}/claim (the `AgentsClaimIssue` operationId).
+func (c *ClientWithResponses) AgentsClaimIssueWithResponse(ctx context.Context, key string, body AgentsClaimIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsClaimIssueHTTPResponse, error) {
+	rsp, err := c.AgentsClaimIssue(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsClaimIssueHTTPResponse(rsp)
+}
+
 // IssuesCloneWithBodyWithResponse Copy an issue
 //
 // Copies fields, custom fields and the security level, links the copy to the original ("clones"), and optionally the subtasks. Needs create-issues.
@@ -78734,6 +79956,49 @@ func (c *ClientWithResponses) MeChangePasswordWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseMeChangePasswordHTTPResponse(rsp)
+}
+
+// AgentsMineWithResponse Get the own state from the last heartbeat
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/me/presence (the `AgentsMine` operationId).
+func (c *ClientWithResponses) AgentsMineWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsMineHTTPResponse, error) {
+	rsp, err := c.AgentsMine(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsMineHTTPResponse(rsp)
+}
+
+// AgentsBeatWithBodyWithResponse Send a heartbeat: state and what one is working on
+//
+// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+func (c *ClientWithResponses) AgentsBeatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsBeatHTTPResponse, error) {
+	rsp, err := c.AgentsBeatWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsBeatHTTPResponse(rsp)
+}
+
+// AgentsBeatWithResponse Send a heartbeat: state and what one is working on
+//
+// Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/me/presence (the `AgentsBeat` operationId).
+func (c *ClientWithResponses) AgentsBeatWithResponse(ctx context.Context, body AgentsBeatJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsBeatHTTPResponse, error) {
+	rsp, err := c.AgentsBeat(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsBeatHTTPResponse(rsp)
 }
 
 // PersonalRecentWithResponse List recently opened issues, projects, spaces and pages, newest first
@@ -80095,6 +81360,49 @@ func (c *ClientWithResponses) ProjectsGetWithResponse(ctx context.Context, key s
 	return ParseProjectsGetHTTPResponse(rsp)
 }
 
+// AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
+//
+// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+func (c *ClientWithResponses) AgentsClaimNextWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsClaimNextHTTPResponse, error) {
+	rsp, err := c.AgentsClaimNextWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsClaimNextHTTPResponse(rsp)
+}
+
+// AgentsClaimNextWithResponse Claim the next fitting issue of a project
+//
+// One’s own open claim first; otherwise unresolved issues of active and planned sprints, then of the whole project, in rank order, that are unassigned or one’s own, not claimed by others, not blocked by an unresolved issue and within the agent’s task filter and the optional `filter`. `claim` is null when nothing fits.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/claim-next (the `AgentsClaimNext` operationId).
+func (c *ClientWithResponses) AgentsClaimNextWithResponse(ctx context.Context, key string, body AgentsClaimNextJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsClaimNextHTTPResponse, error) {
+	rsp, err := c.AgentsClaimNext(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsClaimNextHTTPResponse(rsp)
+}
+
+// AgentsListClaimsWithResponse List the active claims of a project
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/projects/{key}/claims (the `AgentsListClaims` operationId).
+func (c *ClientWithResponses) AgentsListClaimsWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsListClaimsHTTPResponse, error) {
+	rsp, err := c.AgentsListClaims(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsListClaimsHTTPResponse(rsp)
+}
+
 // ProjectsListComponentsWithResponse List the components of a project
 //
 // Returns a wrapper object for the known response body format(s).
@@ -80709,6 +82017,21 @@ func (c *ClientWithResponses) SpacesOfProjectWithResponse(ctx context.Context, k
 		return nil, err
 	}
 	return ParseSpacesOfProjectHTTPResponse(rsp)
+}
+
+// AgentsTeamWithResponse Who works in the project
+//
+// People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/projects/{key}/team (the `AgentsTeam` operationId).
+func (c *ClientWithResponses) AgentsTeamWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*AgentsTeamHTTPResponse, error) {
+	rsp, err := c.AgentsTeam(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsTeamHTTPResponse(rsp)
 }
 
 // ProjectsTimelineWithResponse Epics with their children and milestones for the timeline
@@ -88273,6 +89596,101 @@ func ParseIssuesDeleteHTTPResponse(rsp *http.Response) (*IssuesDeleteHTTPRespons
 	return response, nil
 }
 
+// ParseAgentsReleaseClaimHTTPResponse parses an HTTP response from a AgentsReleaseClaimWithResponse call
+func ParseAgentsReleaseClaimHTTPResponse(rsp *http.Response) (*AgentsReleaseClaimHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsReleaseClaimHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsGetClaimHTTPResponse parses an HTTP response from a AgentsGetClaimWithResponse call
+func ParseAgentsGetClaimHTTPResponse(rsp *http.Response) (*AgentsGetClaimHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsGetClaimHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClaimResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsClaimIssueHTTPResponse parses an HTTP response from a AgentsClaimIssueWithResponse call
+func ParseAgentsClaimIssueHTTPResponse(rsp *http.Response) (*AgentsClaimIssueHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsClaimIssueHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Claim
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseIssuesCloneHTTPResponse parses an HTTP response from a IssuesCloneWithResponse call
 func ParseIssuesCloneHTTPResponse(rsp *http.Response) (*IssuesCloneHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -89893,6 +91311,72 @@ func ParseMeChangePasswordHTTPResponse(rsp *http.Response) (*MeChangePasswordHTT
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PasswordChanged
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsMineHTTPResponse parses an HTTP response from a AgentsMineWithResponse call
+func ParseAgentsMineHTTPResponse(rsp *http.Response) (*AgentsMineHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsMineHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Presence
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsBeatHTTPResponse parses an HTTP response from a AgentsBeatWithResponse call
+func ParseAgentsBeatHTTPResponse(rsp *http.Response) (*AgentsBeatHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsBeatHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Presence
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -92224,6 +93708,72 @@ func ParseProjectsGetHTTPResponse(rsp *http.Response) (*ProjectsGetHTTPResponse,
 	return response, nil
 }
 
+// ParseAgentsClaimNextHTTPResponse parses an HTTP response from a AgentsClaimNextWithResponse call
+func ParseAgentsClaimNextHTTPResponse(rsp *http.Response) (*AgentsClaimNextHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsClaimNextHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClaimResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsListClaimsHTTPResponse parses an HTTP response from a AgentsListClaimsWithResponse call
+func ParseAgentsListClaimsHTTPResponse(rsp *http.Response) (*AgentsListClaimsHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsListClaimsHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Claim
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseProjectsListComponentsHTTPResponse parses an HTTP response from a ProjectsListComponentsWithResponse call
 func ParseProjectsListComponentsHTTPResponse(rsp *http.Response) (*ProjectsListComponentsHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -93198,6 +94748,39 @@ func ParseSpacesOfProjectHTTPResponse(rsp *http.Response) (*SpacesOfProjectHTTPR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []SpaceSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsTeamHTTPResponse parses an HTTP response from a AgentsTeamWithResponse call
+func ParseAgentsTeamHTTPResponse(rsp *http.Response) (*AgentsTeamHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsTeamHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []TeamMember
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

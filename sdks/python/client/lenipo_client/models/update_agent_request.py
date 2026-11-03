@@ -28,12 +28,14 @@ class UpdateAgentRequest:
             display_name (str | Unset):
             vendor (str | Unset):
             model (str | Unset):
+            task_filter (str | Unset):
             owner_id (None | Unset | UUID):
      """
 
     display_name: str | Unset = UNSET
     vendor: str | Unset = UNSET
     model: str | Unset = UNSET
+    task_filter: str | Unset = UNSET
     owner_id: None | Unset | UUID = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -47,6 +49,8 @@ class UpdateAgentRequest:
         vendor = self.vendor
 
         model = self.model
+
+        task_filter = self.task_filter
 
         owner_id: None | str | Unset
         if isinstance(self.owner_id, Unset):
@@ -67,6 +71,8 @@ class UpdateAgentRequest:
             field_dict["vendor"] = vendor
         if model is not UNSET:
             field_dict["model"] = model
+        if task_filter is not UNSET:
+            field_dict["taskFilter"] = task_filter
         if owner_id is not UNSET:
             field_dict["ownerId"] = owner_id
 
@@ -82,6 +88,8 @@ class UpdateAgentRequest:
         vendor = d.pop("vendor", UNSET)
 
         model = d.pop("model", UNSET)
+
+        task_filter = d.pop("taskFilter", UNSET)
 
         def _parse_owner_id(data: object) -> None | Unset | UUID:
             if data is None:
@@ -107,6 +115,7 @@ class UpdateAgentRequest:
             display_name=display_name,
             vendor=vendor,
             model=model,
+            task_filter=task_filter,
             owner_id=owner_id,
         )
 
