@@ -12,6 +12,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { pageAttachments, users } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { FileNotFoundError, type FileStore } from '../storage/file-store.js';
 import { contentTypeOf, receiveUpload } from '../storage/upload.js';
 import { PageService } from './page.service.js';
@@ -31,6 +32,7 @@ export class PageAttachmentService {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(PageService) private readonly pages: PageService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   private present(
@@ -88,6 +90,8 @@ export class PageAttachmentService {
       request,
       Math.floor(this.config.ATTACHMENT_MAX_MB * 1024 * 1024),
     );
+    // The storage of the plan (TL-103).
+    await this.provider.requireStorage(upload.size);
     const id = uuidv7();
     const storageKey = `page-attachments/${id}`;
     const { type, image } = contentTypeOf(upload.head, upload.declaredType);

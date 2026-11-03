@@ -2404,6 +2404,18 @@ export const en: Messages = {
     },
   },
   operations: {
+    plan: {
+      title: 'Plan',
+      titleNamed: 'Plan “{{plan}}”',
+      intro:
+        'The provider of this instance sets the limits. Guests (external people) and agents take no seats. More seats or features come through the customer account at the provider.',
+      persons: 'Seats',
+      agents: 'Agents',
+      storage: 'Storage for attachments',
+      serviceDesk: 'Service desk',
+      included: 'included',
+      notIncluded: 'not included',
+    },
     title: 'Operations',
     modules: 'Modules',
     modulesIntro:

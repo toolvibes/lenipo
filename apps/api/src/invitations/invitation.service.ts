@@ -31,6 +31,7 @@ import { SetupService } from '../identity/setup.service.js';
 import { UserService } from '../identity/user.service.js';
 import { invitationEmail } from '../notifications/email.js';
 import { Mailer } from '../notifications/mailer.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { ProjectMemberService } from '../tracking/project-member.service.js';
@@ -58,6 +59,7 @@ export class InvitationService {
     @Inject(Mailer) private readonly mailer: Mailer,
     @Inject(ProjectAccessService) private readonly projectAccess: ProjectAccessService,
     @Inject(SetupService) private readonly setup: SetupService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   private async administers(principal: Principal, projectId: string): Promise<boolean> {
@@ -124,6 +126,9 @@ export class InvitationService {
       });
     } else if (existing) {
       throw new ConflictException('A user with this email already exists');
+    } else if (!request.external) {
+      // Say it now rather than when the link is used (TL-103).
+      await this.provider.requireSeat();
     }
     const token = randomSecret();
     const id = uuidv7();

@@ -13,6 +13,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { groupMembers, oidcLoginAttempts, userIdentities, users } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { GroupService, USERS_GROUP } from './group.service.js';
 import { sha256 } from './secrets.js';
 
@@ -41,6 +42,7 @@ export class OidcService {
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(GroupService) private readonly groupService: GroupService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   get enabled(): boolean {
@@ -179,6 +181,8 @@ export class OidcService {
             'An account with this email exists, but the identity provider did not verify the address',
           );
         }
+        // A new person takes a seat of the plan (TL-103).
+        await this.provider.requireSeat(tx);
         userId = uuidv7();
         status = 'active';
         event = 'created';

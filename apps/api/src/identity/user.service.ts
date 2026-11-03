@@ -12,6 +12,7 @@ import { AccessService } from '../access/access.service.js';
 import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, type Executor, isUniqueViolation } from '../db/client.js';
 import { groupMembers, groups, users } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { GroupService, USERS_GROUP } from './group.service.js';
 import { TwoFactorService } from './two-factor.service.js';
 
@@ -33,6 +34,7 @@ export class UserService {
     @Inject(GroupService) private readonly groupService: GroupService,
     @Inject(AccessService) private readonly access: AccessService,
     @Inject(TwoFactorService) private readonly twoFactor: TwoFactorService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   async findForLogin(email: string) {
@@ -58,6 +60,9 @@ export class UserService {
   }
 
   async create(user: NewUser, db: Executor = this.database.db): Promise<string> {
+    // The plan of a provider limits seats and agents (TL-103).
+    if (user.kind === 'agent') await this.provider.requireAgent(db);
+    else if (!user.external) await this.provider.requireSeat(db);
     const id = uuidv7();
     const groupIds = await this.groupService.idsByName(user.groupNames, db);
     try {
@@ -150,6 +155,16 @@ export class UserService {
   async setExternal(id: string, external: boolean): Promise<void> {
     await this.database.atomic(async () => {
       const db = this.database.db;
+      // A guest made regular takes a seat of the plan (TL-103).
+      if (!external) {
+        const [current] = await db
+          .select({ external: users.external, status: users.status, kind: users.kind })
+          .from(users)
+          .where(eq(users.id, id));
+        if (current?.external && current.status === 'active' && current.kind === 'person') {
+          await this.provider.requireSeat(db);
+        }
+      }
       const [changed] = await db
         .update(users)
         .set({ external, updatedAt: new Date() })

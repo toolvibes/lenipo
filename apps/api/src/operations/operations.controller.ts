@@ -1,11 +1,15 @@
 import {
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
+  HttpCode,
   Inject,
   NotFoundException,
   Param,
   ParseUUIDPipe,
   Put,
+  Req,
 } from '@nestjs/common';
 import {
   AdminToken,
@@ -13,10 +17,14 @@ import {
   FeatureFlags,
   InstanceNotice,
   MaintenanceMode,
+  MODULES,
+  ProviderLimits,
+  ProviderUsage,
   RateLimitSettings,
   TokenLimits,
 } from '@toolvibes/shared';
 import { asc, eq, isNull, sql } from 'drizzle-orm';
+import type { Request } from 'express';
 import { z } from 'zod';
 import { RequireGlobal } from '../access/require-global.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -27,6 +35,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { personalAccessTokens, users } from '../db/schema/index.js';
 import { OperationsService } from './operations.service.js';
+import { ProviderService } from './provider.service.js';
 
 /** What every page shows: modules, maintenance and the banner (TL-40, E-121). */
 @Public()
@@ -53,6 +62,7 @@ export class OperationsController {
     @Inject(OperationsService) private readonly operations: OperationsService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   private record(principal: Principal, action: string, details: unknown) {
@@ -82,6 +92,12 @@ export class OperationsController {
     @CurrentPrincipal() principal: Principal,
     @ValidBody(FeatureFlags) body: FeatureFlags,
   ): Promise<FeatureFlags> {
+    // A module the provider's plan leaves out stays off (TL-103).
+    for (const name of MODULES) {
+      if (body[name] && !(await this.operations.snapshot()).modules[name]) {
+        await this.provider.requireModule(name);
+      }
+    }
     await this.record(principal, 'system.modules_changed', body);
     return this.operations.setModules(body);
   }
@@ -202,5 +218,74 @@ export class OperationsController {
       details: body,
     });
     return body;
+  }
+}
+
+/** The frame a provider such as Lenipo Cloud sets (TL-103, E-154), with the SETUP_TOKEN. */
+@Public()
+@Controller('provider')
+export class ProviderController {
+  constructor(@Inject(ProviderService) private readonly provider: ProviderService) {}
+
+  private authorize(request: Request) {
+    const [scheme, token] = (request.get('authorization') ?? '').split(' ');
+    if (scheme?.toLowerCase() !== 'bearer' || !token || !this.provider.acceptsToken(token)) {
+      throw new ForbiddenException('Needs the SETUP_TOKEN of the instance');
+    }
+  }
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'Set the limits of the plan',
+    description:
+      'For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.',
+    response: ProviderUsage,
+  })
+  @Put('limits')
+  async setLimits(
+    @ValidBody(ProviderLimits) body: ProviderLimits,
+    @Req() request: Request,
+  ): Promise<ProviderUsage> {
+    this.authorize(request);
+    await this.provider.setLimits(body);
+    return this.provider.usage();
+  }
+
+  @Endpoint({ tag: 'Operations', summary: 'Remove the limits of the plan' })
+  @Delete('limits')
+  @HttpCode(204)
+  async removeLimits(@Req() request: Request): Promise<void> {
+    this.authorize(request);
+    await this.provider.setLimits(null);
+  }
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'What the instance uses',
+    description: 'Seats taken, agents, storage, service desks and modules, for billing.',
+    response: ProviderUsage,
+  })
+  @Get('usage')
+  async usage(@Req() request: Request): Promise<ProviderUsage> {
+    this.authorize(request);
+    return this.provider.usage();
+  }
+}
+
+/** The plan and its use, for administrators (TL-103). */
+@RequireGlobal('admin')
+@Controller('admin')
+export class PlanController {
+  constructor(@Inject(ProviderService) private readonly provider: ProviderService) {}
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'The plan of the instance and what it uses',
+    description: '`limits` is null without a provider: then nothing is limited.',
+    response: ProviderUsage,
+  })
+  @Get('plan')
+  plan(): Promise<ProviderUsage> {
+    return this.provider.usage();
   }
 }

@@ -5,9 +5,15 @@ import { GlobalPermissionGuard } from '../access/require-global.js';
 import { SystemController } from '../admin/system.controller.js';
 import { AuditService } from '../audit/audit.service.js';
 import { IdempotencyInterceptor } from '../operations/idempotency.interceptor.js';
-import { InstanceController, OperationsController } from '../operations/operations.controller.js';
+import {
+  InstanceController,
+  OperationsController,
+  PlanController,
+  ProviderController,
+} from '../operations/operations.controller.js';
 import { OperationsGuard } from '../operations/operations.guard.js';
 import { OperationsService } from '../operations/operations.service.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { AdminController } from './admin.controller.js';
 import { AgentService } from './agent.service.js';
 import { AgentsController } from './agents.controller.js';
@@ -40,6 +46,8 @@ import { GroupsController, UsersController } from './users.controller.js';
     SetupController,
     InstanceController,
     OperationsController,
+    ProviderController,
+    PlanController,
     AuthController,
     MeController,
     AdminController,
@@ -71,6 +79,7 @@ import { GroupsController, UsersController } from './users.controller.js';
     UserLifecycleService,
     AgentService,
     OperationsService,
+    ProviderService,
     AuthGuard,
     OperationsGuard,
     GlobalPermissionGuard,
@@ -82,6 +91,7 @@ import { GroupsController, UsersController } from './users.controller.js';
   ],
   exports: [
     OperationsService,
+    ProviderService,
     AccessService,
     AuditService,
     SessionService,

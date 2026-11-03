@@ -13,6 +13,7 @@ import {
   userIdentities,
   users,
 } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { GroupService, USERS_GROUP } from './group.service.js';
 
 type Row = typeof samlProviders.$inferSelect;
@@ -57,6 +58,7 @@ export class SamlService {
   constructor(
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(GroupService) private readonly groupService: GroupService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   private present(row: Row, base: string): SamlProvider {
@@ -241,6 +243,8 @@ export class SamlService {
       userId = existing?.id;
       if (!userId) {
         if (!row.createUsers) throw new BadRequestException('No account with this e-mail address');
+        // A new person takes a seat of the plan (TL-103).
+        await this.provider.requireSeat(db);
         userId = uuidv7();
         await db.insert(users).values({ id: userId, email, displayName: name, passwordHash: null });
         const [everyone] = await this.groupService.idsByName([USERS_GROUP], db);

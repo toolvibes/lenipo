@@ -44,6 +44,7 @@ import {
   users,
 } from '../db/schema/index.js';
 import { emitIssueEvent } from '../notifications/events.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
@@ -79,6 +80,7 @@ export class ServiceDeskService {
     @Inject(ProjectAccessService) private readonly access: ProjectAccessService,
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   // ---------------------------------------------------------------- setup (administer)
@@ -108,6 +110,12 @@ export class ServiceDeskService {
     settings: ServiceDeskSettings,
   ): Promise<ServiceDesk> {
     const project = await this.administered(principal, key);
+    // New service desks only where the plan includes them (TL-103).
+    const [existing] = await this.database.db
+      .select({ projectId: serviceDesks.projectId })
+      .from(serviceDesks)
+      .where(eq(serviceDesks.projectId, project.id));
+    if (!existing) await this.provider.requireServiceDesk();
     const values = { ...settings };
     await this.database.db
       .insert(serviceDesks)

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IdentityModule } from '../identity/identity.module.js';
 import { TrackingModule } from '../tracking/tracking.module.js';
 import { MailHandlerController } from './mail-handler.controller.js';
 import { MailHandlerService } from './mail-handler.service.js';
@@ -11,7 +12,7 @@ import { ServiceDeskService } from './servicedesk.service.js';
 
 /** Service desk with customer portal (TL-47, E-137). */
 @Module({
-  imports: [TrackingModule],
+  imports: [IdentityModule, TrackingModule],
   controllers: [
     ServiceDeskController,
     ServiceQueueController,

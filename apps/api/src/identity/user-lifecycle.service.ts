@@ -34,6 +34,7 @@ import {
   userPreferences,
   users,
 } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { plainText } from '../tracking/rich-text.js';
 
 /** Domain of the addresses anonymised accounts get; `.invalid` never delivers (RFC 2606). */
@@ -69,7 +70,10 @@ export function relabelMentions(doc: unknown, userId: string, label: string): un
  */
 @Injectable()
 export class UserLifecycleService {
-  constructor(@Inject(DATABASE) private readonly database: DatabaseHandle) {}
+  constructor(
+    @Inject(DATABASE) private readonly database: DatabaseHandle,
+    @Inject(ProviderService) private readonly provider: ProviderService,
+  ) {}
 
   private async user(id: string, actorId: string) {
     if (id === actorId) throw new BadRequestException('You cannot do this to your own account');
@@ -109,6 +113,11 @@ export class UserLifecycleService {
     const user = await this.user(id, actorId);
     if (user.email.endsWith(`@${ANONYMOUS_DOMAIN}`))
       throw new BadRequestException('An anonymised account cannot be reactivated');
+    // Coming back takes a seat or an agent place of the plan (TL-103).
+    if (user.status !== 'active') {
+      if (user.kind === 'agent') await this.provider.requireAgent();
+      else if (!user.external) await this.provider.requireSeat();
+    }
     await this.database.db
       .update(users)
       .set({ status: 'active', updatedAt: sql`now()` })

@@ -10458,6 +10458,129 @@
         }
       }
     },
+    "/api/v1/provider/limits": {
+      "put": {
+        "operationId": "Operations.setLimits",
+        "summary": "Set the limits of the plan",
+        "description": "For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.",
+        "tags": ["Operations"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderLimits"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderUsage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Operations.removeLimits",
+        "summary": "Remove the limits of the plan",
+        "tags": ["Operations"],
+        "security": [],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/provider/usage": {
+      "get": {
+        "operationId": "Operations.usage",
+        "summary": "What the instance uses",
+        "description": "Seats taken, agents, storage, service desks and modules, for billing.",
+        "tags": ["Operations"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderUsageOutput"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/plan": {
+      "get": {
+        "operationId": "Operations.plan",
+        "summary": "The plan of the instance and what it uses",
+        "description": "`limits` is null without a provider: then nothing is limited.\n\nRequires the global permission `admin`.",
+        "tags": ["Operations"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderUsageOutput"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pages/{id}/status": {
       "put": {
         "operationId": "Pages.setStatus",
@@ -30914,6 +31037,254 @@
           }
         },
         "required": ["perMinute", "perDay"]
+      },
+      "ProviderLimits": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "default": "",
+            "type": "string",
+            "maxLength": 60
+          },
+          "persons": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "agents": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "storageMb": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modules": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ModuleName"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "serviceDesk": {
+            "default": true,
+            "type": "boolean"
+          }
+        }
+      },
+      "ModuleName": {
+        "type": "string",
+        "enum": ["wiki", "boards", "time-tracking", "automation", "dashboards"]
+      },
+      "ProviderUsage": {
+        "type": "object",
+        "properties": {
+          "persons": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "agents": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "storageMb": {
+            "type": "number"
+          },
+          "serviceDesks": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModuleName"
+            }
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderLimitsOutput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "persons",
+          "agents",
+          "storageMb",
+          "serviceDesks",
+          "modules",
+          "limits",
+          "measuredAt"
+        ],
+        "additionalProperties": false
+      },
+      "ProviderLimitsOutput": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "default": "",
+            "type": "string",
+            "maxLength": 60
+          },
+          "persons": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "agents": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "storageMb": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modules": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ModuleName"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "serviceDesk": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": ["plan", "persons", "agents", "storageMb", "modules", "serviceDesk"],
+        "additionalProperties": false
+      },
+      "ProviderUsageOutput": {
+        "type": "object",
+        "properties": {
+          "persons": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "agents": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "storageMb": {
+            "type": "number"
+          },
+          "serviceDesks": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModuleName"
+            }
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderLimitsOutput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "persons",
+          "agents",
+          "storageMb",
+          "serviceDesks",
+          "modules",
+          "limits",
+          "measuredAt"
+        ],
+        "additionalProperties": false
       },
       "SetPageStatusRequest": {
         "type": "object",

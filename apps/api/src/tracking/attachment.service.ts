@@ -20,6 +20,7 @@ import type { Logger } from '../core/logger.js';
 import { CONFIG, DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { issueAttachments, issues, users } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { FileNotFoundError, type FileStore } from '../storage/file-store.js';
 import { contentTypeOf, receiveUpload, type SpooledUpload } from '../storage/upload.js';
 import { recordChanges } from './history.js';
@@ -36,6 +37,7 @@ export class AttachmentService {
     @Inject(CONFIG) private readonly config: AppConfig,
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(IssueService) private readonly issues: IssueService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
 
   get maxBytes(): number {
@@ -126,6 +128,8 @@ export class AttachmentService {
     permissions: Awaited<ReturnType<IssueService['authorize']>>['permissions'],
     upload: SpooledUpload,
   ): Promise<Attachment> {
+    // The storage of the plan (TL-103).
+    await this.provider.requireStorage(upload.size);
     const id = uuidv7();
     const storageKey = `attachments/${id}`;
     const { type, image } = contentTypeOf(upload.head, upload.declaredType);

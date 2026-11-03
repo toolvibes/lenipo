@@ -20,6 +20,7 @@ export function OperationsPage() {
   return (
     <main className="flex max-w-[760px] flex-col gap-8">
       <h1 className="m-0 text-xl font-semibold">{t('operations.title')}</h1>
+      <Plan />
       <Modules />
       <Maintenance />
       <Banner />
@@ -60,6 +61,48 @@ function Section({
       {intro && <p className="m-0 text-[13px] text-[var(--ink-muted)]">{intro}</p>}
       {children}
     </section>
+  );
+}
+
+/** The plan a provider such as Lenipo Cloud set (TL-103); nothing without one. */
+function Plan() {
+  const { t } = useTranslation();
+  const plan = useQuery({
+    queryKey: ['admin', 'plan'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/plan')),
+  });
+  const limits = plan.data?.limits;
+  if (!plan.data || !limits) return null;
+  const rows: Array<[string, string]> = [
+    [t('operations.plan.persons'), `${plan.data.persons} / ${limits.persons ?? '∞'}`],
+    [t('operations.plan.agents'), `${plan.data.agents} / ${limits.agents ?? '∞'}`],
+    [
+      t('operations.plan.storage'),
+      `${plan.data.storageMb.toLocaleString()} / ${limits.storageMb === null ? '∞' : limits.storageMb.toLocaleString()} MB`,
+    ],
+    [
+      t('operations.plan.serviceDesk'),
+      limits.serviceDesk ? t('operations.plan.included') : t('operations.plan.notIncluded'),
+    ],
+  ];
+  return (
+    <Section
+      title={
+        limits.plan
+          ? t('operations.plan.titleNamed', { plan: limits.plan })
+          : t('operations.plan.title')
+      }
+      intro={t('operations.plan.intro')}
+    >
+      <dl className="m-0 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-[13px]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-[var(--ink-muted)]">{label}</dt>
+            <dd className="m-0 tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </Section>
   );
 }
 

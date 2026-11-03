@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=18 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=19 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -27,7 +27,7 @@ Umgebungsvariablen, beim Start geprüft (ein Fehler nennt die Variable):
 | `DATABASE_URL` | PostgreSQL-Verbindung (Pflicht) |
 | `PUBLIC_URL` | Öffentliche Adresse, für Links in E-Mails, OAuth und SAML |
 | `MODE` | `all` (Standard) oder eine Rolle: `api`, `collab`, `worker` |
-| `SETUP_TOKEN` | Optional, mindestens 32 Zeichen: Mit `Authorization: Bearer <SETUP_TOKEN>` richtet ein Bereitsteller (Hosting-Dienst, Deployment-Skript) die Instanz über `POST /api/v1/setup/provision` ein. Er legt den Namen und eine Einladung für die erste Admin-Person an und bekommt den Link zurück; die Person setzt Name und Passwort selbst. Gilt nur, solange die Einrichtung aussteht |
+| `SETUP_TOKEN` | Optional, mindestens 32 Zeichen, für Bereitsteller (Hosting-Dienst, Deployment-Skript) mit `Authorization: Bearer <SETUP_TOKEN>`. `POST /api/v1/setup/provision` richtet die Instanz ein, solange das noch aussteht: Name und eine Einladung für die erste Admin-Person, deren Link zurückkommt; die Person setzt Name und Passwort selbst. `PUT /api/v1/provider/limits` setzt einen Rahmen (Plätze, Agenten, Speicher, Module, Service Desk), `GET /api/v1/provider/usage` liefert die Nutzung |
 | `REDIS_URL` | Valkey: Anfragegrenzen über alle Instanzen, mehrere Collab-Server |
 | `STORAGE_DRIVER`, `STORAGE_LOCAL_DIR`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Ablage der Anhänge und Backups |
 | `ATTACHMENT_MAX_MB` | Größte Anhangsdatei (Standard 25) |
@@ -121,6 +121,10 @@ Administration → PDF-Vorlagen: Titelseite mit Logo (PNG, JPEG oder WebP bis 20
 ## Rechte
 
 Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projekte bekommen ein **Berechtigungsschema** (wer was darf, über Projektrollen), ein **Benachrichtigungsschema** und optional ein **Sicherheitsschema** mit Stufen, die einzelne Vorgänge verbergen. Bereiche in Wiki haben eigene Rollen und Seiteneinschränkungen. „Rechte prüfen“ in der Administration erklärt, warum eine Person etwas sehen darf oder nicht.
+
+## Tarif-Rahmen eines Bereitstellers
+
+Hat ein Bereitsteller wie ein Hosting-Dienst einen Rahmen gesetzt, steht er unter Administration → Betrieb: Tarifname, belegte und gebuchte Plätze, Agenten, Speicher für Anhänge, Service Desk. Ist der Rahmen erreicht, lehnt Lenipo das Anlegen, Einladen und Reaktivieren von Personen ab (auch bei Anmeldung per OIDC, SAML und beim Verzeichnis-Sync), ebenso neue Agenten, Anhänge über dem Speicher, neue Service Desks und Module außerhalb des Tarifs, jeweils mit einem Hinweis auf den Tarif. Gäste (externe Personen) und KI-Agenten belegen keine Plätze. Ohne Rahmen, also beim eigenen Betrieb, ist nichts begrenzt.
 
 ## Sicherung und Wiederherstellung
 

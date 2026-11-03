@@ -13,6 +13,7 @@ import type { Logger } from '../core/logger.js';
 import { DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { directories, groupMembers, groups, users } from '../db/schema/index.js';
+import { ProviderService } from '../operations/provider.service.js';
 import { GroupService, USERS_GROUP } from './group.service.js';
 
 type Row = typeof directories.$inferSelect;
@@ -56,7 +57,19 @@ export class DirectoryService {
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(GroupService) private readonly groupService: GroupService,
+    @Inject(ProviderService) private readonly provider: ProviderService,
   ) {}
+
+  /** Whether one more person fits the plan (TL-103); a full plan skips new people. */
+  private async seatFree(person: Person): Promise<boolean> {
+    try {
+      await this.provider.requireSeat(this.database.db);
+      return true;
+    } catch {
+      this.logger.warn({ dn: person.dn }, 'Directory sync: the seats of the plan are taken');
+      return false;
+    }
+  }
 
   /** The directories in order; the internal one is created on first use. */
   private async rows(): Promise<Row[]> {
@@ -222,6 +235,9 @@ export class DirectoryService {
       if (byEmail.passwordHash || byEmail.directoryId) return null;
     }
     if (byEmail) {
+      if (byEmail.status !== 'active' && !byEmail.external && !(await this.seatFree(person))) {
+        return null;
+      }
       await db
         .update(users)
         .set({
@@ -235,6 +251,7 @@ export class DirectoryService {
         .where(eq(users.id, byEmail.id));
       return { id: byEmail.id, created: false };
     }
+    if (!(await this.seatFree(person))) return null;
     const id = uuidv7();
     await db.insert(users).values({
       id,

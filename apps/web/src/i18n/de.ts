@@ -2442,6 +2442,18 @@ export const de = {
     },
   },
   operations: {
+    plan: {
+      title: 'Tarif',
+      titleNamed: 'Tarif „{{plan}}“',
+      intro:
+        'Der Anbieter dieser Instanz legt die Grenzen fest. Gäste (externe Personen) und Agenten belegen keine Plätze. Mehr Plätze oder Funktionen gibt es über das Kundenkonto beim Anbieter.',
+      persons: 'Plätze',
+      agents: 'Agenten',
+      storage: 'Speicher für Anhänge',
+      serviceDesk: 'Service Desk',
+      included: 'enthalten',
+      notIncluded: 'nicht enthalten',
+    },
     title: 'Betrieb',
     modules: 'Module',
     modulesIntro:

@@ -88,3 +88,40 @@ export const AdminToken = z
   })
   .meta({ id: 'AdminToken' });
 export type AdminToken = z.infer<typeof AdminToken>;
+
+// ---------------------------------------------------------------- provider limits (TL-103, E-154)
+
+/**
+ * What a provider (e.g. Lenipo Cloud) allows this instance, set over the API with the
+ * SETUP_TOKEN. Without it (self-hosting) nothing is limited.
+ */
+export const ProviderLimits = z
+  .object({
+    /** The name of the plan, shown to administrators. */
+    plan: z.string().trim().max(60).default(''),
+    /** Active people who are not external guests; agents do not count. Null: no limit. */
+    persons: z.number().int().min(1).max(1_000_000).nullable().default(null),
+    agents: z.number().int().min(0).max(10_000).nullable().default(null),
+    /** Attachments of issues and pages together. */
+    storageMb: z.number().int().min(0).max(10_000_000).nullable().default(null),
+    /** Modules the plan includes; null: all. */
+    modules: z.array(ModuleName).nullable().default(null),
+    serviceDesk: z.boolean().default(true),
+  })
+  .meta({ id: 'ProviderLimits' });
+export type ProviderLimits = z.infer<typeof ProviderLimits>;
+
+export const ProviderUsage = z
+  .object({
+    persons: z.number().int(),
+    agents: z.number().int(),
+    storageMb: z.number(),
+    serviceDesks: z.number().int(),
+    /** Modules switched on now. */
+    modules: z.array(ModuleName),
+    /** The limits in force; null without a provider. */
+    limits: ProviderLimits.nullable(),
+    measuredAt: z.iso.datetime(),
+  })
+  .meta({ id: 'ProviderUsage' });
+export type ProviderUsage = z.infer<typeof ProviderUsage>;

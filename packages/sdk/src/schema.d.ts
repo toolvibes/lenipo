@@ -3826,6 +3826,69 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/provider/limits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the limits of the plan
+     * @description For providers, with `Authorization: Bearer <SETUP_TOKEN>`: seats (active people who are not external guests), agents, storage, modules and service desks. Takes effect at once; modules the plan leaves out are switched off. Without limits nothing is limited.
+     */
+    put: operations['Operations.setLimits'];
+    post?: never;
+    /** Remove the limits of the plan */
+    delete: operations['Operations.removeLimits'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/provider/usage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * What the instance uses
+     * @description Seats taken, agents, storage, service desks and modules, for billing.
+     */
+    get: operations['Operations.usage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/plan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The plan of the instance and what it uses
+     * @description `limits` is null without a provider: then nothing is limited.
+     *
+     *     Requires the global permission `admin`.
+     */
+    get: operations['Operations.plan'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/status': {
     parameters: {
       query?: never;
@@ -9931,6 +9994,56 @@ export interface components {
     TokenLimitsInput: {
       perMinute: number | null;
       perDay: number | null;
+    };
+    ProviderLimits: {
+      /** @default  */
+      plan?: string;
+      /** @default null */
+      persons?: number | null;
+      /** @default null */
+      agents?: number | null;
+      /** @default null */
+      storageMb?: number | null;
+      /** @default null */
+      modules?: components['schemas']['ModuleName'][] | null;
+      /** @default true */
+      serviceDesk?: boolean;
+    };
+    /** @enum {string} */
+    ModuleName: 'wiki' | 'boards' | 'time-tracking' | 'automation' | 'dashboards';
+    ProviderUsage: {
+      persons: number;
+      agents: number;
+      storageMb: number;
+      serviceDesks: number;
+      modules: components['schemas']['ModuleName'][];
+      limits: components['schemas']['ProviderLimitsOutput'] | null;
+      /** Format: date-time */
+      measuredAt: string;
+    };
+    ProviderLimitsOutput: {
+      /** @default  */
+      plan: string;
+      /** @default null */
+      persons: number | null;
+      /** @default null */
+      agents: number | null;
+      /** @default null */
+      storageMb: number | null;
+      /** @default null */
+      modules: components['schemas']['ModuleName'][] | null;
+      /** @default true */
+      serviceDesk: boolean;
+    };
+    ProviderUsageOutput: {
+      persons: number;
+      agents: number;
+      storageMb: number;
+      serviceDesks: number;
+      modules: components['schemas']['ModuleName'][];
+      limits: components['schemas']['ProviderLimitsOutput'] | null;
+      /** Format: date-time */
+      measuredAt: string;
     };
     SetPageStatusRequest: {
       status: components['schemas']['PageStatus'];
@@ -20247,6 +20360,124 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['TokenLimits'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setLimits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProviderLimits'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderUsage'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.removeLimits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.usage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderUsageOutput'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.plan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderUsageOutput'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
