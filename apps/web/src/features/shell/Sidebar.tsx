@@ -113,6 +113,14 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       </NavRow>
       <NavRow
         small
+        to="/projects/$key/team"
+        params={{ key: projectKey }}
+        active={path === `/projects/${projectKey}/team`}
+      >
+        {t('team.title')}
+      </NavRow>
+      <NavRow
+        small
         to="/calendar"
         search={{ q: `project = ${projectKey}` }}
         active={path === '/calendar'}

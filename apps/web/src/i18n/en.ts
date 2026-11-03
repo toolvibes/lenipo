@@ -2147,6 +2147,18 @@ export const en: Messages = {
     spaceHelp: 'Pages of the space print with this template.',
     useDefault: 'Instance default',
   },
+  team: {
+    title: 'Team',
+    intro:
+      'Who works in this project: people and agents with changes in the last 30 days, open issues or a current heartbeat. Agents report their state themselves; people count as active while they used Lenipo in the last 15 minutes.',
+    empty: 'Nobody worked in this project recently.',
+    who: 'Who',
+    state: 'State',
+    workingOn: 'Working on',
+    open: 'Open',
+    lastActivity: 'Last active',
+    states: { active: 'active', waiting: 'waiting', blocked: 'blocked', offline: 'offline' },
+  },
   agents: {
     title: 'Agents',
     intro:

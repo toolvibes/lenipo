@@ -276,6 +276,10 @@ describe('tl, the command line (TL-37)', () => {
     // A question parks the issue until a human answers after it.
     expect((await tl(['agent', 'ask', mine, 'Welche', 'Farbe?', '--dir', repo])).code).toBe(0);
     expect(await next()).toBeNull();
+    // The question also reports the agent as waiting on the issue (TL-93).
+    expect((await tl(['agent', 'team', '--dir', repo])).out).toContain(`wartet – ${mine}`);
+    expect((await tl(['agent', 'status', 'offline'])).out).toBe('Status: offline');
+    expect((await tl(['agent', 'status', 'schläft'])).code).toBe(2);
     const human = new TestClient(test.baseUrl);
     await admin.request('POST', '/admin/users', {
       email: 'mensch@example.org',

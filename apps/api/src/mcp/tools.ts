@@ -8,7 +8,9 @@ import {
   CreateWorklogRequest,
   type FeatureFlags,
   type ModuleName,
+  PRESENCE_STATES,
   SearchRequest,
+  type TeamMember,
   TransitionRequest,
   UpdateIssueRequest,
 } from '@toolvibes/shared';
@@ -23,6 +25,7 @@ import type { Principal } from '../core/http/principal.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { users } from '../db/schema/index.js';
 import type { UserService } from '../identity/user.service.js';
+import type { PresenceService } from '../presence/presence.service.js';
 import { QueryException } from '../search/query-exception.js';
 import type { SearchService } from '../search/search.service.js';
 import type { ComponentService } from '../tracking/component.service.js';
@@ -55,11 +58,27 @@ export interface ToolServices extends WikiToolServices {
   customFields: CustomFieldService;
   users: UserService;
   audit: AuditService;
+  presence: PresenceService;
 }
 
 const IssueKey = z.string().min(1).max(30).describe('Issue key, e.g. WEB-12');
 const ProjectKey = z.string().min(1).max(10).describe('Project key, e.g. WEB');
 const MarkdownText = z.string().max(200_000);
+
+/** The team as a Markdown list (TL-93). */
+export function teamMarkdown(team: TeamMember[]): string {
+  if (team.length === 0) return 'Nobody worked in this project recently.';
+  return team
+    .map((member) => {
+      const work = [
+        member.issue ? `${member.issue.key} ${member.issue.summary}` : null,
+        member.branch ? `branch ${member.branch}` : null,
+        member.note || null,
+      ].filter(Boolean);
+      return `- ${member.user.displayName}${member.agent ? ' (agent)' : ''}: ${member.state}${work.length > 0 ? ` – ${work.join(', ')}` : ''}; open issues: ${member.openIssues}; last activity: ${member.lastActivityAt ?? 'never'}`;
+    })
+    .join('\n');
+}
 
 function text(markdown: string, structured?: Record<string, unknown>): CallToolResult {
   return {
@@ -195,8 +214,8 @@ export function registerTools(
     async () => {
       const me = await services.users.me(principal.userId, 'mcp');
       return text(
-        `${me.displayName} <${me.email}>, global permissions: ${me.globalPermissions.join(', ') || 'none'}`,
-        { id: me.id, displayName: me.displayName, email: me.email },
+        `${me.displayName}${me.agent ? ' (agent)' : ` <${me.email}>`}, global permissions: ${me.globalPermissions.join(', ') || 'none'}`,
+        { id: me.id, displayName: me.displayName, email: me.email, agent: me.agent },
       );
     },
   );
@@ -251,6 +270,47 @@ export function registerTools(
       return text(
         `Valid. Conditions: ${[...fields].join(', ') || 'none (all issues you can see)'}. Order: ${order.join(', ') || 'created desc'}.`,
       );
+    },
+  );
+
+  // ---------------------------------------------------------------- presence (TL-93)
+
+  tool(
+    'set_status',
+    {
+      title: 'Send a heartbeat',
+      description:
+        'Tell the team your state and what you work on: at the start of a run (active, with issue and branch), when waiting for an answer (waiting), when stuck (blocked, with a note) and at the end (offline). Without a heartbeat for 30 minutes you count as offline.',
+      inputSchema: {
+        state: z.enum(PRESENCE_STATES),
+        issue: IssueKey.nullable().optional().describe('The issue you work on; null clears it'),
+        branch: z.string().max(200).nullable().optional(),
+        note: z.string().max(280).optional().describe('e.g. what blocks you'),
+      },
+    },
+    async ({ state, issue, branch, note }) => {
+      const now = await services.presence.beat(principal, {
+        state,
+        ...(issue !== undefined ? { issueKey: issue } : {}),
+        ...(branch !== undefined ? { branch } : {}),
+        ...(note !== undefined ? { note } : {}),
+      });
+      return text(`State: ${now.state}${now.issue ? ` on ${now.issue.key}` : ''}.`, now);
+    },
+  );
+
+  tool(
+    'get_team',
+    {
+      title: 'Who works in a project',
+      description:
+        'People and agents of a project with state (active, waiting, blocked, offline), current issue and branch, last activity and open issues. Check it before taking work, so two agents do not do the same.',
+      inputSchema: { project: ProjectKey },
+      readOnly: true,
+    },
+    async ({ project }) => {
+      const team = await services.presence.team(principal, project);
+      return text(teamMarkdown(team), { team });
     },
   );
 

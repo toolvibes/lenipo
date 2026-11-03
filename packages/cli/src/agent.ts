@@ -6,7 +6,8 @@ import { CliError, type Io, openSession, type Session, unwrap } from './session.
 /**
  * The sprint agent (TL-88, E-132): a coding agent such as Claude Code works through the active
  * sprint of one project. `lenipo agent init` writes the setup into the repository, `next` says
- * which issue to take, `ask` puts a question and waits for a human answer.
+ * which issue to take, `ask` puts a question and waits for a human answer. `status` sends a
+ * heartbeat and `team` shows who works in the project (TL-93).
  */
 
 /** What `.lenipo/agent.json` holds; the instance comes from the profile or LENIPO_URL. */
@@ -53,8 +54,12 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return next(rest, io);
     case 'ask':
       return ask(rest, io);
+    case 'status':
+      return status(rest, io);
+    case 'team':
+      return team(rest, io);
     default:
-      throw new CliError('lenipo agent init|next|ask', 2);
+      throw new CliError('lenipo agent init|next|ask|status|team', 2);
   }
 }
 
@@ -106,16 +111,20 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
 
 ## Ablauf je Durchgang
 
-1. \`lenipo agent next --output json\` ausführen. Ist \`task\` leer, ist nichts zu tun: Durchgang beenden.
+1. \`lenipo agent next --output json\` ausführen. Ist \`task\` leer, ist nichts zu tun: \`lenipo agent status offline\` und Durchgang beenden.
 2. Den Vorgang vollständig lesen: \`lenipo issue view <KEY> --comments\` (Beschreibung, Kommentare, Entscheidungen).
 3. Ist \`answered\` wahr, das Label \`${config.questionLabel}\` entfernen (\`lenipo issue edit <KEY> --labels …\` ohne das Label) und die Antwort beachten.
-4. Ist etwas unklar oder fehlt eine Entscheidung: \`lenipo agent ask <KEY> "<Frage>"\` und Durchgang beenden. Nicht raten.
+4. Ist etwas unklar oder fehlt eine Entscheidung: \`lenipo agent ask <KEY> "<Frage>"\` (meldet dich als wartend) und Durchgang beenden. Nicht raten.
 5. Sonst umsetzen:
+   - mit \`lenipo agent team\` prüfen, dass niemand sonst an dem Vorgang arbeitet
    - eigener Branch \`agent/<KEY>-<kurzer-name>\`, nie direkt auf main
+   - \`lenipo agent status active --issue <KEY> --branch <Branch>\` melden, bei längerer Arbeit alle 15 Minuten wiederholen
+   - kommst du nicht weiter: \`lenipo agent status blocked --issue <KEY> --note "<Grund>"\`
    - Tests und Prüfungen des Repositorys laufen lassen; erst bei Erfolg pushen
    - Pull Request öffnen
    - Kommentar am Vorgang mit Zusammenfassung, getroffenen Entscheidungen und Link zum Pull Request
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
+   - \`lenipo agent status offline\`
 
 ## Leitplanken
 
@@ -206,5 +215,87 @@ async function ask(args: string[], io: Io) {
       }),
     );
   }
+  await unwrap(
+    client.PUT('/api/v1/me/presence', {
+      body: { state: 'waiting', issueKey: upper, note: 'Rückfrage gestellt' },
+    }),
+  );
   io.out(`${upper}: Rückfrage gestellt; der Agent wartet auf eine Antwort.`);
+}
+
+const STATES = ['active', 'waiting', 'blocked', 'offline'] as const;
+type State = (typeof STATES)[number];
+
+/** A heartbeat: state, and issue, branch and note if given (TL-93). */
+async function status(args: string[], io: Io) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      ...COMMON,
+      issue: { type: 'string' },
+      branch: { type: 'string' },
+      note: { type: 'string' },
+    },
+    allowPositionals: true,
+  });
+  const state = positionals[0] as State | undefined;
+  if (!state || !STATES.includes(state)) {
+    throw new CliError(
+      'lenipo agent status active|waiting|blocked|offline [--issue <KEY>] [--branch <Name>] [--note <Text>]',
+      2,
+    );
+  }
+  const { client } = await openSession(io, values.profile);
+  // Going offline ends the work on the issue.
+  const offline = state === 'offline';
+  const now = await unwrap(
+    client.PUT('/api/v1/me/presence', {
+      body: {
+        state,
+        ...(values.issue
+          ? { issueKey: values.issue.toUpperCase() }
+          : offline
+            ? { issueKey: null }
+            : {}),
+        ...(values.branch ? { branch: values.branch } : offline ? { branch: null } : {}),
+        ...(values.note !== undefined ? { note: values.note } : offline ? { note: '' } : {}),
+      },
+    }),
+  );
+  io.out(
+    `Status: ${now.state}${now.issue ? ` · ${now.issue.key}` : ''}${now.branch ? ` · ${now.branch}` : ''}`,
+  );
+}
+
+const STATE_LABELS: Record<State, string> = {
+  active: 'aktiv',
+  waiting: 'wartet',
+  blocked: 'blockiert',
+  offline: 'offline',
+};
+
+/** Who works in the agent's project (TL-93), so two agents do not take the same issue. */
+async function team(args: string[], io: Io) {
+  const { values } = parseArgs({
+    args,
+    options: { ...COMMON, project: { type: 'string' }, output: { type: 'string', short: 'o' } },
+  });
+  const project =
+    values.project?.toUpperCase() ?? (await readAgentConfig(values.dir ?? process.cwd())).project;
+  const { client } = await openSession(io, values.profile);
+  const members = await unwrap(
+    client.GET('/api/v1/projects/{key}/team', { params: { path: { key: project } } }),
+  );
+  if (values.output === 'json') {
+    io.out(JSON.stringify({ team: members }, null, 2));
+    return;
+  }
+  io.out(
+    members
+      .map((member) => {
+        const work = [member.issue?.key, member.branch, member.note].filter(Boolean).join(' · ');
+        return `${member.user.displayName}${member.agent ? ' (Agent)' : ''}: ${STATE_LABELS[member.state]}${work ? ` – ${work}` : ''}`;
+      })
+      .join('\n') || 'Niemand hat zuletzt in diesem Projekt gearbeitet.',
+  );
 }

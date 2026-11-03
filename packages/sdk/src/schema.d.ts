@@ -774,6 +774,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/presence': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the own state from the last heartbeat */
+    get: operations['Agents.mine'];
+    /**
+     * Send a heartbeat: state and what one is working on
+     * @description Mainly for agents, e.g. at the start and end of each run. Without a new heartbeat for 30 minutes the state counts as offline. `issueKey` and `branch` stay as they are when left out; null clears them.
+     */
+    put: operations['Agents.beat'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/team': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Who works in the project
+     * @description People and agents who changed something in the project in the last 30 days, have open issues there or a fresh heartbeat on one of its issues; with state, current issue and branch, last activity and open issues. Agents first.
+     */
+    get: operations['Agents.team'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/apps': {
     parameters: {
       query?: never;
@@ -6587,6 +6628,38 @@ export interface components {
       expiresAt: string;
       lastUsedAt: string | null;
       secret: string;
+    };
+    UpdatePresenceRequest: {
+      state: components['schemas']['PresenceState'];
+      issueKey?: string | null;
+      branch?: string | null;
+      note?: string;
+    };
+    /** @enum {string} */
+    PresenceState: 'active' | 'waiting' | 'blocked' | 'offline';
+    Presence: {
+      state: components['schemas']['PresenceState'];
+      issue: {
+        key: string;
+        summary: string;
+      } | null;
+      branch: string | null;
+      note: string;
+      heartbeatAt: string | null;
+    };
+    TeamMember: {
+      state: components['schemas']['PresenceState'];
+      issue: {
+        key: string;
+        summary: string;
+      } | null;
+      branch: string | null;
+      note: string;
+      heartbeatAt: string | null;
+      user: components['schemas']['UserRef'];
+      agent: boolean;
+      lastActivityAt: string | null;
+      openIssues: number;
     };
     InstalledApp: {
       /** Format: uuid */
@@ -12623,6 +12696,99 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.mine': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Presence'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.beat': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePresenceRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Presence'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Agents.team': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamMember'][];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

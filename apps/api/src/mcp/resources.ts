@@ -27,7 +27,7 @@ const one = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value) ?? '';
 
 /**
- * Issues, pages, boards and sprints as MCP resources (D-MCP-08, E-114), read with the caller's
+ * Issues, pages, boards, sprints and teams as MCP resources (D-MCP-08, E-114), read with the caller's
  * rights through the same code as the tools; Markdown like the tools return it.
  */
 export function registerResources(
@@ -104,6 +104,19 @@ export function registerResources(
     },
     async (uri, variables) =>
       markdown(uri, await run(handlers, 'get_sprint_report', { sprint: one(variables.id) })),
+  );
+
+  server.registerResource(
+    'team',
+    new ResourceTemplate('lenipo://project/{key}/team', { list: undefined }),
+    {
+      title: 'Team',
+      description:
+        'Who works in a project, people and agents, with state, current issue and last activity, e.g. lenipo://project/WEB/team.',
+      mimeType: 'text/markdown',
+    },
+    async (uri, variables) =>
+      markdown(uri, await run(handlers, 'get_team', { project: one(variables.key) })),
   );
 }
 

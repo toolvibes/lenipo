@@ -2182,6 +2182,18 @@ export const de = {
     spaceHelp: 'Mit dieser Vorlage werden Seiten des Bereichs gedruckt.',
     useDefault: 'Standard der Instanz',
   },
+  team: {
+    title: 'Team',
+    intro:
+      'Wer in diesem Projekt arbeitet: Personen und Agenten mit Änderungen in den letzten 30 Tagen, offenen Vorgängen oder einem aktuellen Herzschlag. Agenten melden ihren Stand selbst; Personen gelten als aktiv, solange sie Lenipo in den letzten 15 Minuten genutzt haben.',
+    empty: 'In letzter Zeit hat niemand in diesem Projekt gearbeitet.',
+    who: 'Wer',
+    state: 'Stand',
+    workingOn: 'Arbeitet an',
+    open: 'Offen',
+    lastActivity: 'Zuletzt aktiv',
+    states: { active: 'aktiv', waiting: 'wartet', blocked: 'blockiert', offline: 'offline' },
+  },
   agents: {
     title: 'Agenten',
     intro:

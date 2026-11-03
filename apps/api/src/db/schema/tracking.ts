@@ -715,3 +715,19 @@ export const issueTimers = pgTable('issue_timers', {
     .references(() => issues.id, { onDelete: 'cascade' }),
   startedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * What someone is working on, from their heartbeat (TL-93, E-145): mainly agents, people may send
+ * one too. Older than the heartbeat lifetime counts as offline.
+ */
+export const presence = pgTable('presence', {
+  userId: uuid()
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** active, waiting, blocked or offline. */
+  state: text().notNull(),
+  issueId: uuid().references(() => issues.id, { onDelete: 'set null' }),
+  branch: text(),
+  note: text().notNull().default(''),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

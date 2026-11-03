@@ -21,6 +21,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { UserService } from '../identity/user.service.js';
 import { OperationsService } from '../operations/operations.service.js';
+import { PresenceService } from '../presence/presence.service.js';
 import { EverythingService } from '../search/everything.service.js';
 import { SearchService } from '../search/search.service.js';
 import { ComponentService } from '../tracking/component.service.js';
@@ -64,6 +65,7 @@ export class McpController {
     @Inject(PageCommentService) pageComments: PageCommentService,
     @Inject(EverythingService) everything: EverythingService,
     @Inject(OperationsService) private readonly operations: OperationsService,
+    @Inject(PresenceService) presence: PresenceService,
   ) {
     this.services = {
       database,
@@ -84,6 +86,7 @@ export class McpController {
       drafts,
       pageComments,
       everything,
+      presence,
     };
   }
 

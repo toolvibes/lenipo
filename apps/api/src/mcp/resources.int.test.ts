@@ -74,6 +74,7 @@ describe('MCP resources and prompts (D-MCP-08/09)', () => {
       'lenipo://board/{id}',
       'lenipo://issue/{key}',
       'lenipo://page/{id}',
+      'lenipo://project/{key}/team',
       'lenipo://sprint/{id}',
     ]);
     const { resources } = await client.listResources();

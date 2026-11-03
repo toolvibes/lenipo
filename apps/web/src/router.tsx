@@ -71,6 +71,7 @@ import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
 import { ProjectIssuesPage } from './features/tracking/ProjectIssuesPage';
 import { ProjectsPage } from './features/tracking/ProjectsPage';
+import { ProjectTeamPage } from './features/tracking/ProjectTeamPage';
 import { BlogPage } from './features/wiki/BlogPage';
 import { LabelPages, SpaceLabelsPage } from './features/wiki/LabelPages';
 import { PageEditor } from './features/wiki/PageEditor';
@@ -488,6 +489,15 @@ const projectReportsRoute = createRoute({
     const { key } = projectReportsRoute.useParams();
     const { kind } = projectReportsRoute.useSearch();
     return <ProjectReportsPage key={key} projectKey={key.toUpperCase()} kind={kind ?? 'cfd'} />;
+  },
+});
+
+const projectTeamRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/team',
+  component: function ProjectTeam() {
+    const { key } = projectTeamRoute.useParams();
+    return <ProjectTeamPage key={key} projectKey={key.toUpperCase()} />;
   },
 });
 
@@ -1029,6 +1039,7 @@ const routeTree = rootRoute.addChildren([
     projectRoute,
     timelineRoute,
     projectReportsRoute,
+    projectTeamRoute,
     releasesRoute,
     releaseRoute,
     newRuleRoute,

@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=12 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=13 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -34,6 +34,10 @@ Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen,
 - **Kapazität:** Je Projekt und Monat trägt man ein, wie viele Story Points das Team schafft. Die Tabelle zeigt die geplanten offenen Punkte (nach Fälligkeit, sonst Start) dagegen; Überlastung ist rot.
 - **Szenarien:** „Szenario anlegen“ und dann mit dem Stift Start, Fälligkeit oder Story Points einzelner Vorgänge ändern, ohne die echten Vorgänge anzufassen. Zeitleiste und Kapazität rechnen mit dem Szenario. „In echte Daten übernehmen“ schreibt die Änderungen in die Vorgänge; was man nicht ändern darf oder was inzwischen jemand geändert hat, wird übersprungen und genannt.
 - Ändern dürfen einen Plan die Person, die ihn angelegt hat, und die Administration.
+
+## Team
+
+„Team“ in der Seitenleiste eines Projekts zeigt, wer dort arbeitet: Personen und KI-Agenten mit Änderungen in den letzten 30 Tagen, offenen Vorgängen oder einem aktuellen Herzschlag. Je Eintrag stehen der Stand (aktiv, wartet, blockiert, offline), der Vorgang und Branch, an dem gerade gearbeitet wird, die Zahl offener Vorgänge und wann zuletzt etwas geschah. Agenten melden ihren Stand selbst (mindestens alle 30 Minuten, sonst gelten sie als offline); Personen gelten als aktiv, solange sie Lenipo in den letzten 15 Minuten genutzt haben.
 
 ## Service-Portal
 

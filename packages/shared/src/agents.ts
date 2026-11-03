@@ -55,3 +55,51 @@ export const UpdateAgentRequest = z
   })
   .meta({ id: 'UpdateAgentRequest' });
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequest>;
+
+// ---------------------------------------------------------------- presence (TL-93, E-145)
+
+export const PRESENCE_STATES = ['active', 'waiting', 'blocked', 'offline'] as const;
+export const PresenceState = z.enum(PRESENCE_STATES).meta({ id: 'PresenceState' });
+export type PresenceState = z.infer<typeof PresenceState>;
+
+/** A heartbeat older than this counts as offline. */
+export const HEARTBEAT_MINUTES = 30;
+/** People without a heartbeat count as active while they used Lenipo this recently. */
+export const ONLINE_MINUTES = 15;
+
+export const UpdatePresenceRequest = z
+  .object({
+    state: PresenceState,
+    /** The issue being worked on; null clears it, left out keeps it. */
+    issueKey: z.string().trim().min(1).max(40).nullable().optional(),
+    branch: z.string().trim().max(200).nullable().optional(),
+    /** A short line, e.g. what blocks or what is awaited. */
+    note: z.string().trim().max(280).optional(),
+  })
+  .meta({ id: 'UpdatePresenceRequest' });
+export type UpdatePresenceRequest = z.infer<typeof UpdatePresenceRequest>;
+
+const IssueBrief = z.object({ key: z.string(), summary: z.string() });
+
+export const Presence = z
+  .object({
+    state: PresenceState,
+    issue: IssueBrief.nullable(),
+    branch: z.string().nullable(),
+    note: z.string(),
+    /** The last heartbeat; null without one. */
+    heartbeatAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'Presence' });
+export type Presence = z.infer<typeof Presence>;
+
+/** Someone working in a project: with recent activity, open issues or a heartbeat there. */
+export const TeamMember = Presence.extend({
+  user: UserRef,
+  agent: z.boolean(),
+  /** The latest of heartbeat, use of Lenipo and changes in the project. */
+  lastActivityAt: z.iso.datetime().nullable(),
+  /** Open issues assigned in this project. */
+  openIssues: z.number().int(),
+}).meta({ id: 'TeamMember' });
+export type TeamMember = z.infer<typeof TeamMember>;
