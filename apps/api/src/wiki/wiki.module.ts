@@ -8,6 +8,8 @@ import { DraftService } from './draft.service.js';
 import { IssuePagesController } from './issue-pages.controller.js';
 import { LabelsController } from './labels.controller.js';
 import { PageService } from './page.service.js';
+import { PageAnalyticsService } from './page-analytics.service.js';
+import { PageApprovalController } from './page-approval.controller.js';
 import { PageAttachmentService } from './page-attachment.service.js';
 import { PageAttachmentsController } from './page-attachments.controller.js';
 import { PageCommentService } from './page-comment.service.js';
@@ -33,6 +35,7 @@ import { WikiMacrosService } from './wiki-macros.service.js';
     RestrictedPagesController,
     SpacesController,
     PagesController,
+    PageApprovalController,
     PageAttachmentsController,
     PageCommentsController,
     ProjectSpacesController,
@@ -46,6 +49,7 @@ import { WikiMacrosService } from './wiki-macros.service.js';
     TemplateService,
     DraftService,
     PageService,
+    PageAnalyticsService,
     PageAttachmentService,
     PageCommentService,
   ],

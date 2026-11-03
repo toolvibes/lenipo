@@ -1,5 +1,6 @@
 import {
   CaretRight,
+  ChartBar,
   ChatCircle,
   ClockCounterClockwise,
   DotsThree,
@@ -25,6 +26,8 @@ import { FavouriteButton } from '../personal/FavouriteButton';
 import { PageComments } from './comments';
 import { PageExportMenu } from './ExportMenu';
 import { CommentedText, InlineThreads } from './InlineComments';
+import { PageAnalyticsDialog } from './PageAnalytics';
+import { ApprovalBanner, useApprovalMode } from './PageApproval';
 import { PageAttachments } from './PageAttachments';
 import { PageLabelList, WatchMenu } from './PageMeta';
 import { PageOutline, readingMinutes } from './PageOutline';
@@ -204,7 +207,10 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
   const comments = useQuery(pageCommentsQuery(id));
   useRealtimeRooms([`page:${id}`]);
   useRecordView('page', page.data?.id);
-  const [dialog, setDialog] = useState<'move' | 'delete' | 'child' | 'restrict' | null>(null);
+  const [dialog, setDialog] = useState<
+    'move' | 'delete' | 'child' | 'restrict' | 'analytics' | null
+  >(null);
+  const approvalMode = useApprovalMode(id);
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [quote, setQuote] = useState<TextAnchor | null>(null);
   const article = useRef<HTMLElement>(null);
@@ -261,6 +267,12 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
                 {t('wiki.comments.title', { count: openComments })}
               </a>
             )}
+            {data.version > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setDialog('analytics')}>
+                <ChartBar size={16} aria-hidden />
+                {t('analytics.button')}
+              </Button>
+            )}
             {data.version > 0 && <PageExportMenu spaceKey={spaceKey} pageId={data.id} />}
             <WatchMenu page={data} />
             {data.canEdit && (
@@ -286,6 +298,28 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
                     <DropdownMenu.Item className={menuItem} onSelect={() => setDialog('restrict')}>
                       {t('restrictions.menu')}
                     </DropdownMenu.Item>
+                    {data.approval.canApprove && (
+                      <>
+                        <DropdownMenu.Separator className="my-1 h-px bg-[var(--border)]" />
+                        <DropdownMenu.Label className="px-2 py-1 text-xs text-[var(--ink-muted)]">
+                          {t('approval.mode')}
+                        </DropdownMenu.Label>
+                        <DropdownMenu.RadioGroup
+                          value={data.approval.mode}
+                          onValueChange={(mode) =>
+                            approvalMode.mutate(mode as typeof data.approval.mode)
+                          }
+                        >
+                          {(['space', 'on', 'off'] as const).map((mode) => (
+                            <DropdownMenu.RadioItem key={mode} value={mode} className={menuItem}>
+                              {data.approval.mode === mode ? '✓ ' : ''}
+                              {t(`approval.modes.${mode}`)}
+                            </DropdownMenu.RadioItem>
+                          ))}
+                        </DropdownMenu.RadioGroup>
+                        <DropdownMenu.Separator className="my-1 h-px bg-[var(--border)]" />
+                      </>
+                    )}
                     <DropdownMenu.Item
                       className={`${menuItem} text-[var(--danger)]`}
                       onSelect={() => setDialog('delete')}
@@ -341,6 +375,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
             </h1>
             <PageLabelList page={data} />
             <PageStatusBar page={data} />
+            <ApprovalBanner page={data} />
           </header>
           {doc ? (
             <article ref={article}>
@@ -415,6 +450,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
         open={dialog === 'child'}
         onOpenChange={close}
       />
+      <PageAnalyticsDialog pageId={data.id} open={dialog === 'analytics'} onOpenChange={close} />
     </main>
   );
 }

@@ -3,12 +3,13 @@ import { Id } from './identity.js';
 import { RichText, RichTextInput, RichTextOutput, UserRef } from './tracking.js';
 
 /** What a space role allows (W-SPC-03, E-59). `edit` covers creating, moving and deleting pages. */
-export const SPACE_PERMISSIONS = ['view', 'comment', 'edit', 'administer'] as const;
+/** `approve`: publish versions of pages that need approval (TL-51, E-135). */
+export const SPACE_PERMISSIONS = ['view', 'comment', 'edit', 'approve', 'administer'] as const;
 export const SpacePermission = z.enum(SPACE_PERMISSIONS).meta({ id: 'SpacePermission' });
 export type SpacePermission = z.infer<typeof SpacePermission>;
 
 export const SpaceRole = z
-  .enum(['administrators', 'editors', 'commenters', 'viewers'])
+  .enum(['administrators', 'approvers', 'editors', 'commenters', 'viewers'])
   .meta({ id: 'SpaceRole' });
 export type SpaceRole = z.infer<typeof SpaceRole>;
 
@@ -42,6 +43,8 @@ export const SpaceSummary = z
     /** The linked tracking project; null if none or the caller may not browse it (E-60). */
     project: z.object({ key: z.string(), name: z.string() }).nullable(),
     type: SpaceType,
+    /** New page versions need approval by default (TL-51, E-135). */
+    approvalRequired: z.boolean(),
   })
   .meta({ id: 'SpaceSummary' });
 export type SpaceSummary = z.infer<typeof SpaceSummary>;
@@ -72,6 +75,8 @@ export const UpdateSpaceRequest = z
     homePageId: Id.nullable(),
     /** Links the space with a project, or unlinks it (null); needs administer on both (E-60). */
     projectKey: z.string().trim().min(1).max(20).nullable(),
+    /** New page versions need approval, unless a page says otherwise (TL-51, E-135). */
+    approvalRequired: z.boolean(),
   })
   .partial()
   .meta({ id: 'UpdateSpaceRequest' });
@@ -155,6 +160,72 @@ export const WatchPageRequest = z
 export type WatchPageRequest = z.infer<typeof WatchPageRequest>;
 
 /** A page as readers see it: the latest published version (E-59). */
+/** Approval of new versions (W-PAG-12, TL-51, E-135). */
+export const APPROVAL_MODES = ['space', 'on', 'off'] as const;
+export const PageApproval = z
+  .object({
+    /** space: as the space says; on or off: this page decides. */
+    mode: z.enum(APPROVAL_MODES),
+    /** New versions of this page wait for approval. */
+    required: z.boolean(),
+    /** May approve or reject, and publishes without waiting. */
+    canApprove: z.boolean(),
+    /** The version waiting for approval; its content only for editors and approvers. */
+    pending: z
+      .object({
+        title: z.string(),
+        comment: z.string(),
+        author: UserRef.nullable(),
+        submittedAt: z.iso.datetime(),
+        content: RichTextOutput.nullable(),
+      })
+      .nullable(),
+    /** The last rejection of a submission, until a new one replaces it. */
+    rejected: z
+      .object({ by: UserRef.nullable(), at: z.iso.datetime(), comment: z.string() })
+      .nullable(),
+  })
+  .meta({ id: 'PageApproval' });
+export type PageApproval = z.infer<typeof PageApproval>;
+
+export const SetApprovalModeRequest = z
+  .object({ mode: z.enum(APPROVAL_MODES) })
+  .meta({ id: 'SetApprovalModeRequest' });
+export type SetApprovalModeRequest = z.infer<typeof SetApprovalModeRequest>;
+
+export const RejectSubmissionRequest = z
+  .object({ comment: z.string().trim().min(1).max(2000) })
+  .meta({ id: 'RejectSubmissionRequest' });
+export type RejectSubmissionRequest = z.infer<typeof RejectSubmissionRequest>;
+
+/** A page waiting for approval, for the space's list (TL-51). */
+export const PendingApproval = z
+  .object({
+    pageId: Id,
+    title: z.string(),
+    author: UserRef.nullable(),
+    submittedAt: z.iso.datetime(),
+  })
+  .meta({ id: 'PendingApproval' });
+export type PendingApproval = z.infer<typeof PendingApproval>;
+
+/** Page analytics (W-PAG-14, TL-51, E-135): counts for all readers, names for administrators. */
+export const PageAnalytics = z
+  .object({
+    days: z.number().int(),
+    views: z.number().int(),
+    readers: z.number().int(),
+    daily: z.array(
+      z.object({ day: z.iso.date(), views: z.number().int(), readers: z.number().int() }),
+    ),
+    /** Only for space administrators; covers the last 90 days at most. */
+    readerList: z
+      .array(z.object({ user: UserRef, views: z.number().int(), lastViewed: z.iso.date() }))
+      .nullable(),
+  })
+  .meta({ id: 'PageAnalytics' });
+export type PageAnalytics = z.infer<typeof PageAnalytics>;
+
 export const Page = z
   .object({
     id: Id,
@@ -186,6 +257,7 @@ export const Page = z
     watch: PageWatchState,
     /** Restrictions on this page, and whether a page above limits who sees it (E-95). */
     restrictions: z.object({ view: z.boolean(), edit: z.boolean(), inherited: z.boolean() }),
+    approval: PageApproval,
   })
   .meta({ id: 'Page' });
 export type Page = z.infer<typeof Page>;

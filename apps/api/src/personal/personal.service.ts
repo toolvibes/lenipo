@@ -29,6 +29,7 @@ import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { PageService } from '../wiki/page.service.js';
+import { recordPageView } from '../wiki/page-analytics.service.js';
 import { SpaceService } from '../wiki/space.service.js';
 import { SpaceAccessService } from '../wiki/space-access.service.js';
 
@@ -232,6 +233,8 @@ export class PersonalService {
         .where(
           and(eq(recentItems.userId, principal.userId), notInArray(recentItems.targetId, keep)),
         );
+      // Page analytics count the same opening (W-PAG-14, TL-51).
+      if (kind === 'page') await recordPageView(tx, targetId, principal.userId);
     });
   }
 

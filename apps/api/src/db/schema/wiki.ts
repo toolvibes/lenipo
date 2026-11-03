@@ -3,6 +3,7 @@ import {
   type AnyPgColumn,
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -23,6 +24,8 @@ export const spaceRole = pgEnum('space_role', [
   'editors',
   'commenters',
   'viewers',
+  // Approve page versions (TL-51, E-135); new enum values go last.
+  'approvers',
 ]);
 
 /** A wiki space (W-SPC-01, E-59): a page tree with its own permissions. */
@@ -41,6 +44,8 @@ export const spaces = pgTable(
     archivedAt: timestamp({ withTimezone: true }),
     /** team, project, documentation or personal (TL-29, E-110). */
     type: text().notNull().default('team'),
+    /** New page versions need approval unless the page says otherwise (TL-51, E-135). */
+    approvalRequired: boolean().notNull().default(false),
     /** The tracking project this space documents; a project may have several (E-60). */
     projectId: uuid().references(() => projects.id, { onDelete: 'set null' }),
   },
@@ -99,6 +104,8 @@ export const pages = pgTable(
     kind: text().notNull().default('page'),
     /** none, draft, in-review, verified or outdated. */
     status: text().notNull().default('none'),
+    /** Approval of new versions: space (as the space says), on or off (TL-51, E-135). */
+    approvalMode: text().notNull().default('space'),
     ownerId: uuid().references(() => users.id, { onDelete: 'set null' }),
     statusChangedAt: timestamp({ withTimezone: true }),
     deletedById: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -297,4 +304,53 @@ export const pageRestrictions = pgTable(
     index('page_restrictions_page_idx').on(table.pageId, table.kind),
     check('page_restrictions_one_target', sql`(user_id is null) <> (group_id is null)`),
   ],
+);
+
+/** The version waiting for approval, one per page; a new submission replaces it (TL-51, E-135). */
+export const pageSubmissions = pgTable('page_submissions', {
+  pageId: uuid()
+    .primaryKey()
+    .references(() => pages.id, { onDelete: 'cascade' }),
+  title: text().notNull(),
+  content: jsonb().notNull(),
+  comment: text().notNull().default(''),
+  authorId: uuid().references(() => users.id, { onDelete: 'set null' }),
+  submittedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  /** Set when rejected; the submission then waits for the author's next one. */
+  rejectedAt: timestamp({ withTimezone: true }),
+  rejectedById: uuid().references(() => users.id, { onDelete: 'set null' }),
+  rejectionComment: text(),
+});
+
+/** Who read a page on which day, kept 90 days (W-PAG-14, TL-51, E-135). */
+export const pageViews = pgTable(
+  'page_views',
+  {
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    day: date().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    views: integer().notNull().default(1),
+  },
+  (table) => [
+    primaryKey({ columns: [table.pageId, table.day, table.userId] }),
+    index('page_views_day_idx').on(table.day),
+  ],
+);
+
+/** Anonymous daily counts, for days older than the per-person rows. */
+export const pageViewCounts = pgTable(
+  'page_view_counts',
+  {
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    day: date().notNull(),
+    views: integer().notNull(),
+    readers: integer().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.pageId, table.day] })],
 );

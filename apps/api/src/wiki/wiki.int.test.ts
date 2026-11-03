@@ -86,7 +86,7 @@ describe('spaces', () => {
     });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ key: 'DOCS', homePageId: null });
-    expect(created.body.permissions).toEqual(['administer', 'comment', 'edit', 'view']);
+    expect(created.body.permissions).toEqual(['administer', 'approve', 'comment', 'edit', 'view']);
     expect((await admin.request('POST', '/spaces', { key: 'DOCS', name: 'Doppelt' })).status).toBe(
       409,
     );

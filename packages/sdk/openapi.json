@@ -8171,6 +8171,196 @@
         }
       }
     },
+    "/api/v1/pages/{id}/approval/approve": {
+      "post": {
+        "operationId": "Pages.approvePage",
+        "summary": "Approve the version waiting for approval",
+        "description": "Requires the space permission `approve`; the author stays the author.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/approval/reject": {
+      "post": {
+        "operationId": "Pages.rejectPage",
+        "summary": "Reject the version waiting for approval, with a comment",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/approval-mode": {
+      "put": {
+        "operationId": "Pages.setApprovalMode",
+        "summary": "Whether new versions of the page need approval",
+        "description": "`space` follows the space setting. Requires the space permission `approve`.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetApprovalModeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{id}/analytics": {
+      "get": {
+        "operationId": "Pages.pageAnalytics",
+        "summary": "Views and readers of a page per day",
+        "description": "Counts for everyone who sees the page; the list of readers only for space administrators. Per-person data covers the last 90 days.",
+        "tags": ["Pages"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageAnalytics"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pages/{id}/attachments": {
       "get": {
         "operationId": "Pages.listAttachments",
@@ -11879,6 +12069,48 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{key}/approvals": {
+      "get": {
+        "operationId": "Spaces.pendingApprovals",
+        "summary": "Pages of the space waiting for approval",
+        "tags": ["Spaces"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingApproval"
+                  }
                 }
               }
             }
@@ -15834,7 +16066,7 @@
       },
       "SpacePermission": {
         "type": "string",
-        "enum": ["view", "comment", "edit", "administer"]
+        "enum": ["view", "comment", "edit", "approve", "administer"]
       },
       "AccessCheckResult": {
         "type": "object",
@@ -22954,9 +23186,22 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "pageViews": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
-        "required": ["issues", "pages", "comments", "versions", "auditEntries", "files"],
+        "required": [
+          "issues",
+          "pages",
+          "comments",
+          "versions",
+          "auditEntries",
+          "files",
+          "pageViews"
+        ],
         "additionalProperties": false
       },
       "BackupSettings": {
@@ -23382,6 +23627,9 @@
           "type": {
             "$ref": "#/components/schemas/SpaceType"
           },
+          "approvalRequired": {
+            "type": "boolean"
+          },
           "permissions": {
             "type": "array",
             "items": {
@@ -23400,6 +23648,7 @@
           "watching",
           "project",
           "type",
+          "approvalRequired",
           "permissions"
         ],
         "additionalProperties": false
@@ -24441,6 +24690,9 @@
             },
             "required": ["view", "edit", "inherited"],
             "additionalProperties": false
+          },
+          "approval": {
+            "$ref": "#/components/schemas/PageApproval"
           }
         },
         "required": [
@@ -24463,7 +24715,8 @@
           "canComment",
           "labels",
           "watch",
-          "restrictions"
+          "restrictions",
+          "approval"
         ],
         "additionalProperties": false
       },
@@ -24504,6 +24757,100 @@
           }
         },
         "required": ["page", "subtree", "inherited"],
+        "additionalProperties": false
+      },
+      "PageApproval": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["space", "on", "off"]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "canApprove": {
+            "type": "boolean"
+          },
+          "pending": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "comment": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/UserRef"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "submittedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "content": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/RichTextOutput"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["title", "comment", "author", "submittedAt", "content"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rejected": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/UserRef"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                },
+                "required": ["by", "at", "comment"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["mode", "required", "canApprove", "pending", "rejected"],
         "additionalProperties": false
       },
       "LabelledPage": {
@@ -24550,6 +24897,104 @@
           }
         },
         "required": ["id", "title", "space", "labels", "publishedAt"],
+        "additionalProperties": false
+      },
+      "RejectSubmissionRequest": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": ["comment"]
+      },
+      "SetApprovalModeRequest": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["space", "on", "off"]
+          }
+        },
+        "required": ["mode"]
+      },
+      "PageAnalytics": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "views": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "readers": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "day": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "views": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "readers": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": ["day", "views", "readers"],
+              "additionalProperties": false
+            }
+          },
+          "readerList": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserRef"
+                    },
+                    "views": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "lastViewed": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "required": ["user", "views", "lastViewed"],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["days", "views", "readers", "daily", "readerList"],
         "additionalProperties": false
       },
       "PageComment": {
@@ -28256,6 +28701,36 @@
         "required": ["id", "title", "spaceKey", "publishedAt", "author", "excerpt"],
         "additionalProperties": false
       },
+      "PendingApproval": {
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": ["pageId", "title", "author", "submittedAt"],
+        "additionalProperties": false
+      },
       "RestrictedPage": {
         "type": "object",
         "properties": {
@@ -28339,6 +28814,9 @@
           },
           "type": {
             "$ref": "#/components/schemas/SpaceType"
+          },
+          "approvalRequired": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -28351,7 +28829,8 @@
           "favourite",
           "watching",
           "project",
-          "type"
+          "type",
+          "approvalRequired"
         ],
         "additionalProperties": false
       },
@@ -28429,6 +28908,9 @@
                 "type": "null"
               }
             ]
+          },
+          "approvalRequired": {
+            "type": "boolean"
           }
         }
       },
@@ -28496,7 +28978,7 @@
       },
       "SpaceRole": {
         "type": "string",
-        "enum": ["administrators", "editors", "commenters", "viewers"]
+        "enum": ["administrators", "approvers", "editors", "commenters", "viewers"]
       },
       "AddSpaceMemberRequest": {
         "anyOf": [

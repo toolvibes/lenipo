@@ -6,6 +6,7 @@ import { DATABASE, FILE_STORE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { systemSettings } from '../db/schema/index.js';
 import type { FileStore } from '../storage/file-store.js';
+import { anonymizeOldPageViews } from '../wiki/page-analytics.service.js';
 
 const KEY = 'retention';
 
@@ -50,6 +51,7 @@ export class RetentionService {
       versions: 0,
       auditEntries: 0,
       files: 0,
+      pageViews: 0,
     };
     const keys: string[] = [];
     const db = this.database.db;
@@ -116,6 +118,9 @@ export class RetentionService {
         delete from audit_log where at < ${before(settings.auditDays)} returning id`);
       result.auditEntries = deleted.length;
     }
+
+    // Page views per person last 90 days; older days keep anonymous counts (E-135).
+    result.pageViews = await anonymizeOldPageViews(db);
 
     // Files go after the rows: a failed delete leaves an orphan, never a broken link.
     for (const key of keys) {

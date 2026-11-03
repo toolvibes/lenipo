@@ -23,6 +23,7 @@ import { passesEditList, seesPage } from './page-restrictions.js';
 /** What each space role may do (W-SPC-03, E-59). */
 const ROLE_PERMISSIONS: Record<SpaceRole, readonly SpacePermission[]> = {
   administrators: SPACE_PERMISSIONS,
+  approvers: ['view', 'comment', 'edit', 'approve'],
   editors: ['view', 'comment', 'edit'],
   commenters: ['view', 'comment'],
   viewers: ['view'],

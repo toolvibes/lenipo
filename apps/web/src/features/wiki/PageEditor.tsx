@@ -194,7 +194,9 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
               (!changed && page.data.version > 0)
             }
           >
-            {t('wiki.publish')}
+            {page.data.approval.required && !page.data.approval.canApprove
+              ? t('approval.submit')
+              : t('wiki.publish')}
           </Button>
         </div>
       </main>

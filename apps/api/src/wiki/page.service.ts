@@ -23,6 +23,7 @@ import type {
   LabelledPage,
   MovePageRequest,
   Page,
+  PageApproval,
   PageDiff,
   PageRef,
   PageRestrictions,
@@ -30,6 +31,7 @@ import type {
   PageTreeEntry,
   PageVersion,
   PageVersionSummary,
+  PendingApproval,
   PublishPageRequest,
   RestoreVersionRequest,
   RestrictedPage,
@@ -55,6 +57,7 @@ import {
   groups,
   pageAttachments,
   pageRestrictions,
+  pageSubmissions,
   pages,
   pageVersions,
   spaces,
@@ -88,6 +91,14 @@ function canonicalJson(value: unknown): string {
 }
 
 /** Pages of a wiki space: tree, drafts, published versions and trash (W-PAG, E-59). */
+/** New versions of the page wait for approval: the page decides, or follows its space. */
+function approvalNeeded(
+  page: { approvalMode: string },
+  space: { approvalRequired: boolean },
+): boolean {
+  return page.approvalMode === 'on' || (page.approvalMode === 'space' && space.approvalRequired);
+}
+
 @Injectable()
 export class PageService {
   constructor(
@@ -563,6 +574,7 @@ export class PageService {
       labels: page.labels,
       watch: await watchState(this.database.db, principal.userId, page.id),
       restrictions: await this.restrictionFlags(page.id),
+      approval: await this.approvalOf(page, space, permissions, format),
     };
   }
 
@@ -956,7 +968,7 @@ export class PageService {
    * document must fit the shared schema; the plain text is derived here.
    */
   async publish(principal: Principal, id: string, request: PublishPageRequest): Promise<Page> {
-    const { page, space } = await this.authorize(principal, id, 'edit');
+    const { page, space, permissions } = await this.authorize(principal, id, 'edit');
     // Template instructions never reach the published page (TL-27, E-108).
     const content = withoutPlaceholders(request.content);
     if (!isValidDoc(content)) {
@@ -972,13 +984,187 @@ export class PageService {
         throw new BadRequestException('Images must be attachments of this page');
       }
     }
+    if (approvalNeeded(page, space) && !permissions.has('approve')) {
+      // The version waits for an approver; readers keep the last approved one (E-135).
+      await this.database.db
+        .insert(pageSubmissions)
+        .values({
+          pageId: page.id,
+          title: request.title,
+          content,
+          comment: request.comment,
+          authorId: principal.userId,
+        })
+        .onConflictDoUpdate({
+          target: pageSubmissions.pageId,
+          set: {
+            title: request.title,
+            content,
+            comment: request.comment,
+            authorId: principal.userId,
+            submittedAt: new Date(),
+            rejectedAt: null,
+            rejectedById: null,
+            rejectionComment: null,
+          },
+        });
+      await signal(this.database.db, { type: 'page', pageId: page.id, spaceKey: space.key });
+      return this.get(principal, id);
+    }
     await this.storeVersion(principal, page.id, space.key, {
       title: request.title,
       content: content,
       comment: request.comment,
       restoredFrom: null,
     });
+    // Published by an approver: a waiting submission is superseded.
+    await this.database.db.delete(pageSubmissions).where(eq(pageSubmissions.pageId, page.id));
     return this.get(principal, id);
+  }
+
+  // ---------------------------------------------------------------- approval (TL-51, E-135)
+
+  /** Publishes the waiting submission as the next version, written by its author. */
+  async approve(principal: Principal, id: string): Promise<Page> {
+    const { page, space } = await this.authorize(principal, id, 'approve');
+    const [submission] = await this.database.db
+      .select()
+      .from(pageSubmissions)
+      .where(and(eq(pageSubmissions.pageId, page.id), isNull(pageSubmissions.rejectedAt)));
+    if (!submission) throw new ConflictException('Nothing is waiting for approval');
+    await this.storeVersion(
+      principal,
+      page.id,
+      space.key,
+      {
+        title: submission.title,
+        content: submission.content,
+        comment: submission.comment,
+        restoredFrom: null,
+      },
+      submission.authorId ?? principal.userId,
+    );
+    await this.database.db.delete(pageSubmissions).where(eq(pageSubmissions.pageId, page.id));
+    return this.get(principal, id);
+  }
+
+  async reject(principal: Principal, id: string, comment: string): Promise<Page> {
+    const { page, space } = await this.authorize(principal, id, 'approve');
+    const [rejected] = await this.database.db
+      .update(pageSubmissions)
+      .set({ rejectedAt: new Date(), rejectedById: principal.userId, rejectionComment: comment })
+      .where(and(eq(pageSubmissions.pageId, page.id), isNull(pageSubmissions.rejectedAt)))
+      .returning({ pageId: pageSubmissions.pageId });
+    if (!rejected) throw new ConflictException('Nothing is waiting for approval');
+    await signal(this.database.db, { type: 'page', pageId: page.id, spaceKey: space.key });
+    return this.get(principal, id);
+  }
+
+  /** Whether this page follows the space, or needs approval or not regardless. */
+  async setApprovalMode(
+    principal: Principal,
+    id: string,
+    mode: PageApproval['mode'],
+  ): Promise<Page> {
+    const { page, space } = await this.authorize(principal, id, 'approve');
+    await this.database.db.update(pages).set({ approvalMode: mode }).where(eq(pages.id, page.id));
+    await signal(this.database.db, { type: 'page', pageId: page.id, spaceKey: space.key });
+    return this.get(principal, id);
+  }
+
+  /** Pages of the space waiting for approval, oldest first; for approvers. */
+  async pendingApprovals(principal: Principal, spaceKey: string): Promise<PendingApproval[]> {
+    const { space, permissions } = await this.spaces.find(principal, spaceKey);
+    if (!permissions.has('approve')) {
+      throw new ForbiddenException('Requires the space permission "approve"');
+    }
+    const rows = await this.database.db
+      .select({
+        pageId: pages.id,
+        title: pageSubmissions.title,
+        authorId: pageSubmissions.authorId,
+        authorName: users.displayName,
+        submittedAt: pageSubmissions.submittedAt,
+      })
+      .from(pageSubmissions)
+      .innerJoin(pages, eq(pages.id, pageSubmissions.pageId))
+      .leftJoin(users, eq(users.id, pageSubmissions.authorId))
+      .where(
+        and(
+          eq(pages.spaceId, space.id),
+          isNull(pages.deletedAt),
+          isNull(pageSubmissions.rejectedAt),
+        ),
+      )
+      .orderBy(asc(pageSubmissions.submittedAt));
+    return rows.map((row) => ({
+      pageId: row.pageId,
+      title: row.title,
+      author: row.authorId ? { id: row.authorId, displayName: row.authorName ?? '' } : null,
+      submittedAt: row.submittedAt.toISOString(),
+    }));
+  }
+
+  private async approvalOf(
+    page: PageRow,
+    space: SpaceRow,
+    permissions: Set<SpacePermission>,
+    format: ContentFormat,
+  ): Promise<PageApproval> {
+    const [row] = await this.database.db
+      .select({ submission: pageSubmissions, authorName: users.displayName })
+      .from(pageSubmissions)
+      .leftJoin(users, eq(users.id, pageSubmissions.authorId))
+      .where(eq(pageSubmissions.pageId, page.id));
+    const names = await this.userNames(
+      [row?.submission.rejectedById ?? null].filter((entry): entry is string => !!entry),
+    );
+    const submission = row?.submission;
+    const seesContent = permissions.has('edit') || permissions.has('approve');
+    const content = submission?.content as RichText | undefined;
+    return {
+      mode: page.approvalMode as PageApproval['mode'],
+      required: approvalNeeded(page, space),
+      canApprove: permissions.has('approve'),
+      pending:
+        submission && !submission.rejectedAt
+          ? {
+              title: submission.title,
+              comment: submission.comment,
+              author: submission.authorId
+                ? { id: submission.authorId, displayName: row?.authorName ?? '' }
+                : null,
+              submittedAt: submission.submittedAt.toISOString(),
+              content:
+                seesContent && content
+                  ? format === 'markdown'
+                    ? markdownOf(content)
+                    : content
+                  : null,
+            }
+          : null,
+      rejected: submission?.rejectedAt
+        ? {
+            by: submission.rejectedById
+              ? {
+                  id: submission.rejectedById,
+                  displayName: names.get(submission.rejectedById) ?? '',
+                }
+              : null,
+            at: submission.rejectedAt.toISOString(),
+            comment: submission.rejectionComment ?? '',
+          }
+        : null,
+    };
+  }
+
+  private async userNames(ids: string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.database.db
+      .select({ id: users.id, displayName: users.displayName })
+      .from(users)
+      .where(inArray(users.id, ids));
+    return new Map(rows.map((row) => [row.id, row.displayName]));
   }
 
   /**
@@ -1011,6 +1197,8 @@ export class PageService {
     pageId: string,
     spaceKey: string,
     version: { title: string; content: unknown; comment: string; restoredFrom: number | null },
+    /** Who wrote it; differs from the caller when an approver publishes a submission. */
+    authorId: string = principal.userId,
   ): Promise<void> {
     await this.database.db.transaction(async (tx) => {
       const [locked] = await tx
@@ -1027,7 +1215,7 @@ export class PageService {
         title: version.title,
         content: version.content,
         text: plainText(version.content),
-        authorId: principal.userId,
+        authorId,
         comment: version.comment,
         restoredFrom: version.restoredFrom,
         createdAt: now,
@@ -1038,7 +1226,7 @@ export class PageService {
         .where(eq(pages.id, pageId));
       await reanchorComments(tx, pageId, version.content);
       await indexIssueRefs(tx, pageId, version.content);
-      await autoWatch(tx, principal.userId, pageId);
+      await autoWatch(tx, authorId, pageId);
       await emitPageEvent(tx, pageId, principal.userId, {
         type: 'page.published',
         version: number,

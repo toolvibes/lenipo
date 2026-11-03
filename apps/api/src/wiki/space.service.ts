@@ -430,6 +430,7 @@ export class SpaceService {
       favourite: starred.has(space.id),
       watching: watched.has(space.id),
       type: (space.type as SpaceSummary['type']) ?? 'team',
+      approvalRequired: space.approvalRequired,
       project: (space.projectId && linked.get(space.projectId)) || null,
     }));
   }

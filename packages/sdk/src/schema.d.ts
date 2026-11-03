@@ -2986,6 +2986,83 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/pages/{id}/approval/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve the version waiting for approval
+     * @description Requires the space permission `approve`; the author stays the author.
+     */
+    post: operations['Pages.approvePage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/approval/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject the version waiting for approval, with a comment */
+    post: operations['Pages.rejectPage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/approval-mode': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Whether new versions of the page need approval
+     * @description `space` follows the space setting. Requires the space permission `approve`.
+     */
+    put: operations['Pages.setApprovalMode'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/pages/{id}/analytics': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Views and readers of a page per day
+     * @description Counts for everyone who sees the page; the list of readers only for space administrators. Per-person data covers the last 90 days.
+     */
+    get: operations['Pages.pageAnalytics'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/pages/{id}/attachments': {
     parameters: {
       query?: never;
@@ -4177,6 +4254,23 @@ export interface paths {
     };
     /** Atom feed of a space’s blog, read with a personal feed token */
     get: operations['Spaces.feed'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/spaces/{key}/approvals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Pages of the space waiting for approval */
+    get: operations['Spaces.pendingApprovals'];
     put?: never;
     post?: never;
     delete?: never;
@@ -5449,7 +5543,7 @@ export interface components {
       spacePermission?: components['schemas']['SpacePermission'];
     };
     /** @enum {string} */
-    SpacePermission: 'view' | 'comment' | 'edit' | 'administer';
+    SpacePermission: 'view' | 'comment' | 'edit' | 'approve' | 'administer';
     AccessCheckResult: {
       user: {
         /** Format: uuid */
@@ -7484,6 +7578,7 @@ export interface components {
       versions: number;
       auditEntries: number;
       files: number;
+      pageViews: number;
     };
     BackupSettings: {
       /** @default true */
@@ -7596,6 +7691,7 @@ export interface components {
         name: string;
       } | null;
       type: components['schemas']['SpaceType'];
+      approvalRequired: boolean;
       permissions: components['schemas']['SpacePermission'][];
     };
     /** @enum {string} */
@@ -7874,6 +7970,7 @@ export interface components {
         edit: boolean;
         inherited: boolean;
       };
+      approval: components['schemas']['PageApproval'];
     };
     PageRef: {
       /** Format: uuid */
@@ -7885,6 +7982,26 @@ export interface components {
       subtree: boolean;
       inherited: ('ancestor' | 'space') | null;
     };
+    PageApproval: {
+      /** @enum {string} */
+      mode: 'space' | 'on' | 'off';
+      required: boolean;
+      canApprove: boolean;
+      pending: {
+        title: string;
+        comment: string;
+        author: components['schemas']['UserRef'] | null;
+        /** Format: date-time */
+        submittedAt: string;
+        content: components['schemas']['RichTextOutput'] | null;
+      } | null;
+      rejected: {
+        by: components['schemas']['UserRef'] | null;
+        /** Format: date-time */
+        at: string;
+        comment: string;
+      } | null;
+    };
     LabelledPage: {
       /** Format: uuid */
       id: string;
@@ -7895,6 +8012,32 @@ export interface components {
       };
       labels: string[];
       publishedAt: string | null;
+    };
+    RejectSubmissionRequest: {
+      comment: string;
+    };
+    SetApprovalModeRequest: {
+      /** @enum {string} */
+      mode: 'space' | 'on' | 'off';
+    };
+    PageAnalytics: {
+      days: number;
+      views: number;
+      readers: number;
+      daily: {
+        /** Format: date */
+        day: string;
+        views: number;
+        readers: number;
+      }[];
+      readerList:
+        | {
+            user: components['schemas']['UserRef'];
+            views: number;
+            /** Format: date */
+            lastViewed: string;
+          }[]
+        | null;
     };
     PageComment: {
       /** Format: uuid */
@@ -8846,6 +8989,14 @@ export interface components {
       author: components['schemas']['UserRef'] | null;
       excerpt: string;
     };
+    PendingApproval: {
+      /** Format: uuid */
+      pageId: string;
+      title: string;
+      author: components['schemas']['UserRef'] | null;
+      /** Format: date-time */
+      submittedAt: string;
+    };
     RestrictedPage: {
       /** Format: uuid */
       id: string;
@@ -8869,6 +9020,7 @@ export interface components {
         name: string;
       } | null;
       type: components['schemas']['SpaceType'];
+      approvalRequired: boolean;
     };
     CreateSpaceRequest: {
       key: components['schemas']['SpaceKey'];
@@ -8885,6 +9037,7 @@ export interface components {
       description?: string;
       homePageId?: string | null;
       projectKey?: string | null;
+      approvalRequired?: boolean;
     };
     LabelCount: {
       label: string;
@@ -8902,7 +9055,7 @@ export interface components {
       } | null;
     };
     /** @enum {string} */
-    SpaceRole: 'administrators' | 'editors' | 'commenters' | 'viewers';
+    SpaceRole: 'administrators' | 'approvers' | 'editors' | 'commenters' | 'viewers';
     AddSpaceMemberRequest:
       | {
           role: components['schemas']['SpaceRole'];
@@ -15995,6 +16148,140 @@ export interface operations {
       };
     };
   };
+  'Pages.approvePage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.rejectPage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectSubmissionRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.setApprovalMode': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetApprovalModeRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Pages.pageAnalytics': {
+    parameters: {
+      query?: {
+        days?: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PageAnalytics'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Pages.listAttachments': {
     parameters: {
       query?: never;
@@ -18663,6 +18950,37 @@ export interface operations {
         };
         content: {
           'application/octet-stream': string;
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Spaces.pendingApprovals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PendingApproval'][];
         };
       };
       /** @description Error (RFC 9457 problem details) */

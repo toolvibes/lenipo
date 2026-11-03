@@ -99,6 +99,26 @@ function General({ space }: { space: Space }) {
   );
 }
 
+/** New page versions wait for an approver (W-PAG-12, TL-51, E-135); pages may opt out. */
+function Approval({ space }: { space: Space }) {
+  const { t } = useTranslation();
+  const update = useUpdateSpace(space.key);
+  return (
+    <Section title={t('approval.settingsTitle')} help={t('approval.settingsHelp')}>
+      {update.error && <FormError message={update.error.message} />}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={space.approvalRequired}
+          disabled={update.isPending}
+          onChange={(event) => update.mutate({ approvalRequired: event.target.checked })}
+        />
+        {t('approval.settingsLabel')}
+      </label>
+    </Section>
+  );
+}
+
 /** Link with a tracking project; the server checks administer on both sides (E-60). */
 function ProjectLink({ space }: { space: Space }) {
   const { t } = useTranslation();
@@ -254,6 +274,7 @@ export function SpaceSettingsPage({ spaceKey }: { spaceKey: string }) {
       <h1 className="tl-heading-xl">{t('wiki.settings.title')}</h1>
       <General space={space.data} />
       <ProjectLink space={space.data} />
+      <Approval space={space.data} />
       <Roles spaceKey={spaceKey} />
       <RestrictedPages spaceKey={spaceKey} />
       <Section title={t('templates.title')} help={t('templates.help')}>

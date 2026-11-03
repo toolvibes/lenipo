@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=6 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=7 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -48,6 +48,8 @@ Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Fi
 - **Makros** über `/` im Editor: Inhaltsverzeichnis, Info-Kästen, Vorgangslisten per TQL, Diagramme (Mermaid), Seitenbäume, Einbettungen und mehr.
 - **Vorlagen** und Blueprints (Besprechungsnotizen, Entscheidungen, Retrospektive …) beim Anlegen einer Seite.
 - **Versionen** vergleichen und eine ältere wiederherstellen; **Inline-Kommentare** an markiertem Text.
+- **Freigabe:** In Bereichen mit Freigabe wartet eine neue Version, bis jemand mit der Rolle „Freigeben“ oder der Administration sie freigibt; bis dahin sehen alle die letzte freigegebene Fassung. „Zur Freigabe einreichen“ ersetzt dann „Veröffentlichen“; eine zurückgewiesene Fassung zeigt die Begründung. Freigebende stellen je Seite ein, ob sie dem Bereich folgt.
+- **Seitenanalyse:** „Analyse“ an jeder Seite zeigt Aufrufe und Leser über einen Zeitraum; wer gelesen hat, sieht nur die Bereichsadministration. Namen bleiben 90 Tage gespeichert, danach nur anonyme Zahlen.
 - **Gelöschte Seiten** liegen mit ihren Unterseiten im Papierkorb des Bereichs und lassen sich dort wiederherstellen, bis die Aufbewahrungsfrist abläuft.
 - **Export** als Word, Markdown, HTML oder PDF (über die Druckansicht).
 

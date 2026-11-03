@@ -25,6 +25,8 @@ export const RetentionResult = z
     versions: z.number().int(),
     auditEntries: z.number().int(),
     files: z.number().int(),
+    /** Per-person page views turned into anonymous counts (TL-51, E-135). */
+    pageViews: z.number().int(),
   })
   .meta({ id: 'RetentionResult' });
 export type RetentionResult = z.infer<typeof RetentionResult>;

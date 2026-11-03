@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=4 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -61,7 +61,7 @@ Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projek
 
 - **Backups** (Administration → Wartung): ein ZIP mit allen Tabellen und Anhängen im Dateispeicher, täglich zur eingestellten Stunde, die letzten drei bleiben. Von Hand oder per Cronjob: `lenipo admin backup create` und `lenipo admin backup download <id>`. Backups gehören zusätzlich außer Haus.
 - **Wiederherstellen** geht in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das ZIP hochladen. Danach melden sich alle mit ihren alten Konten an.
-- **Aufbewahrung:** Papierkorb 30 Tage, Audit-Log 365 Tage, alte Seitenversionen optional ausdünnen; stündlich im Worker.
+- **Aufbewahrung:** Papierkorb 30 Tage, Audit-Log 365 Tage, alte Seitenversionen optional ausdünnen, Seitenaufrufe je Person 90 Tage (danach anonyme Zahlen); stündlich im Worker.
 - **Archive** einzelner Projekte oder Bereiche (Administration → Import) ziehen Inhalte in eine andere Instanz um.
 
 ## Updates

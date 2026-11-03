@@ -505,6 +505,13 @@
       "when": 1793541503339,
       "tag": "0071_planning_poker",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1793684410966,
+      "tag": "0072_page_approval_analytics",
+      "breakpoints": true
     }
   ]
 }
