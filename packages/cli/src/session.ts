@@ -136,6 +136,8 @@ export interface Session {
   client: LenipoClient;
   /** Fetch with a current token, e.g. for the MCP bridge. */
   authorizedFetch: typeof fetch;
+  /** A current token, e.g. for a coding agent the runner starts (TL-99). */
+  token: () => Promise<string>;
 }
 
 export async function openSession(io: Io, profileName: string | undefined): Promise<Session> {
@@ -150,6 +152,7 @@ export async function openSession(io: Io, profileName: string | undefined): Prom
       headers.set('authorization', `Bearer ${fresh}`);
       return fetch(input, { ...init, headers });
     },
+    token: () => accessToken(io, name, profile, config),
   };
 }
 

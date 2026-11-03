@@ -24,6 +24,7 @@ export const COMMANDS: Record<string, string[]> = {
     'reviews',
     'review',
     'usage',
+    'run',
   ],
   mcp: [],
   admin: ['users', 'import', 'backup', 'archive', 'restore'],

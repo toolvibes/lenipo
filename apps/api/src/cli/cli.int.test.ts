@@ -265,6 +265,9 @@ describe('tl, the command line (TL-37)', () => {
       board: board.id,
       label: 'agent',
     });
+    expect(JSON.parse(await readFile(join(repo, '.lenipo', 'runner.json'), 'utf8'))).toMatchObject({
+      agents: [{ name: 'claude', adapter: 'claude-code', profile: 'claude' }],
+    });
     expect(await readFile(join(repo, '.lenipo', 'agent-prompt.md'), 'utf8')).toContain(
       'lenipo agent next',
     );

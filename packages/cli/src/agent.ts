@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { runAgents } from './runner.js';
 import { CliError, type Io, openSession, type Session, unwrap } from './session.js';
 
 /**
@@ -32,15 +34,15 @@ export interface AgentTask {
   answered: boolean;
 }
 
-const CONFIG = join('.lenipo', 'agent.json');
-const PROMPT = join('.lenipo', 'agent-prompt.md');
+export const CONFIG = join('.lenipo', 'agent.json');
+export const PROMPT = join('.lenipo', 'agent-prompt.md');
 
 const COMMON = {
   profile: { type: 'string' },
   dir: { type: 'string' },
 } as const;
 
-async function readAgentConfig(dir: string): Promise<AgentConfig> {
+export async function readAgentConfig(dir: string): Promise<AgentConfig> {
   try {
     return JSON.parse(await readFile(join(dir, CONFIG), 'utf8')) as AgentConfig;
   } catch {
@@ -81,9 +83,22 @@ export async function agent(args: string[], io: Io): Promise<void> {
       return review(rest, io);
     case 'usage':
       return usage(rest, io);
+    case 'run': {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          dir: { type: 'string' },
+          once: { type: 'boolean' },
+          every: { type: 'string' },
+          listen: { type: 'string' },
+          'dry-run': { type: 'boolean' },
+        },
+      });
+      return runAgents(values, io);
+    }
     default:
       throw new CliError(
-        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch|review-request|reviews|review|usage',
+        'lenipo agent init|next|ask|status|team|claim|release|handover|blocked|inbox|watch|review-request|reviews|review|usage|run',
         2,
       );
   }
@@ -123,9 +138,25 @@ async function init(args: string[], io: Io) {
   await mkdir(join(dir, '.lenipo'), { recursive: true });
   await writeFile(join(dir, CONFIG), `${JSON.stringify(config, null, 2)}\n`);
   await writeFile(join(dir, PROMPT), prompt(config));
+  // A starting point for `lenipo agent run` (TL-99); tokens stay in the CLI profiles.
+  const runner = join(dir, '.lenipo', 'runner.json');
+  if (!existsSync(runner)) {
+    await writeFile(
+      runner,
+      `${JSON.stringify(
+        {
+          base: 'main',
+          every: 15,
+          agents: [{ name: 'claude', adapter: 'claude-code', profile: 'claude', slots: 1 }],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
   io.out(
-    `Geschrieben: ${CONFIG} und ${PROMPT} (Projekt ${project}, Board ${board}).\n` +
-      `Starten, z. B. in Claude Code: /loop 15m mit dem Inhalt von ${PROMPT}`,
+    `Geschrieben: ${CONFIG}, ${PROMPT} und .lenipo/runner.json (Projekt ${project}, Board ${board}).\n` +
+      `Starten: lenipo agent run (Agenten in .lenipo/runner.json, Tokens per lenipo login --profile <Name> --token …)`,
   );
 }
 
@@ -151,7 +182,7 @@ Du arbeitest selbstständig Aufgaben aus dem aktiven Sprint des Lenipo-Projekts 
    - Review anfordern: \`lenipo agent review-request <KEY>\` (Lenipo wählt einen Reviewer, bevorzugt eines anderen Herstellers)
    - Vorgang in den Status für Review verschieben (\`lenipo issue move <KEY> Review\`)
    - Übergabe schreiben: \`lenipo agent handover <KEY> --done "<Zusammenfassung, Entscheidungen, Link zum Pull Request>" --open "<was noch fehlt>"\`; das beendet auch deinen Anspruch. Soll jemand Bestimmtes weitermachen, mit \`--to <E-Mail>\`
-   - meldet dein Runner Kosten, den Lauf mit \`lenipo agent usage --cost <Betrag>\` melden
+   - ist die Umgebungsvariable \`LENIPO_COST_REPORTED\` nicht gesetzt und kennst du die Kosten des Laufs: \`lenipo agent usage --cost <Betrag>\`
    - \`lenipo agent status offline\`
 6. Mit \`lenipo agent inbox\` nachsehen, ob dich jemand erwähnt hat, und antworten (\`lenipo issue comment\`); erledigte mit \`--read\` als gelesen markieren.
 
@@ -213,7 +244,7 @@ async function next(args: string[], io: Io) {
 export async function nextTask(
   session: Session,
   config: AgentConfig,
-  options: { ownOnly?: boolean } = {},
+  options: { ownOnly?: boolean; exclude?: Set<string> } = {},
 ): Promise<AgentTask | null> {
   const { client } = session;
   const me = await unwrap(client.GET('/api/v1/me'));
@@ -223,7 +254,7 @@ export async function nextTask(
   const active = backlog.sprints.find((entry) => entry.sprint.state === 'active');
   if (!active) return null;
   for (const issue of active.issues) {
-    if (issue.status.category === 'done') continue;
+    if (issue.status.category === 'done' || options.exclude?.has(issue.key)) continue;
     const mine = options.ownOnly
       ? issue.assignee?.id === me.id
       : issue.labels.includes(config.label) || issue.assignee?.id === me.id;
@@ -555,11 +586,24 @@ async function inbox(args: string[], io: Io) {
 async function watch(args: string[], io: Io) {
   const { values } = parseArgs({ args, options: COMMON });
   const session = await openSession(io, values.profile);
+  await streamEvents(session, (data) => io.out(data));
+}
+
+/**
+ * Follows the event stream of the caller (TL-95), resuming after breaks where it stopped; runs
+ * until the signal aborts it.
+ */
+export async function streamEvents(
+  session: Session,
+  onEvent: (data: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
   let last: string | undefined;
-  for (;;) {
+  while (!signal?.aborted) {
     try {
       const response = await session.authorizedFetch(`${session.url}/api/v1/me/events`, {
         headers: { accept: 'text/event-stream', ...(last ? { 'last-event-id': last } : {}) },
+        signal,
       });
       if (!response.ok || !response.body) {
         throw new CliError(`${response.status}: Ereignisse nicht verfügbar`);
@@ -575,12 +619,13 @@ async function watch(args: string[], io: Io) {
           const id = /^id: (.*)$/m.exec(block)?.[1];
           const data = /^data: (.*)$/m.exec(block)?.[1];
           if (id) last = id;
-          if (data) io.out(data);
+          if (data) onEvent(data);
           end = buffer.indexOf('\n\n');
         }
       }
     } catch (error) {
       if (error instanceof CliError) throw error;
+      if (signal?.aborted) return;
     }
     // The stream ended (restart, proxy): wait a moment and pick up where it broke.
     await new Promise((resolve) => setTimeout(resolve, 3000));
