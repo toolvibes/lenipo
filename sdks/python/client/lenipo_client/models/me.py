@@ -38,6 +38,7 @@ class Me:
             onboarded (bool):
             keyboard_shortcuts (bool):
             has_password (bool):
+            agent (bool):
             two_factor (TwoFactorStatus):
      """
 
@@ -51,6 +52,7 @@ class Me:
     onboarded: bool
     keyboard_shortcuts: bool
     has_password: bool
+    agent: bool
     two_factor: TwoFactorStatus
 
 
@@ -84,6 +86,8 @@ class Me:
 
         has_password = self.has_password
 
+        agent = self.agent
+
         two_factor = self.two_factor.to_dict()
 
 
@@ -100,6 +104,7 @@ class Me:
             "onboarded": onboarded,
             "keyboardShortcuts": keyboard_shortcuts,
             "hasPassword": has_password,
+            "agent": agent,
             "twoFactor": two_factor,
         })
 
@@ -145,6 +150,8 @@ class Me:
 
         has_password = d.pop("hasPassword")
 
+        agent = d.pop("agent")
+
         two_factor = TwoFactorStatus.from_dict(d.pop("twoFactor"))
 
 
@@ -161,6 +168,7 @@ class Me:
             onboarded=onboarded,
             keyboard_shortcuts=keyboard_shortcuts,
             has_password=has_password,
+            agent=agent,
             two_factor=two_factor,
         )
 

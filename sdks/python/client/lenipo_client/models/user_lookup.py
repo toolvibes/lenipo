@@ -26,11 +26,13 @@ class UserLookup:
             id (UUID):
             display_name (str):
             email (str):
+            agent (bool):
      """
 
     id: UUID
     display_name: str
     email: str
+    agent: bool
 
 
 
@@ -43,6 +45,8 @@ class UserLookup:
 
         email = self.email
 
+        agent = self.agent
+
 
         field_dict: dict[str, Any] = {}
 
@@ -50,6 +54,7 @@ class UserLookup:
             "id": id,
             "displayName": display_name,
             "email": email,
+            "agent": agent,
         })
 
         return field_dict
@@ -68,10 +73,13 @@ class UserLookup:
 
         email = d.pop("email")
 
+        agent = d.pop("agent")
+
         user_lookup = cls(
             id=id,
             display_name=display_name,
             email=email,
+            agent=agent,
         )
 
         return user_lookup

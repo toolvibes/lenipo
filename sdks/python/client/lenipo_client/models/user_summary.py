@@ -31,6 +31,7 @@ class UserSummary:
             status (UserSummaryStatus):
             groups (list[str]):
             external (bool):
+            agent (bool):
      """
 
     id: UUID
@@ -39,6 +40,7 @@ class UserSummary:
     status: UserSummaryStatus
     groups: list[str]
     external: bool
+    agent: bool
 
 
 
@@ -59,6 +61,8 @@ class UserSummary:
 
         external = self.external
 
+        agent = self.agent
+
 
         field_dict: dict[str, Any] = {}
 
@@ -69,6 +73,7 @@ class UserSummary:
             "status": status,
             "groups": groups,
             "external": external,
+            "agent": agent,
         })
 
         return field_dict
@@ -97,6 +102,8 @@ class UserSummary:
 
         external = d.pop("external")
 
+        agent = d.pop("agent")
+
         user_summary = cls(
             id=id,
             email=email,
@@ -104,6 +111,7 @@ class UserSummary:
             status=status,
             groups=groups,
             external=external,
+            agent=agent,
         )
 
         return user_summary

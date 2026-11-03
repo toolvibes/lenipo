@@ -22,6 +22,8 @@ from .add_space_member_request_type_0 import AddSpaceMemberRequestType0
 from .add_space_member_request_type_1 import AddSpaceMemberRequestType1
 from .admin_token import AdminToken
 from .admin_token_owner import AdminTokenOwner
+from .agent import Agent
+from .agent_status import AgentStatus
 from .ai_settings import AiSettings
 from .ai_settings_indexed import AiSettingsIndexed
 from .ai_test_result import AiTestResult
@@ -138,6 +140,7 @@ from .control_chart_cycle import ControlChartCycle
 from .control_chart_lead import ControlChartLead
 from .control_chart_points_item import ControlChartPointsItem
 from .copy_dashboard_request import CopyDashboardRequest
+from .create_agent_request import CreateAgentRequest
 from .create_board_request import CreateBoardRequest
 from .create_board_request_type import CreateBoardRequestType
 from .create_comment_request import CreateCommentRequest
@@ -739,6 +742,7 @@ from .two_factor_setup import TwoFactorSetup
 from .two_factor_status import TwoFactorStatus
 from .two_factor_status_pending_type_0 import TwoFactorStatusPendingType0
 from .unread_count import UnreadCount
+from .update_agent_request import UpdateAgentRequest
 from .update_ai_settings_request import UpdateAiSettingsRequest
 from .update_app_request import UpdateAppRequest
 from .update_board_request import UpdateBoardRequest
@@ -831,6 +835,8 @@ __all__ = (
     "AddSpaceMemberRequestType1",
     "AdminToken",
     "AdminTokenOwner",
+    "Agent",
+    "AgentStatus",
     "AiSettings",
     "AiSettingsIndexed",
     "AiTestResult",
@@ -947,6 +953,7 @@ __all__ = (
     "ControlChartLead",
     "ControlChartPointsItem",
     "CopyDashboardRequest",
+    "CreateAgentRequest",
     "CreateBoardRequest",
     "CreateBoardRequestType",
     "CreateCommentRequest",
@@ -1548,6 +1555,7 @@ __all__ = (
     "TwoFactorStatus",
     "TwoFactorStatusPendingType0",
     "UnreadCount",
+    "UpdateAgentRequest",
     "UpdateAiSettingsRequest",
     "UpdateAppRequest",
     "UpdateBoardRequest",

@@ -39,6 +39,24 @@ func (e ActivityEntryKind) Valid() bool {
 	}
 }
 
+// Defines values for AgentStatus.
+const (
+	AgentStatusActive      AgentStatus = "active"
+	AgentStatusDeactivated AgentStatus = "deactivated"
+)
+
+// Valid indicates whether the value is a known member of the AgentStatus enum.
+func (e AgentStatus) Valid() bool {
+	switch e {
+	case AgentStatusActive:
+		return true
+	case AgentStatusDeactivated:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AnnouncementLevel.
 const (
 	AnnouncementLevelInfo    AnnouncementLevel = "info"
@@ -5639,6 +5657,20 @@ type AdminToken struct {
 	UsedToday int      `json:"usedToday"`
 }
 
+// Agent defines model for Agent.
+type Agent struct {
+	CreatedAt   time.Time          `json:"createdAt"`
+	DisplayName string             `json:"displayName"`
+	Id          openapi_types.UUID `json:"id"`
+	Model       string             `json:"model"`
+	Owner       *UserRef           `json:"owner"`
+	Status      AgentStatus        `json:"status"`
+	Vendor      string             `json:"vendor"`
+}
+
+// AgentStatus defines model for Agent.Status.
+type AgentStatus string
+
 // AiSettings defines model for AiSettings.
 type AiSettings struct {
 	BaseUrl        string `json:"baseUrl"`
@@ -6440,6 +6472,15 @@ type ControlChart struct {
 // CopyDashboardRequest defines model for CopyDashboardRequest.
 type CopyDashboardRequest struct {
 	Name string `json:"name"`
+}
+
+// CreateAgentRequest defines model for CreateAgentRequest.
+type CreateAgentRequest struct {
+	DisplayName string              `json:"displayName"`
+	Groups      *[]string           `json:"groups,omitempty"`
+	Model       *string             `json:"model,omitempty"`
+	OwnerId     *openapi_types.UUID `json:"ownerId,omitempty"`
+	Vendor      string              `json:"vendor"`
 }
 
 // CreateBoardRequest defines model for CreateBoardRequest.
@@ -8087,6 +8128,7 @@ type MarkNotificationsRead struct {
 
 // Me defines model for Me.
 type Me struct {
+	Agent             bool               `json:"agent"`
 	AuthenticatedVia  MeAuthenticatedVia `json:"authenticatedVia"`
 	DisplayName       string             `json:"displayName"`
 	Email             string             `json:"email"`
@@ -10587,6 +10629,14 @@ type UnreadCount struct {
 	Count int `json:"count"`
 }
 
+// UpdateAgentRequest defines model for UpdateAgentRequest.
+type UpdateAgentRequest struct {
+	DisplayName *string             `json:"displayName,omitempty"`
+	Model       *string             `json:"model,omitempty"`
+	OwnerId     *openapi_types.UUID `json:"ownerId,omitempty"`
+	Vendor      *string             `json:"vendor,omitempty"`
+}
+
 // UpdateAiSettingsRequest defines model for UpdateAiSettingsRequest.
 type UpdateAiSettingsRequest struct {
 	ApiKey         *string                         `json:"apiKey,omitempty"`
@@ -10858,6 +10908,7 @@ type UpdateWorklogRequest struct {
 
 // UserLookup defines model for UserLookup.
 type UserLookup struct {
+	Agent       bool               `json:"agent"`
 	DisplayName string             `json:"displayName"`
 	Email       string             `json:"email"`
 	Id          openapi_types.UUID `json:"id"`
@@ -10871,6 +10922,7 @@ type UserRef struct {
 
 // UserSummary defines model for UserSummary.
 type UserSummary struct {
+	Agent       bool               `json:"agent"`
 	DisplayName string             `json:"displayName"`
 	Email       string             `json:"email"`
 	External    bool               `json:"external"`
@@ -11813,6 +11865,15 @@ type WebhooksUpdateJSONRequestBody = UpdateWebhookRequest
 
 // AdminSetSettingsJSONRequestBody defines body for AdminSetSettings for application/json ContentType.
 type AdminSetSettingsJSONRequestBody = WikiSettingsInput
+
+// AgentsCreateJSONRequestBody defines body for AgentsCreate for application/json ContentType.
+type AgentsCreateJSONRequestBody = CreateAgentRequest
+
+// AgentsUpdateJSONRequestBody defines body for AgentsUpdate for application/json ContentType.
+type AgentsUpdateJSONRequestBody = UpdateAgentRequest
+
+// AgentsCreateTokenJSONRequestBody defines body for AgentsCreateToken for application/json ContentType.
+type AgentsCreateTokenJSONRequestBody = CreateTokenRequest
 
 // AuthSecondFactorJSONRequestBody defines body for AuthSecondFactor for application/json ContentType.
 type AuthSecondFactorJSONRequestBody = TwoFactorCodeRequest
@@ -19362,6 +19423,85 @@ type ClientInterface interface {
 	// Corresponds with PUT /api/v1/admin/wiki-settings (the `AdminSetSettings` operationId).
 	AdminSetSettings(ctx context.Context, body AdminSetSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AgentsList List the AI agents
+	//
+	// With vendor, model and responsible person; the web app marks them by this list.
+	//
+	// Requires the global permission `browse-users`.
+	//
+	// Corresponds with GET /api/v1/agents (the `AgentsList` operationId).
+	AgentsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsCreateWithBody Create an AI agent
+	//
+	// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+	AgentsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsCreate Create an AI agent
+	//
+	// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+	AgentsCreate(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsUpdateWithBody Change an AI agent
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+	AgentsUpdateWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsUpdate Change an AI agent
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+	AgentsUpdate(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsListTokens List the tokens of an AI agent
+	//
+	// For its responsible person and administrators.
+	//
+	// Corresponds with GET /api/v1/agents/{id}/tokens (the `AgentsListTokens` operationId).
+	AgentsListTokens(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsCreateTokenWithBody Create a token for an AI agent; the secret is returned only once
+	//
+	// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+	AgentsCreateTokenWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsCreateToken Create a token for an AI agent; the secret is returned only once
+	//
+	// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+	AgentsCreateToken(ctx context.Context, id string, body AgentsCreateTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AgentsRevokeToken Revoke a token of an AI agent
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
+	AgentsRevokeToken(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AppsListApps Enabled apps with their panels, macros and gadgets
 	//
 	// Corresponds with GET /api/v1/apps (the `AppsListApps` operationId).
@@ -25250,6 +25390,175 @@ func (c *Client) AdminSetSettingsWithBody(ctx context.Context, contentType strin
 // Corresponds with PUT /api/v1/admin/wiki-settings (the `AdminSetSettings` operationId).
 func (c *Client) AdminSetSettings(ctx context.Context, body AdminSetSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAdminSetSettingsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsList List the AI agents
+//
+// With vendor, model and responsible person; the web app marks them by this list.
+//
+// Requires the global permission `browse-users`.
+//
+// Corresponds with GET /api/v1/agents (the `AgentsList` operationId).
+func (c *Client) AgentsList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsCreateWithBody Create an AI agent
+//
+// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+func (c *Client) AgentsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsCreateRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsCreate Create an AI agent
+//
+// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+func (c *Client) AgentsCreate(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsCreateRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsUpdateWithBody Change an AI agent
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+func (c *Client) AgentsUpdateWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsUpdateRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsUpdate Change an AI agent
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+func (c *Client) AgentsUpdate(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsUpdateRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsListTokens List the tokens of an AI agent
+//
+// For its responsible person and administrators.
+//
+// Corresponds with GET /api/v1/agents/{id}/tokens (the `AgentsListTokens` operationId).
+func (c *Client) AgentsListTokens(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsListTokensRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsCreateTokenWithBody Create a token for an AI agent; the secret is returned only once
+//
+// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+func (c *Client) AgentsCreateTokenWithBody(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsCreateTokenRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsCreateToken Create a token for an AI agent; the secret is returned only once
+//
+// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+func (c *Client) AgentsCreateToken(ctx context.Context, id string, body AgentsCreateTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsCreateTokenRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AgentsRevokeToken Revoke a token of an AI agent
+//
+// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
+func (c *Client) AgentsRevokeToken(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAgentsRevokeTokenRequest(c.Server, id, tokenId)
 	if err != nil {
 		return nil, err
 	}
@@ -36462,6 +36771,242 @@ func NewAdminSetSettingsRequestWithBody(server string, contentType string, body 
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsListRequest constructs an http.Request for the AgentsList method
+func NewAgentsListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsCreateRequest calls the generic AgentsCreate builder with application/json body
+func NewAgentsCreateRequest(server string, body AgentsCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsCreateRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAgentsCreateRequestWithBody constructs an http.Request for the AgentsCreate method, with any body, and a specified content type
+func NewAgentsCreateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsUpdateRequest calls the generic AgentsUpdate builder with application/json body
+func NewAgentsUpdateRequest(server string, id string, body AgentsUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsUpdateRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsUpdateRequestWithBody constructs an http.Request for the AgentsUpdate method, with any body, and a specified content type
+func NewAgentsUpdateRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsListTokensRequest constructs an http.Request for the AgentsListTokens method
+func NewAgentsListTokensRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/tokens", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAgentsCreateTokenRequest calls the generic AgentsCreateToken builder with application/json body
+func NewAgentsCreateTokenRequest(server string, id string, body AgentsCreateTokenJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAgentsCreateTokenRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAgentsCreateTokenRequestWithBody constructs an http.Request for the AgentsCreateToken method, with any body, and a specified content type
+func NewAgentsCreateTokenRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/tokens", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAgentsRevokeTokenRequest constructs an http.Request for the AgentsRevokeToken method
+func NewAgentsRevokeTokenRequest(server string, id string, tokenId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "tokenId", tokenId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/agents/%s/tokens/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -50529,6 +51074,91 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /api/v1/admin/wiki-settings (the `AdminSetSettings` operationId).
 	AdminSetSettingsWithResponse(ctx context.Context, body AdminSetSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminSetSettingsHTTPResponse, error)
 
+	// AgentsListWithResponse List the AI agents
+	//
+	// With vendor, model and responsible person; the web app marks them by this list.
+	//
+	// Requires the global permission `browse-users`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents (the `AgentsList` operationId).
+	AgentsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsListHTTPResponse, error)
+
+	// AgentsCreateWithBodyWithResponse Create an AI agent
+	//
+	// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+	AgentsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsCreateHTTPResponse, error)
+
+	// AgentsCreateWithResponse Create an AI agent
+	//
+	// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+	AgentsCreateWithResponse(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsCreateHTTPResponse, error)
+
+	// AgentsUpdateWithBodyWithResponse Change an AI agent
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+	AgentsUpdateWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsUpdateHTTPResponse, error)
+
+	// AgentsUpdateWithResponse Change an AI agent
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+	AgentsUpdateWithResponse(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsUpdateHTTPResponse, error)
+
+	// AgentsListTokensWithResponse List the tokens of an AI agent
+	//
+	// For its responsible person and administrators.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/agents/{id}/tokens (the `AgentsListTokens` operationId).
+	AgentsListTokensWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsListTokensHTTPResponse, error)
+
+	// AgentsCreateTokenWithBodyWithResponse Create a token for an AI agent; the secret is returned only once
+	//
+	// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+	AgentsCreateTokenWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsCreateTokenHTTPResponse, error)
+
+	// AgentsCreateTokenWithResponse Create a token for an AI agent; the secret is returned only once
+	//
+	// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+	AgentsCreateTokenWithResponse(ctx context.Context, id string, body AgentsCreateTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsCreateTokenHTTPResponse, error)
+
+	// AgentsRevokeTokenWithResponse Revoke a token of an AI agent
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
+	AgentsRevokeTokenWithResponse(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*AgentsRevokeTokenHTTPResponse, error)
+
 	// AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -59181,6 +59811,287 @@ func (r AdminSetSettingsHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AdminSetSettingsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsListHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsListHTTPResponse) GetJSON200() *[]Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsListHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsListHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsListHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsListHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsListHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsCreateHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AgentsCreateHTTPResponse) GetJSON201() *Agent {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsCreateHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsCreateHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsCreateHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsCreateHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsCreateHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsUpdateHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Agent
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsUpdateHTTPResponse) GetJSON200() *Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsUpdateHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsUpdateHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsUpdateHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsUpdateHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsUpdateHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsListTokensHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]TokenInfo
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AgentsListTokensHTTPResponse) GetJSON200() *[]TokenInfo {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsListTokensHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsListTokensHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsListTokensHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsListTokensHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsListTokensHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsCreateTokenHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CreatedToken
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AgentsCreateTokenHTTPResponse) GetJSON201() *CreatedToken {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsCreateTokenHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsCreateTokenHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsCreateTokenHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsCreateTokenHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsCreateTokenHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AgentsRevokeTokenHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AgentsRevokeTokenHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AgentsRevokeTokenHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AgentsRevokeTokenHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AgentsRevokeTokenHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AgentsRevokeTokenHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75391,6 +76302,145 @@ func (c *ClientWithResponses) AdminSetSettingsWithResponse(ctx context.Context, 
 	return ParseAdminSetSettingsHTTPResponse(rsp)
 }
 
+// AgentsListWithResponse List the AI agents
+//
+// With vendor, model and responsible person; the web app marks them by this list.
+//
+// Requires the global permission `browse-users`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents (the `AgentsList` operationId).
+func (c *ClientWithResponses) AgentsListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AgentsListHTTPResponse, error) {
+	rsp, err := c.AgentsList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsListHTTPResponse(rsp)
+}
+
+// AgentsCreateWithBodyWithResponse Create an AI agent
+//
+// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+func (c *ClientWithResponses) AgentsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsCreateHTTPResponse, error) {
+	rsp, err := c.AgentsCreateWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsCreateHTTPResponse(rsp)
+}
+
+// AgentsCreateWithResponse Create an AI agent
+//
+// A user of the kind "agent" without password or sign-in. It joins only the groups named, not "users"; give it projects through their roles.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/agents (the `AgentsCreate` operationId).
+func (c *ClientWithResponses) AgentsCreateWithResponse(ctx context.Context, body AgentsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsCreateHTTPResponse, error) {
+	rsp, err := c.AgentsCreate(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsCreateHTTPResponse(rsp)
+}
+
+// AgentsUpdateWithBodyWithResponse Change an AI agent
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+func (c *ClientWithResponses) AgentsUpdateWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsUpdateHTTPResponse, error) {
+	rsp, err := c.AgentsUpdateWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsUpdateHTTPResponse(rsp)
+}
+
+// AgentsUpdateWithResponse Change an AI agent
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /api/v1/agents/{id} (the `AgentsUpdate` operationId).
+func (c *ClientWithResponses) AgentsUpdateWithResponse(ctx context.Context, id string, body AgentsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsUpdateHTTPResponse, error) {
+	rsp, err := c.AgentsUpdate(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsUpdateHTTPResponse(rsp)
+}
+
+// AgentsListTokensWithResponse List the tokens of an AI agent
+//
+// For its responsible person and administrators.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/agents/{id}/tokens (the `AgentsListTokens` operationId).
+func (c *ClientWithResponses) AgentsListTokensWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*AgentsListTokensHTTPResponse, error) {
+	rsp, err := c.AgentsListTokens(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsListTokensHTTPResponse(rsp)
+}
+
+// AgentsCreateTokenWithBodyWithResponse Create a token for an AI agent; the secret is returned only once
+//
+// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+func (c *ClientWithResponses) AgentsCreateTokenWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AgentsCreateTokenHTTPResponse, error) {
+	rsp, err := c.AgentsCreateTokenWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsCreateTokenHTTPResponse(rsp)
+}
+
+// AgentsCreateTokenWithResponse Create a token for an AI agent; the secret is returned only once
+//
+// Needs a browser session of its responsible person or an administrator. Agent tokens never carry the `admin` scope.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/agents/{id}/tokens (the `AgentsCreateToken` operationId).
+func (c *ClientWithResponses) AgentsCreateTokenWithResponse(ctx context.Context, id string, body AgentsCreateTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsCreateTokenHTTPResponse, error) {
+	rsp, err := c.AgentsCreateToken(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsCreateTokenHTTPResponse(rsp)
+}
+
+// AgentsRevokeTokenWithResponse Revoke a token of an AI agent
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/agents/{id}/tokens/{tokenId} (the `AgentsRevokeToken` operationId).
+func (c *ClientWithResponses) AgentsRevokeTokenWithResponse(ctx context.Context, id string, tokenId string, reqEditors ...RequestEditorFn) (*AgentsRevokeTokenHTTPResponse, error) {
+	rsp, err := c.AgentsRevokeToken(ctx, id, tokenId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAgentsRevokeTokenHTTPResponse(rsp)
+}
+
 // AppsListAppsWithResponse Enabled apps with their panels, macros and gadgets
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84776,6 +85826,200 @@ func ParseAdminSetSettingsHTTPResponse(rsp *http.Response) (*AdminSetSettingsHTT
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsListHTTPResponse parses an HTTP response from a AgentsListWithResponse call
+func ParseAgentsListHTTPResponse(rsp *http.Response) (*AgentsListHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsListHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsCreateHTTPResponse parses an HTTP response from a AgentsCreateWithResponse call
+func ParseAgentsCreateHTTPResponse(rsp *http.Response) (*AgentsCreateHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsCreateHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsUpdateHTTPResponse parses an HTTP response from a AgentsUpdateWithResponse call
+func ParseAgentsUpdateHTTPResponse(rsp *http.Response) (*AgentsUpdateHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsUpdateHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsListTokensHTTPResponse parses an HTTP response from a AgentsListTokensWithResponse call
+func ParseAgentsListTokensHTTPResponse(rsp *http.Response) (*AgentsListTokensHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsListTokensHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []TokenInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsCreateTokenHTTPResponse parses an HTTP response from a AgentsCreateTokenWithResponse call
+func ParseAgentsCreateTokenHTTPResponse(rsp *http.Response) (*AgentsCreateTokenHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsCreateTokenHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CreatedToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAgentsRevokeTokenHTTPResponse parses an HTTP response from a AgentsRevokeTokenWithResponse call
+func ParseAgentsRevokeTokenHTTPResponse(rsp *http.Response) (*AgentsRevokeTokenHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AgentsRevokeTokenHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
