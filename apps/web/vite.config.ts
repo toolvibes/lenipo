@@ -58,6 +58,8 @@ export default defineConfig({
       '/api': { target: 'http://localhost:4000', ws: true },
       // MCP lives outside /api (D-MCP-01); the profile shows this origin in the setup command.
       '/mcp': { target: 'http://localhost:4000' },
+      // The Jira-compatible API (TL-48).
+      '/rest/api/2/': { target: 'http://localhost:4000' },
       // OAuth metadata for MCP clients (E-115).
       '/.well-known/oauth-': { target: 'http://localhost:4000' },
       '/collab': {

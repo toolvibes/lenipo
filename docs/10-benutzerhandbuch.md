@@ -75,6 +75,12 @@ Die Glocke zeigt, was dich betrifft: Erwähnungen, Zuweisungen, Kommentare und �
 
 Im Profil: Name, Sprache, Zeitzone, Design (hell/dunkel), Tastaturkürzel an oder aus, Passwort, Zwei-Faktor-Anmeldung (Authenticator-App und Wiederherstellungscodes), aktive Sitzungen, persönliche API-Tokens und verbundene Apps (z. B. KI-Assistenten über MCP).
 
+## Skripte für Jira weiterverwenden
+
+Lenipo versteht einen Teil der Jira-REST-API v2 unter `/rest/api/2`: Suche (`/search`, JQL wird als TQL gelesen), Vorgänge lesen, anlegen und ändern (`/issue`), Übergänge, Kommentare sowie `myself`, `serverInfo`, `project`, `issuetype`, `priority`, `resolution` und `status`. Skripte und Werkzeuge für Jira zeigen dafür auf die Adresse von Lenipo und melden sich mit einem persönlichen API-Token an – als Bearer-Token oder wie bei Jira Cloud mit E-Mail-Adresse und Token als Benutzername und Passwort. Das Passwort selbst funktioniert dort nicht.
+
+Unterschiede zu Jira: Beschreibungen und Kommentare sind Markdown statt Wiki-Markup; IDs sind die von Lenipo; eigene Felder heißen `customfield_<id>` mit der ID des Felds in Lenipo; beim Ändern gibt es `set` für alle Felder, `add` und `remove` für Labels und `add` für Kommentare. Was Lenipo nicht kennt, lehnt die API mit einer Jira-Fehlermeldung zum Feld ab.
+
 ## Tastaturkürzel
 
 `?` zeigt alle Kürzel. Die wichtigsten:

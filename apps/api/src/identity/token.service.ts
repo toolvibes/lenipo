@@ -12,6 +12,8 @@ const TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 export interface AuthenticatedToken {
   tokenId: string;
   userId: string;
+  /** The owner's address, which Basic credentials name besides the token (TL-48). */
+  email: string;
   scopes: TokenScope[];
 }
 
@@ -57,6 +59,7 @@ export class TokenService {
       .select({
         tokenId: personalAccessTokens.id,
         userId: personalAccessTokens.userId,
+        email: users.email,
         scopes: personalAccessTokens.scopes,
         lastUsedAt: personalAccessTokens.lastUsedAt,
       })
@@ -77,7 +80,12 @@ export class TokenService {
         .set({ lastUsedAt: now })
         .where(eq(personalAccessTokens.id, row.tokenId));
     }
-    return { tokenId: row.tokenId, userId: row.userId, scopes: row.scopes as TokenScope[] };
+    return {
+      tokenId: row.tokenId,
+      userId: row.userId,
+      email: row.email,
+      scopes: row.scopes as TokenScope[],
+    };
   }
 
   async list(userId: string): Promise<TokenInfo[]> {

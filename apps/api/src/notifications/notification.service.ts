@@ -177,7 +177,7 @@ export class NotificationService {
       .select({ email: users.email, locale: users.locale, status: users.status })
       .from(users)
       .where(eq(users.id, issue.reporterId));
-    if (!customer || customer.status !== 'active') return;
+    if (customer?.status !== 'active') return;
     const link = `${(this.config.PUBLIC_URL ?? '').replace(/\/+$/, '')}/portal/requests/${issue.key}`;
     const german = customer.locale !== 'en';
     const subject = answered
@@ -190,13 +190,13 @@ export class NotificationService {
     const line = german
       ? `„${issue.summary}“: Details und Antworten im Portal: ${link}`
       : `"${issue.summary}": details and answers in the portal: ${link}`;
-    const escape = (value: string) =>
+    const escapeHtml = (value: string) =>
       value.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
     await this.mailer.send({
       to: customer.email,
       subject,
       text: `${line}\n`,
-      html: `<p>${escape(german ? `„${issue.summary}“` : `"${issue.summary}"`)}</p><p><a href="${escape(link)}">${german ? 'Anfrage im Portal öffnen' : 'Open the request in the portal'}</a></p>`,
+      html: `<p>${escapeHtml(german ? `„${issue.summary}“` : `"${issue.summary}"`)}</p><p><a href="${escapeHtml(link)}">${german ? 'Anfrage im Portal öffnen' : 'Open the request in the portal'}</a></p>`,
     });
   }
 

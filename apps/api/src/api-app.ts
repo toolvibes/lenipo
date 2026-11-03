@@ -18,10 +18,12 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.useLogger(app.get(NestPinoLogger));
   app.use(httpMetrics);
   app.use(securityHeaders);
-  // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115).
+  // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115);
+  // Jira clients append rest/api/2 to the server address (TL-48, E-138).
   app.setGlobalPrefix('api/v1', {
     exclude: [
       'mcp',
+      'rest/api/2/{*path}',
       '.well-known/oauth-protected-resource',
       '.well-known/oauth-protected-resource/mcp',
       '.well-known/oauth-authorization-server',

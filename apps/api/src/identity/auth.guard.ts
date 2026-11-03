@@ -100,10 +100,25 @@ export class AuthGuard implements CanActivate {
     return true;
   }
 
+  /**
+   * Basic credentials as Jira clients send them: the address and a personal access token in
+   * place of the password (TL-48, E-138). Passwords never work here: they need a second factor.
+   */
+  private async basic(encoded: string): Promise<Principal> {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const colon = decoded.indexOf(':');
+    const token = colon < 0 ? null : await this.tokens.authenticate(decoded.slice(colon + 1));
+    if (!token || token.email.toLowerCase() !== decoded.slice(0, colon).trim().toLowerCase()) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return { userId: token.userId, via: 'token', tokenId: token.tokenId, scopes: token.scopes };
+  }
+
   private async resolve(request: Request): Promise<Principal | undefined> {
     const authorization = request.get('authorization');
     if (authorization) {
       const [scheme, secret] = authorization.split(' ');
+      if (scheme?.toLowerCase() === 'basic' && secret) return this.basic(secret);
       if (scheme?.toLowerCase() !== 'bearer' || !secret) {
         throw new UnauthorizedException('Unsupported authorization scheme');
       }

@@ -54,7 +54,12 @@ export function serveWebApp(app: NestExpressApplication, dir: string): void {
     },
   });
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.method !== 'GET' || req.path.startsWith('/api/') || !req.accepts('html')) {
+    if (
+      req.method !== 'GET' ||
+      req.path.startsWith('/api/') ||
+      req.path.startsWith('/rest/') ||
+      !req.accepts('html')
+    ) {
       next();
       return;
     }
