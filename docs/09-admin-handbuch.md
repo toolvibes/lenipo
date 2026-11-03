@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=7 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=8 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -48,6 +48,7 @@ Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und steh
 
 - **Lokale Konten** mit Passwort (Argon2id) und optionaler Zwei-Faktor-Anmeldung; Gruppen können sie verpflichtend machen (Administration → Anmeldung).
 - **OIDC** über die Variablen oben; **SAML 2.0** und **LDAP/Active Directory** in der Administration (Verzeichnisse). Die Reihenfolge der Verzeichnisse entscheidet beim Passwort-Login. SAML verknüpft ein vorhandenes Konto nur, wenn es kein eigenes Passwort und keinen zweiten Faktor hat.
+- **SCIM 2.0** für Identitätsanbieter wie Entra ID, Okta oder Keycloak: Administration → Verzeichnisse → SCIM-Provisionierung erzeugt ein Token (nur einmal angezeigt, widerrufbar); im Anbieter als Adresse `https://<lenipo>/scim/v2` und das Token als Bearer-Token eintragen. Der Anbieter legt Personen (Anmeldename = E-Mail, ohne Passwort, Anmeldung über OIDC oder SAML) und Gruppen an, ändert und deaktiviert sie; ein vorhandenes Konto mit derselben E-Mail übernimmt er. Löschen deaktiviert nur, Beiträge bleiben. Gruppen, die der Anbieter angelegt hat, verwaltet nur er; eingebaute und in Lenipo angelegte Gruppen kann er nicht ändern.
 - **Einladungen** per E-Mail, **Selbstregistrierung** für freigegebene Domains (standardmäßig aus).
 - **Externe** (Kunden, Partner): Einladung mit „Als externe Person einladen“ oder in der Benutzerverwaltung „Als extern führen“. Externe sind nicht in der Gruppe „users“, haben keine globalen Rechte und sehen nur die Projekte und Bereiche, in denen sie eine Rolle haben. Beim Zuordnen zu einem Projekt gibt „Auch im verknüpften Wiki-Bereich freigeben“ die passende Stufe im Wiki-Bereich des Projekts.
 - **Deaktivieren** beendet alle Sitzungen und Tokens; **Anonymisieren** (DSGVO) ersetzt Name und E-Mail überall durch „Ehemalige Person n“ und ist nicht umkehrbar.

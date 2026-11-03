@@ -993,6 +993,17 @@ export const de = {
     back: 'Zurück zur Seite',
   },
   directories: {
+    scim: {
+      title: 'SCIM-Provisionierung',
+      intro:
+        'Identitätsanbieter wie Entra ID, Okta oder Keycloak legen Personen und Gruppen über SCIM 2.0 an, ändern und deaktivieren sie. Adresse: {{url}}. Personen ohne Passwort melden sich über OIDC oder SAML an; Löschen deaktiviert nur.',
+      name: 'Name des Anbieters',
+      create: 'Token erzeugen',
+      once: 'Das Token wird nur jetzt angezeigt:',
+      used: 'zuletzt benutzt {{when}}',
+      unused: 'noch nicht benutzt',
+      revoke: 'Widerrufen',
+    },
     title: 'Verzeichnisse',
     intro:
       'Woher Personen kommen: das interne Verzeichnis und LDAP-/Active-Directory-Server. Bei der Anmeldung mit Passwort entscheidet das erste Verzeichnis in dieser Reihenfolge, das die Person kennt. LDAP-Verzeichnisse gleichen Personen und Gruppen stündlich ab; wer dort fehlt, wird deaktiviert.',
@@ -1116,7 +1127,12 @@ export const de = {
     add: 'Verbindung anlegen',
     name: 'Name',
     provider: 'Anbieter',
-    providers: { github: 'GitHub', gitlab: 'GitLab', gitea: 'Gitea / Forgejo' },
+    providers: {
+      github: 'GitHub',
+      gitlab: 'GitLab',
+      gitea: 'Gitea / Forgejo',
+      bitbucket: 'Bitbucket Cloud',
+    },
     created: 'Verbindung „{{name}}“ angelegt',
     secretOnce: 'Das Geheimnis wird nur jetzt angezeigt.',
     webhookUrl: 'Webhook-Adresse',
@@ -1128,6 +1144,8 @@ export const de = {
         'GitLab: Projekt oder Gruppe → Settings → Webhooks. URL wie oben, „Secret token“ wie oben. Auslöser: Push events, Merge request events, Pipeline events.',
       gitea:
         'Gitea/Forgejo: Repository oder Organisation → Einstellungen → Webhooks → Gitea. Ziel-URL wie oben, Content-Type „application/json“, Geheimnis wie oben. Ereignisse: Push, Branch erstellen, Pull Request, Pull-Request-Review, Status.',
+      bitbucket:
+        'Bitbucket Cloud: Repository → Repository settings → Webhooks → Add webhook. URL wie oben, Secret wie oben. Auslöser: Repository Push, Commit status created/updated, alle Pull-Request-Ereignisse.',
     },
     lastEvent: 'Letzte Lieferung {{when}}',
     never: 'Noch keine Lieferung',

@@ -60,6 +60,8 @@ export default defineConfig({
       '/mcp': { target: 'http://localhost:4000' },
       // The Jira-compatible API (TL-48).
       '/rest/api/2/': { target: 'http://localhost:4000' },
+      // SCIM for identity providers (TL-52).
+      '/scim/v2/': { target: 'http://localhost:4000' },
       // OAuth metadata for MCP clients (E-115).
       '/.well-known/oauth-': { target: 'http://localhost:4000' },
       '/collab': {

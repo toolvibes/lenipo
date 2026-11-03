@@ -68,3 +68,75 @@ describe('git webhooks (D-GIT-01..03)', () => {
     ]);
   });
 });
+
+describe('Bitbucket Cloud (TL-52)', () => {
+  it('checks the signature and reads pushes, pull requests and commit statuses', () => {
+    const body = Buffer.from('{"a":1}');
+    const hmac = createHmac('sha256', 'geheim').update(body).digest('hex');
+    expect(verify('bitbucket', 'geheim', { 'x-hub-signature': `sha256=${hmac}` }, body)).toBe(true);
+    expect(verify('bitbucket', 'geheim', { 'x-hub-signature': hmac }, body)).toBe(false);
+
+    const repository = { full_name: 'acme/web' };
+    const push = changesOf('bitbucket', 'repo:push', {
+      repository,
+      actor: { display_name: 'Lena' },
+      push: {
+        changes: [
+          {
+            created: true,
+            new: {
+              type: 'branch',
+              name: 'web-12-login',
+              links: { html: { href: 'https://bitbucket.org/acme/web/branch/web-12-login' } },
+            },
+            commits: [
+              {
+                hash: 'abc',
+                message: 'WEB-12 Login\n',
+                date: '2026-11-03T10:00:00+00:00',
+                author: { raw: 'Lena Vogt <lena@example.org>' },
+                links: { html: { href: 'https://bitbucket.org/acme/web/commits/abc' } },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(push).toMatchObject([
+      { kind: 'branch', name: 'web-12-login', created: true, author: 'Lena' },
+      {
+        kind: 'commit',
+        sha: 'abc',
+        authorName: 'Lena Vogt',
+        authorEmail: 'lena@example.org',
+        branch: 'web-12-login',
+      },
+    ]);
+
+    const merged = changesOf('bitbucket', 'pullrequest:fulfilled', {
+      repository,
+      pullrequest: {
+        id: 7,
+        title: 'WEB-12 Login',
+        state: 'MERGED',
+        source: { branch: { name: 'web-12-login' } },
+        links: { html: { href: 'https://bitbucket.org/acme/web/pull-requests/7' } },
+        author: { display_name: 'Lena' },
+      },
+    });
+    expect(merged).toMatchObject([{ kind: 'pull_request', number: '7', state: 'merged' }]);
+
+    const build = changesOf('bitbucket', 'repo:commit_status_updated', {
+      repository,
+      commit_status: {
+        key: 'ci',
+        name: 'Pipeline',
+        state: 'FAILED',
+        refname: 'web-12-login',
+        url: 'https://ci',
+        commit: { hash: 'abc' },
+      },
+    });
+    expect(build).toMatchObject([{ kind: 'build', state: 'failure', sha: 'abc' }]);
+  });
+});

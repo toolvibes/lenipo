@@ -264,6 +264,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/scim-tokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List SCIM tokens
+     * @description Requires the global permission `admin`.
+     */
+    get: operations['Admin.listScimTokens'];
+    put?: never;
+    /**
+     * Create a SCIM token for an identity provider; the secret is shown once
+     * @description Requires the global permission `admin`.
+     */
+    post: operations['Admin.createScimToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/scim-tokens/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Revoke a SCIM token
+     * @description Requires the global permission `admin`.
+     */
+    delete: operations['Admin.revokeScimToken'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/ai': {
     parameters: {
       query?: never;
@@ -5831,6 +5875,28 @@ export interface components {
       /** Format: uuid */
       userId: string;
     };
+    ScimToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+    };
+    CreateScimTokenRequest: {
+      name: string;
+    };
+    CreatedScimToken: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      prefix: string;
+      /** Format: date-time */
+      createdAt: string;
+      lastUsedAt: string | null;
+      secret: string;
+    };
     AiSettings: {
       baseUrl: string;
       hasApiKey: boolean;
@@ -7735,7 +7801,7 @@ export interface components {
       lastError: string | null;
     };
     /** @enum {string} */
-    GitProvider: 'github' | 'gitlab' | 'gitea';
+    GitProvider: 'github' | 'gitlab' | 'gitea' | 'bitbucket';
     CreateGitConnectionRequest: {
       name: string;
       provider: components['schemas']['GitProvider'];
@@ -10971,6 +11037,97 @@ export interface operations {
       path: {
         name: string;
         userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.listScimTokens': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ScimToken'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.createScimToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateScimTokenRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreatedScimToken'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Admin.revokeScimToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
       };
       cookie?: never;
     };

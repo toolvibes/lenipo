@@ -254,6 +254,7 @@ export function DirectoriesPage() {
           onOpenChange={(open) => !open && setDialog(null)}
         />
       )}
+      <ScimTokens />
     </div>
   );
 }
@@ -358,6 +359,85 @@ function SamlProviders() {
             {t('directories.samlAdd')}
           </Button>
         </div>
+      </form>
+    </section>
+  );
+}
+
+/** Tokens for identity providers that provision people and groups over SCIM (TL-52, E-141). */
+function ScimTokens() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const queryKey = ['admin', 'scim-tokens'];
+  const tokens = useQuery({
+    queryKey,
+    queryFn: () => unwrap(client.GET('/api/v1/admin/scim-tokens')),
+  });
+  const [name, setName] = useState('');
+  const create = useMutation({
+    mutationFn: () => unwrap(client.POST('/api/v1/admin/scim-tokens', { body: { name } })),
+    onSuccess: () => {
+      setName('');
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+  const revoke = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE('/api/v1/admin/scim-tokens/{id}', { params: { path: { id } } })),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey }),
+  });
+  const error = tokens.error ?? create.error ?? revoke.error;
+  return (
+    <section className="flex flex-col gap-3 border-t border-[var(--border)] pt-5">
+      <h2 className="m-0 text-[15px] font-semibold">{t('directories.scim.title')}</h2>
+      <p className="m-0 text-[13px] text-[var(--ink-muted)]">
+        {t('directories.scim.intro', { url: `${window.location.origin}/scim/v2` })}
+      </p>
+      {error && <FormError message={error.message} />}
+      {create.data && (
+        <p role="status" className="m-0 flex flex-col gap-1 text-[13px]">
+          <span>{t('directories.scim.once')}</span>
+          <code className="break-all font-[family-name:var(--font-mono)]">
+            {create.data.secret}
+          </code>
+        </p>
+      )}
+      <ul className="m-0 flex list-none flex-col p-0">
+        {tokens.data?.map((token) => (
+          <li
+            key={token.id}
+            className="flex items-center gap-3 border-b border-[var(--border)] py-2 text-[13px]"
+          >
+            <span className="flex-1">
+              {token.name} · <code>{token.prefix}…</code> ·{' '}
+              {token.lastUsedAt
+                ? t('directories.scim.used', { when: formatRelative(token.lastUsedAt) })
+                : t('directories.scim.unused')}
+            </span>
+            <Button size="sm" variant="danger" onClick={() => revoke.mutate(token.id)}>
+              {t('directories.scim.revoke')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <form
+        className="flex flex-wrap items-end gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <div className="min-w-[240px] flex-1">
+          <TextField
+            label={t('directories.scim.name')}
+            value={name}
+            placeholder="Entra ID"
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <Button type="submit" disabled={!name.trim() || create.isPending}>
+          {t('directories.scim.create')}
+        </Button>
       </form>
     </section>
   );

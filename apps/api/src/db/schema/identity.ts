@@ -52,6 +52,9 @@ export const users = pgTable(
     directoryId: uuid(),
     /** Its id there, e.g. the LDAP DN, to find it again on renames. */
     externalId: text(),
+    /** Provisioned by an identity provider over SCIM (TL-52, E-141), with its id there. */
+    scimManaged: boolean().notNull().default(false),
+    scimExternalId: text(),
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)],
 );
@@ -64,6 +67,9 @@ export const groups = pgTable(
     description: text().notNull().default(''),
     /** Mirrored from this directory; its sync owns the members (E-119). */
     directoryId: uuid(),
+    /** Provisioned over SCIM (TL-52, E-141); the identity provider owns the members. */
+    scimManaged: boolean().notNull().default(false),
+    scimExternalId: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('groups_name_unique').on(table.name)],
@@ -198,6 +204,18 @@ export const recoveryCodes = pgTable(
 );
 
 /** User directories in sign-in order: the internal one and LDAP/AD servers (P-USR-07, E-119). */
+/** Bearer tokens of identity providers for /scim/v2 (TL-52, E-141); only the hash is kept. */
+export const scimTokens = pgTable('scim_tokens', {
+  id: uuid().primaryKey(),
+  name: text().notNull(),
+  tokenHash: text().notNull(),
+  prefix: text().notNull(),
+  createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp({ withTimezone: true }),
+  revokedAt: timestamp({ withTimezone: true }),
+});
+
 export const directories = pgTable('directories', {
   id: uuid().primaryKey(),
   name: text().notNull(),

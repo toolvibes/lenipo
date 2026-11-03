@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Id } from './identity.js';
 
 /** Git hosting connected through inbound webhooks (D-GIT-01, E-116). */
-export const GIT_PROVIDERS = ['github', 'gitlab', 'gitea'] as const;
+export const GIT_PROVIDERS = ['github', 'gitlab', 'gitea', 'bitbucket'] as const;
 export const GitProvider = z.enum(GIT_PROVIDERS).meta({ id: 'GitProvider' });
 export type GitProvider = z.infer<typeof GitProvider>;
 

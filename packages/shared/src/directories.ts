@@ -105,3 +105,25 @@ export const SaveSamlProviderRequest = z
   })
   .meta({ id: 'SaveSamlProviderRequest' });
 export type SaveSamlProviderRequest = z.infer<typeof SaveSamlProviderRequest>;
+
+/** A token an identity provider uses for SCIM 2.0 (TL-52, E-141); the secret is shown once. */
+export const ScimToken = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    prefix: z.string(),
+    createdAt: z.iso.datetime(),
+    lastUsedAt: z.iso.datetime().nullable(),
+  })
+  .meta({ id: 'ScimToken' });
+export type ScimToken = z.infer<typeof ScimToken>;
+
+export const CreatedScimToken = ScimToken.extend({ secret: z.string() }).meta({
+  id: 'CreatedScimToken',
+});
+export type CreatedScimToken = z.infer<typeof CreatedScimToken>;
+
+export const CreateScimTokenRequest = z
+  .object({ name: z.string().trim().min(1).max(100) })
+  .meta({ id: 'CreateScimTokenRequest' });
+export type CreateScimTokenRequest = z.infer<typeof CreateScimTokenRequest>;

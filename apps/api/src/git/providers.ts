@@ -70,6 +70,10 @@ export function verify(
     return !!token && constantTimeEquals(token, secret);
   }
   const digest = createHmac('sha256', secret).update(body).digest('hex');
+  if (provider === 'bitbucket') {
+    const signature = headers['x-hub-signature'];
+    return !!signature && constantTimeEquals(signature, `sha256=${digest}`);
+  }
   if (provider === 'github') {
     const signature = headers['x-hub-signature-256'];
     return !!signature && constantTimeEquals(signature, `sha256=${digest}`);
@@ -82,6 +86,7 @@ export function verify(
 export function eventOf(provider: GitProvider, headers: Record<string, string | undefined>) {
   if (provider === 'github') return headers['x-github-event'] ?? '';
   if (provider === 'gitlab') return headers['x-gitlab-event'] ?? '';
+  if (provider === 'bitbucket') return headers['x-event-key'] ?? '';
   return headers['x-gitea-event'] ?? headers['x-forgejo-event'] ?? '';
 }
 
@@ -303,9 +308,129 @@ function gitlab(event: string, body: Json): GitChange[] {
   }
 }
 
+/** "Name <address>" as Bitbucket writes commit authors. */
+function rawAuthor(raw: unknown): { name: string | null; email: string | null } {
+  const text = str(raw) ?? '';
+  const match = /^(.*?)\s*<([^>]+)>\s*$/.exec(text);
+  return match
+    ? { name: match[1] || null, email: match[2] ?? null }
+    : { name: text || null, email: null };
+}
+
+/** Bitbucket Cloud (TL-52, E-141): `X-Event-Key` names the event. */
+function bitbucket(event: string, body: Json): GitChange[] {
+  const repository = str(body?.repository?.full_name) ?? '';
+  const author = str(body?.actor?.display_name);
+  switch (event) {
+    case 'repo:push':
+      return (Array.isArray(body?.push?.changes) ? body.push.changes : []).flatMap(
+        (change: Json): GitChange[] => {
+          const target = change?.new;
+          if (!target || target.type !== 'branch') return [];
+          const branch = str(target.name);
+          const changes: GitChange[] = (
+            Array.isArray(change.commits) ? change.commits : []
+          ).flatMap((commit: Json): GitChange[] => {
+            const sha = str(commit?.hash);
+            if (!sha) return [];
+            const who = rawAuthor(commit.author?.raw);
+            return [
+              {
+                kind: 'commit',
+                repository,
+                sha,
+                message: String(commit.message ?? ''),
+                url: str(commit.links?.html?.href),
+                authorName: str(commit.author?.user?.display_name) ?? who.name,
+                authorEmail: who.email,
+                at: str(commit.date) ?? new Date().toISOString(),
+                branch,
+              },
+            ];
+          });
+          if (change.created && branch) {
+            changes.unshift({
+              kind: 'branch',
+              repository,
+              name: branch,
+              url: str(target.links?.html?.href),
+              created: true,
+              author,
+            });
+          }
+          return changes;
+        },
+      );
+    case 'pullrequest:created':
+    case 'pullrequest:updated':
+    case 'pullrequest:approved':
+    case 'pullrequest:unapproved':
+    case 'pullrequest:changes_request_created':
+    case 'pullrequest:fulfilled':
+    case 'pullrequest:rejected': {
+      const pull = body?.pullrequest;
+      const number = str(pull?.id);
+      if (!number) return [];
+      const state =
+        pull.state === 'MERGED'
+          ? 'merged'
+          : pull.state === 'DECLINED' || pull.state === 'SUPERSEDED'
+            ? 'closed'
+            : pull.draft
+              ? 'draft'
+              : 'open';
+      return [
+        {
+          kind: 'pull_request',
+          repository,
+          number,
+          title: String(pull.title ?? ''),
+          url: str(pull.links?.html?.href),
+          state,
+          review:
+            event === 'pullrequest:approved'
+              ? 'approved'
+              : event === 'pullrequest:changes_request_created'
+                ? 'changes_requested'
+                : null,
+          branch: str(pull.source?.branch?.name),
+          author: str(pull.author?.display_name),
+        },
+      ];
+    }
+    case 'repo:commit_status_created':
+    case 'repo:commit_status_updated': {
+      const status = body?.commit_status;
+      const id = str(status?.key);
+      if (!id) return [];
+      return [
+        {
+          kind: 'build',
+          repository,
+          id,
+          name: String(status.name ?? id),
+          state:
+            status.state === 'SUCCESSFUL'
+              ? 'success'
+              : status.state === 'FAILED' || status.state === 'STOPPED'
+                ? 'failure'
+                : 'pending',
+          url: str(status.url),
+          branch: str(status.refname),
+          sha: str(status.commit?.hash),
+        },
+      ];
+    }
+    default:
+      return [];
+  }
+}
+
 /** The changes a webhook delivery describes; unknown events describe none. */
 export function changesOf(provider: GitProvider, event: string, body: Json): GitChange[] {
-  return provider === 'gitlab' ? gitlab(event, body) : githubLike(event, body);
+  if (provider === 'gitlab') return gitlab(event, body);
+  if (provider === 'bitbucket') return bitbucket(event, body);
+  return githubLike(event, body);
 }
 
 const KEY = /\b([A-Z][A-Z0-9]{1,9}-[1-9][0-9]*)\b/g;

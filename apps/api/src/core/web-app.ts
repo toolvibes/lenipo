@@ -65,6 +65,7 @@ export function serveWebApp(
       req.method !== 'GET' ||
       req.path.startsWith('/api/') ||
       req.path.startsWith('/rest/') ||
+      req.path.startsWith('/scim/') ||
       !req.accepts('html')
     ) {
       next();

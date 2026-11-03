@@ -973,6 +973,17 @@ export const en: Messages = {
     back: 'Back to the page',
   },
   directories: {
+    scim: {
+      title: 'SCIM provisioning',
+      intro:
+        'Identity providers such as Entra ID, Okta or Keycloak create, change and deactivate people and groups over SCIM 2.0. Address: {{url}}. People without a password sign in through OIDC or SAML; deleting only deactivates.',
+      name: 'Name of the provider',
+      create: 'Create token',
+      once: 'The token is shown only now:',
+      used: 'last used {{when}}',
+      unused: 'not used yet',
+      revoke: 'Revoke',
+    },
     title: 'Directories',
     intro:
       'Where people come from: the internal directory and LDAP/Active Directory servers. For a password sign-in, the first directory in this order that knows the person decides. LDAP directories sync people and groups hourly; whoever is missing there is deactivated.',
@@ -1094,7 +1105,12 @@ export const en: Messages = {
     add: 'Add connection',
     name: 'Name',
     provider: 'Provider',
-    providers: { github: 'GitHub', gitlab: 'GitLab', gitea: 'Gitea / Forgejo' },
+    providers: {
+      github: 'GitHub',
+      gitlab: 'GitLab',
+      gitea: 'Gitea / Forgejo',
+      bitbucket: 'Bitbucket Cloud',
+    },
     created: 'Connection “{{name}}” added',
     secretOnce: 'The secret is shown only now.',
     webhookUrl: 'Webhook URL',
@@ -1106,6 +1122,8 @@ export const en: Messages = {
         'GitLab: project or group → Settings → Webhooks. URL as above, “Secret token” as above. Triggers: push events, merge request events, pipeline events.',
       gitea:
         'Gitea/Forgejo: repository or organization → Settings → Webhooks → Gitea. Target URL as above, content type “application/json”, secret as above. Events: push, create branch, pull request, pull request review, status.',
+      bitbucket:
+        'Bitbucket Cloud: repository → Repository settings → Webhooks → Add webhook. URL as above, secret as above. Triggers: repository push, commit status created/updated, all pull request events.',
     },
     lastEvent: 'Last delivery {{when}}',
     never: 'No delivery yet',

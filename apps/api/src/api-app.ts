@@ -1,6 +1,7 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { NextFunction, Request, Response } from 'express';
 import { Logger as NestPinoLogger } from 'nestjs-pino';
 import { type AppDependencies, AppModule } from './app.module.js';
 import { appCors } from './apps/app-cors.js';
@@ -21,12 +22,21 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.use(httpMetrics);
   app.use(securityHeaders);
   app.use(appCors(app.get(AppsService)));
+  // SCIM clients send application/scim+json (RFC 7644).
+  // This replaces Nest's JSON parser, so plain JSON stays in the list.
+  app.useBodyParser('json', { type: ['application/json', 'application/scim+json'] });
+  app.use('/scim/v2', (_request: Request, response: Response, next: NextFunction) => {
+    response.type('application/scim+json');
+    next();
+  });
   // MCP clients expect the server at /mcp (D-MCP-01) and its OAuth metadata at /.well-known (E-115);
   // Jira clients append rest/api/2 to the server address (TL-48, E-138).
   app.setGlobalPrefix('api/v1', {
     exclude: [
       'mcp',
       'rest/api/2/{*path}',
+      // Identity providers expect SCIM below the base address they are given (TL-52).
+      'scim/v2/{*path}',
       '.well-known/oauth-protected-resource',
       '.well-known/oauth-protected-resource/mcp',
       '.well-known/oauth-authorization-server',
