@@ -12,6 +12,9 @@ export const AiSettings = z
     hasApiKey: z.boolean(),
     chatModel: z.string(),
     embeddingModel: z.string(),
+    /** Text before every search and every document, as some embedding models expect. */
+    queryPrefix: z.string(),
+    documentPrefix: z.string(),
     /** Calls of the automation action per day, across all rules. */
     dailyLimit: z.number().int(),
     usedToday: z.number().int(),
@@ -30,6 +33,8 @@ export const UpdateAiSettingsRequest = z
     apiKey: z.string().max(1_000).optional(),
     chatModel: z.string().trim().max(200),
     embeddingModel: z.string().trim().max(200),
+    queryPrefix: z.string().max(500).default(''),
+    documentPrefix: z.string().max(500).default(''),
     dailyLimit: z.number().int().min(0).max(1_000_000),
   })
   .meta({ id: 'UpdateAiSettingsRequest' });

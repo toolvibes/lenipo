@@ -33,6 +33,8 @@ export class AiAdminController {
       hasApiKey: config.apiKey !== '',
       chatModel: config.chatModel,
       embeddingModel: config.embeddingModel,
+      queryPrefix: config.queryPrefix,
+      documentPrefix: config.documentPrefix,
       dailyLimit: config.dailyLimit,
       usedToday,
       vectorAvailable,

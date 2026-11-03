@@ -6012,6 +6012,8 @@ export interface components {
       hasApiKey: boolean;
       chatModel: string;
       embeddingModel: string;
+      queryPrefix: string;
+      documentPrefix: string;
       dailyLimit: number;
       usedToday: number;
       vectorAvailable: boolean;
@@ -6025,6 +6027,10 @@ export interface components {
       apiKey?: string;
       chatModel: string;
       embeddingModel: string;
+      /** @default  */
+      queryPrefix?: string;
+      /** @default  */
+      documentPrefix?: string;
       dailyLimit: number;
     };
     AiTestResult: {

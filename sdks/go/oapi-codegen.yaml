@@ -1,0 +1,6 @@
+# Types and a client from the OpenAPI description (D-SDK-02).
+package: lenipo
+generate:
+  models: true
+  client: true
+output: lenipo.gen.go

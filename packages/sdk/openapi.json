@@ -18382,6 +18382,12 @@
           "embeddingModel": {
             "type": "string"
           },
+          "queryPrefix": {
+            "type": "string"
+          },
+          "documentPrefix": {
+            "type": "string"
+          },
           "dailyLimit": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -18421,6 +18427,8 @@
           "hasApiKey",
           "chatModel",
           "embeddingModel",
+          "queryPrefix",
+          "documentPrefix",
           "dailyLimit",
           "usedToday",
           "vectorAvailable",
@@ -18454,6 +18462,16 @@
           "embeddingModel": {
             "type": "string",
             "maxLength": 200
+          },
+          "queryPrefix": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "documentPrefix": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
           },
           "dailyLimit": {
             "type": "integer",

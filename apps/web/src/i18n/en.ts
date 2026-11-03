@@ -2160,7 +2160,13 @@ export const en: Messages = {
     apiKeySet: 'A key is stored; leave empty to keep it.',
     removeKey: 'Remove key',
     embeddingModel: 'Embedding model',
-    embeddingModelHelp: 'For search by meaning, e.g. nomic-embed-text.',
+    embeddingModelHelp:
+      'For search by meaning. For German text a multilingual model, e.g. qwen3-embedding or bge-m3.',
+    queryPrefix: 'Prefix for searches (optional)',
+    queryPrefixHelp: 'Some models expect one, e.g. “search_query: ” for nomic-embed-text.',
+    documentPrefix: 'Prefix for content (optional)',
+    documentPrefixHelp:
+      'E.g. “search_document: ” for nomic-embed-text. Changing it embeds all content again.',
     chatModel: 'Chat model',
     chatModelHelp: 'For the action “Ask AI” in automation rules.',
     dailyLimit: 'Calls of the AI action per day',

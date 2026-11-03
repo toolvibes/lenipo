@@ -2,6 +2,7 @@
 // Python and Go clients from the same OpenAPI document as the TypeScript SDK (D-SDK-02).
 // Needs uv (for Python) and Go. Generated code is committed; run after `pnpm api:generate`.
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +13,10 @@ const PYTHON_GENERATOR = 'openapi-python-client==0.29.1';
 const GO_GENERATOR = 'github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0';
 
 function run(command, args, cwd) {
+  if (!existsSync(cwd)) {
+    console.error(`Missing directory ${cwd}`);
+    process.exit(1);
+  }
   console.log(`$ ${command} ${args.join(' ')}`);
   const result = spawnSync(command, args, { cwd, stdio: 'inherit' });
   if (result.status !== 0) process.exit(result.status ?? 1);

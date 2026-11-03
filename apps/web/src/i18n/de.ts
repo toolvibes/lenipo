@@ -2195,7 +2195,13 @@ export const de = {
     apiKeySet: 'Ein Schlüssel ist gespeichert; leer lassen, um ihn zu behalten.',
     removeKey: 'Schlüssel entfernen',
     embeddingModel: 'Embedding-Modell',
-    embeddingModelHelp: 'Für die Suche nach Bedeutung, z. B. nomic-embed-text.',
+    embeddingModelHelp:
+      'Für die Suche nach Bedeutung. Für deutsche Texte ein mehrsprachiges Modell, z. B. qwen3-embedding oder bge-m3.',
+    queryPrefix: 'Präfix für Suchanfragen (optional)',
+    queryPrefixHelp: 'Manche Modelle erwarten ihn, z. B. „search_query: “ bei nomic-embed-text.',
+    documentPrefix: 'Präfix für Inhalte (optional)',
+    documentPrefixHelp:
+      'Z. B. „search_document: “ bei nomic-embed-text. Eine Änderung erfasst alle Inhalte neu.',
     chatModel: 'Chat-Modell',
     chatModelHelp: 'Für die Aktion „KI fragen“ in Automatisierungsregeln.',
     dailyLimit: 'Aufrufe der KI-Aktion pro Tag',

@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=9 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=10 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -62,7 +62,7 @@ Projekteinstellungen → Service Desk → „Als Service Desk betreiben“. Dort
 
 Administration → KI verbindet ein Sprachmodell mit OpenAI-kompatibler Schnittstelle: Ollama, vLLM, LocalAI oder ein Anbieter wie OpenAI oder Mistral. Einzutragen sind die Adresse bis vor `/embeddings` (z. B. `http://ollama:11434/v1`), bei Bedarf ein API-Schlüssel und zwei Modelle:
 
-- **Embedding-Modell** für die Suche nach Bedeutung. Für deutsche Texte ein mehrsprachiges Modell nehmen, z. B. `qwen3-embedding`, `bge-m3` oder `multilingual-e5`. Der Worker erfasst danach alle Vorgänge und veröffentlichten Seiten und hält sie aktuell; nach einem Modellwechsel erfasst er alles neu.
+- **Embedding-Modell** für die Suche nach Bedeutung. Für deutsche Texte ein mehrsprachiges Modell nehmen, z. B. `qwen3-embedding`, `bge-m3` oder `multilingual-e5`. Der Worker erfasst danach alle Vorgänge und veröffentlichten Seiten und hält sie aktuell – Seiten Abschnitt für Abschnitt (an den Überschriften bis Ebene 3), sodass die Suche die passende Stelle zeigt. Nach einem Modellwechsel erfasst er alles neu. Manche Modelle erwarten einen **Präfix**: `nomic-embed-text` etwa `search_query: ` vor Suchanfragen und `search_document: ` vor Inhalten, `qwen3-embedding` eine Anweisung wie `Instruct: Given a search query, retrieve relevant passages that answer the query` gefolgt von einem Zeilenumbruch und `Query: ` vor Suchanfragen.
 - **Chat-Modell** für die Automatisierungsaktion „KI fragen“, begrenzt auf eine einstellbare Zahl von Aufrufen pro Tag (0 schaltet die Aktion ab).
 
 „Verbindung testen“ ruft beide Modelle einmal auf. Inhalte von Vorgängen und Seiten gehen an das eingetragene Modell; wer keine Daten nach außen geben will, betreibt das Modell selbst. Der Schlüssel liegt wie das LDAP-Passwort in der Datenbank und wird nie angezeigt.

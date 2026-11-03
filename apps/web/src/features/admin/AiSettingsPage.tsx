@@ -21,12 +21,16 @@ export function AiSettingsPage() {
   const [chatModel, setChatModel] = useState('');
   const [embeddingModel, setEmbeddingModel] = useState('');
   const [dailyLimit, setDailyLimit] = useState('200');
+  const [queryPrefix, setQueryPrefix] = useState('');
+  const [documentPrefix, setDocumentPrefix] = useState('');
   useEffect(() => {
     if (!settings.data) return;
     setBaseUrl(settings.data.baseUrl);
     setChatModel(settings.data.chatModel);
     setEmbeddingModel(settings.data.embeddingModel);
     setDailyLimit(String(settings.data.dailyLimit));
+    setQueryPrefix(settings.data.queryPrefix);
+    setDocumentPrefix(settings.data.documentPrefix);
   }, [settings.data]);
   const save = useMutation({
     mutationFn: (removeKey: boolean) =>
@@ -37,6 +41,8 @@ export function AiSettingsPage() {
             ...(removeKey ? { apiKey: '' } : apiKey ? { apiKey } : {}),
             chatModel,
             embeddingModel,
+            queryPrefix,
+            documentPrefix,
             dailyLimit: Number(dailyLimit) || 0,
           },
         }),
@@ -93,6 +99,18 @@ export function AiSettingsPage() {
           value={embeddingModel}
           placeholder="nomic-embed-text"
           onChange={(event) => setEmbeddingModel(event.target.value)}
+        />
+        <TextField
+          label={t('ai.queryPrefix')}
+          help={t('ai.queryPrefixHelp')}
+          value={queryPrefix}
+          onChange={(event) => setQueryPrefix(event.target.value)}
+        />
+        <TextField
+          label={t('ai.documentPrefix')}
+          help={t('ai.documentPrefixHelp')}
+          value={documentPrefix}
+          onChange={(event) => setDocumentPrefix(event.target.value)}
         />
         <TextField
           label={t('ai.chatModel')}

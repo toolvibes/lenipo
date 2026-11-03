@@ -26,6 +26,9 @@ export interface AiConfig {
   apiKey: string;
   chatModel: string;
   embeddingModel: string;
+  /** Written before every query and every document; some models expect it (TL-108). */
+  queryPrefix: string;
+  documentPrefix: string;
   dailyLimit: number;
 }
 
@@ -34,6 +37,8 @@ const DEFAULTS: AiConfig = {
   apiKey: '',
   chatModel: '',
   embeddingModel: '',
+  queryPrefix: '',
+  documentPrefix: '',
   dailyLimit: 200,
 };
 
@@ -76,6 +81,8 @@ export class AiService {
       apiKey: request.apiKey === undefined ? current.apiKey : request.apiKey,
       chatModel: request.chatModel,
       embeddingModel: request.embeddingModel,
+      queryPrefix: request.queryPrefix,
+      documentPrefix: request.documentPrefix,
       dailyLimit: request.dailyLimit,
     };
     await this.database.db

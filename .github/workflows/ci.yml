@@ -75,3 +75,20 @@ jobs:
           helm lint deploy/helm/lenipo --set secrets.DATABASE_URL=postgres://x
           helm template t deploy/helm/lenipo --set secrets.DATABASE_URL=postgres://x > /dev/null
           helm template t deploy/helm/lenipo --set existingSecret=s --set collab.replicas=2 --set api.autoscaling.enabled=true --set persistence.enabled=true --set persistence.existingClaim=files --set metrics.serviceMonitor.enabled=true > /dev/null
+
+  sdks:
+    name: Python and Go SDKs are up to date
+    runs-on: ubuntu-latest
+    # Until the SDKs were generated once and committed, there is nothing to compare.
+    if: ${{ hashFiles('sdks/go/lenipo.gen.go') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - uses: astral-sh/setup-uv@v6
+      - run: node scripts/generate-sdks.mjs
+      - run: git diff --exit-code sdks
+      - name: Go SDK builds
+        working-directory: sdks/go
+        run: go build ./...

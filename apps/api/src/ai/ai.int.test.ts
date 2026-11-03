@@ -191,6 +191,53 @@ describe('AI extension (TL-49)', () => {
     expect(await test.app.get(SemanticService).indexPending()).toBe(1);
   });
 
+  it('embeds pages per section and shows the section that answers (TL-108)', async () => {
+    const page = (
+      await admin.request<Page>('POST', '/spaces/HOW/pages', { title: 'Büro-Handbuch' })
+    ).body;
+    const heading = (text: string) => ({
+      type: 'heading',
+      attrs: { level: 2 },
+      content: [{ type: 'text', text }],
+    });
+    const paragraph = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+    await admin.request('POST', `/pages/${page.id}/publish`, {
+      title: 'Büro-Handbuch',
+      content: {
+        type: 'doc',
+        content: [
+          heading('Drucken'),
+          paragraph('Der Drucker steht im Flur, er druckt doppelseitig.'),
+          heading('Zugang'),
+          paragraph('Das Passwort für die Anmeldung kommt per Brief.'),
+        ],
+      },
+    });
+    await index();
+    const found = (
+      await admin.request<EverythingResult>(
+        'GET',
+        `/search/everything?q=${encodeURIComponent('Passwort vergessen')}&semantic=true&type=page`,
+      )
+    ).body;
+    expect(found.pages[0]?.title).toBe('Büro-Handbuch');
+    expect(found.pages[0]?.snippet.map((part) => part.text).join('')).toMatch(
+      /^Zugang: Das Passwort/,
+    );
+
+    // Another document prefix means other embeddings: everything is embedded again.
+    const settings = (await admin.request<AiSettings>('GET', '/admin/ai')).body;
+    await admin.request('PUT', '/admin/ai', {
+      baseUrl: settings.baseUrl,
+      chatModel: settings.chatModel,
+      embeddingModel: settings.embeddingModel,
+      dailyLimit: settings.dailyLimit,
+      queryPrefix: 'search_query: ',
+      documentPrefix: 'search_document: ',
+    });
+    expect(await test.app.get(SemanticService).indexPending()).toBeGreaterThan(0);
+  });
+
   it('answers in automation rules within the daily limit', async () => {
     const rule = (
       await admin.request<{ id: string }>('POST', '/automation/rules', {

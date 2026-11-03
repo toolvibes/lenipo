@@ -5,11 +5,15 @@ import { DATABASE, LOGGER } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { issues, pages, pageVersions } from '../db/schema/index.js';
 import { AiService } from './ai.service.js';
+import { sectionsOf } from './sections.js';
 
 /** Embeddings live outside the Drizzle schema: the table exists only where pgvector does. */
 const TABLE = 'semantic_embeddings';
 const STATUS_MS = 60_000;
 const BATCH = 8;
+/** Pages per run; each brings up to 40 sections. */
+const PAGE_BATCH = 4;
+const EXCERPT_LENGTH = 240;
 const INDEX_TIMEOUT_MS = 180_000;
 /** After a failed batch the worker waits this long instead of asking the model again at once. */
 const PAUSE_AFTER_FAILURE_MS = 5 * 60_000;
@@ -55,12 +59,27 @@ export function nearestIds(kind: EmbeddingKind, query: QueryVector, limit: numbe
     order by embedding::${type} <=> ${query.literal}::${type} limit ${limit}`;
 }
 
-/** Cosine distance of one issue or page to the query; null without an embedding. */
+/** Cosine distance of the nearest section of an issue or page; null without an embedding. */
 export function distanceTo(kind: EmbeddingKind, query: QueryVector, id: SQLWrapper): SQL {
   const type = vectorType(query.dimensions);
-  return sql`(select embedding::${type} <=> ${query.literal}::${type} from ${sql.raw(TABLE)}
+  return sql`(select min(embedding::${type} <=> ${query.literal}::${type}) from ${sql.raw(TABLE)}
     where kind = ${kind} and target_id = ${id} and model = ${query.model}
       and dimensions = ${sql.raw(String(query.dimensions))})`;
+}
+
+/** Heading and start of the section nearest to the query, to show where a page answers. */
+export function nearestExcerpt(
+  kind: EmbeddingKind,
+  query: QueryVector,
+  id: SQLWrapper,
+): SQL<string | null> {
+  const type = vectorType(query.dimensions);
+  return sql<
+    string | null
+  >`(select concat_ws(': ', nullif(heading, ''), excerpt) from ${sql.raw(TABLE)}
+    where kind = ${kind} and target_id = ${id} and model = ${query.model}
+      and dimensions = ${sql.raw(String(query.dimensions))}
+    order by embedding::${type} <=> ${query.literal}::${type} limit 1)`;
 }
 
 function literal(vector: number[]): string {
@@ -105,15 +124,28 @@ export class SemanticService {
         await this.database.sql`create extension if not exists vector`;
       }
       if (offered) {
+        // Before sections (TL-108) there was one row per issue or page; derived data, so
+        // the old table goes and everything is embedded again.
+        const [old] = await this.database.sql<{ chunked: boolean; present: boolean }[]>`
+          select exists (select 1 from information_schema.columns
+            where table_name = ${TABLE} and column_name = 'chunk') as chunked,
+            exists (select 1 from information_schema.tables where table_name = ${TABLE}) as present`;
+        if (old?.present && !old.chunked) {
+          await this.database.sql.unsafe(`drop table ${TABLE}`);
+          this.indexed.clear();
+        }
         await this.database.sql.unsafe(`create table if not exists ${TABLE} (
           kind text not null,
           target_id uuid not null,
+          chunk integer not null default 0,
+          heading text not null default '',
+          excerpt text not null default '',
           model text not null,
           dimensions integer not null,
           content_hash text not null,
           embedding vector not null,
           updated_at timestamptz not null default now(),
-          primary key (kind, target_id))`);
+          primary key (kind, target_id, chunk))`);
         vector = true;
       }
     } catch (error) {
@@ -131,11 +163,11 @@ export class SemanticService {
   /** The query text as vector; null when semantic search is not available. */
   async queryVector(text: string): Promise<QueryVector | null> {
     if (!(await this.available())) return null;
-    const { embeddingModel } = await this.ai.config();
-    const key = `${embeddingModel}\n${text}`;
+    const { embeddingModel, queryPrefix } = await this.ai.config();
+    const key = `${embeddingModel}\n${queryPrefix}\n${text}`;
     const cached = this.queries.get(key);
     if (cached) return cached;
-    const { model, vectors } = await this.ai.embed([text.slice(0, TEXT_LIMIT)]);
+    const { model, vectors } = await this.ai.embed([`${queryPrefix}${text}`.slice(0, TEXT_LIMIT)]);
     const vector = vectors[0] ?? [];
     const result = { literal: literal(vector), dimensions: vector.length, model };
     // Paging through results asks again with the same text.
@@ -148,7 +180,7 @@ export class SemanticService {
     if (!(await this.vectorAvailable())) return { issues: 0, pages: 0 };
     const { embeddingModel } = await this.ai.config();
     const rows = await this.database.sql<{ kind: string; n: number }[]>`
-      select kind, count(*)::int as n from semantic_embeddings
+      select kind, count(distinct target_id)::int as n from semantic_embeddings
       where model = ${embeddingModel} group by kind`;
     const of = (kind: string) => rows.find((row) => row.kind === kind)?.n ?? 0;
     return { issues: of('issue'), pages: of('page') };
@@ -169,63 +201,96 @@ export class SemanticService {
   }
 
   private async indexBatch(): Promise<number> {
-    const { embeddingModel } = await this.ai.config();
+    const { embeddingModel, documentPrefix } = await this.ai.config();
     const db = this.database.db;
     const stale = (kind: EmbeddingKind, id: SQLWrapper, hash: SQL) =>
       sql`not exists (select 1 from ${sql.raw(TABLE)} e where e.kind = ${kind}
         and e.target_id = ${id} and e.model = ${embeddingModel} and e.content_hash = ${hash})`;
 
     const issueText = sql<string>`left(${issues.key} || ': ' || ${issues.summary} || E'\n\n' || ${issues.descriptionText}, ${TEXT_LIMIT})`;
-    const issueHash = sql<string>`md5(${issueText})`;
+    const issueHash = sql<string>`md5(${documentPrefix} || ${issueText})`;
     const issueRows = await db
       .select({ id: issues.id, text: issueText, hash: issueHash })
       .from(issues)
       .where(and(isNull(issues.deletedAt), stale('issue', issues.id, issueHash)))
       .limit(BATCH);
 
-    const pageText = sql<string>`left(${pages.title} || E'\n\n' || ${pageVersions.text}, ${TEXT_LIMIT})`;
-    const pageHash = sql<string>`md5(${pageText})`;
+    const pageHash = sql<string>`md5(${documentPrefix} || ${pages.title} || ${pageVersions.text})`;
     const pageRows = await db
-      .select({ id: pages.id, text: pageText, hash: pageHash })
+      .select({ id: pages.id, title: pages.title, content: pageVersions.content, hash: pageHash })
       .from(pages)
       .innerJoin(
         pageVersions,
         and(eq(pageVersions.pageId, pages.id), eq(pageVersions.number, pages.version)),
       )
       .where(and(isNull(pages.deletedAt), gt(pages.version, 0), stale('page', pages.id, pageHash)))
-      .limit(BATCH);
+      .limit(PAGE_BATCH);
 
-    let embedded = 0;
-    for (const [kind, rows] of [
-      ['issue', issueRows],
-      ['page', pageRows],
-    ] as const) {
-      if (rows.length === 0) continue;
-      const { model, vectors } = await this.ai.embed(
-        rows.map((row) => row.text),
-        INDEX_TIMEOUT_MS,
-      );
-      const dimensions = vectors[0]?.length ?? 0;
-      await this.ensureIndex(dimensions);
-      for (const [index, row] of rows.entries()) {
-        const vector = literal(vectors[index] ?? []);
-        await this.database.sql`
-          insert into semantic_embeddings (kind, target_id, model, dimensions, content_hash, embedding)
-          values (${kind}, ${row.id}, ${model}, ${dimensions}, ${row.hash}, ${vector}::vector)
-          on conflict (kind, target_id) do update set model = excluded.model,
-            dimensions = excluded.dimensions, content_hash = excluded.content_hash,
-            embedding = excluded.embedding, updated_at = now()`;
-      }
-      embedded += rows.length;
-    }
-    if (embedded === 0) {
+    // An issue is one section; a page one per heading (TL-108).
+    const targets: Array<{
+      kind: EmbeddingKind;
+      id: string;
+      hash: string;
+      sections: Array<{ heading: string; text: string; input: string }>;
+    }> = [
+      ...issueRows.map((row) => ({
+        kind: 'issue' as const,
+        id: row.id,
+        hash: row.hash,
+        sections: [{ heading: '', text: '', input: `${documentPrefix}${row.text}` }],
+      })),
+      ...pageRows.map((row) => {
+        const sections = sectionsOf(row.content);
+        return {
+          kind: 'page' as const,
+          id: row.id,
+          hash: row.hash,
+          sections: (sections.length > 0 ? sections : [{ heading: '', text: row.title }]).map(
+            (section) => ({
+              heading: section.heading,
+              text: section.text,
+              input: `${documentPrefix}${row.title}${section.heading ? ` – ${section.heading}` : ''}\n\n${section.text}`,
+            }),
+          ),
+        };
+      }),
+    ];
+    if (targets.length === 0) {
       await this.database.sql`
         delete from semantic_embeddings e where (e.kind = 'issue' and not exists (
           select 1 from issues i where i.id = e.target_id and i.deleted_at is null))
         or (e.kind = 'page' and not exists (
           select 1 from pages p where p.id = e.target_id and p.deleted_at is null and p.version > 0))`;
+      return 0;
     }
-    return embedded;
+    // Issues in one call; each page in its own, so a long page does not hold up the rest.
+    const groups = [
+      targets.filter((target) => target.kind === 'issue'),
+      ...targets.filter((target) => target.kind === 'page').map((target) => [target]),
+    ].filter((group) => group.length > 0);
+    for (const group of groups) {
+      const inputs = group.flatMap((target) => target.sections.map((section) => section.input));
+      const { model, vectors } = await this.ai.embed(inputs, INDEX_TIMEOUT_MS);
+      const dimensions = vectors[0]?.length ?? 0;
+      await this.ensureIndex(dimensions);
+      let next = 0;
+      for (const target of group) {
+        await this.database.sql.begin(async (tx) => {
+          await tx`delete from semantic_embeddings where kind = ${target.kind} and target_id = ${target.id}`;
+          for (const [chunk, section] of target.sections.entries()) {
+            const vector = literal(vectors[next] ?? []);
+            next += 1;
+            await tx`
+              insert into semantic_embeddings
+                (kind, target_id, chunk, heading, excerpt, model, dimensions, content_hash, embedding)
+              values (${target.kind}, ${target.id}, ${chunk}, ${section.heading},
+                ${section.text.slice(0, EXCERPT_LENGTH)}, ${model}, ${dimensions}, ${target.hash},
+                ${vector}::vector)`;
+          }
+        });
+      }
+    }
+    return targets.length;
   }
 
   /** One partial HNSW index per dimension count in use. */

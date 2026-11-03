@@ -23,6 +23,7 @@ import {
 import { alias } from 'drizzle-orm/pg-core';
 import {
   distanceTo,
+  nearestExcerpt,
   nearestIds,
   SEMANTIC_CANDIDATES,
   SemanticService,
@@ -360,7 +361,8 @@ export class EverythingService {
               spaceName: spaces.name,
               parentTitle: parent.title,
               publishedAt: pages.publishedAt,
-              text: sql<string>`left(${pageVersions.text}, 200)`,
+              // The section nearest to the question (TL-108).
+              text: sql<string>`coalesce(${nearestExcerpt('page', vector, pages.id)}, left(${pageVersions.text}, 200))`,
             })
             .from(pages)
             .innerJoin(pageVersions, pageJoin)
