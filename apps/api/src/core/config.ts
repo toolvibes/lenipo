@@ -11,6 +11,10 @@ const configSchema = z.object({
   REDIS_URL: z.url({ protocol: /^rediss?$/ }).optional(),
   /** Request limits per person, token and IP (TL-40); off behind a gateway that limits already. */
   RATE_LIMITS: z.stringbool().default(true),
+  /** Where the optional update check reads the newest release (TL-110, E-155). */
+  UPDATE_CHECK_URL: z
+    .url()
+    .default('https://api.github.com/repos/toolvibes/lenipo/releases/latest'),
   /** Prometheus metrics on this port at /metrics (TL-42); off when unset, never public. */
   METRICS_PORT: z.coerce.number().int().positive().optional(),
   /** Where "Help" leads; without it the user handbook built into the web app (TL-44). */

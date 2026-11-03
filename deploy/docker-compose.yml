@@ -7,6 +7,9 @@ name: lenipo-prod
 
 services:
   app:
+    # Released images (latest = proven for some days; or a fixed version like 1.4.0).
+    # `docker compose build` builds from the source instead.
+    image: ghcr.io/toolvibes/lenipo:${LENIPO_VERSION:-latest}
     build:
       context: ..
     restart: unless-stopped

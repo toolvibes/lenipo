@@ -22,7 +22,8 @@
     "migrations:check": "node scripts/check-migrations.mjs",
     "design:tokens": "node scripts/build-design-tokens.mjs",
     "api:generate": "pnpm --filter @toolvibes/shared build && pnpm --filter @toolvibes/api build && pnpm --filter @toolvibes/api openapi:export && pnpm --filter @toolvibes/codegen generate && biome format --write packages/sdk",
-    "sdk:generate": "node scripts/generate-sdks.mjs"
+    "sdk:generate": "node scripts/generate-sdks.mjs",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

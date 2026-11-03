@@ -70,3 +70,26 @@ export const RestoreResult = z
   })
   .meta({ id: 'RestoreResult' });
 export type RestoreResult = z.infer<typeof RestoreResult>;
+
+// ---------------------------------------------------------------- updates (TL-110, E-155)
+
+/** The running version and, if the check is on, the newest released one. */
+export const UpdateStatus = z
+  .object({
+    current: z.string(),
+    /** Daily look at the public list of releases; off unless an administrator turns it on. */
+    enabled: z.boolean(),
+    latest: z.string().nullable(),
+    /** The release notes of the newest version. */
+    url: z.string().nullable(),
+    checkedAt: z.iso.datetime().nullable(),
+    /** A newer version than the running one is out. */
+    available: z.boolean(),
+    /** The last check failed with this message. */
+    error: z.string().nullable(),
+  })
+  .meta({ id: 'UpdateStatus' });
+export type UpdateStatus = z.infer<typeof UpdateStatus>;
+
+export const UpdateSettings = z.object({ enabled: z.boolean() }).meta({ id: 'UpdateSettings' });
+export type UpdateSettings = z.infer<typeof UpdateSettings>;

@@ -3151,6 +3151,34 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/updates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Running version and newest release
+     * @description The newest release is known only while the update check is on.
+     *
+     *     Requires the global permission `admin`.
+     */
+    get: operations['Maintenance.status'];
+    /**
+     * Turn the update check on or off
+     * @description Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Maintenance.setEnabled'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/me': {
     parameters: {
       query?: never;
@@ -9697,6 +9725,18 @@ export interface components {
       rows: number | null;
       files: number | null;
       error: string | null;
+    };
+    UpdateStatus: {
+      current: string;
+      enabled: boolean;
+      latest: string | null;
+      url: string | null;
+      checkedAt: string | null;
+      available: boolean;
+      error: string | null;
+    };
+    UpdateSettings: {
+      enabled: boolean;
     };
     TwoFactorSetup: {
       secret: string;
@@ -18946,6 +18986,68 @@ export interface operations {
         };
         content: {
           'application/octet-stream': string;
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UpdateStatus'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Maintenance.setEnabled': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateSettings'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UpdateStatus'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

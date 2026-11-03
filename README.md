@@ -60,6 +60,7 @@ Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vo
 | `pnpm build` | Alle Pakete bauen |
 | `pnpm migrations:check` | Migrationen müssen Updates ohne Ausfall erlauben |
 | `pnpm licenses:check` | Nur permissive Lizenzen in Produktionsabhängigkeiten |
+| `pnpm release minor` | Release: Version, Changelog und Tag; der Push des Tags baut das Image (siehe unten) |
 | `node tools/loadtest/run.mjs --smoke` | Kleiner Lasttest; ohne `--smoke` der volle Lauf mit einer Million Vorgängen |
 
 Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://localhost:9010` mit `TEST_S3_ACCESS_KEY_ID=tasklore` und `TEST_S3_SECRET_ACCESS_KEY=tasklore-dev-secret`), die Valkey-Tests nur mit `TEST_REDIS_URL`. Die CI in `.github/workflows/ci.yml` führt alles zusammen aus.
@@ -80,20 +81,24 @@ Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://loca
 
 ```bash
 cd deploy
-POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d --build
+POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d
 ```
 
-Startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL mit pgvector, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
+Holt das Image `ghcr.io/toolvibes/lenipo:latest` (die neueste bewährte Version; eine feste Version mit `LENIPO_VERSION=1.4.0`, aus dem Quellcode mit `--build`) und startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL mit pgvector, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
 
 ### Kubernetes
 
 ```bash
-helm install lenipo deploy/helm/lenipo --set image.repository=<registry>/lenipo \
+helm install lenipo deploy/helm/lenipo \
   --set secrets.DATABASE_URL='postgres://…' --set secrets.REDIS_URL='redis://…' \
   --set ingress.host=lenipo.example.org
 ```
 
 Je Rolle ein Deployment (api, collab, worker) aus demselben Image, Migrationen als Job vor jedem Update; PostgreSQL, Valkey und S3 laufen außerhalb.
+
+### Releases
+
+`pnpm release minor|patch|major` setzt die Version, schreibt den Abschnitt in [CHANGELOG.md](CHANGELOG.md) und den Tag. `git push origin main vX.Y.Z` startet den Workflow `release`: Er baut das Image für amd64 und arm64 (`X.Y.Z`, `X.Y`, `edge`) und legt ein Vorab-Release an. Nach einigen Tagen ohne Probleme macht der Workflow `promote` die Version zu `latest`.
 
 Konfiguration, Anmeldung, Rechte, Backups, Updates, Überwachung und Fehlersuche beschreibt das **[Admin-Handbuch](docs/09-admin-handbuch.md)**.
 

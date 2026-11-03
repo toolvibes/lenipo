@@ -15,6 +15,7 @@ import { OAuthService } from '../identity/oauth.service.js';
 import { ImportService } from '../imports/import.service.js';
 import { BackupService } from '../maintenance/backup.service.js';
 import { RetentionService } from '../maintenance/retention.service.js';
+import { UpdateCheckService } from '../maintenance/update-check.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { FilterSubscriptionService } from '../search/filter-subscription.service.js';
 import { MailHandlerService } from '../servicedesk/mail-handler.service.js';
@@ -45,6 +46,7 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(ImportService) private readonly imports: ImportService,
     @Inject(RetentionService) private readonly retention: RetentionService,
     @Inject(BackupService) private readonly backups: BackupService,
+    @Inject(UpdateCheckService) private readonly updates: UpdateCheckService,
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(SemanticService) private readonly semantic: SemanticService,
     @Inject(MailHandlerService) private readonly mail: MailHandlerService,
@@ -81,6 +83,8 @@ export class EventWorker implements OnApplicationBootstrap, OnApplicationShutdow
     this.every('retention', 60 * 60_000, () => this.retention.run().then(() => {}));
     // The daily backup at its hour; a long one keeps the loop busy.
     this.every('backups', 5 * 60_000, () => this.backups.runScheduled());
+    // Only when an administrator turned it on (TL-110, E-155).
+    this.every('update-check', 60 * 60_000, () => this.updates.checkIfDue());
     this.every('cleanup', 60 * 60_000, async () => {
       await this.webhooks.cleanUp();
       await this.automation.cleanUp();

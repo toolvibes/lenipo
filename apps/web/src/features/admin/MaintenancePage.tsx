@@ -14,9 +14,81 @@ export function MaintenancePage() {
   return (
     <main className="flex max-w-[760px] flex-col gap-8">
       <h1 className="m-0 text-xl font-semibold">{t('maintenance.title')}</h1>
+      <Updates />
       <Backups />
       <Retention />
     </main>
+  );
+}
+
+/** The running version and the optional check for newer releases (TL-110, E-155). */
+function Updates() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const status = useQuery({
+    queryKey: ['admin', 'updates'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/updates')),
+  });
+  const toggle = useMutation({
+    mutationFn: (enabled: boolean) =>
+      unwrap(client.PUT('/api/v1/admin/updates', { body: { enabled } })),
+    onSuccess: (data) => queryClient.setQueryData(['admin', 'updates'], data),
+  });
+  const data = status.data;
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="m-0 text-base font-semibold">{t('maintenance.updates.title')}</h2>
+      {(status.error ?? toggle.error) && (
+        <FormError message={(status.error ?? toggle.error)?.message ?? ''} />
+      )}
+      {data && (
+        <>
+          <p className="m-0 text-[13px]">
+            {t('maintenance.updates.current', { version: data.current })}
+          </p>
+          {data.available && data.latest && (
+            <p className="m-0 rounded-[var(--radius-md)] bg-[var(--accent-soft)] px-3 py-2 text-[13px]">
+              {t('maintenance.updates.available', { version: data.latest })}{' '}
+              {data.url && (
+                <a
+                  href={data.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[var(--accent)]"
+                >
+                  {t('maintenance.updates.notes')}
+                </a>
+              )}
+            </p>
+          )}
+          {data.enabled && !data.available && data.latest && (
+            <p className="m-0 text-[13px] text-[var(--ink-muted)]">
+              {t('maintenance.updates.upToDate')}
+            </p>
+          )}
+          {data.enabled && data.error && (
+            <p className="m-0 text-[13px] text-[var(--danger)]">
+              {t('maintenance.updates.failed', { error: data.error })}
+            </p>
+          )}
+          <label className="flex items-start gap-2 text-[13px]">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={data.enabled}
+              disabled={toggle.isPending}
+              onChange={(event) => toggle.mutate(event.target.checked)}
+            />
+            <span>
+              {t('maintenance.updates.check')}
+              <span className="block text-xs text-[var(--ink-muted)]">
+                {t('maintenance.updates.checkHelp')}
+              </span>
+            </span>
+          </label>
+        </>
+      )}
+    </section>
   );
 }
 

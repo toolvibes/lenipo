@@ -2502,6 +2502,17 @@ export const de = {
     usedToday: 'heute {{count}} Anfragen',
   },
   maintenance: {
+    updates: {
+      title: 'Version und Updates',
+      current: 'Diese Instanz läuft mit Lenipo {{version}}.',
+      available: 'Lenipo {{version}} ist verfügbar.',
+      notes: 'Was ist neu?',
+      upToDate: 'Das ist die neueste Version.',
+      failed: 'Die letzte Prüfung ist fehlgeschlagen: {{error}}',
+      check: 'Täglich nach neuen Versionen sehen',
+      checkHelp:
+        'Lenipo liest dafür einmal am Tag die öffentliche Liste der Versionen auf GitHub; sonst wird nichts gesendet. Neue Versionen erscheinen dort, wenn sie sich einige Tage bewährt haben.',
+    },
     title: 'Wartung',
     backups: 'Backups',
     backupsIntro:

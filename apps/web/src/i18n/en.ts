@@ -2464,6 +2464,17 @@ export const en: Messages = {
     usedToday: '{{count}} requests today',
   },
   maintenance: {
+    updates: {
+      title: 'Version and updates',
+      current: 'This instance runs Lenipo {{version}}.',
+      available: 'Lenipo {{version}} is available.',
+      notes: 'What is new?',
+      upToDate: 'This is the newest version.',
+      failed: 'The last check failed: {{error}}',
+      check: 'Look for new versions daily',
+      checkHelp:
+        'Lenipo reads the public list of versions on GitHub once a day; nothing else is sent. New versions appear there once they have proven themselves for a few days.',
+    },
     title: 'Maintenance',
     backups: 'Backups',
     backupsIntro:

@@ -8830,6 +8830,74 @@
         }
       }
     },
+    "/api/v1/admin/updates": {
+      "get": {
+        "operationId": "Maintenance.status",
+        "summary": "Running version and newest release",
+        "description": "The newest release is known only while the update check is on.\n\nRequires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "Maintenance.setEnabled",
+        "summary": "Turn the update check on or off",
+        "description": "Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.\n\nRequires the global permission `admin`.",
+        "tags": ["Maintenance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "Me.me",
@@ -29919,6 +29987,52 @@
           "error"
         ],
         "additionalProperties": false
+      },
+      "UpdateStatus": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "latest": {
+            "type": ["string", "null"]
+          },
+          "url": {
+            "type": ["string", "null"]
+          },
+          "checkedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["current", "enabled", "latest", "url", "checkedAt", "available", "error"],
+        "additionalProperties": false
+      },
+      "UpdateSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["enabled"]
       },
       "TwoFactorSetup": {
         "type": "object",

@@ -3,7 +3,7 @@
 # PostgreSQL, Valkey and S3 are run outside the chart and named here.
 
 image:
-  repository: lenipo/lenipo
+  repository: ghcr.io/toolvibes/lenipo
   tag: ""          # defaults to the chart's appVersion
   pullPolicy: IfNotPresent
 imagePullSecrets: []

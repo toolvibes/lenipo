@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=19 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=20 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -135,11 +135,30 @@ Hat ein Bereitsteller wie ein Hosting-Dienst einen Rahmen gesetzt, steht er unte
 
 ## Updates
 
-1. Release-Hinweise lesen.
-2. Neues Image ausrollen. Migrationen laufen beim Start unter einer Sperre (im Helm-Chart zusätzlich als Job vor dem Update).
-3. Mit mehreren Instanzen rollt das Update ohne Ausfall: jede Migration funktioniert noch mit der vorigen Version (erst erweitern, eine Version später aufräumen; `pnpm migrations:check` prüft das).
+**Versionen und Images:** Lenipo hat eine Versionsnummer nach dem Muster `1.4.0`. Die Images liegen unter `ghcr.io/toolvibes/lenipo`:
 
-**Zurück** auf die vorige Version geht, solange die neue keine aufräumende Migration (`-- lenipo:contract`) enthielt; sonst aus dem Backup vor dem Update.
+| Tag | Inhalt |
+| --- | --- |
+| `latest` | die neueste bewährte Version: sie lief vorher einige Tage im gehosteten Betrieb ohne Probleme |
+| `1` | die neueste bewährte Version der Hauptversion 1 |
+| `1.4` | die neueste Version von 1.4, ab dem Erscheinen |
+| `1.4.0` | genau diese Version |
+| `edge` | die neueste Version überhaupt, auch vor ihrer Bewährung |
+
+Die Docker-Compose-Datei nutzt `latest`; eine feste Version setzt `LENIPO_VERSION=1.4.0`. Im Helm-Chart steht sie in `image.tag`. Was jede Version bringt, steht im Changelog und in den Release-Hinweisen auf GitHub.
+
+**Ablauf:**
+
+1. Release-Hinweise lesen, vor allem den Abschnitt „Update“.
+2. Eine Sicherung anlegen (Administration → Wartung oder `backup-cli`).
+3. Neues Image holen und starten (`docker compose pull && docker compose up -d`). Migrationen laufen beim Start unter einer Sperre, im Helm-Chart zusätzlich als Job vor dem Update.
+4. Mit mehreren Instanzen rollt das Update ohne Ausfall: jede Migration funktioniert noch mit der vorigen Version (erst erweitern, eine Version später aufräumen; `pnpm migrations:check` prüft das).
+
+**Versionen überspringen** geht, solange die Release-Hinweise keine Mindestversion nennen. Nennt eine Version eine (etwa „Updates auf diese Version gehen ab Lenipo 1.3.0“), weil sie Altes aus der Datenbank entfernt, startet sie nicht auf einer älteren Datenbank. Sie meldet dann, auf welche Version zuerst zu aktualisieren ist, statt halb zu migrieren.
+
+**Zurück** auf die vorige Version geht, solange die neue keine aufräumende Migration enthielt; die Release-Hinweise sagen es („Diese Version räumt die Datenbank auf“). Sonst geht es nur über die Sicherung von vor dem Update.
+
+**Hinweis auf neue Versionen:** Administration → Wartung zeigt die laufende Version. Auf Wunsch sieht Lenipo einmal am Tag in der öffentlichen Liste der Versionen auf GitHub nach und zeigt Admins, wenn eine neuere bewährte Version erschienen ist. Das ist standardmäßig aus; außer dieser Abfrage wird nichts gesendet. `UPDATE_CHECK_URL` zeigt bei Bedarf auf eine andere Quelle, etwa einen Spiegel.
 
 **Wartungsmodus** (Administration → Betrieb) lässt nur Admins herein, etwa für größere Arbeiten; ein **Ankündigungsbanner** informiert vorher.
 

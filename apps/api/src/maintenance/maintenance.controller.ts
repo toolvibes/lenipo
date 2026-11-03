@@ -21,6 +21,8 @@ import {
   RestoreResult,
   RetentionResult,
   RetentionSettings,
+  UpdateSettings,
+  UpdateStatus,
 } from '@toolvibes/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -34,6 +36,7 @@ import { disposition } from '../storage/disposition.js';
 import { receiveUpload } from '../storage/upload.js';
 import { BackupService, RestoreError } from './backup.service.js';
 import { RetentionService } from './retention.service.js';
+import { UpdateCheckService } from './update-check.service.js';
 
 /** Retention and backups for administrators (TL-39, E-120). */
 @RequireGlobal('admin')
@@ -201,5 +204,35 @@ export class RestoreController {
     } finally {
       await rm(upload.path, { force: true });
     }
+  }
+}
+
+/** The running version and the optional update check (TL-110, E-155). */
+@RequireGlobal('admin')
+@Controller('admin/updates')
+export class UpdatesController {
+  constructor(@Inject(UpdateCheckService) private readonly updates: UpdateCheckService) {}
+
+  @Endpoint({
+    tag: 'Maintenance',
+    summary: 'Running version and newest release',
+    description: 'The newest release is known only while the update check is on.',
+    response: UpdateStatus,
+  })
+  @Get()
+  status(): Promise<UpdateStatus> {
+    return this.updates.status();
+  }
+
+  @Endpoint({
+    tag: 'Maintenance',
+    summary: 'Turn the update check on or off',
+    description:
+      'Once a day the instance reads the public list of releases on GitHub; nothing else is sent. Turning it on checks at once.',
+    response: UpdateStatus,
+  })
+  @Put()
+  setEnabled(@ValidBody(UpdateSettings) body: UpdateSettings): Promise<UpdateStatus> {
+    return this.updates.setEnabled(body.enabled);
   }
 }
