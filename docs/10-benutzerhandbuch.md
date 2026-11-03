@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=8 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=9 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
 Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
@@ -34,6 +34,12 @@ Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen,
 - **Kapazität:** Je Projekt und Monat trägt man ein, wie viele Story Points das Team schafft. Die Tabelle zeigt die geplanten offenen Punkte (nach Fälligkeit, sonst Start) dagegen; Überlastung ist rot.
 - **Szenarien:** „Szenario anlegen“ und dann mit dem Stift Start, Fälligkeit oder Story Points einzelner Vorgänge ändern, ohne die echten Vorgänge anzufassen. Zeitleiste und Kapazität rechnen mit dem Szenario. „In echte Daten übernehmen“ schreibt die Änderungen in die Vorgänge; was man nicht ändern darf oder was inzwischen jemand geändert hat, wird übersprungen und genannt.
 - Ändern dürfen einen Plan die Person, die ihn angelegt hat, und die Administration.
+
+## Service-Portal
+
+Ist ein Projekt als Service Desk eingerichtet, stellen Kunden unter „Service-Portal“ (`/portal`) Anfragen: Anfragetyp wählen, Formular ausfüllen, absenden. „Meine Anfragen“ zeigt den Stand und die Antworten des Teams; geantwortet wird direkt im Portal. Bei Antworten und Statuswechseln kommt eine E-Mail.
+
+Im Team sind Anfragen normale Vorgänge. Ein Kommentar mit „Interne Notiz“ bleibt für Kunden unsichtbar. Die **Warteschlange** des Projekts (`/projects/KEY/queue`) listet offene Anfragen, die mit der knappsten SLA-Frist zuerst; am Vorgang zeigt „SLA“, wie viel Zeit bis zur ersten Antwort und zur Lösung bleibt.
 
 ## Suche mit TQL
 

@@ -11,14 +11,17 @@ import {
   AUTOMATION_ACTOR_ID,
   CreateIssueRequest,
   type CreatePortalRequest,
+  type IssueSla,
   type PortalDesk,
   type PortalRequest,
   type PortalRequestDetail,
+  type QueueEntry,
   type RequestType,
   type RichText,
   type SaveRequestTypeRequest,
   type ServiceDesk,
   type ServiceDeskSettings,
+  type SlaMetric,
 } from '@toolvibes/shared';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -28,6 +31,8 @@ import type { DatabaseHandle } from '../db/client.js';
 import {
   groupMembers,
   groups,
+  issueChangeGroups,
+  issueChangeItems,
   issueComments,
   issues,
   issueTypes,
@@ -41,9 +46,12 @@ import {
 } from '../db/schema/index.js';
 import { emitIssueEvent } from '../notifications/events.js';
 import { IssueService } from '../tracking/issue.service.js';
+import { securityVisible } from '../tracking/issue-security.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
 import { mentionedUserIds, plainText } from '../tracking/rich-text.js';
+import { WorkingTimeService } from '../tracking/working-time.service.js';
+import { type BusinessHours, type Interval, workingMillis } from './sla.js';
 
 /** Portal requests are created by the system actor, on behalf of the customer (E-137). */
 const PORTAL: Principal = { userId: AUTOMATION_ACTOR_ID, via: 'automation', ruleId: 'portal' };
@@ -71,6 +79,7 @@ export class ServiceDeskService {
     @Inject(ProjectService) private readonly projects: ProjectService,
     @Inject(ProjectAccessService) private readonly access: ProjectAccessService,
     @Inject(IssueService) private readonly issues: IssueService,
+    @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
   ) {}
 
   // ---------------------------------------------------------------- setup (administer)
@@ -322,6 +331,153 @@ export class ServiceDeskService {
       });
     });
     return this.request(principal, key);
+  }
+
+  // ---------------------------------------------------------------- SLAs (agents)
+
+  /** The SLA clocks of one request; null when the issue is no service desk request. */
+  async sla(principal: Principal, key: string): Promise<IssueSla | null> {
+    const issue = await this.issues.get(principal, key);
+    const [row] = await this.database.db.select().from(issues).where(eq(issues.id, issue.id));
+    if (!row?.requestTypeId) return null;
+    const desk = await this.desk(row.projectId);
+    if (!desk) return null;
+    const [result] = await this.slas([row], desk, issue.priority.key);
+    return result ?? null;
+  }
+
+  /** Open requests of the desk, the one closest to breaching first (TL-47, E-137). */
+  async queue(principal: Principal, key: string): Promise<QueueEntry[]> {
+    const project = await this.projects.findBrowsable(principal, key);
+    const desk = await this.desk(project.id);
+    if (!desk) throw new NotFoundException('This project is no service desk');
+    const rows = await this.database.db
+      .select({ issue: issues, requestTypeName: requestTypes.name })
+      .from(issues)
+      .innerJoin(requestTypes, eq(requestTypes.id, issues.requestTypeId))
+      .innerJoin(statuses, eq(statuses.id, issues.statusId))
+      .where(
+        and(
+          eq(issues.projectId, project.id),
+          isNull(issues.deletedAt),
+          sql`${statuses.category} <> 'done'`,
+          securityVisible(principal.userId),
+        ),
+      )
+      .orderBy(asc(issues.createdAt))
+      .limit(500);
+    if (rows.length === 0) return [];
+    const summaries = new Map(
+      (
+        await this.issues.summarize(
+          principal.userId,
+          rows.map((row) => row.issue),
+        )
+      ).map((summary) => [summary.id, summary]),
+    );
+    const entries: QueueEntry[] = [];
+    for (const row of rows) {
+      const summary = summaries.get(row.issue.id);
+      if (!summary) continue;
+      const [sla] = await this.slas([row.issue], desk, summary.priority.key);
+      entries.push({
+        key: summary.key,
+        summary: summary.summary,
+        status: summary.status,
+        requestType: row.requestTypeName,
+        reporter: summary.reporter,
+        assignee: summary.assignee,
+        priority: summary.priority.name,
+        createdAt: summary.createdAt,
+        sla: sla ?? { firstResponse: null, resolution: null },
+      });
+    }
+    const urgency = (entry: QueueEntry) =>
+      Math.min(
+        ...[entry.sla.firstResponse, entry.sla.resolution]
+          .filter((metric): metric is SlaMetric => !!metric && !metric.stopped)
+          .map((metric) => metric.remainingHours),
+        Number.POSITIVE_INFINITY,
+      );
+    return entries.sort((a, b) => urgency(a) - urgency(b));
+  }
+
+  /** Clocks from creation to the first agent answer and to resolution, without pauses. */
+  private async slas(
+    rows: Array<typeof issues.$inferSelect>,
+    desk: DeskRow,
+    priorityKey: string,
+  ): Promise<IssueSla[]> {
+    const working = await this.workingTime.get();
+    const hours: BusinessHours = {
+      timeZone: desk.timeZone,
+      dayStartHour: desk.dayStartHour,
+      hoursPerDay: working.hoursPerDay,
+      daysPerWeek: working.daysPerWeek,
+    };
+    const now = new Date();
+    const targets = {
+      first: (desk.firstResponseHours as Record<string, number>)[priorityKey],
+      resolution: (desk.resolutionHours as Record<string, number>)[priorityKey],
+    };
+    const result: IssueSla[] = [];
+    for (const row of rows) {
+      const changes = await this.database.db
+        .select({
+          at: issueChangeGroups.createdAt,
+          from: issueChangeItems.fromValue,
+          to: issueChangeItems.toValue,
+        })
+        .from(issueChangeItems)
+        .innerJoin(issueChangeGroups, eq(issueChangeGroups.id, issueChangeItems.groupId))
+        .where(and(eq(issueChangeGroups.issueId, row.id), eq(issueChangeItems.field, 'status')))
+        .orderBy(asc(issueChangeGroups.createdAt));
+      // Status segments from creation until now; the paused ones rest the clocks.
+      const paused: Interval[] = [];
+      let status = changes[0]?.from ?? row.statusId;
+      let since = row.createdAt;
+      for (const change of changes) {
+        if (status && desk.pauseStatusIds.includes(status))
+          paused.push({ start: since, end: change.at });
+        status = change.to ?? status;
+        since = change.at;
+      }
+      const pausedNow = !!status && desk.pauseStatusIds.includes(status);
+      if (pausedNow) paused.push({ start: since, end: now });
+      const [answer] = await this.database.db
+        .select({ at: issueComments.createdAt })
+        .from(issueComments)
+        .where(
+          and(
+            eq(issueComments.issueId, row.id),
+            eq(issueComments.internal, false),
+            isNull(issueComments.deletedAt),
+            row.reporterId
+              ? sql`${issueComments.authorId} is distinct from ${row.reporterId}`
+              : undefined,
+          ),
+        )
+        .orderBy(asc(issueComments.createdAt))
+        .limit(1);
+      const metric = (target: number | undefined, stop: Date | null): SlaMetric | null => {
+        if (!target) return null;
+        const elapsed = workingMillis(row.createdAt, stop ?? now, hours, paused) / 3_600_000;
+        const round = (value: number) => Math.round(value * 100) / 100;
+        return {
+          targetHours: target,
+          elapsedHours: round(elapsed),
+          remainingHours: round(target - elapsed),
+          breached: elapsed > target,
+          stopped: stop !== null,
+          paused: stop === null && pausedNow,
+        };
+      };
+      result.push({
+        firstResponse: metric(targets.first, answer?.at ?? null),
+        resolution: metric(targets.resolution, row.resolvedAt ?? null),
+      });
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------- helpers

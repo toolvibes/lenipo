@@ -12946,6 +12946,101 @@
         }
       }
     },
+    "/api/v1/projects/{key}/service-desk/queue": {
+      "get": {
+        "operationId": "Service desk.serviceQueue",
+        "summary": "Open requests, the one closest to breaching its SLA first",
+        "tags": ["Service desk"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueueEntry"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/issues/{key}/sla": {
+      "get": {
+        "operationId": "Service desk.issueSla",
+        "summary": "The SLA clocks of a request",
+        "tags": ["Service desk"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sla": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/IssueSla"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["sla"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/setup/status": {
       "get": {
         "operationId": "Setup.status",
@@ -30577,6 +30672,125 @@
             "additionalProperties": false
           }
         ]
+      },
+      "QueueEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusInfo"
+          },
+          "requestType": {
+            "type": "string"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "sla": {
+            "$ref": "#/components/schemas/IssueSla"
+          }
+        },
+        "required": [
+          "key",
+          "summary",
+          "status",
+          "requestType",
+          "reporter",
+          "assignee",
+          "priority",
+          "createdAt",
+          "sla"
+        ],
+        "additionalProperties": false
+      },
+      "IssueSla": {
+        "type": "object",
+        "properties": {
+          "firstResponse": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlaMetric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlaMetric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["firstResponse", "resolution"],
+        "additionalProperties": false
+      },
+      "SlaMetric": {
+        "type": "object",
+        "properties": {
+          "targetHours": {
+            "type": "number"
+          },
+          "elapsedHours": {
+            "type": "number"
+          },
+          "remainingHours": {
+            "type": "number"
+          },
+          "breached": {
+            "type": "boolean"
+          },
+          "stopped": {
+            "type": "boolean"
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "targetHours",
+          "elapsedHours",
+          "remainingHours",
+          "breached",
+          "stopped",
+          "paused"
+        ],
+        "additionalProperties": false
       },
       "SetupStatusResponse": {
         "type": "object",

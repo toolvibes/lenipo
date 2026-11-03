@@ -57,6 +57,7 @@ import { type ReportKind as BoardReportKind, ReportsPage } from './features/repo
 import { EverythingPage } from './features/search/EverythingPage';
 import { IssuePrintPage } from './features/search/IssueExport';
 import { SearchPage } from './features/search/SearchPage';
+import { QueuePage } from './features/servicedesk/Sla';
 import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { MaintenanceScreen } from './features/shell/Announcement';
 import { AppShell } from './features/shell/AppShell';
@@ -618,6 +619,15 @@ const planRoute = createRoute({
   },
 });
 
+const queueRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$key/queue',
+  component: function Queue() {
+    const { key } = queueRoute.useParams();
+    return <QueuePage key={key} projectKey={key.toUpperCase()} />;
+  },
+});
+
 const portalRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/portal',
@@ -969,6 +979,7 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     plansRoute,
     planRoute,
+    queueRoute,
     portalRoute,
     portalDeskRoute,
     portalRequestRoute,

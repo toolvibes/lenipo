@@ -1,12 +1,15 @@
 import type {
   Comment,
   Issue,
+  IssueSla,
   PortalDesk,
   PortalRequest,
   PortalRequestDetail,
+  QueueEntry,
   ServiceDesk,
   UserSummary,
 } from '@toolvibes/shared';
+import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EventProcessor } from '../events/event-processor.js';
 import { SetupService } from '../identity/setup.service.js';
@@ -141,6 +144,48 @@ describe('service desk portal (TL-47)', () => {
     expect(answered.body.comments.map((comment) => comment.fromAgent)).toEqual([true, false]);
     const mine = (await kunde.request<PortalRequest[]>('GET', '/portal/requests')).body;
     expect(mine.map((request) => request.key)).toEqual([key]);
+  });
+
+  it('keeps SLA clocks in working time and lists the queue by urgency', async () => {
+    const settings = (await admin.request<ServiceDesk>('GET', '/projects/HELP/service-desk')).body
+      .settings;
+    await admin.request('PUT', '/projects/HELP/service-desk', {
+      ...settings,
+      firstResponseHours: { high: 4 },
+      resolutionHours: { high: 40 },
+    });
+    const desks = (await kunde.request<PortalDesk[]>('GET', '/portal/desks')).body;
+    const filed = await kunde.request<PortalRequestDetail>('POST', '/portal/desks/HELP/requests', {
+      requestTypeId: desks[0]?.requestTypes[0]?.id,
+      summary: 'Drucker',
+      priority: 'high',
+    });
+    const key = filed.body.key;
+    // Filed Monday 09:00 Berlin, answered 11:00: two working hours to the first response.
+    await test.database.db.execute(
+      sql`update issues set created_at = '2026-11-02T08:00:00Z' where key = ${key}`,
+    );
+    const answer = await admin.request<Comment>('POST', `/issues/${key}/comments`, {
+      body: { markdown: 'Schauen wir uns an.' },
+    });
+    await test.database.db.execute(
+      sql`update issue_comments set created_at = '2026-11-02T10:00:00Z' where id = ${answer.body.id}`,
+    );
+    const sla = (await admin.request<{ sla: IssueSla }>('GET', `/issues/${key}/sla`)).body.sla;
+    expect(sla.firstResponse).toMatchObject({
+      targetHours: 4,
+      elapsedHours: 2,
+      remainingHours: 2,
+      breached: false,
+      stopped: true,
+    });
+    expect(sla.resolution).toMatchObject({ targetHours: 40, stopped: false });
+    expect((await kunde.request('GET', `/issues/${key}/sla`)).status).toBe(404);
+
+    const queue = (await admin.request<QueueEntry[]>('GET', '/projects/HELP/service-desk/queue'))
+      .body;
+    expect(queue.map((entry) => entry.key)).toContain(key);
+    expect(queue.find((entry) => entry.key === key)?.requestType).toBe('Zugang beantragen');
   });
 
   it('can open the portal to everyone signed in', async () => {

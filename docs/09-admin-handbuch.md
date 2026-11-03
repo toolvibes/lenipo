@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=5 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=6 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -52,6 +52,10 @@ Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und steh
 - **Externe** (Kunden, Partner): Einladung mit „Als externe Person einladen“ oder in der Benutzerverwaltung „Als extern führen“. Externe sind nicht in der Gruppe „users“, haben keine globalen Rechte und sehen nur die Projekte und Bereiche, in denen sie eine Rolle haben. Beim Zuordnen zu einem Projekt gibt „Auch im verknüpften Wiki-Bereich freigeben“ die passende Stufe im Wiki-Bereich des Projekts.
 - **Deaktivieren** beendet alle Sitzungen und Tokens; **Anonymisieren** (DSGVO) ersetzt Name und E-Mail überall durch „Ehemalige Person n“ und ist nicht umkehrbar.
 - **API-Tokens** und **OAuth-Apps**: Personen legen Tokens selbst an; Admins registrieren Apps von Drittanbietern (vertraulich mit Secret oder öffentlich mit PKCE) und sehen alle Verbindungen.
+
+## Service Desk
+
+Projekteinstellungen → Service Desk → „Als Service Desk betreiben“. Dort: wer Anfragen stellen darf (eingetragene Kunden, oft externe Konten, oder alle Angemeldeten), Begrüßung im Portal, Anfragetypen (Name, Vorgangstyp, zusätzliche Felder Priorität und Fälligkeit) und SLA-Ziele in Stunden Arbeitszeit je Priorität für erste Antwort und Lösung. Gezählt wird an den Arbeitstagen der Instanz (Zeiterfassung: Stunden pro Tag, Tage pro Woche) ab der eingestellten Uhrzeit in Europe/Berlin; in gewählten Status (z. B. „Wartet auf Kunde“) ruht die Uhr. Kunden brauchen keine Rolle im Projekt; sie sehen nur ihre eigenen Anfragen und keine internen Notizen.
 
 ## Rechte
 

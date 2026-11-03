@@ -29,6 +29,7 @@ import {
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TopBar } from '../../ui/TopBar';
+import { SlaPanel } from '../servicedesk/Sla';
 import { Attachments } from './Attachments';
 import { ComponentsField } from './ComponentsField';
 import { CustomFieldRows } from './CustomFields';
@@ -895,6 +896,7 @@ export function IssuePage({
             onLogWork={() => setLoggingWork(true)}
           />
           <DevelopmentPanel issueKey={data.key} />
+          <SlaPanel issueKey={data.key} />
           <PlanningPoker
             issueKey={data.key}
             canEdit={canEdit}

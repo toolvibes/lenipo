@@ -72,9 +72,14 @@ export function ServiceDeskSettings({ projectKey }: { projectKey: string }) {
     <section className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="tl-heading-md m-0">{t('serviceDesk.title')}</h2>
-        <Link to="/portal/$key" params={{ key: projectKey }} className="text-sm">
-          {t('serviceDesk.openPortal')}
-        </Link>
+        <span className="flex gap-4 text-sm">
+          <Link to="/projects/$key/queue" params={{ key: projectKey }}>
+            {t('sla.queue')}
+          </Link>
+          <Link to="/portal/$key" params={{ key: projectKey }}>
+            {t('serviceDesk.openPortal')}
+          </Link>
+        </span>
       </div>
       {error && <FormError message={error.message} />}
       <GeneralSettings

@@ -4509,6 +4509,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/service-desk/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open requests, the one closest to breaching its SLA first */
+    get: operations['Service desk.serviceQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/issues/{key}/sla': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The SLA clocks of a request */
+    get: operations['Service desk.issueSla'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/setup/status': {
     parameters: {
       query?: never;
@@ -9519,6 +9553,30 @@ export interface components {
           /** Format: uuid */
           groupId: string;
         };
+    QueueEntry: {
+      key: string;
+      summary: string;
+      status: components['schemas']['StatusInfo'];
+      requestType: string;
+      reporter: components['schemas']['UserRef'] | null;
+      assignee: components['schemas']['UserRef'] | null;
+      priority: string;
+      /** Format: date-time */
+      createdAt: string;
+      sla: components['schemas']['IssueSla'];
+    };
+    IssueSla: {
+      firstResponse: components['schemas']['SlaMetric'] | null;
+      resolution: components['schemas']['SlaMetric'] | null;
+    };
+    SlaMetric: {
+      targetHours: number;
+      elapsedHours: number;
+      remainingHours: number;
+      breached: boolean;
+      stopped: boolean;
+      paused: boolean;
+    };
     SetupStatusResponse: {
       required: boolean;
     };
@@ -20165,6 +20223,70 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.serviceQueue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['QueueEntry'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.issueSla': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sla: components['schemas']['IssueSla'] | null;
+          };
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {

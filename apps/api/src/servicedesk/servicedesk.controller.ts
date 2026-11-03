@@ -12,10 +12,12 @@ import {
 import {
   AddServiceCustomerRequest,
   CreatePortalRequest,
+  IssueSla,
   PortalCommentRequest,
   PortalDesk,
   PortalRequest,
   PortalRequestDetail,
+  QueueEntry,
   SaveRequestTypeRequest,
   ServiceDesk,
   ServiceDeskSettings,
@@ -124,6 +126,32 @@ export class ServiceDeskController {
     @Param('id', EntryId) id: string,
   ): Promise<void> {
     return this.desks.removeCustomer(principal, key, id);
+  }
+}
+
+/** SLA clocks and the queue, for the people working on the requests (TL-47, E-137). */
+@Controller()
+export class ServiceQueueController {
+  constructor(@Inject(ServiceDeskService) private readonly desks: ServiceDeskService) {}
+
+  @Endpoint({
+    tag: 'Service desk',
+    summary: 'Open requests, the one closest to breaching its SLA first',
+    response: z.array(QueueEntry),
+  })
+  @Get('projects/:key/service-desk/queue')
+  serviceQueue(@CurrentPrincipal() principal: Principal, @Param('key') key: string) {
+    return this.desks.queue(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Service desk',
+    summary: 'The SLA clocks of a request',
+    response: z.object({ sla: IssueSla.nullable() }),
+  })
+  @Get('issues/:key/sla')
+  async issueSla(@CurrentPrincipal() principal: Principal, @Param('key') key: string) {
+    return { sla: await this.desks.sla(principal, key) };
   }
 }
 

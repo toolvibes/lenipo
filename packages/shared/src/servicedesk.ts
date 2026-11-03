@@ -125,3 +125,40 @@ export const PortalCommentRequest = z
   .object({ body: RichTextInput })
   .meta({ id: 'PortalCommentRequest' });
 export type PortalCommentRequest = z.infer<typeof PortalCommentRequest>;
+
+/** One SLA clock of a request (TL-47, E-137), in working hours. */
+export const SlaMetric = z
+  .object({
+    targetHours: z.number(),
+    elapsedHours: z.number(),
+    /** Negative once breached. */
+    remainingHours: z.number(),
+    breached: z.boolean(),
+    /** The goal was reached: first answer given, or request resolved. */
+    stopped: z.boolean(),
+    /** Waiting for the customer: the clock rests. */
+    paused: z.boolean(),
+  })
+  .meta({ id: 'SlaMetric' });
+export type SlaMetric = z.infer<typeof SlaMetric>;
+
+export const IssueSla = z
+  .object({ firstResponse: SlaMetric.nullable(), resolution: SlaMetric.nullable() })
+  .meta({ id: 'IssueSla' });
+export type IssueSla = z.infer<typeof IssueSla>;
+
+/** A request in the agents' queue, most urgent first. */
+export const QueueEntry = z
+  .object({
+    key: z.string(),
+    summary: z.string(),
+    status: StatusInfo,
+    requestType: z.string(),
+    reporter: UserRef.nullable(),
+    assignee: UserRef.nullable(),
+    priority: z.string(),
+    createdAt: z.iso.datetime(),
+    sla: IssueSla,
+  })
+  .meta({ id: 'QueueEntry' });
+export type QueueEntry = z.infer<typeof QueueEntry>;
