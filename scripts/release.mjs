@@ -4,7 +4,8 @@
 //     sets the version in every package and the Helm chart, writes the section of CHANGELOG.md
 //     from the commits since the last tag (feat, fix, perf), records the minimum version an
 //     update may start from when migrations removed something, commits "release: x.y.z" and
-//     tags vx.y.z. Pushing the tag starts the release workflow.
+//     tags vx.y.z, with the API description regenerated for the new version (the Go and Python
+//     SDKs follow with pnpm sdk:generate). Pushing the tag starts the release workflow.
 //   node scripts/release.mjs notes <x.y.z>
 //     prints the CHANGELOG section of that version, for the GitHub release.
 import { execFileSync } from 'node:child_process';
@@ -156,7 +157,10 @@ writeFileSync(
     .replace(/^appVersion:.*$/m, `appVersion: "${version}"`),
 );
 
-git('add', CHANGELOG, RELEASE, CHART, ...packageFiles());
+// The API description carries the version; CI compares it with the code.
+console.log('Generating the API description …');
+execFileSync('pnpm', ['-s', 'api:generate'], { stdio: 'inherit' });
+git('add', CHANGELOG, RELEASE, CHART, 'packages/sdk', ...packageFiles());
 git('commit', '--quiet', '-m', `release: ${version}`);
 git('tag', '--annotate', `v${version}`, '--message', `Lenipo ${version}`);
 console.log(`Tagged v${version}. Publish with: git push origin main v${version}`);
