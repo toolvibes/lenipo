@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lenipo API",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "description": "REST API of Lenipo. Browsers authenticate with the session cookie; scripts, the CLI and MCP clients with a personal access token (`Authorization: Bearer tl_pat_…`)."
   },
   "servers": [

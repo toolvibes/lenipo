@@ -1,6 +1,6 @@
 {
   "name": "@toolvibes/sdk",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "private": true,
   "description": "Typed client for the Lenipo REST API, generated from its OpenAPI document.",
   "type": "module",

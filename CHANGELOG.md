@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.1.0 – 2026-11-04
+
+### Neu
+
+- Neues Erscheinungsbild: Violett, weiche Schatten statt Rahmen, große Rundungen, Plus Jakarta Sans
+
 ## 1.0.3 – 2026-11-04
 
 ### Behoben
