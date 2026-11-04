@@ -4,7 +4,7 @@
 
 Website: <https://lenipo.de> · Früherer Projektname: Tasklore
 
-> **Stand:** in Entwicklung, noch vor Version 1.0. Eine Lizenz ist noch nicht festgelegt; bis dahin gilt für den Code „alle Rechte vorbehalten“.
+> **Stand:** in Entwicklung, noch vor Version 1.0. Freie Software unter der [GNU AGPL-3.0](LICENSE).
 
 ## Was Lenipo kann
 
@@ -153,6 +153,15 @@ Die API beschreibt jede Instanz selbst unter `/api/docs` (OpenAPI).
 - Vor einem Commit `pnpm lint`, `pnpm typecheck` und `pnpm test` ausführen; bei Änderungen an der Oberfläche auch die End-to-End-Tests.
 - Neue Abhängigkeiten brauchen eine permissive Lizenz und sollten mindestens zwei Wochen alt sein.
 - Größere Änderungen bitte vorher in einem Issue besprechen.
+- Beiträge stehen unter derselben Lizenz wie Lenipo (AGPL-3.0-only).
 - Commit-Nachrichten auf Deutsch, im Stil `feat: …`, `fix: …`, `perf: …` mit Story-Nummer.
 
 Sicherheitslücken bitte nicht öffentlich als Issue melden, sondern über [SECURITY.md](SECURITY.md).
+
+## Lizenz
+
+Copyright (C) 2026 David Kahl
+
+Lenipo ist freie Software: Sie dürfen es unter den Bedingungen der GNU Affero General Public License, Version 3 (`AGPL-3.0-only`), weitergeben und verändern – siehe [LICENSE](LICENSE). Lenipo wird ohne jede Gewährleistung bereitgestellt.
+
+Wer eine veränderte Fassung von Lenipo anderen über ein Netzwerk zur Verfügung stellt, muss ihnen den Quellcode genau dieser Fassung anbieten (Abschnitt 13 der Lizenz). Für den eigenen Betrieb ohne Änderungen genügt der Verweis auf dieses Repository.
