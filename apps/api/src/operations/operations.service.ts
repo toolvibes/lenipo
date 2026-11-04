@@ -5,6 +5,7 @@ import {
   type InstanceNotice,
   MaintenanceMode,
   type ModuleName,
+  ProviderLimits,
   RateLimitSettings,
 } from '@toolvibes/shared';
 import { and, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
@@ -19,11 +20,18 @@ const KEYS = {
   rateLimits: 'rate-limits',
   maintenance: 'maintenance-mode',
   announcement: 'announcement',
+  /** Written by ProviderService (TL-103); read here for the ceilings of the request limits. */
+  providerLimits: 'provider-limits',
 } as const;
+
+export const PROVIDER_LIMITS_KEY = KEYS.providerLimits;
 
 interface Snapshot {
   modules: FeatureFlags;
+  /** The limits in force: the administrators' settings, at most the provider's ceilings. */
   rateLimits: RateLimitSettings;
+  /** The provider's ceilings (TL-104, E-156); null without them. */
+  rateLimitCeilings: RateLimitSettings | null;
   maintenance: MaintenanceMode;
   announcement: Announcement & { version: string };
   tokenLimits: Map<string, { perMinute: number | null; perDay: number | null }>;
@@ -84,15 +92,35 @@ export class OperationsService implements OnApplicationShutdown {
           ),
         ),
       );
+    const provider = value(KEYS.providerLimits);
+    const ceilings = provider
+      ? (ProviderLimits.safeParse(provider.value).data?.requestsPerMinute ?? null)
+      : null;
+    const own = RateLimitSettings.parse(value(KEYS.rateLimits)?.value ?? {});
+    const capped = (limit: number, ceiling: number | undefined) =>
+      ceiling === undefined ? limit : Math.min(limit, ceiling);
     return {
       modules: FeatureFlags.parse(value(KEYS.modules)?.value ?? {}),
-      rateLimits: RateLimitSettings.parse(value(KEYS.rateLimits)?.value ?? {}),
+      rateLimits: {
+        people: capped(own.people, ceilings?.people),
+        tokens: capped(own.tokens, ceilings?.tokens),
+        anonymous: capped(own.anonymous, ceilings?.anonymous),
+      },
+      rateLimitCeilings: ceilings,
       maintenance: MaintenanceMode.parse(value(KEYS.maintenance)?.value ?? {}),
       announcement: {
         ...Announcement.parse(announcement?.value ?? {}),
         version: announcement?.updatedAt.toISOString() ?? '',
       },
-      tokenLimits: new Map(limited.map(({ id, ...limits }) => [id, limits])),
+      tokenLimits: new Map(
+        limited.map(({ id, perMinute, perDay }) => [
+          id,
+          {
+            perMinute: perMinute === null ? null : capped(perMinute, ceilings?.tokens),
+            perDay,
+          },
+        ]),
+      ),
     };
   }
 

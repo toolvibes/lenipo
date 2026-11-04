@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=20 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=21 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -27,7 +27,7 @@ Umgebungsvariablen, beim Start geprüft (ein Fehler nennt die Variable):
 | `DATABASE_URL` | PostgreSQL-Verbindung (Pflicht) |
 | `PUBLIC_URL` | Öffentliche Adresse, für Links in E-Mails, OAuth und SAML |
 | `MODE` | `all` (Standard) oder eine Rolle: `api`, `collab`, `worker` |
-| `SETUP_TOKEN` | Optional, mindestens 32 Zeichen, für Bereitsteller (Hosting-Dienst, Deployment-Skript) mit `Authorization: Bearer <SETUP_TOKEN>`. `POST /api/v1/setup/provision` richtet die Instanz ein, solange das noch aussteht: Name und eine Einladung für die erste Admin-Person, deren Link zurückkommt; die Person setzt Name und Passwort selbst. `PUT /api/v1/provider/limits` setzt einen Rahmen (Plätze, Agenten, Speicher, Module, Service Desk), `GET /api/v1/provider/usage` liefert die Nutzung |
+| `SETUP_TOKEN` | Optional, mindestens 32 Zeichen, für Bereitsteller (Hosting-Dienst, Deployment-Skript) mit `Authorization: Bearer <SETUP_TOKEN>`. `POST /api/v1/setup/provision` richtet die Instanz ein, solange das noch aussteht: Name und eine Einladung für die erste Admin-Person, deren Link zurückkommt; die Person setzt Name und Passwort selbst. `PUT /api/v1/provider/limits` setzt einen Rahmen (Plätze, Agenten, Speicher, Module, Service Desk, Obergrenzen der Anfragegrenzen), `GET /api/v1/provider/usage` liefert die Nutzung und wann zuletzt eine Person Lenipo genutzt hat |
 | `REDIS_URL` | Valkey: Anfragegrenzen über alle Instanzen, mehrere Collab-Server |
 | `STORAGE_DRIVER`, `STORAGE_LOCAL_DIR`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Ablage der Anhänge und Backups |
 | `ATTACHMENT_MAX_MB` | Größte Anhangsdatei (Standard 25) |
@@ -124,12 +124,12 @@ Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projek
 
 ## Tarif-Rahmen eines Bereitstellers
 
-Hat ein Bereitsteller wie ein Hosting-Dienst einen Rahmen gesetzt, steht er unter Administration → Betrieb: Tarifname, belegte und gebuchte Plätze, Agenten, Speicher für Anhänge, Service Desk. Ist der Rahmen erreicht, lehnt Lenipo das Anlegen, Einladen und Reaktivieren von Personen ab (auch bei Anmeldung per OIDC, SAML und beim Verzeichnis-Sync), ebenso neue Agenten, Anhänge über dem Speicher, neue Service Desks und Module außerhalb des Tarifs, jeweils mit einem Hinweis auf den Tarif. Gäste (externe Personen) und KI-Agenten belegen keine Plätze. Ohne Rahmen, also beim eigenen Betrieb, ist nichts begrenzt.
+Hat ein Bereitsteller wie ein Hosting-Dienst einen Rahmen gesetzt, steht er unter Administration → Betrieb: Tarifname, belegte und gebuchte Plätze, Agenten, Speicher für Anhänge, Service Desk und gegebenenfalls Anfragen je Minute. Ist der Rahmen erreicht, lehnt Lenipo das Anlegen, Einladen und Reaktivieren von Personen ab (auch bei Anmeldung per OIDC, SAML und beim Verzeichnis-Sync), ebenso neue Agenten, Anhänge über dem Speicher, neue Service Desks und Module außerhalb des Tarifs, jeweils mit einem Hinweis auf den Tarif. Gäste (externe Personen) und KI-Agenten belegen keine Plätze. Setzt der Tarif Obergrenzen für die Anfragegrenzen, lassen sich die Grenzen je Person, Token und IP nur darunter einstellen; höhere Einstellungen von früher gelten nur bis zur Obergrenze. Ohne Rahmen, also beim eigenen Betrieb, ist nichts begrenzt.
 
 ## Sicherung und Wiederherstellung
 
 - **Backups** (Administration → Wartung): ein ZIP mit allen Tabellen und Anhängen im Dateispeicher, täglich zur eingestellten Stunde, die letzten drei bleiben. Von Hand oder per Cronjob: `lenipo admin backup create` und `lenipo admin backup download <id>`, oder ohne Token direkt im Container: `docker compose exec app node api/dist/maintenance/backup-cli.js --out /tmp/lenipo.zip`. Backups gehören zusätzlich außer Haus.
-- **Wiederherstellen** geht in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das ZIP hochladen. Danach melden sich alle mit ihren alten Konten an.
+- **Wiederherstellen** geht in eine frische Instanz derselben Version: unter `/setup` den Einrichtungscode eingeben und das ZIP hochladen, oder ohne Web-Oberfläche im Container: `docker compose exec app node api/dist/maintenance/restore-cli.js --in /tmp/lenipo.zip` (die Datei vorher mit `docker compose cp` hineinkopieren). Danach melden sich alle mit ihren alten Konten an.
 - **Aufbewahrung:** Papierkorb 30 Tage, Audit-Log 365 Tage, alte Seitenversionen optional ausdünnen, Seitenaufrufe je Person 90 Tage (danach anonyme Zahlen); stündlich im Worker.
 - **Archive** einzelner Projekte oder Bereiche (Administration → Import) ziehen Inhalte in eine andere Instanz um.
 

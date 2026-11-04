@@ -107,6 +107,14 @@ export const ProviderLimits = z
     /** Modules the plan includes; null: all. */
     modules: z.array(ModuleName).nullable().default(null),
     serviceDesk: z.boolean().default(true),
+    /**
+     * Ceilings for the request limits (TL-104, E-156): administrators set them lower, never
+     * higher. Null: no ceiling.
+     */
+    requestsPerMinute: z
+      .object({ people: PerMinute, tokens: PerMinute, anonymous: PerMinute })
+      .nullable()
+      .default(null),
   })
   .meta({ id: 'ProviderLimits' });
 export type ProviderLimits = z.infer<typeof ProviderLimits>;
@@ -121,6 +129,8 @@ export const ProviderUsage = z
     modules: z.array(ModuleName),
     /** The limits in force; null without a provider. */
     limits: ProviderLimits.nullable(),
+    /** The last time a person used the instance (browser or token); null: never. */
+    lastActiveAt: z.iso.datetime().nullable(),
     measuredAt: z.iso.datetime(),
   })
   .meta({ id: 'ProviderUsage' });

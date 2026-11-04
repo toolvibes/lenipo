@@ -85,6 +85,15 @@ function Plan() {
       limits.serviceDesk ? t('operations.plan.included') : t('operations.plan.notIncluded'),
     ],
   ];
+  if (limits.requestsPerMinute) {
+    rows.push([
+      t('operations.plan.requests'),
+      t('operations.plan.requestsValue', {
+        people: limits.requestsPerMinute.people.toLocaleString(),
+        tokens: limits.requestsPerMinute.tokens.toLocaleString(),
+      }),
+    ]);
+  }
   return (
     <Section
       title={
@@ -259,6 +268,12 @@ function Limits() {
   const { t } = useTranslation();
   const { query, save } = useSaved<RateLimitSettings>('rate-limits', '/api/v1/admin/rate-limits');
   const [form, setForm] = useState<Record<keyof RateLimitSettings, string> | null>(null);
+  // The provider's plan may set ceilings (TL-104).
+  const plan = useQuery({
+    queryKey: ['admin', 'plan'],
+    queryFn: () => unwrap(client.GET('/api/v1/admin/plan')),
+  });
+  const ceilings = plan.data?.limits?.requestsPerMinute ?? null;
   useEffect(() => {
     if (query.data)
       setForm({
@@ -289,6 +304,8 @@ function Limits() {
               label={t(`operations.limit.${field}`)}
               type="number"
               min={1}
+              max={ceilings?.[field]}
+              help={ceilings ? t('operations.limitCeiling', { count: ceilings[field] }) : undefined}
               value={form[field]}
               onChange={(event) => setForm({ ...form, [field]: event.target.value })}
             />

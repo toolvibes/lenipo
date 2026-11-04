@@ -2441,6 +2441,8 @@ export const en: Messages = {
       serviceDesk: 'Service desk',
       included: 'included',
       notIncluded: 'not included',
+      requests: 'Requests per minute',
+      requestsValue: 'at most {{people}} per person, {{tokens}} per token',
     },
     title: 'Operations',
     modules: 'Modules',
@@ -2479,6 +2481,7 @@ export const en: Messages = {
     limitsIntro:
       'Whoever sends more gets 429 with Retry-After. With Valkey (REDIS_URL) the limits hold across all instances, otherwise per instance.',
     limit: { people: 'Per person', tokens: 'Per token', anonymous: 'Without sign-in, per IP' },
+    limitCeiling: 'Your plan allows at most {{count}}.',
     tokens: 'API tokens',
     tokensIntro:
       'Own limits per token: per minute instead of the default, and a daily quota (UTC).',

@@ -31216,6 +31216,35 @@
           "serviceDesk": {
             "default": true,
             "type": "boolean"
+          },
+          "requestsPerMinute": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "people": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "tokens": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "anonymous": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  }
+                },
+                "required": ["people", "tokens", "anonymous"]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -31260,6 +31289,18 @@
               }
             ]
           },
+          "lastActiveAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "measuredAt": {
             "type": "string",
             "format": "date-time",
@@ -31273,6 +31314,7 @@
           "serviceDesks",
           "modules",
           "limits",
+          "lastActiveAt",
           "measuredAt"
         ],
         "additionalProperties": false
@@ -31341,9 +31383,47 @@
           "serviceDesk": {
             "default": true,
             "type": "boolean"
+          },
+          "requestsPerMinute": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "people": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "tokens": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "anonymous": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  }
+                },
+                "required": ["people", "tokens", "anonymous"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": ["plan", "persons", "agents", "storageMb", "modules", "serviceDesk"],
+        "required": [
+          "plan",
+          "persons",
+          "agents",
+          "storageMb",
+          "modules",
+          "serviceDesk",
+          "requestsPerMinute"
+        ],
         "additionalProperties": false
       },
       "ProviderUsageOutput": {
@@ -31383,6 +31463,18 @@
               }
             ]
           },
+          "lastActiveAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "measuredAt": {
             "type": "string",
             "format": "date-time",
@@ -31396,6 +31488,7 @@
           "serviceDesks",
           "modules",
           "limits",
+          "lastActiveAt",
           "measuredAt"
         ],
         "additionalProperties": false

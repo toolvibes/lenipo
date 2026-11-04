@@ -2480,6 +2480,8 @@ export const de = {
       serviceDesk: 'Service Desk',
       included: 'enthalten',
       notIncluded: 'nicht enthalten',
+      requests: 'Anfragen je Minute',
+      requestsValue: 'höchstens {{people}} je Person, {{tokens}} je Token',
     },
     title: 'Betrieb',
     modules: 'Module',
@@ -2518,6 +2520,7 @@ export const de = {
     limitsIntro:
       'Wer mehr schickt, bekommt 429 mit Retry-After. Mit Valkey (REDIS_URL) gelten die Grenzen über alle Instanzen, sonst je Instanz.',
     limit: { people: 'Je Person', tokens: 'Je Token', anonymous: 'Ohne Anmeldung, je IP' },
+    limitCeiling: 'Dein Tarif erlaubt höchstens {{count}}.',
     tokens: 'API-Tokens',
     tokensIntro:
       'Eigene Grenzen je Token: pro Minute statt der Vorgabe, und eine Tagesquote (UTC).',

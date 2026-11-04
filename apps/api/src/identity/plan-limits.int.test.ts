@@ -123,4 +123,48 @@ describe('plan limits of a provider (TL-103)', () => {
     ).toBe(204);
     expect((await admin.request<ProviderUsage>('GET', '/admin/plan')).body.limits).toBeNull();
   });
+
+  it('caps the request limits and reports the last activity (TL-104)', async () => {
+    const usage = await anonymous.request<ProviderUsage>(
+      'GET',
+      '/provider/usage',
+      undefined,
+      provider,
+    );
+    // The administrator signed in during setup.
+    expect(Date.now() - new Date(usage.body.lastActiveAt ?? 0).getTime()).toBeLessThan(120_000);
+
+    await anonymous.request(
+      'PUT',
+      '/provider/limits',
+      { plan: 'Team', requestsPerMinute: { people: 300, tokens: 100, anonymous: 30 } },
+      provider,
+    );
+    // The default settings (600, 300, 60) are above the ceilings: the ceilings apply.
+    expect((await admin.request('GET', '/admin/rate-limits')).body).toEqual({
+      people: 300,
+      tokens: 100,
+      anonymous: 30,
+    });
+    const above = await admin.request('PUT', '/admin/rate-limits', {
+      people: 400,
+      tokens: 100,
+      anonymous: 30,
+    });
+    expect(above.status).toBe(403);
+    expect(above.body).toMatchObject({ type: 'urn:lenipo:problem:plan-limit' });
+    expect(
+      (await admin.request('PUT', '/admin/rate-limits', { people: 200, tokens: 50, anonymous: 20 }))
+        .status,
+    ).toBe(200);
+    expect((await admin.request('GET', '/admin/rate-limits')).body).toEqual({
+      people: 200,
+      tokens: 50,
+      anonymous: 20,
+    });
+    expect(
+      (await admin.request<ProviderUsage>('GET', '/admin/plan')).body.limits?.requestsPerMinute,
+    ).toEqual({ people: 300, tokens: 100, anonymous: 30 });
+    await anonymous.request('DELETE', '/provider/limits', undefined, provider);
+  });
 });

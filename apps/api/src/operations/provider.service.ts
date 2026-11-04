@@ -12,9 +12,9 @@ import { CONFIG, DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle, Executor } from '../db/client.js';
 import { serviceDesks, systemSettings, users } from '../db/schema/index.js';
 import { constantTimeEquals, sha256 } from '../identity/secrets.js';
-import { OperationsService } from './operations.service.js';
+import { OperationsService, PROVIDER_LIMITS_KEY } from './operations.service.js';
 
-const KEY = 'provider-limits';
+const KEY = PROVIDER_LIMITS_KEY;
 const MB = 1024 * 1024;
 
 /** 403 with its own problem type, so the web app can say which plan limit was hit. */
@@ -48,6 +48,7 @@ export class ProviderService {
   async setLimits(limits: ProviderLimits | null): Promise<void> {
     if (limits === null) {
       await this.database.db.delete(systemSettings).where(eq(systemSettings.key, KEY));
+      this.operations.invalidate();
     } else {
       await this.database.db
         .insert(systemSettings)
@@ -56,6 +57,8 @@ export class ProviderService {
           target: systemSettings.key,
           set: { value: limits, updatedAt: new Date() },
         });
+      // The ceilings of the request limits apply at once.
+      this.operations.invalidate();
       // Modules the plan leaves out are switched off; their data stays.
       if (limits.modules) {
         const allowed = new Set<ModuleName>(limits.modules);
@@ -84,8 +87,26 @@ export class ProviderService {
       serviceDesks: desks?.value ?? 0,
       modules: MODULES.filter((name) => modules[name]),
       limits: await this.limits(db),
+      lastActiveAt: await this.lastActiveAt(db),
       measuredAt: new Date().toISOString(),
     };
+  }
+
+  /**
+   * The latest sign-in, browser request or token use of a person (not of an agent); a provider
+   * lets an instance nobody uses sleep (TL-104, E-156).
+   */
+  private async lastActiveAt(db: Executor): Promise<string | null> {
+    const rows = await db.execute<{ at: Date | string | null }>(sql`
+      select greatest(
+        (select max(u.last_login_at) from users u where u.kind = 'person'),
+        (select max(s.last_seen_at) from sessions s
+           join users u on u.id = s.user_id where u.kind = 'person'),
+        (select max(t.last_used_at) from personal_access_tokens t
+           join users u on u.id = t.user_id where u.kind = 'person')
+      ) as at`);
+    const at = [...rows][0]?.at ?? null;
+    return at === null ? null : new Date(at).toISOString();
   }
 
   /** Seats are taken by active people who are not external guests. */

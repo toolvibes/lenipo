@@ -35,7 +35,7 @@ import { DATABASE } from '../core/tokens.js';
 import type { DatabaseHandle } from '../db/client.js';
 import { personalAccessTokens, users } from '../db/schema/index.js';
 import { OperationsService } from './operations.service.js';
-import { ProviderService } from './provider.service.js';
+import { ProviderService, planLimit } from './provider.service.js';
 
 /** What every page shows: modules, maintenance and the banner (TL-40, E-121). */
 @Public()
@@ -118,6 +118,12 @@ export class OperationsController {
     @CurrentPrincipal() principal: Principal,
     @ValidBody(RateLimitSettings) body: RateLimitSettings,
   ): Promise<RateLimitSettings> {
+    const ceilings = (await this.provider.limits())?.requestsPerMinute;
+    for (const key of ['people', 'tokens', 'anonymous'] as const) {
+      if (ceilings && body[key] > ceilings[key]) {
+        throw planLimit(`The plan allows at most ${ceilings[key]} requests per minute here`);
+      }
+    }
     await this.record(principal, 'system.rate_limits_changed', body);
     return this.operations.setRateLimits(body);
   }
@@ -202,6 +208,10 @@ export class OperationsController {
     @Param('id', ParseUUIDPipe) id: string,
     @ValidBody(TokenLimits) body: TokenLimits,
   ): Promise<TokenLimits> {
+    const ceiling = (await this.provider.limits())?.requestsPerMinute?.tokens;
+    if (ceiling !== undefined && body.perMinute !== null && body.perMinute > ceiling) {
+      throw planLimit(`The plan allows at most ${ceiling} requests per minute for a token`);
+    }
     const [row] = await this.database.db
       .update(personalAccessTokens)
       .set({ rateLimitPerMinute: body.perMinute, dailyQuota: body.perDay, quotaUsed: sql`0` })

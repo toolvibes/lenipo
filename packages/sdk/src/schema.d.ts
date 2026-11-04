@@ -10048,6 +10048,12 @@ export interface components {
       modules?: components['schemas']['ModuleName'][] | null;
       /** @default true */
       serviceDesk?: boolean;
+      /** @default null */
+      requestsPerMinute?: {
+        people: number;
+        tokens: number;
+        anonymous: number;
+      } | null;
     };
     /** @enum {string} */
     ModuleName: 'wiki' | 'boards' | 'time-tracking' | 'automation' | 'dashboards';
@@ -10058,6 +10064,7 @@ export interface components {
       serviceDesks: number;
       modules: components['schemas']['ModuleName'][];
       limits: components['schemas']['ProviderLimitsOutput'] | null;
+      lastActiveAt: string | null;
       /** Format: date-time */
       measuredAt: string;
     };
@@ -10074,6 +10081,12 @@ export interface components {
       modules: components['schemas']['ModuleName'][] | null;
       /** @default true */
       serviceDesk: boolean;
+      /** @default null */
+      requestsPerMinute: {
+        people: number;
+        tokens: number;
+        anonymous: number;
+      } | null;
     };
     ProviderUsageOutput: {
       persons: number;
@@ -10082,6 +10095,7 @@ export interface components {
       serviceDesks: number;
       modules: components['schemas']['ModuleName'][];
       limits: components['schemas']['ProviderLimitsOutput'] | null;
+      lastActiveAt: string | null;
       /** Format: date-time */
       measuredAt: string;
     };
