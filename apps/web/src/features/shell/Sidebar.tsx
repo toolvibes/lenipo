@@ -14,6 +14,7 @@ import { projectSpacesQuery, spacesQuery } from '../../lib/wiki';
 import { LogoMark } from '../../ui/Logo';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { TimerBar } from '../time/TimerBar';
+import { LegalLinks } from './LegalLinks';
 
 /** Assigned to me and not done: "Meine Aufgaben" (S2, E-67). */
 export const MY_ISSUES =
@@ -423,6 +424,7 @@ export function Sidebar({
           <SignOut size={16} aria-hidden />
         </button>
       </div>
+      <LegalLinks className="px-2" />
     </nav>
   );
 }

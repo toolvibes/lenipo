@@ -72,6 +72,10 @@ export const en: Messages = {
     allBoards: 'All boards',
     settings: 'Settings',
   },
+  legal: {
+    imprint: 'Imprint',
+    privacy: 'Privacy',
+  },
   accessibility: {
     link: 'Accessibility',
     title: 'Accessibility',
@@ -2430,6 +2434,9 @@ export const en: Messages = {
     },
   },
   operations: {
+    legal: 'Imprint and privacy',
+    legalIntro:
+      'Links to the imprint and privacy policy of your organisation. They show on the sign-in page, in the service portal and at the bottom of the sidebar. Empty: the value from the environment applies (IMPRINT_URL, PRIVACY_URL).',
     plan: {
       title: 'Plan',
       titleNamed: 'Plan “{{plan}}”',

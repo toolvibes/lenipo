@@ -19,6 +19,9 @@ const configSchema = z.object({
   METRICS_PORT: z.coerce.number().int().positive().optional(),
   /** Where "Help" leads; without it the user handbook built into the web app (TL-44). */
   HELP_URL: z.url({ protocol: /^https?$/ }).optional(),
+  /** Defaults for the links to imprint and privacy policy; administrators can set their own (TL-105). */
+  IMPRINT_URL: z.url({ protocol: /^https?$/ }).optional(),
+  PRIVACY_URL: z.url({ protocol: /^https?$/ }).optional(),
   /** How long a stopping process waits for running requests and jobs (TL-42). */
   SHUTDOWN_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(25),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */

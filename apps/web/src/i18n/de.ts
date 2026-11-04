@@ -73,6 +73,10 @@ export const de = {
     allBoards: 'Alle Boards',
     settings: 'Einstellungen',
   },
+  legal: {
+    imprint: 'Impressum',
+    privacy: 'Datenschutz',
+  },
   accessibility: {
     link: 'Barrierefreiheit',
     title: 'Barrierefreiheit',
@@ -2469,6 +2473,9 @@ export const de = {
     },
   },
   operations: {
+    legal: 'Impressum und Datenschutz',
+    legalIntro:
+      'Links zu Impressum und Datenschutzerklärung deiner Organisation. Sie stehen auf der Anmeldeseite, im Service-Portal und unten in der Seitenleiste. Leer gilt der Wert aus der Umgebung (IMPRINT_URL, PRIVACY_URL).',
     plan: {
       title: 'Tarif',
       titleNamed: 'Tarif „{{plan}}“',

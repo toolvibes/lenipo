@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type Announcement,
   type FeatureFlags,
+  type LegalLinks,
   type MaintenanceMode,
   MODULES,
   type RateLimitSettings,
@@ -14,7 +15,7 @@ import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
 
-/** Modules, maintenance mode, banner and request limits (TL-40, E-121). */
+/** Modules, maintenance mode, banner, legal links and request limits (TL-40, E-121; TL-105). */
 export function OperationsPage() {
   const { t } = useTranslation();
   return (
@@ -24,6 +25,7 @@ export function OperationsPage() {
       <Modules />
       <Maintenance />
       <Banner />
+      <Legal />
       <Limits />
       <Tokens />
     </main>
@@ -257,6 +259,59 @@ function Banner() {
             onClick={() => save.mutate({ text: '', level: 'info', startsAt: null, endsAt: null })}
           >
             {t('operations.bannerRemove')}
+          </Button>
+        </div>
+      </form>
+    </Section>
+  );
+}
+
+/** Imprint and privacy policy of the organisation that runs the instance (TL-105, E-157). */
+function Legal() {
+  const { t } = useTranslation();
+  const { query, save } = useSaved<LegalLinks>('legal-links', '/api/v1/admin/legal-links');
+  const [form, setForm] = useState<{ imprintUrl: string; privacyUrl: string } | null>(null);
+  useEffect(() => {
+    if (query.data) {
+      setForm({
+        imprintUrl: query.data.imprintUrl ?? '',
+        privacyUrl: query.data.privacyUrl ?? '',
+      });
+    }
+  }, [query.data]);
+  if (!form) return null;
+  return (
+    <Section title={t('operations.legal')} intro={t('operations.legalIntro')}>
+      {save.error && <FormError message={save.error.message} />}
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          save.mutate({
+            imprintUrl: form.imprintUrl.trim() || null,
+            privacyUrl: form.privacyUrl.trim() || null,
+          });
+        }}
+      >
+        <TextField
+          label={t('legal.imprint')}
+          type="url"
+          placeholder="https://"
+          maxLength={500}
+          value={form.imprintUrl}
+          onChange={(event) => setForm({ ...form, imprintUrl: event.target.value })}
+        />
+        <TextField
+          label={t('legal.privacy')}
+          type="url"
+          placeholder="https://"
+          maxLength={500}
+          value={form.privacyUrl}
+          onChange={(event) => setForm({ ...form, privacyUrl: event.target.value })}
+        />
+        <div className="flex gap-2">
+          <Button type="submit" variant="primary" disabled={save.isPending}>
+            {t('common.save')}
           </Button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogoMark } from '../../ui/Logo';
+import { LegalLinks } from '../shell/LegalLinks';
 
 const PITCH = ['issues', 'lore', 'linked'] as const;
 
@@ -31,9 +32,12 @@ export function AuthLayout({
           </div>
           {children}
         </div>
-        <a href="/accessibility" className="text-xs text-[var(--ink-muted)]">
-          {t('accessibility.link')}
-        </a>
+        <span className="flex flex-wrap gap-x-3 gap-y-1">
+          <a href="/accessibility" className="text-xs text-[var(--ink-muted)]">
+            {t('accessibility.link')}
+          </a>
+          <LegalLinks />
+        </span>
       </main>
       <aside
         aria-label={t('auth.pitchLabel')}

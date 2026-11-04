@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=21 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=22 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -41,6 +41,7 @@ Umgebungsvariablen, beim Start geprüft (ein Fehler nennt die Variable):
 | `SHUTDOWN_TIMEOUT_SECONDS` | Wie lange ein stoppender Prozess auf laufende Arbeit wartet (25) |
 | `WEBHOOK_ALLOW_PRIVATE_NETWORKS` | Webhooks und Abrufe an private Adressen erlauben (Standard aus) |
 | `HELP_URL` | Ziel des Eintrags „Hilfe“; ohne ihn das eingebaute Benutzerhandbuch |
+| `IMPRINT_URL`, `PRIVACY_URL` | Links zu Impressum und Datenschutzerklärung, solange Admins keine eigenen eintragen |
 | `LOG_LEVEL` | `info` (Standard), `debug`, `warn` … |
 
 Einstellungen, die Admins zur Laufzeit ändern, liegen in der Datenbank und stehen in der **Administration**.
@@ -168,6 +169,7 @@ Die Docker-Compose-Datei nutzt `latest`; eine feste Version setzt `LENIPO_VERSIO
 - **Metriken** mit `METRICS_PORT`: HTTP-Dauer je Route, offene Verbindungen, Warteschlangen (`lenipo_backlog`), Alter des ältesten unverarbeiteten Ereignisses (`lenipo_outbox_lag_seconds`), `lenipo_database_up`. Sinnvolle Alarme: `lenipo_database_up == 0`, `lenipo_outbox_lag_seconds > 300`, wachsende Webhook-Warteschlange.
 - **Logs** als JSON auf der Standardausgabe, ohne Header und Query-Strings; mit Traces enthalten sie `trace_id`.
 - **Module** (Wiki, Boards, Zeiterfassung, Automatisierung, Dashboards) lassen sich abschalten; **Anfragegrenzen** je Person, Token und IP einstellen (Administration → Betrieb).
+- **Impressum und Datenschutz** (Administration → Betrieb): Links zu den Seiten der eigenen Organisation. Sie stehen auf der Anmeldeseite, im Service-Portal und unten in der Seitenleiste; ohne eigene gelten `IMPRINT_URL` und `PRIVACY_URL`. Wer Lenipo für andere betreibt, etwa für Service-Desk-Kunden, sollte sie eintragen.
 - **Skalierung:** mehrere api- und worker-Instanzen jederzeit; mehrere Collab-Server nur mit `REDIS_URL`.
 - **Lasttest** gegen die Qualitätsziele: `pnpm --filter @toolvibes/loadtest loadtest`.
 

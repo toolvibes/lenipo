@@ -50,6 +50,23 @@ export const Announcement = z
   .meta({ id: 'Announcement' });
 export type Announcement = z.infer<typeof Announcement>;
 
+/** Links to the operator's imprint and privacy policy, shown before and after sign-in (TL-105, E-157). */
+export const LegalLinks = z
+  .object({
+    imprintUrl: z
+      .url({ protocol: /^https?$/ })
+      .max(500)
+      .nullable()
+      .default(null),
+    privacyUrl: z
+      .url({ protocol: /^https?$/ })
+      .max(500)
+      .nullable()
+      .default(null),
+  })
+  .meta({ id: 'LegalLinks' });
+export type LegalLinks = z.infer<typeof LegalLinks>;
+
 /** What every page needs to know about the instance; also before sign-in. */
 export const InstanceNotice = z
   .object({
@@ -59,6 +76,8 @@ export const InstanceNotice = z
     announcement: Announcement.extend({ version: z.string() }).nullable(),
     /** An external help page set by the operators; null: the built-in handbook. */
     helpUrl: z.string().nullable(),
+    /** Imprint and privacy policy of whoever runs the instance; null where none is set. */
+    legal: LegalLinks,
   })
   .meta({ id: 'InstanceNotice' });
 export type InstanceNotice = z.infer<typeof InstanceNotice>;

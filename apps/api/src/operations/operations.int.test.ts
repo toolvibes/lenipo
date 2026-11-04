@@ -19,7 +19,7 @@ async function signIn(email: string) {
 }
 
 beforeAll(async () => {
-  test = await startTestApp({ RATE_LIMITS: 'true' });
+  test = await startTestApp({ RATE_LIMITS: 'true', IMPRINT_URL: 'https://example.org/impressum' });
   admin = new TestClient(test.baseUrl);
   const code = await test.app.get(SetupService).issueCode();
   await admin.request('POST', '/setup', {
@@ -164,5 +164,43 @@ describe('maintenance mode and announcement (TL-40)', () => {
     expect((await admin.request<InstanceNotice>('GET', '/instance/notice')).body.announcement).toBe(
       null,
     );
+  });
+});
+
+describe('legal links (TL-105)', () => {
+  it('shows the defaults from the environment until administrators set their own', async () => {
+    const anonymous = new TestClient(test.baseUrl);
+    const before = (await anonymous.request<InstanceNotice>('GET', '/instance/notice')).body;
+    expect(before.legal).toEqual({
+      imprintUrl: 'https://example.org/impressum',
+      privacyUrl: null,
+    });
+    const jonas = await signIn('jonas@example.org');
+    expect(
+      (
+        await jonas.client.request('PUT', '/admin/legal-links', {
+          imprintUrl: null,
+          privacyUrl: 'https://evil.example',
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await admin.request('PUT', '/admin/legal-links', {
+          imprintUrl: 'javascript:alert(1)',
+          privacyUrl: null,
+        })
+      ).status,
+    ).toBe(400);
+    const saved = await admin.request('PUT', '/admin/legal-links', {
+      imprintUrl: null,
+      privacyUrl: 'https://example.org/datenschutz',
+    });
+    expect(saved.body).toEqual({
+      imprintUrl: 'https://example.org/impressum',
+      privacyUrl: 'https://example.org/datenschutz',
+    });
+    const after = (await anonymous.request<InstanceNotice>('GET', '/instance/notice')).body;
+    expect(after.legal.privacyUrl).toBe('https://example.org/datenschutz');
   });
 });

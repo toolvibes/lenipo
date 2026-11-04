@@ -3,6 +3,7 @@ import {
   Announcement,
   FeatureFlags,
   type InstanceNotice,
+  LegalLinks,
   MaintenanceMode,
   type ModuleName,
   ProviderLimits,
@@ -20,6 +21,7 @@ const KEYS = {
   rateLimits: 'rate-limits',
   maintenance: 'maintenance-mode',
   announcement: 'announcement',
+  legal: 'legal-links',
   /** Written by ProviderService (TL-103); read here for the ceilings of the request limits. */
   providerLimits: 'provider-limits',
 } as const;
@@ -34,6 +36,8 @@ interface Snapshot {
   rateLimitCeilings: RateLimitSettings | null;
   maintenance: MaintenanceMode;
   announcement: Announcement & { version: string };
+  /** As the administrators saved them, without the defaults from the environment. */
+  legal: LegalLinks;
   tokenLimits: Map<string, { perMinute: number | null; perDay: number | null }>;
 }
 
@@ -41,8 +45,8 @@ interface Snapshot {
 const CACHE_MS = 5_000;
 
 /**
- * Instance-wide switches (TL-40, E-121): modules, request limits, maintenance mode and the
- * announcement banner, read on every request from a short cache.
+ * Instance-wide switches (TL-40, E-121): modules, request limits, maintenance mode, the
+ * announcement banner and the legal links (TL-105), read on every request from a short cache.
  */
 @Injectable()
 export class OperationsService implements OnApplicationShutdown {
@@ -112,6 +116,7 @@ export class OperationsService implements OnApplicationShutdown {
         ...Announcement.parse(announcement?.value ?? {}),
         version: announcement?.updatedAt.toISOString() ?? '',
       },
+      legal: LegalLinks.parse(value(KEYS.legal)?.value ?? {}),
       tokenLimits: new Map(
         limited.map(({ id, perMinute, perDay }) => [
           id,
@@ -156,6 +161,20 @@ export class OperationsService implements OnApplicationShutdown {
     return announcement;
   }
 
+  async setLegal(links: LegalLinks): Promise<LegalLinks> {
+    await this.save(KEYS.legal, links);
+    return this.legal();
+  }
+
+  /** The links in force: the administrators' own, else the defaults from the environment. */
+  async legal(): Promise<LegalLinks> {
+    const { legal } = await this.snapshot();
+    return {
+      imprintUrl: legal.imprintUrl ?? this.config.IMPRINT_URL ?? null,
+      privacyUrl: legal.privacyUrl ?? this.config.PRIVACY_URL ?? null,
+    };
+  }
+
   async notice(now = new Date()): Promise<InstanceNotice> {
     const { modules, maintenance, announcement } = await this.snapshot();
     const due =
@@ -167,6 +186,7 @@ export class OperationsService implements OnApplicationShutdown {
       maintenance,
       announcement: due ? announcement : null,
       helpUrl: this.config.HELP_URL ?? null,
+      legal: await this.legal(),
     };
   }
 

@@ -10,6 +10,7 @@ import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
+import { LegalLinks } from '../shell/LegalLinks';
 import { StatusLozenge } from '../tracking/icons';
 import { RichTextView } from '../tracking/RichTextEditor';
 
@@ -83,6 +84,7 @@ export function PortalPage() {
         ))}
       </ul>
       <MyRequests />
+      <LegalLinks />
     </main>
   );
 }

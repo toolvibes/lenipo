@@ -16,6 +16,7 @@ import {
   Announcement,
   FeatureFlags,
   InstanceNotice,
+  LegalLinks,
   MaintenanceMode,
   MODULES,
   ProviderLimits,
@@ -170,6 +171,33 @@ export class OperationsController {
   ): Promise<Announcement> {
     await this.record(principal, 'system.announcement_changed', { level: body.level });
     return this.operations.setAnnouncement(body);
+  }
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'Links to imprint and privacy policy',
+    description:
+      'The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.',
+    response: LegalLinks,
+  })
+  @Get('legal-links')
+  legal(): Promise<LegalLinks> {
+    return this.operations.legal();
+  }
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'Set the links to imprint and privacy policy',
+    description: 'null removes an own link; the default from the environment applies again.',
+    response: LegalLinks,
+  })
+  @Put('legal-links')
+  async setLegal(
+    @CurrentPrincipal() principal: Principal,
+    @ValidBody(LegalLinks) body: LegalLinks,
+  ): Promise<LegalLinks> {
+    await this.record(principal, 'system.legal_links_changed', body);
+    return this.operations.setLegal(body);
   }
 
   @Endpoint({

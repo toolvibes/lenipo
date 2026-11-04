@@ -3814,6 +3814,34 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/legal-links': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Links to imprint and privacy policy
+     * @description The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.
+     *
+     *     Requires the global permission `admin`.
+     */
+    get: operations['Operations.legal'];
+    /**
+     * Set the links to imprint and privacy policy
+     * @description null removes an own link; the default from the environment applies again.
+     *
+     *     Requires the global permission `admin`.
+     */
+    put: operations['Operations.setLegal'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/tokens': {
     parameters: {
       query?: never;
@@ -9294,6 +9322,7 @@ export interface components {
         version: string;
       } | null;
       helpUrl: string | null;
+      legal: components['schemas']['LegalLinks'];
     };
     FeatureFlags: {
       /** @default true */
@@ -9312,6 +9341,12 @@ export interface components {
       enabled: boolean;
       /** @default  */
       message: string;
+    };
+    LegalLinks: {
+      /** @default null */
+      imprintUrl: string | null;
+      /** @default null */
+      privacyUrl: string | null;
     };
     CreateInvitationRequest: {
       /** Format: email */
@@ -10009,6 +10044,12 @@ export interface components {
       startsAt?: string | null;
       /** @default null */
       endsAt?: string | null;
+    };
+    LegalLinksInput: {
+      /** @default null */
+      imprintUrl?: string | null;
+      /** @default null */
+      privacyUrl?: string | null;
     };
     AdminToken: {
       /** Format: uuid */
@@ -20412,6 +20453,68 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Announcement'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.legal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegalLinks'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setLegal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegalLinksInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LegalLinks'];
         };
       };
       /** @description Error (RFC 9457 problem details) */
