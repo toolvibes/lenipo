@@ -134,4 +134,22 @@ describe('Markdown folder as a snapshot of a space', () => {
     expect(result.drafts).toEqual(['Nur Entwurf']);
     expect(await readFile(join(folder, '02-entscheidungen.md'), 'utf8')).toContain('Neu im Wiki');
   });
+
+  it('publish a marked page that an import cut short left unpublished, as created', async () => {
+    const home = (await tree())[0];
+    const draft = (
+      await admin.request<Page>('POST', '/spaces/TL/pages', {
+        title: 'Abgebrochen',
+        parentId: home?.id,
+      })
+    ).body;
+    await writeFile(
+      join(folder, '04-abgebrochen.md'),
+      `<!-- lenipo page=${draft.id} version=0 · Schnappschuss -->\n# Abgebrochen\n\nJetzt da\n`,
+    );
+    const result = await importFolder(services, principal, folder, options);
+    expect(result.created).toEqual(['04-abgebrochen.md']);
+    const page = (await admin.request<Page>('GET', `/pages/${draft.id}`)).body;
+    expect(page.version).toBe(1);
+  });
 });

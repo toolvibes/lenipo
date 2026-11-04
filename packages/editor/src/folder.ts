@@ -255,6 +255,8 @@ export async function importFolder(
       comment: page.version === 0 ? 'Import aus Markdown' : 'Aus dem Markdown-Schnappschuss',
     });
     if (page.version > 0) result.updated.push(file.path);
+    // A marked page that was never published (an import cut short) counts as created now.
+    else if (!result.created.includes(file.path)) result.created.push(file.path);
     // The file now matches the new version, so the next import or export knows its page.
     await writeFile(join(folder, file.path), marker(published) + file.text);
   }

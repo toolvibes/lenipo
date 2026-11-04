@@ -52,8 +52,12 @@ export async function createApiApp(deps: AppDependencies): Promise<NestExpressAp
   app.use(appCors(app.get(AppsService)));
   app.use(agentRequestLog(app.get(AgentActivityService)));
   // SCIM clients send application/scim+json (RFC 7644).
-  // This replaces Nest's JSON parser, so plain JSON stays in the list.
-  app.useBodyParser('json', { type: ['application/json', 'application/scim+json'] });
+  // This replaces Nest's JSON parser, so plain JSON stays in the list. A long wiki page is
+  // published as one editor document; its JSON easily passes the 100 KB default.
+  app.useBodyParser('json', {
+    type: ['application/json', 'application/scim+json'],
+    limit: '10mb',
+  });
   app.use('/scim/v2', (_request: Request, response: Response, next: NextFunction) => {
     response.type('application/scim+json');
     next();

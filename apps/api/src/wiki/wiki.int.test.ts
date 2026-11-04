@@ -743,3 +743,24 @@ describe('labels and watching (E-65)', () => {
     await mira.request('DELETE', '/spaces/DOCS/watch');
   });
 });
+
+describe('long pages', () => {
+  it('publishes a page of several hundred KB, as a long decision log needs', async () => {
+    await admin.request('POST', '/spaces', { key: 'LONG', name: 'Lange Seiten' });
+    const page = (await admin.request<Page>('POST', '/spaces/LONG/pages', { title: 'Log' })).body;
+    const content = {
+      type: 'doc',
+      content: Array.from({ length: 3000 }, (_, index) => ({
+        type: 'paragraph',
+        content: [{ type: 'text', text: `Entscheidung ${index}: `.repeat(8) }],
+      })),
+    };
+    expect(JSON.stringify(content).length).toBeGreaterThan(400_000);
+    const published = await admin.request<Page>('POST', `/pages/${page.id}/publish`, {
+      title: 'Log',
+      content,
+    });
+    expect(published.status).toBe(200);
+    expect(published.body.version).toBe(1);
+  });
+});
