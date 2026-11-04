@@ -36,6 +36,23 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
   next();
 }
 
+/** Paths the API answers itself, also for clients that accept anything (curl, MCP SDKs). */
+const API_PREFIXES = ['/api/', '/rest/', '/scim/', '/.well-known/', '/mcp/'];
+
+/**
+ * Whether a request gets the web app's index.html. OAuth metadata under /.well-known and /mcp
+ * stay with the API even when the client accepts any type (curl, MCP SDKs), or MCP clients
+ * would read HTML instead of JSON.
+ */
+export function isAppNavigation(method: string, path: string, acceptsHtml: boolean): boolean {
+  return (
+    method === 'GET' &&
+    acceptsHtml &&
+    path !== '/mcp' &&
+    !API_PREFIXES.some((prefix) => path.startsWith(prefix))
+  );
+}
+
 /**
  * Serves the built web app from the API process (decision E-07): hashed assets as static
  * files, every other browser navigation falls back to index.html for client-side routing.
@@ -61,13 +78,7 @@ export function serveWebApp(
     },
   });
   app.use(async (req: Request, res: Response, next: NextFunction) => {
-    if (
-      req.method !== 'GET' ||
-      req.path.startsWith('/api/') ||
-      req.path.startsWith('/rest/') ||
-      req.path.startsWith('/scim/') ||
-      !req.accepts('html')
-    ) {
+    if (!isAppNavigation(req.method, req.path, !!req.accepts('html'))) {
       next();
       return;
     }
