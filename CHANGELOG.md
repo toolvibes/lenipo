@@ -2,6 +2,13 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.0.3 – 2026-11-04
+
+### Behoben
+
+- Release erhöht auch die Version der Python-SDK, damit die SDK-Prüfung grün bleibt
+- Lange Wiki-Seiten lassen sich veröffentlichen (JSON bis 10 MB statt 100 KB)
+
 ## 1.0.2 – 2026-11-04
 
 Keine Änderungen an Funktionen.

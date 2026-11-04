@@ -1,6 +1,6 @@
 {
   "name": "@toolvibes/cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Command line for Lenipo: issues, boards, wiki pages as Markdown and a local MCP bridge.",
   "type": "module",
