@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.1.1 – 2026-11-04
+
+### Neu
+
+- Wiki-Seiten nutzen die volle Breite statt einer festen Zeilenlänge
+
 ## 1.1.0 – 2026-11-04
 
 ### Neu
