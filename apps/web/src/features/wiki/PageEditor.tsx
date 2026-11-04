@@ -141,7 +141,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
               maxLength={255}
               aria-label={t('wiki.pageTitle')}
               placeholder={t('wiki.pageTitle')}
-              className="tl-heading-xl w-full max-w-[var(--prose-measure)] border-0 border-b border-transparent bg-transparent px-0 outline-none focus:border-[var(--accent)]"
+              className="tl-heading-xl w-full border-0 border-b border-transparent bg-transparent px-0 outline-none focus:border-[var(--accent)]"
             />
             <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
               {session && (

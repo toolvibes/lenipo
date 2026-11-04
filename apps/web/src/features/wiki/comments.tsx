@@ -234,7 +234,7 @@ export function PageComments({
   return (
     <section
       aria-labelledby="page-comments"
-      className="flex max-w-[var(--prose-measure)] flex-col gap-4 border-t border-[var(--border)] pt-4"
+      className="flex flex-col gap-4 border-t border-[var(--border)] pt-4"
     >
       <h2 id="page-comments" className="tl-heading-md m-0 flex items-center gap-2">
         <ChatCircle size={18} aria-hidden />

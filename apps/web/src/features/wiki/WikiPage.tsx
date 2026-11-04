@@ -345,7 +345,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
       />
 
       <div className="flex flex-wrap items-start gap-x-10 gap-y-6 px-12 py-9">
-        <div className="flex min-w-0 max-w-[680px] flex-[999_1_480px] flex-col gap-4">
+        <div className="flex min-w-0 flex-[999_1_480px] flex-col gap-4">
           <header className="flex flex-col gap-3">
             <span className="text-[12.5px] text-[var(--ink-muted)]">
               {data.version === 0
@@ -420,7 +420,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
           </aside>
         )}
       </div>
-      <div className="flex max-w-[728px] flex-col gap-6 px-12 pb-12">
+      <div className="flex flex-col gap-6 px-12 pb-12">
         <PageAttachments pageId={data.id} canEdit={data.canEdit} />
         {data.version > 0 && (
           <PageComments

@@ -53,8 +53,10 @@ body {
   font-size: 14px;
   line-height: 22px;
 }
-/* wiki pages read like a document: the prose sizes of the type scale, a little larger than the UI. */
+/* wiki pages read like a document: the prose sizes of the type scale, a little larger than the UI,
+   and as wide as the screen allows (no fixed measure). */
 .tl-prose.tl-lore {
+  max-width: none;
   font-family: var(--font-prose);
   font-size: 15.5px;
   line-height: 26px;

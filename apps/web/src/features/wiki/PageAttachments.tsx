@@ -42,7 +42,7 @@ export function PageAttachments({ pageId, canEdit }: { pageId: string; canEdit: 
   return (
     <section
       aria-labelledby="page-attachments"
-      className="flex max-w-[var(--prose-measure)] flex-col gap-2 border-t border-[var(--border)] pt-4"
+      className="flex flex-col gap-2 border-t border-[var(--border)] pt-4"
     >
       <div className="flex items-center justify-between gap-2">
         <h2 id="page-attachments" className="tl-heading-md m-0 flex items-center gap-2">
