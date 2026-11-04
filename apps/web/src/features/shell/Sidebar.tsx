@@ -395,6 +395,7 @@ export function Sidebar({
             {t('sidebar.settings')}
           </NavRow>
         )}
+        <LegalLinks className="px-2.5 pt-1.5" />
       </div>
 
       <div className="flex items-center gap-2 border-t border-[var(--border)] px-2 pt-2">
@@ -424,7 +425,6 @@ export function Sidebar({
           <SignOut size={16} aria-hidden />
         </button>
       </div>
-      <LegalLinks className="px-2" />
     </nav>
   );
 }
