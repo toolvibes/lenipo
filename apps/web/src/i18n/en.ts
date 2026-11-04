@@ -1429,7 +1429,15 @@ export const en: Messages = {
       lore: 'Wiki only',
       loreText: 'Documentation and knowledge first – tasks later.',
     },
-    nameTitle: 'What is it called?',
+    nameTitle: {
+      project: 'What should your first project be called?',
+      space: 'What should your first wiki space be called?',
+    },
+    nameIntro: {
+      project:
+        'For example the name of your team or initiative, such as “Website relaunch”. The project’s wiki gets the same name.',
+      space: 'For example the name of your team or topic, such as “Support handbook”.',
+    },
     name: 'Name',
     key: 'Key',
     keyHelp: 'Prefixes every issue number and the wiki space, e.g. {{key}}-12.',

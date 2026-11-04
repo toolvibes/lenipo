@@ -195,8 +195,11 @@ export function WelcomePage({ me }: { me: Me }) {
           {step === 3 && (
             <>
               <h2 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
-                {t('welcome.nameTitle')}
+                {t(`welcome.nameTitle.${method === 'lore' ? 'space' : 'project'}`)}
               </h2>
+              <p className="m-0 text-sm leading-normal text-[var(--ink-muted)]">
+                {t(`welcome.nameIntro.${method === 'lore' ? 'space' : 'project'}`)}
+              </p>
               <TextField
                 label={t('welcome.name')}
                 value={name}

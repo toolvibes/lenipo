@@ -1456,7 +1456,15 @@ export const de = {
       lore: 'Nur Wiki',
       loreText: 'Dokumentation und Wissen zuerst – Aufgaben später.',
     },
-    nameTitle: 'Wie heißt es?',
+    nameTitle: {
+      project: 'Wie soll Ihr erstes Projekt heißen?',
+      space: 'Wie soll Ihr erster Wiki-Bereich heißen?',
+    },
+    nameIntro: {
+      project:
+        'Zum Beispiel der Name Ihres Teams oder Vorhabens, etwa „Website-Relaunch“. Das Wiki des Projekts bekommt denselben Namen.',
+      space: 'Zum Beispiel der Name Ihres Teams oder Themas, etwa „Handbuch Support“.',
+    },
     name: 'Name',
     key: 'Schlüssel',
     keyHelp: 'Steht vor jeder Vorgangsnummer und jedem Wiki-Bereich, z. B. {{key}}-12.',
