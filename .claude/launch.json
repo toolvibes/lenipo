@@ -4,13 +4,14 @@
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@tasklore/api", "dev"],
+      "runtimeArgs": ["--filter", "@toolvibes/api", "dev"],
+      "env": { "S3_ENDPOINT": "http://[::1]:9010" },
       "port": 4000
     },
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@tasklore/web", "dev"],
+      "runtimeArgs": ["--filter", "@toolvibes/web", "dev"],
       "port": 5173
     }
   ]

@@ -12,6 +12,8 @@ from ..models.module_name import ModuleName
 from ..types import UNSET, Unset
 from typing import cast
 
+if TYPE_CHECKING:
+  from ..models.provider_limits_requests_per_minute_type_0 import ProviderLimitsRequestsPerMinuteType0
 
 
 
@@ -31,6 +33,8 @@ class ProviderLimits:
             storage_mb (int | None | Unset):
             modules (list[ModuleName] | None | Unset):
             service_desk (bool | Unset):  Default: True.
+            requests_per_minute (None | ProviderLimitsRequestsPerMinuteType0 | Unset):
+            support_url (None | str | Unset):
      """
 
     plan: str | Unset = ''
@@ -39,6 +43,8 @@ class ProviderLimits:
     storage_mb: int | None | Unset = UNSET
     modules: list[ModuleName] | None | Unset = UNSET
     service_desk: bool | Unset = True
+    requests_per_minute: None | ProviderLimitsRequestsPerMinuteType0 | Unset = UNSET
+    support_url: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
 
@@ -46,6 +52,7 @@ class ProviderLimits:
 
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.provider_limits_requests_per_minute_type_0 import ProviderLimitsRequestsPerMinuteType0 # noqa: PLC0415
         plan = self.plan
 
         persons: int | None | Unset
@@ -81,6 +88,20 @@ class ProviderLimits:
 
         service_desk = self.service_desk
 
+        requests_per_minute: dict[str, Any] | None | Unset
+        if isinstance(self.requests_per_minute, Unset):
+            requests_per_minute = UNSET
+        elif isinstance(self.requests_per_minute, ProviderLimitsRequestsPerMinuteType0):
+            requests_per_minute = self.requests_per_minute.to_dict()
+        else:
+            requests_per_minute = self.requests_per_minute
+
+        support_url: None | str | Unset
+        if isinstance(self.support_url, Unset):
+            support_url = UNSET
+        else:
+            support_url = self.support_url
+
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -98,6 +119,10 @@ class ProviderLimits:
             field_dict["modules"] = modules
         if service_desk is not UNSET:
             field_dict["serviceDesk"] = service_desk
+        if requests_per_minute is not UNSET:
+            field_dict["requestsPerMinute"] = requests_per_minute
+        if support_url is not UNSET:
+            field_dict["supportUrl"] = support_url
 
         return field_dict
 
@@ -105,6 +130,7 @@ class ProviderLimits:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.provider_limits_requests_per_minute_type_0 import ProviderLimitsRequestsPerMinuteType0 # noqa: PLC0415
         d = dict(src_dict)
         plan = d.pop("plan", UNSET)
 
@@ -165,6 +191,36 @@ class ProviderLimits:
 
         service_desk = d.pop("serviceDesk", UNSET)
 
+        def _parse_requests_per_minute(data: object) -> None | ProviderLimitsRequestsPerMinuteType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                requests_per_minute_type_0 = ProviderLimitsRequestsPerMinuteType0.from_dict(data)
+
+
+
+                return requests_per_minute_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | ProviderLimitsRequestsPerMinuteType0 | Unset, data)
+
+        requests_per_minute = _parse_requests_per_minute(d.pop("requestsPerMinute", UNSET))
+
+
+        def _parse_support_url(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        support_url = _parse_support_url(d.pop("supportUrl", UNSET))
+
+
         provider_limits = cls(
             plan=plan,
             persons=persons,
@@ -172,6 +228,8 @@ class ProviderLimits:
             storage_mb=storage_mb,
             modules=modules,
             service_desk=service_desk,
+            requests_per_minute=requests_per_minute,
+            support_url=support_url,
         )
 
 

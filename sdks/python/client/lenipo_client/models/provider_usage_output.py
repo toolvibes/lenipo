@@ -33,6 +33,7 @@ class ProviderUsageOutput:
             service_desks (int):
             modules (list[ModuleName]):
             limits (None | ProviderLimitsOutput):
+            last_active_at (datetime.datetime | None):
             measured_at (datetime.datetime):
      """
 
@@ -42,6 +43,7 @@ class ProviderUsageOutput:
     service_desks: int
     modules: list[ModuleName]
     limits: None | ProviderLimitsOutput
+    last_active_at: datetime.datetime | None
     measured_at: datetime.datetime
 
 
@@ -71,6 +73,12 @@ class ProviderUsageOutput:
         else:
             limits = self.limits
 
+        last_active_at: None | str
+        if isinstance(self.last_active_at, datetime.datetime):
+            last_active_at = self.last_active_at.isoformat()
+        else:
+            last_active_at = self.last_active_at
+
         measured_at = self.measured_at.isoformat()
 
 
@@ -83,6 +91,7 @@ class ProviderUsageOutput:
             "serviceDesks": service_desks,
             "modules": modules,
             "limits": limits,
+            "lastActiveAt": last_active_at,
             "measuredAt": measured_at,
         })
 
@@ -130,6 +139,24 @@ class ProviderUsageOutput:
         limits = _parse_limits(d.pop("limits"))
 
 
+        def _parse_last_active_at(data: object) -> datetime.datetime | None:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                last_active_at_type_0 = datetime.datetime.fromisoformat(data)
+
+
+
+                return last_active_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None, data)
+
+        last_active_at = _parse_last_active_at(d.pop("lastActiveAt"))
+
+
         measured_at = datetime.datetime.fromisoformat(d.pop("measuredAt"))
 
 
@@ -142,6 +169,7 @@ class ProviderUsageOutput:
             service_desks=service_desks,
             modules=modules,
             limits=limits,
+            last_active_at=last_active_at,
             measured_at=measured_at,
         )
 

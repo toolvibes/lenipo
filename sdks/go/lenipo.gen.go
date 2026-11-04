@@ -2094,6 +2094,24 @@ func (e InstanceNoticeAnnouncementLevel) Valid() bool {
 	}
 }
 
+// Defines values for InstanceNoticeProviderNoticeLevel.
+const (
+	InstanceNoticeProviderNoticeLevelInfo    InstanceNoticeProviderNoticeLevel = "info"
+	InstanceNoticeProviderNoticeLevelWarning InstanceNoticeProviderNoticeLevel = "warning"
+)
+
+// Valid indicates whether the value is a known member of the InstanceNoticeProviderNoticeLevel enum.
+func (e InstanceNoticeProviderNoticeLevel) Valid() bool {
+	switch e {
+	case InstanceNoticeProviderNoticeLevelInfo:
+		return true
+	case InstanceNoticeProviderNoticeLevelWarning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssueApprovalStatus.
 const (
 	IssueApprovalStatusApproved IssueApprovalStatus = "approved"
@@ -8052,13 +8070,25 @@ type InstanceNotice struct {
 		Text     string                          `json:"text"`
 		Version  string                          `json:"version"`
 	} `json:"announcement"`
-	HelpUrl     *string         `json:"helpUrl"`
-	Maintenance MaintenanceMode `json:"maintenance"`
-	Modules     FeatureFlags    `json:"modules"`
+	HelpUrl        *string         `json:"helpUrl"`
+	Legal          LegalLinks      `json:"legal"`
+	Maintenance    MaintenanceMode `json:"maintenance"`
+	Modules        FeatureFlags    `json:"modules"`
+	ProviderNotice *struct {
+		EndsAt   *time.Time                        `json:"endsAt"`
+		Level    InstanceNoticeProviderNoticeLevel `json:"level"`
+		StartsAt *time.Time                        `json:"startsAt"`
+		Text     string                            `json:"text"`
+		Version  string                            `json:"version"`
+	} `json:"providerNotice"`
+	SupportUrl *string `json:"supportUrl"`
 }
 
 // InstanceNoticeAnnouncementLevel defines model for InstanceNotice.Announcement.Level.
 type InstanceNoticeAnnouncementLevel string
+
+// InstanceNoticeProviderNoticeLevel defines model for InstanceNotice.ProviderNotice.Level.
+type InstanceNoticeProviderNoticeLevel string
 
 // Invitation defines model for Invitation.
 type Invitation struct {
@@ -8571,6 +8601,18 @@ type LdapConfig struct {
 	Url                  string  `json:"url"`
 	UserBase             string  `json:"userBase"`
 	UserFilter           *string `json:"userFilter,omitempty"`
+}
+
+// LegalLinks defines model for LegalLinks.
+type LegalLinks struct {
+	ImprintUrl *string `json:"imprintUrl"`
+	PrivacyUrl *string `json:"privacyUrl"`
+}
+
+// LegalLinksInput defines model for LegalLinksInput.
+type LegalLinksInput struct {
+	ImprintUrl *string `json:"imprintUrl,omitempty"`
+	PrivacyUrl *string `json:"privacyUrl,omitempty"`
 }
 
 // LinkedIssue defines model for LinkedIssue.
@@ -9606,27 +9648,40 @@ type ProjectWorkflowMode string
 
 // ProviderLimits defines model for ProviderLimits.
 type ProviderLimits struct {
-	Agents      *int          `json:"agents,omitempty"`
-	Modules     *[]ModuleName `json:"modules,omitempty"`
-	Persons     *int          `json:"persons,omitempty"`
-	Plan        *string       `json:"plan,omitempty"`
-	ServiceDesk *bool         `json:"serviceDesk,omitempty"`
-	StorageMb   *int          `json:"storageMb,omitempty"`
+	Agents            *int          `json:"agents,omitempty"`
+	Modules           *[]ModuleName `json:"modules,omitempty"`
+	Persons           *int          `json:"persons,omitempty"`
+	Plan              *string       `json:"plan,omitempty"`
+	RequestsPerMinute *struct {
+		Anonymous int `json:"anonymous"`
+		People    int `json:"people"`
+		Tokens    int `json:"tokens"`
+	} `json:"requestsPerMinute,omitempty"`
+	ServiceDesk *bool   `json:"serviceDesk,omitempty"`
+	StorageMb   *int    `json:"storageMb,omitempty"`
+	SupportUrl  *string `json:"supportUrl,omitempty"`
 }
 
 // ProviderLimitsOutput defines model for ProviderLimitsOutput.
 type ProviderLimitsOutput struct {
-	Agents      *int          `json:"agents"`
-	Modules     *[]ModuleName `json:"modules"`
-	Persons     *int          `json:"persons"`
-	Plan        string        `json:"plan"`
-	ServiceDesk bool          `json:"serviceDesk"`
-	StorageMb   *int          `json:"storageMb"`
+	Agents            *int          `json:"agents"`
+	Modules           *[]ModuleName `json:"modules"`
+	Persons           *int          `json:"persons"`
+	Plan              string        `json:"plan"`
+	RequestsPerMinute *struct {
+		Anonymous int `json:"anonymous"`
+		People    int `json:"people"`
+		Tokens    int `json:"tokens"`
+	} `json:"requestsPerMinute"`
+	ServiceDesk bool    `json:"serviceDesk"`
+	StorageMb   *int    `json:"storageMb"`
+	SupportUrl  *string `json:"supportUrl"`
 }
 
 // ProviderUsage defines model for ProviderUsage.
 type ProviderUsage struct {
 	Agents       int                   `json:"agents"`
+	LastActiveAt *time.Time            `json:"lastActiveAt"`
 	Limits       *ProviderLimitsOutput `json:"limits"`
 	MeasuredAt   time.Time             `json:"measuredAt"`
 	Modules      []ModuleName          `json:"modules"`
@@ -9638,6 +9693,7 @@ type ProviderUsage struct {
 // ProviderUsageOutput defines model for ProviderUsageOutput.
 type ProviderUsageOutput struct {
 	Agents       int                   `json:"agents"`
+	LastActiveAt *time.Time            `json:"lastActiveAt"`
 	Limits       *ProviderLimitsOutput `json:"limits"`
 	MeasuredAt   time.Time             `json:"measuredAt"`
 	Modules      []ModuleName          `json:"modules"`
@@ -12540,6 +12596,9 @@ type ImportConfluenceMultipartRequestBody ImportConfluenceMultipartBody
 // ImportJiraJSONRequestBody defines body for ImportJira for application/json ContentType.
 type ImportJiraJSONRequestBody = JiraImportRequest
 
+// OperationsSetLegalJSONRequestBody defines body for OperationsSetLegal for application/json ContentType.
+type OperationsSetLegalJSONRequestBody = LegalLinksInput
+
 // OperationsSetMaintenanceJSONRequestBody defines body for OperationsSetMaintenance for application/json ContentType.
 type OperationsSetMaintenanceJSONRequestBody = MaintenanceModeInput
 
@@ -12959,6 +13018,9 @@ type WorkflowsSaveWorkflowDraftJSONRequestBody = PublishWorkflowRequestInput
 
 // OperationsSetLimitsJSONRequestBody defines body for OperationsSetLimits for application/json ContentType.
 type OperationsSetLimitsJSONRequestBody = ProviderLimits
+
+// OperationsSetNoticeJSONRequestBody defines body for OperationsSetNotice for application/json ContentType.
+type OperationsSetNoticeJSONRequestBody = AnnouncementInput
 
 // ReportsAverageAgeJSONRequestBody defines body for ReportsAverageAge for application/json ContentType.
 type ReportsAverageAgeJSONRequestBody = PeriodRequest
@@ -19422,6 +19484,37 @@ type ClientInterface interface {
 	// Corresponds with GET /api/v1/admin/invitations (the `InvitationsAll` operationId).
 	InvitationsAll(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// OperationsLegal Links to imprint and privacy policy
+	//
+	// The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Corresponds with GET /api/v1/admin/legal-links (the `OperationsLegal` operationId).
+	OperationsLegal(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsSetLegalWithBody Set the links to imprint and privacy policy
+	//
+	// null removes an own link; the default from the environment applies again.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+	OperationsSetLegalWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsSetLegal Set the links to imprint and privacy policy
+	//
+	// null removes an own link; the default from the environment applies again.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+	OperationsSetLegal(ctx context.Context, body OperationsSetLegalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// OperationsMaintenance Maintenance mode
 	//
 	// Requires the global permission `admin`.
@@ -23056,6 +23149,24 @@ type ClientInterface interface {
 	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
 	OperationsSetLimits(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// OperationsSetNoticeWithBody Set the notice of the provider
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+	OperationsSetNoticeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OperationsSetNotice Set the notice of the provider
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+	OperationsSetNotice(ctx context.Context, body OperationsSetNoticeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// OperationsUsage What the instance uses
 	//
 	// Seats taken, agents, storage, service desks and modules, for billing.
@@ -24948,6 +25059,67 @@ func (c *Client) ImportRun(ctx context.Context, id string, reqEditors ...Request
 // Corresponds with GET /api/v1/admin/invitations (the `InvitationsAll` operationId).
 func (c *Client) InvitationsAll(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewInvitationsAllRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsLegal Links to imprint and privacy policy
+//
+// The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.
+//
+// Requires the global permission `admin`.
+//
+// Corresponds with GET /api/v1/admin/legal-links (the `OperationsLegal` operationId).
+func (c *Client) OperationsLegal(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsLegalRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsSetLegalWithBody Set the links to imprint and privacy policy
+//
+// null removes an own link; the default from the environment applies again.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+func (c *Client) OperationsSetLegalWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetLegalRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsSetLegal Set the links to imprint and privacy policy
+//
+// null removes an own link; the default from the environment applies again.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+func (c *Client) OperationsSetLegal(ctx context.Context, body OperationsSetLegalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetLegalRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -33492,6 +33664,44 @@ func (c *Client) OperationsSetLimits(ctx context.Context, body OperationsSetLimi
 	return c.Client.Do(req)
 }
 
+// OperationsSetNoticeWithBody Set the notice of the provider
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+func (c *Client) OperationsSetNoticeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetNoticeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OperationsSetNotice Set the notice of the provider
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+func (c *Client) OperationsSetNotice(ctx context.Context, body OperationsSetNoticeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOperationsSetNoticeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // OperationsUsage What the instance uses
 //
 // Seats taken, agents, storage, service desks and modules, for billing.
@@ -36786,6 +36996,73 @@ func NewInvitationsAllRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewOperationsLegalRequest constructs an http.Request for the OperationsLegal method
+func NewOperationsLegalRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/legal-links")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOperationsSetLegalRequest calls the generic OperationsSetLegal builder with application/json body
+func NewOperationsSetLegalRequest(server string, body OperationsSetLegalJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewOperationsSetLegalRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewOperationsSetLegalRequestWithBody constructs an http.Request for the OperationsSetLegal method, with any body, and a specified content type
+func NewOperationsSetLegalRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/admin/legal-links")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -51055,6 +51332,46 @@ func NewOperationsSetLimitsRequestWithBody(server string, contentType string, bo
 	return req, nil
 }
 
+// NewOperationsSetNoticeRequest calls the generic OperationsSetNotice builder with application/json body
+func NewOperationsSetNoticeRequest(server string, body OperationsSetNoticeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewOperationsSetNoticeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewOperationsSetNoticeRequestWithBody constructs an http.Request for the OperationsSetNotice method, with any body, and a specified content type
+func NewOperationsSetNoticeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/provider/notice")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewOperationsUsageRequest constructs an http.Request for the OperationsUsage method
 func NewOperationsUsageRequest(server string) (*http.Request, error) {
 	var err error
@@ -54400,6 +54717,39 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /api/v1/admin/invitations (the `InvitationsAll` operationId).
 	InvitationsAllWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*InvitationsAllHTTPResponse, error)
+
+	// OperationsLegalWithResponse Links to imprint and privacy policy
+	//
+	// The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/admin/legal-links (the `OperationsLegal` operationId).
+	OperationsLegalWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsLegalHTTPResponse, error)
+
+	// OperationsSetLegalWithBodyWithResponse Set the links to imprint and privacy policy
+	//
+	// null removes an own link; the default from the environment applies again.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+	OperationsSetLegalWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetLegalHTTPResponse, error)
+
+	// OperationsSetLegalWithResponse Set the links to imprint and privacy policy
+	//
+	// null removes an own link; the default from the environment applies again.
+	//
+	// Requires the global permission `admin`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+	OperationsSetLegalWithResponse(ctx context.Context, body OperationsSetLegalJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetLegalHTTPResponse, error)
 
 	// OperationsMaintenanceWithResponse Maintenance mode
 	//
@@ -58459,6 +58809,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /api/v1/provider/limits (the `OperationsSetLimits` operationId).
 	OperationsSetLimitsWithResponse(ctx context.Context, body OperationsSetLimitsJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetLimitsHTTPResponse, error)
 
+	// OperationsSetNoticeWithBodyWithResponse Set the notice of the provider
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+	OperationsSetNoticeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetNoticeHTTPResponse, error)
+
+	// OperationsSetNoticeWithResponse Set the notice of the provider
+	//
+	// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+	OperationsSetNoticeWithResponse(ctx context.Context, body OperationsSetNoticeJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetNoticeHTTPResponse, error)
+
 	// OperationsUsageWithResponse What the instance uses
 	//
 	// Seats taken, agents, storage, service desks and modules, for billing.
@@ -61426,6 +61794,102 @@ func (r InvitationsAllHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r InvitationsAllHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type OperationsLegalHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LegalLinks
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsLegalHTTPResponse) GetJSON200() *LegalLinks {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsLegalHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsLegalHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsLegalHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsLegalHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsLegalHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type OperationsSetLegalHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LegalLinks
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsSetLegalHTTPResponse) GetJSON200() *LegalLinks {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsSetLegalHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsSetLegalHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsSetLegalHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsSetLegalHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsSetLegalHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -77844,6 +78308,54 @@ func (r OperationsSetLimitsHTTPResponse) ContentType() string {
 	return ""
 }
 
+type OperationsSetNoticeHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Announcement
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OperationsSetNoticeHTTPResponse) GetJSON200() *Announcement {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OperationsSetNoticeHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OperationsSetNoticeHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OperationsSetNoticeHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OperationsSetNoticeHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OperationsSetNoticeHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type OperationsUsageHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -81714,6 +82226,57 @@ func (c *ClientWithResponses) InvitationsAllWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseInvitationsAllHTTPResponse(rsp)
+}
+
+// OperationsLegalWithResponse Links to imprint and privacy policy
+//
+// The links in force, shown on the sign-in page, in the service portal and in the help menu; without own ones the defaults IMPRINT_URL and PRIVACY_URL apply.
+//
+// Requires the global permission `admin`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/admin/legal-links (the `OperationsLegal` operationId).
+func (c *ClientWithResponses) OperationsLegalWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OperationsLegalHTTPResponse, error) {
+	rsp, err := c.OperationsLegal(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsLegalHTTPResponse(rsp)
+}
+
+// OperationsSetLegalWithBodyWithResponse Set the links to imprint and privacy policy
+//
+// null removes an own link; the default from the environment applies again.
+//
+// Requires the global permission `admin`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+func (c *ClientWithResponses) OperationsSetLegalWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetLegalHTTPResponse, error) {
+	rsp, err := c.OperationsSetLegalWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetLegalHTTPResponse(rsp)
+}
+
+// OperationsSetLegalWithResponse Set the links to imprint and privacy policy
+//
+// null removes an own link; the default from the environment applies again.
+//
+// Requires the global permission `admin`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/admin/legal-links (the `OperationsSetLegal` operationId).
+func (c *ClientWithResponses) OperationsSetLegalWithResponse(ctx context.Context, body OperationsSetLegalJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetLegalHTTPResponse, error) {
+	rsp, err := c.OperationsSetLegal(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetLegalHTTPResponse(rsp)
 }
 
 // OperationsMaintenanceWithResponse Maintenance mode
@@ -88714,6 +89277,36 @@ func (c *ClientWithResponses) OperationsSetLimitsWithResponse(ctx context.Contex
 	return ParseOperationsSetLimitsHTTPResponse(rsp)
 }
 
+// OperationsSetNoticeWithBodyWithResponse Set the notice of the provider
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+func (c *ClientWithResponses) OperationsSetNoticeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*OperationsSetNoticeHTTPResponse, error) {
+	rsp, err := c.OperationsSetNoticeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetNoticeHTTPResponse(rsp)
+}
+
+// OperationsSetNoticeWithResponse Set the notice of the provider
+//
+// For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/v1/provider/notice (the `OperationsSetNotice` operationId).
+func (c *ClientWithResponses) OperationsSetNoticeWithResponse(ctx context.Context, body OperationsSetNoticeJSONRequestBody, reqEditors ...RequestEditorFn) (*OperationsSetNoticeHTTPResponse, error) {
+	rsp, err := c.OperationsSetNotice(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOperationsSetNoticeHTTPResponse(rsp)
+}
+
 // OperationsUsageWithResponse What the instance uses
 //
 // Seats taken, agents, storage, service desks and modules, for billing.
@@ -91450,6 +92043,72 @@ func ParseInvitationsAllHTTPResponse(rsp *http.Response) (*InvitationsAllHTTPRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []Invitation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsLegalHTTPResponse parses an HTTP response from a OperationsLegalWithResponse call
+func ParseOperationsLegalHTTPResponse(rsp *http.Response) (*OperationsLegalHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsLegalHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LegalLinks
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsSetLegalHTTPResponse parses an HTTP response from a OperationsSetLegalWithResponse call
+func ParseOperationsSetLegalHTTPResponse(rsp *http.Response) (*OperationsSetLegalHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsSetLegalHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LegalLinks
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -102779,6 +103438,39 @@ func ParseOperationsSetLimitsHTTPResponse(rsp *http.Response) (*OperationsSetLim
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ProviderUsage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOperationsSetNoticeHTTPResponse parses an HTTP response from a OperationsSetNoticeWithResponse call
+func ParseOperationsSetNoticeHTTPResponse(rsp *http.Response) (*OperationsSetNoticeHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OperationsSetNoticeHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Announcement
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

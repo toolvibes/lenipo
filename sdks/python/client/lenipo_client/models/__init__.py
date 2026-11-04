@@ -324,6 +324,8 @@ from .installed_app_modules import InstalledAppModules
 from .instance_notice import InstanceNotice
 from .instance_notice_announcement_type_0 import InstanceNoticeAnnouncementType0
 from .instance_notice_announcement_type_0_level import InstanceNoticeAnnouncementType0Level
+from .instance_notice_provider_notice_type_0 import InstanceNoticeProviderNoticeType0
+from .instance_notice_provider_notice_type_0_level import InstanceNoticeProviderNoticeType0Level
 from .invitation import Invitation
 from .invitation_invited_by_type_0 import InvitationInvitedByType0
 from .invitation_preview import InvitationPreview
@@ -397,6 +399,8 @@ from .label_count import LabelCount
 from .labelled_page import LabelledPage
 from .labelled_page_space import LabelledPageSpace
 from .ldap_config import LdapConfig
+from .legal_links import LegalLinks
+from .legal_links_input import LegalLinksInput
 from .linked_issue import LinkedIssue
 from .login_request import LoginRequest
 from .mail_handler import MailHandler
@@ -558,6 +562,8 @@ from .projects_list_issues_status import ProjectsListIssuesStatus
 from .projects_save_mail_handler_response_200 import ProjectsSaveMailHandlerResponse200
 from .provider_limits import ProviderLimits
 from .provider_limits_output import ProviderLimitsOutput
+from .provider_limits_output_requests_per_minute_type_0 import ProviderLimitsOutputRequestsPerMinuteType0
+from .provider_limits_requests_per_minute_type_0 import ProviderLimitsRequestsPerMinuteType0
 from .provider_usage import ProviderUsage
 from .provider_usage_output import ProviderUsageOutput
 from .provision_request import ProvisionRequest
@@ -1211,6 +1217,8 @@ __all__ = (
     "InstanceNotice",
     "InstanceNoticeAnnouncementType0",
     "InstanceNoticeAnnouncementType0Level",
+    "InstanceNoticeProviderNoticeType0",
+    "InstanceNoticeProviderNoticeType0Level",
     "Invitation",
     "InvitationInvitedByType0",
     "InvitationPreview",
@@ -1284,6 +1292,8 @@ __all__ = (
     "LabelledPage",
     "LabelledPageSpace",
     "LdapConfig",
+    "LegalLinks",
+    "LegalLinksInput",
     "LinkedIssue",
     "LoginRequest",
     "MailHandler",
@@ -1445,6 +1455,8 @@ __all__ = (
     "ProjectWorkflowUsage",
     "ProviderLimits",
     "ProviderLimitsOutput",
+    "ProviderLimitsOutputRequestsPerMinuteType0",
+    "ProviderLimitsRequestsPerMinuteType0",
     "ProviderUsage",
     "ProviderUsageOutput",
     "ProvisionRequest",
