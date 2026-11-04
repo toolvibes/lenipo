@@ -15,6 +15,9 @@ import { join } from 'node:path';
 const CHANGELOG = 'CHANGELOG.md';
 const RELEASE = 'apps/api/drizzle/release.json';
 const CHART = 'deploy/helm/lenipo/Chart.yaml';
+// The Python SDK takes its version from the API description; keep it in step so the SDK
+// check in CI stays green without regenerating (the Go SDK carries no version).
+const PYPROJECT = 'sdks/python/client/pyproject.toml';
 const MIGRATIONS = 'apps/api/drizzle';
 const MARKER = /^--\s*(?:lenipo|tasklore):contract\b/m;
 const GROUPS = [
@@ -150,6 +153,12 @@ for (const file of packageFiles()) {
   writeFileSync(file, text.replace(/("version":\s*")[^"]+(")/, `$1${version}$2`));
 }
 writeFileSync(RELEASE, `${JSON.stringify(release, null, 2)}\n`);
+if (existsSync(PYPROJECT)) {
+  writeFileSync(
+    PYPROJECT,
+    readFileSync(PYPROJECT, 'utf8').replace(/^version = "[^"]+"/m, `version = "${version}"`),
+  );
+}
 writeFileSync(
   CHART,
   readFileSync(CHART, 'utf8')
@@ -160,7 +169,7 @@ writeFileSync(
 // The API description carries the version; CI compares it with the code.
 console.log('Generating the API description …');
 execFileSync('pnpm', ['-s', 'api:generate'], { stdio: 'inherit' });
-git('add', CHANGELOG, RELEASE, CHART, 'packages/sdk', ...packageFiles());
+git('add', CHANGELOG, RELEASE, CHART, 'packages/sdk', PYPROJECT, ...packageFiles());
 git('commit', '--quiet', '-m', `release: ${version}`);
 git('tag', '--annotate', `v${version}`, '--message', `Lenipo ${version}`);
 console.log(`Tagged v${version}. Publish with: git push origin main v${version}`);
