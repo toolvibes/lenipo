@@ -752,7 +752,7 @@ export function ProfilePage() {
       <TopBar crumbs={[t('profile.title')]} />
       <main className="flex max-w-[960px] flex-col gap-8 px-10 py-6">
         <header className="flex flex-col gap-1">
-          <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+          <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
             {t('profile.title')}
           </h1>
           <p className="m-0 text-[var(--ink-muted)]">{t('profile.intro')}</p>

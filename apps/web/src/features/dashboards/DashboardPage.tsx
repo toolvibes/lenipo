@@ -380,7 +380,7 @@ export function DashboardPage({ id, me }: { id: string; me: Me }) {
       />
       <main className="flex flex-col gap-4 px-6 py-6 lg:px-10">
         <header className="flex flex-col gap-1">
-          <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+          <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
             {data.name}
           </h1>
           <p className="m-0 text-[13px] text-[var(--ink-muted)]">

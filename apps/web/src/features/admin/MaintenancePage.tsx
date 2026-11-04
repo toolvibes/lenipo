@@ -13,7 +13,9 @@ export function MaintenancePage() {
   const { t } = useTranslation();
   return (
     <main className="flex max-w-[760px] flex-col gap-8">
-      <h1 className="m-0 text-xl font-semibold">{t('maintenance.title')}</h1>
+      <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+        {t('maintenance.title')}
+      </h1>
       <Updates />
       <Backups />
       <Retention />

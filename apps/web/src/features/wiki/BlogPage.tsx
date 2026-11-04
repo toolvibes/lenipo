@@ -47,7 +47,7 @@ export function BlogPage({ spaceKey }: { spaceKey: string }) {
   return (
     <main className="flex max-w-[960px] flex-col gap-5 px-6 py-6 lg:px-10">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+        <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
           {t('blog.title')}
         </h1>
         <div className="flex items-center gap-3 text-[13px]">

@@ -180,7 +180,9 @@ export function DirectoriesPage() {
   const error = reorder.error ?? sync.error ?? remove.error;
   return (
     <div className="flex max-w-[760px] flex-col gap-5">
-      <h1 className="m-0 text-xl font-semibold">{t('directories.title')}</h1>
+      <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+        {t('directories.title')}
+      </h1>
       <p className="m-0 text-[var(--ink-muted)]">{t('directories.intro')}</p>
       {error && <FormError message={error.message} />}
       <ol className="m-0 flex list-none flex-col p-0">

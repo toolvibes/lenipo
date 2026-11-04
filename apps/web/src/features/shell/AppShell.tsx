@@ -75,7 +75,7 @@ export function AppShell({ me: signedIn }: { me: Me }) {
         {t('shell.skipToContent')}
       </a>
       {narrow && (
-        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface-2)] px-2">
+        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 bg-[var(--surface-2)] px-2">
           <RadixDialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <RadixDialog.Trigger
               className="grid size-9 place-items-center rounded-[var(--radius-sm)]"
@@ -114,9 +114,14 @@ export function AppShell({ me: signedIn }: { me: Me }) {
           </button>
         </header>
       )}
-      <div className="flex min-h-screen flex-wrap">
+      <div className="flex min-h-screen flex-wrap bg-[var(--surface-2)]">
         {!narrow && sidebar}
-        <div id="main" tabIndex={-1} className="min-w-0 flex-[999_1_560px] outline-none">
+        {/* The work area floats as a white panel next to the sidebar; overflow-clip keeps sticky bars working. */}
+        <div
+          id="main"
+          tabIndex={-1}
+          className="min-w-0 flex-[999_1_560px] bg-[var(--surface-0)] outline-none md:my-2.5 md:mr-2.5 md:min-h-[calc(100vh-20px)] md:overflow-clip md:rounded-[var(--radius-xl)] md:shadow-[var(--shadow-panel)] print:m-0 print:shadow-none"
+        >
           <Announcement />
           <Outlet />
         </div>

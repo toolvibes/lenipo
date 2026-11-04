@@ -357,7 +357,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
                   })}
               {doc && ` · ${t('wiki.readingTime', { count: readingMinutes(doc) })}`}
             </span>
-            <h1 className="m-0 flex items-center gap-2 font-[family-name:var(--font-prose)] text-[40px] leading-[1.12] font-medium tracking-[-0.015em]">
+            <h1 className="m-0 flex items-center gap-2 font-[family-name:var(--font-prose)] text-[34px] leading-[1.15] font-extrabold tracking-[-0.03em]">
               {data.title}
               {(data.restrictions.view ||
                 data.restrictions.edit ||

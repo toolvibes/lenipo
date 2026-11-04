@@ -1,4 +1,28 @@
-import { SignOut } from '@phosphor-icons/react';
+import {
+  BookOpen,
+  CalendarBlank,
+  ChartBarHorizontal,
+  ChartLine,
+  CheckCircle,
+  Folder,
+  Gauge,
+  Headset,
+  type Icon,
+  Kanban,
+  Lifebuoy,
+  ListBullets,
+  ListChecks,
+  MapTrifold,
+  Pulse,
+  Question,
+  Robot,
+  RocketLaunch,
+  SignOut,
+  SlidersHorizontal,
+  SquaresFour,
+  Timer,
+  UsersThree,
+} from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import type { Favourite, Me } from '@toolvibes/shared';
@@ -21,8 +45,9 @@ export const MY_ISSUES =
   'assignee = currentUser() AND resolution is EMPTY ORDER BY priority, updated DESC';
 
 const ROW =
-  'flex h-[30px] items-center gap-2 rounded-[5px] px-2.5 text-[13.5px] font-medium text-[var(--ink-muted)] no-underline hover:bg-[var(--selected)] hover:text-[var(--ink)]';
-const ACTIVE = 'bg-[var(--selected)] font-semibold text-[var(--ink)]';
+  'flex h-9 items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 text-[13.5px] font-medium text-[var(--ink-soft)] no-underline transition-colors hover:bg-[var(--surface-1)] hover:text-[var(--ink)]';
+const ACTIVE =
+  'bg-[var(--surface-1)] font-bold text-[var(--accent-hover)] shadow-[var(--shadow-raised)] hover:bg-[var(--surface-1)] hover:text-[var(--accent-hover)]';
 
 function NavRow({
   to,
@@ -31,6 +56,7 @@ function NavRow({
   active,
   children,
   small = false,
+  icon: RowIcon,
 }: {
   to: string;
   search?: Record<string, string>;
@@ -38,6 +64,7 @@ function NavRow({
   active: boolean;
   children: ReactNode;
   small?: boolean;
+  icon?: Icon;
 }) {
   return (
     <Link
@@ -45,15 +72,20 @@ function NavRow({
       search={search}
       params={params}
       aria-current={active ? 'page' : undefined}
-      className={`${ROW} ${small ? 'h-7 text-[13px]' : ''} ${active ? ACTIVE : ''}`}
+      className={`${ROW} ${small ? 'h-[34px] text-[13px]' : ''} ${active ? ACTIVE : ''}`}
     >
+      {RowIcon && <RowIcon size={small ? 16 : 18} className="shrink-0" aria-hidden />}
       {children}
     </Link>
   );
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
-  return <div className="tl-label px-2.5 pb-1.5 text-[var(--ink-muted)]">{children}</div>;
+  return (
+    <div className="tl-label px-2.5 pb-1.5 tracking-[0.06em] text-[var(--ink-muted)]">
+      {children}
+    </div>
+  );
 }
 
 /** The sub-pages of the project being worked on: its issues, backlog, board and Wiki. */
@@ -66,8 +98,9 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
   const scrum = modules.boards ? boards.data?.find((entry) => entry.type === 'scrum') : undefined;
   const lore = modules.wiki ? spaces.data?.[0] : undefined;
   return (
-    <div className="flex flex-col gap-px pl-[17px]">
+    <div className="flex flex-col gap-0.5 pl-3">
       <NavRow
+        icon={ListChecks}
         small
         to="/projects/$key"
         params={{ key: projectKey }}
@@ -77,6 +110,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       </NavRow>
       {scrum && (
         <NavRow
+          icon={ListBullets}
           small
           to="/boards/$id/backlog"
           params={{ id: scrum.id }}
@@ -87,6 +121,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       )}
       {board && (
         <NavRow
+          icon={Kanban}
           small
           to="/boards/$id"
           params={{ id: board.id }}
@@ -96,6 +131,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
         </NavRow>
       )}
       <NavRow
+        icon={ChartBarHorizontal}
         small
         to="/projects/$key/timeline"
         params={{ key: projectKey }}
@@ -104,6 +140,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
         {t('sidebar.timeline')}
       </NavRow>
       <NavRow
+        icon={ChartLine}
         small
         to="/projects/$key/reports"
         params={{ key: projectKey }}
@@ -113,6 +150,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
         {t('analysis.title')}
       </NavRow>
       <NavRow
+        icon={UsersThree}
         small
         to="/projects/$key/team"
         params={{ key: projectKey }}
@@ -121,6 +159,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
         {t('team.title')}
       </NavRow>
       <NavRow
+        icon={CalendarBlank}
         small
         to="/calendar"
         search={{ q: `project = ${projectKey}` }}
@@ -129,6 +168,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
         {t('calendar.title')}
       </NavRow>
       <NavRow
+        icon={RocketLaunch}
         small
         to="/projects/$key/releases"
         params={{ key: projectKey }}
@@ -138,6 +178,7 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       </NavRow>
       {lore && (
         <NavRow
+          icon={BookOpen}
           small
           to="/spaces/$key"
           params={{ key: lore.key }}
@@ -201,7 +242,7 @@ function OtherFavourites({ path }: { path: string }) {
     );
   };
   return (
-    <div className="flex flex-col gap-px">
+    <div className="flex flex-col gap-0.5">
       <SectionLabel>{t('favourites.title')}</SectionLabel>
       {list.map((favourite) => (
         <div key={`${favourite.kind}:${favourite.id}`}>{row(favourite)}</div>
@@ -225,9 +266,9 @@ function WikiSection({ path }: { path: string }) {
     .sort((a, b) => Number(b.favourite) - Number(a.favourite) || a.name.localeCompare(b.name))
     .slice(0, WIKI_SPACES);
   return (
-    <div className="flex flex-col gap-px">
+    <div className="flex flex-col gap-0.5">
       <SectionLabel>{t('wikiHome.title')}</SectionLabel>
-      <NavRow to="/spaces" active={path === '/spaces'}>
+      <NavRow icon={BookOpen} to="/spaces" active={path === '/spaces'}>
         {t('wikiHome.start')}
       </NavRow>
       {listed.map((space) => (
@@ -280,29 +321,30 @@ export function Sidebar({
   return (
     <nav
       aria-label={t('shell.navigation')}
-      className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-[18px] border-r border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-3.5 md:sticky md:top-0 md:h-screen md:max-w-[var(--sidebar-width)] md:overflow-y-auto"
+      className="flex max-w-full flex-[1_1_var(--sidebar-width)] flex-col gap-5 bg-[var(--surface-2)] px-3 pt-[18px] pb-3.5 md:sticky md:top-0 md:h-screen md:max-w-[var(--sidebar-width)] md:overflow-y-auto"
     >
-      <Link to="/" className="flex items-center gap-2 px-2 py-0.5 text-[var(--ink)] no-underline">
-        <LogoMark size={22} />
-        <span className="text-[15px] font-bold tracking-[-0.01em]">{t('common.product')}</span>
+      <Link to="/" className="flex items-center gap-2.5 px-2 py-0.5 text-[var(--ink)] no-underline">
+        <LogoMark size={26} />
+        <span className="text-[17px] font-extrabold tracking-[-0.02em]">{t('common.product')}</span>
       </Link>
 
       <button
         type="button"
         onClick={onSearch}
-        className="flex h-8 items-center gap-2 rounded-[6px] border border-[var(--border)] bg-[var(--surface-1)] px-2.5 text-left text-[13px] text-[var(--ink-muted)] hover:border-[var(--border-strong)]"
+        className="flex h-9 items-center gap-2 rounded-[11px] bg-[var(--surface-1)] pr-2.5 pl-3 text-left text-[13px] text-[var(--ink-muted)] shadow-[var(--shadow-control)] transition-shadow hover:shadow-[var(--shadow-raised)]"
       >
         <span className="flex-1">{t('sidebar.search')}</span>
-        <kbd className="font-[family-name:var(--font-mono)] text-[11px] font-medium">
+        <kbd className="rounded-[6px] bg-[var(--surface-2)] px-1.5 py-0.5 font-[family-name:var(--font-mono)] text-[11px] font-medium">
           {isMac ? '⌘K' : t('shell.paletteShortcut')}
         </kbd>
       </button>
 
-      <div className="flex flex-col gap-px">
-        <NavRow to="/" active={path === '/'}>
+      <div className="flex flex-col gap-0.5">
+        <NavRow icon={SquaresFour} to="/" active={path === '/'}>
           {t('sidebar.overview')}
         </NavRow>
         <NavRow
+          icon={CheckCircle}
           to="/issues"
           search={{ q: MY_ISSUES }}
           active={path === '/issues' && search.q === MY_ISSUES}
@@ -312,7 +354,7 @@ export function Sidebar({
         <NotificationBell active={path === '/notifications'} />
       </div>
 
-      <div className="flex flex-col gap-px">
+      <div className="flex flex-col gap-0.5">
         <SectionLabel>{t('shell.projects')}</SectionLabel>
         {listed.map((project) => {
           const open = project.key === current;
@@ -321,11 +363,11 @@ export function Sidebar({
               <Link
                 to="/projects/$key"
                 params={{ key: project.key }}
-                className={`${ROW} ${open ? 'font-semibold text-[var(--ink)]' : ''}`}
+                className={`${ROW} ${open ? 'font-bold text-[var(--ink)]' : ''}`}
               >
                 <span
                   aria-hidden
-                  className="size-2 shrink-0 rounded-[2px]"
+                  className="size-2.5 shrink-0 rounded-[4px]"
                   style={{ backgroundColor: presenceColor(project.key) }}
                 />
                 <span className="min-w-0 flex-1 truncate">{project.name}</span>
@@ -351,63 +393,65 @@ export function Sidebar({
       {modules['time-tracking'] && <TimerBar />}
 
       <div className="mt-auto flex flex-col gap-px">
-        <NavRow to="/projects" active={path === '/projects'}>
+        <NavRow icon={Folder} to="/projects" active={path === '/projects'}>
           {t('sidebar.allProjects')}
         </NavRow>
         {modules.boards && (
-          <NavRow to="/boards" active={path === '/boards'}>
+          <NavRow icon={Kanban} to="/boards" active={path === '/boards'}>
             {t('sidebar.allBoards')}
           </NavRow>
         )}
-        <NavRow to="/plans" active={path.startsWith('/plans')}>
+        <NavRow icon={MapTrifold} to="/plans" active={path.startsWith('/plans')}>
           {t('plans.title')}
         </NavRow>
         {me.globalPermissions.includes('browse-users') && (
-          <NavRow to="/agents" active={path.startsWith('/agents')}>
+          <NavRow icon={Robot} to="/agents" active={path.startsWith('/agents')}>
             {t('guard.title')}
           </NavRow>
         )}
-        <NavRow to="/portal" active={path.startsWith('/portal')}>
+        <NavRow icon={Headset} to="/portal" active={path.startsWith('/portal')}>
           {t('portal.title')}
         </NavRow>
         {modules.dashboards && (
-          <NavRow to="/dashboards" active={path === '/dashboards'}>
+          <NavRow icon={Gauge} to="/dashboards" active={path === '/dashboards'}>
             {t('dashboards.title')}
           </NavRow>
         )}
-        <NavRow to="/activity" active={path === '/activity'}>
+        <NavRow icon={Pulse} to="/activity" active={path === '/activity'}>
           {t('activity.title')}
         </NavRow>
         {modules['time-tracking'] && (
-          <NavRow to="/timesheet" search={{}} active={path === '/timesheet'}>
+          <NavRow icon={Timer} to="/timesheet" search={{}} active={path === '/timesheet'}>
             {t('timesheet.title')}
           </NavRow>
         )}
         {helpUrl ? (
           <a href={helpUrl} target="_blank" rel="noreferrer" className={ROW}>
+            <Question size={18} className="shrink-0" aria-hidden />
             {t('sidebar.help')}
           </a>
         ) : (
-          <NavRow to="/help" active={path === '/help'}>
+          <NavRow icon={Question} to="/help" active={path === '/help'}>
             {t('sidebar.help')}
           </NavRow>
         )}
         {supportUrl && (
           <a href={supportUrl} target="_blank" rel="noreferrer" className={ROW}>
+            <Lifebuoy size={18} className="shrink-0" aria-hidden />
             {t('sidebar.support')}
           </a>
         )}
         {isAdmin && (
-          <NavRow to="/admin/webhooks" active={path.startsWith('/admin')}>
+          <NavRow icon={SlidersHorizontal} to="/admin/webhooks" active={path.startsWith('/admin')}>
             {t('sidebar.settings')}
           </NavRow>
         )}
         <LegalLinks className="px-2.5 pt-1.5" />
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[var(--border)] px-2 pt-2">
+      <div className="flex items-center gap-2.5 rounded-[13px] bg-[var(--surface-1)] p-2.5 shadow-[var(--shadow-card)]">
         <span
-          className="grid size-[26px] shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white"
+          className="grid size-8 shrink-0 place-items-center rounded-full text-[11.5px] font-bold text-white"
           style={{ backgroundColor: presenceColor(me.id) }}
           aria-hidden
         >
@@ -417,9 +461,9 @@ export function Sidebar({
           to="/profile"
           aria-current={path === '/profile' ? 'page' : undefined}
           title={t('profile.title')}
-          className="flex min-w-0 flex-1 flex-col rounded-[5px] px-1 leading-tight text-[var(--ink)] no-underline hover:bg-[var(--selected)]"
+          className="flex min-w-0 flex-1 flex-col rounded-[6px] px-1 leading-tight text-[var(--ink)] no-underline hover:bg-[var(--selected)]"
         >
-          <span className="truncate text-[13px] font-semibold">{me.displayName}</span>
+          <span className="truncate text-[13px] font-bold">{me.displayName}</span>
           <span className="truncate text-[11.5px] text-[var(--ink-muted)]">{me.email}</span>
         </Link>
         <button
@@ -427,7 +471,7 @@ export function Sidebar({
           onClick={onSignOut}
           aria-label={t('common.signOut')}
           title={t('common.signOut')}
-          className="grid size-7 place-items-center rounded-[5px] text-[var(--ink-muted)] hover:bg-[var(--selected)] hover:text-[var(--ink)]"
+          className="grid size-7 place-items-center rounded-[8px] text-[var(--ink-muted)] hover:bg-[var(--selected)] hover:text-[var(--ink)]"
         >
           <SignOut size={16} aria-hidden />
         </button>

@@ -144,7 +144,7 @@ function CardView({
       ref={nodeRef}
       style={style}
       data-selected={selected}
-      className={`group flex gap-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)] py-2.5 pr-2.5 pl-1.5 text-[13px] leading-[18px] hover:border-[var(--border-control)] data-[selected=true]:border-[var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'shadow-[var(--shadow-float)]' : ''}`}
+      className={`group flex gap-1 rounded-[12px] bg-[var(--surface-1)] py-[11px] pr-3 pl-1.5 text-[13px] leading-[18px] font-medium shadow-[var(--shadow-raised)] transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-hover)] data-[selected=true]:shadow-[0_0_0_2px_var(--accent)] ${dragging ? 'opacity-40' : ''} ${floating ? 'shadow-[var(--shadow-drag)]' : ''}`}
     >
       <button
         type="button"
@@ -175,7 +175,7 @@ function CardView({
           </span>
           <span className="ml-auto" />
           {issue.storyPoints !== null && (
-            <span className="rounded-[4px] bg-[var(--surface-2)] px-1.5 font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
+            <span className="rounded-full bg-[var(--surface-2)] px-[7px] font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-soft)]">
               {issue.storyPoints}
             </span>
           )}
@@ -585,7 +585,7 @@ export function BoardPage({
                 type="button"
                 aria-pressed={sprintChoice === entry.id}
                 onClick={() => setSprintChoice(entry.id)}
-                className="h-7 rounded-full border border-[var(--border-strong)] px-3 text-[12.5px] aria-pressed:border-[var(--accent)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:font-semibold aria-pressed:text-[var(--accent)]"
+                className="h-[30px] rounded-full bg-[var(--surface-2)] px-3 text-[12.5px] font-medium text-[var(--ink-soft)] transition-colors hover:bg-[var(--selected)] aria-pressed:bg-[var(--ink)] aria-pressed:font-semibold aria-pressed:text-[var(--surface-1)]"
               >
                 {entry.name}
               </button>
@@ -665,11 +665,13 @@ export function BoardPage({
                     >
                       <span
                         aria-hidden
-                        className="size-2 shrink-0 rounded-full"
+                        className="size-[9px] shrink-0 rounded-full"
                         style={{ backgroundColor: dotColor(column) }}
                       />
-                      <h2 className="m-0 truncate text-[13px] font-semibold">{column.name}</h2>
-                      <span className="text-[12px] text-[var(--ink-muted)]">{count}</span>
+                      <h2 className="m-0 truncate text-[13px] font-bold">{column.name}</h2>
+                      <span className="rounded-full bg-[var(--border)] px-[7px] py-px font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[var(--ink-soft)]">
+                        {count}
+                      </span>
                       {column.wipMax !== null && !(over || under) && (
                         <span className="ml-auto font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
                           WIP {count}/{column.wipMax}

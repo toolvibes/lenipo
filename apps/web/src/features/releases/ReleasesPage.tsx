@@ -39,7 +39,7 @@ export function ReleasesPage({ projectKey }: { projectKey: string }) {
     <>
       <TopBar crumbs={[project.data?.name ?? projectKey, t('releases.title')]} />
       <main className="flex max-w-[960px] flex-col gap-4 px-6 py-6 lg:px-10">
-        <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+        <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
           {t('releases.title')}
         </h1>
         {versions.data && list.length === 0 && (
@@ -277,7 +277,7 @@ export function ReleasePage({ projectKey, id }: { projectKey: string; id: string
         {data && (
           <>
             <header className="flex flex-col gap-2">
-              <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+              <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
                 {data.version.name}
               </h1>
               <p className="m-0 text-[13px] text-[var(--ink-muted)]">

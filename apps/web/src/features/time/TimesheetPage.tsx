@@ -114,7 +114,7 @@ export function TimesheetPage({ user, week }: { user?: string; week?: string }) 
       <main className="flex flex-col gap-4 px-6 py-6 lg:px-10">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+            <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
               {t('timesheet.title')}
             </h1>
             <p className="m-0 text-[13px] text-[var(--ink-muted)]">

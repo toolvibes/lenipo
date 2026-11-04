@@ -89,7 +89,7 @@ export function WelcomePage({ me }: { me: Me }) {
           <span className="text-base font-bold">{t('common.product')}</span>
         </span>
         <div className="flex max-w-[380px] flex-1 flex-col justify-center gap-4 py-10">
-          <h1 className="m-0 text-[28px] leading-9 font-semibold tracking-[-0.02em]">
+          <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
             {t('welcome.title', { name: profile.displayName.split(' ')[0] ?? profile.displayName })}
           </h1>
           <p className="m-0 text-sm leading-normal text-[var(--ink-muted)]">

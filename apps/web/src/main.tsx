@@ -1,6 +1,5 @@
-import '@fontsource-variable/instrument-sans';
+import '@fontsource-variable/plus-jakarta-sans';
 import '@fontsource-variable/jetbrains-mono';
-import '@fontsource-variable/newsreader/opsz.css';
 import './i18n';
 import './styles.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

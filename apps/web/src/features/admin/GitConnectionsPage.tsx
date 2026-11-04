@@ -46,7 +46,9 @@ export function GitConnectionsPage() {
 
   return (
     <div className="flex max-w-[760px] flex-col gap-5">
-      <h1 className="m-0 text-xl font-semibold">{t('git.title')}</h1>
+      <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+        {t('git.title')}
+      </h1>
       <p className="m-0 text-[var(--ink-muted)]">{t('git.intro')}</p>
       {created && (
         <div

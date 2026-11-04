@@ -731,7 +731,7 @@ export function WorkflowEditor({
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+        <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
           {t('workflow.title')}
         </h1>
         <label className="flex flex-wrap items-center gap-2 text-[13.5px]">

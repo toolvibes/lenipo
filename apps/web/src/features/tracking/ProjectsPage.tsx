@@ -59,7 +59,7 @@ export function ProjectsPage({ me }: { me: Me }) {
               role="tab"
               aria-selected={tab === id}
               onClick={() => setTab(id)}
-              className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-0 pt-0 pb-2.5 text-[var(--ink-muted)] aria-selected:border-[var(--ink)] aria-selected:font-semibold aria-selected:text-[var(--ink)]"
+              className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-0 pt-0 pb-2.5 text-[var(--ink-muted)] aria-selected:border-[var(--accent)] aria-selected:font-bold aria-selected:text-[var(--ink)]"
             >
               {label} · {count}
             </button>

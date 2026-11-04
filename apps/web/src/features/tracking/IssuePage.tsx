@@ -370,7 +370,7 @@ function Activity({
       role="tab"
       aria-selected={tab === value}
       onClick={() => setTab(value)}
-      className={`-mb-px border-0 border-b-2 bg-transparent px-0 pb-2 text-[13px] ${tab === value ? 'border-[var(--ink)] font-semibold text-[var(--ink)]' : 'border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]'}`}
+      className={`-mb-px border-0 border-b-2 bg-transparent px-0 pb-2 text-[13px] ${tab === value ? 'border-[var(--accent)] font-bold text-[var(--ink)]' : 'border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]'}`}
     >
       {label}
     </button>

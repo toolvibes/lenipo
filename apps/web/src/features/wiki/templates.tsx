@@ -174,7 +174,7 @@ export function TemplateEditorPage({
 
   return (
     <main className="flex max-w-[860px] flex-col gap-5 px-10 py-7">
-      <h1 className="m-0 text-[22px] leading-7 font-semibold tracking-[-0.015em]">
+      <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
         {creating ? t('templates.newTitle') : t('templates.editTitle')}
       </h1>
       {!editable && <p className="m-0 text-[var(--ink-muted)]">{t('templates.readOnly')}</p>}

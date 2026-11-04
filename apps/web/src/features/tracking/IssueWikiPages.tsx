@@ -29,7 +29,7 @@ export function IssueWikiPages({ issueKey }: { issueKey: string }) {
               <Link
                 to="/spaces/$key/pages/$id"
                 params={{ key: page.space.key, id: page.id }}
-                className="min-w-0 flex-1 truncate font-[family-name:var(--font-prose)] text-[15px] text-[var(--ink)] no-underline hover:underline"
+                className="min-w-0 flex-1 truncate font-[family-name:var(--font-prose)] text-[13.5px] font-semibold text-[var(--ink)] no-underline hover:underline"
               >
                 {page.title}
               </Link>

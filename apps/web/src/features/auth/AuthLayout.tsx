@@ -25,7 +25,9 @@ export function AuthLayout({
         </span>
         <div className="flex w-full max-w-[360px] flex-1 flex-col justify-center gap-6 py-10">
           <div className="flex flex-col gap-2">
-            <h1 className="m-0 text-[28px] leading-9 font-semibold tracking-[-0.02em]">{title}</h1>
+            <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+              {title}
+            </h1>
             {subtitle && (
               <p className="m-0 text-sm leading-normal text-[var(--ink-muted)]">{subtitle}</p>
             )}

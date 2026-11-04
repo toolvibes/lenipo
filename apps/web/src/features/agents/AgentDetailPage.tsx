@@ -53,7 +53,7 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
           <header className="flex flex-wrap items-center gap-3">
             <Avatar user={agent} size={40} />
             <div className="flex min-w-0 flex-1 flex-col">
-              <h1 className="m-0 text-[26px] leading-tight font-semibold tracking-[-0.015em]">
+              <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
                 {agent.displayName}
               </h1>
               <span className="text-[13px] text-[var(--ink-muted)]">

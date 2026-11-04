@@ -53,11 +53,11 @@ body {
   font-size: 14px;
   line-height: 22px;
 }
-/* wiki pages read like a document: Newsreader in the prose sizes of the type scale. */
+/* wiki pages read like a document: the prose sizes of the type scale, a little larger than the UI. */
 .tl-prose.tl-lore {
   font-family: var(--font-prose);
-  font-size: 17px;
-  line-height: 28px;
+  font-size: 15.5px;
+  line-height: 26px;
 }
 .tl-prose-read {
   min-height: 0;
@@ -68,7 +68,7 @@ body {
 .tl-prose h1 {
   font-size: 22px;
   line-height: 28px;
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
@@ -85,19 +85,21 @@ body {
   margin-top: 1.25em;
 }
 .tl-prose.tl-lore h1 {
-  font-size: 34px;
-  line-height: 42px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 .tl-prose.tl-lore h2 {
-  font-size: 24px;
-  line-height: 32px;
-  font-weight: 500;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .tl-prose.tl-lore h3 {
-  font-size: 19px;
-  line-height: 28px;
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 700;
 }
 .tl-prose ul {
   list-style: disc;

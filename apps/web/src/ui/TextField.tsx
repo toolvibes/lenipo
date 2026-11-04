@@ -21,7 +21,7 @@ export function TextField({ label, help, error, id, className = '', ...props }: 
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`h-[var(--control-md)] rounded-[var(--radius-md)] border bg-[var(--surface-1)] px-2 text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:border-[var(--accent)] ${
+        className={`h-[var(--control-md)] rounded-[var(--radius-md)] border bg-[var(--surface-1)] px-3 text-[var(--ink)] transition-shadow placeholder:text-[var(--ink-muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_4px_var(--accent-soft)] ${
           error ? 'border-[var(--danger)]' : 'border-[var(--border-strong)]'
         } ${className}`}
         {...props}

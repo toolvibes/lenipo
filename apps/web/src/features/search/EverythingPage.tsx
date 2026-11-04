@@ -117,7 +117,7 @@ function Results({
             params={{ key: page.space.key, id: page.id }}
             className="flex flex-col gap-1 rounded-[var(--radius-md)] px-3.5 py-3 text-[var(--ink)] no-underline hover:bg-[var(--surface-2)]"
           >
-            <span className="font-[family-name:var(--font-prose)] text-lg font-medium">
+            <span className="font-[family-name:var(--font-prose)] text-base font-bold">
               {page.title}
             </span>
             {page.match ? (

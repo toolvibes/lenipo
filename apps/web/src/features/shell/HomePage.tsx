@@ -35,7 +35,7 @@ function Card({
   return (
     <section
       aria-label={title}
-      className={`flex min-w-0 flex-col rounded-lg border border-[var(--border)] bg-[var(--surface-1)] ${
+      className={`flex min-w-0 flex-col rounded-[16px] bg-[var(--surface-1)] shadow-[var(--shadow-card)] ${
         flush ? '' : 'gap-3 px-5 py-4'
       }`}
     >
@@ -115,13 +115,14 @@ function SprintCard({ issue }: { issue: IssueSummary }) {
         </Link>
       }
     >
-      <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-[3px] bg-[var(--surface-2)]">
+      <div className="flex h-2.5 gap-[3px] overflow-hidden rounded-full bg-[var(--surface-2)]">
         {total > 0 &&
           parts.map(
             (part) =>
               (part.count ?? 0) > 0 && (
                 <div
                   key={part.label}
+                  className="rounded-full"
                   style={{ flexGrow: part.count, background: part.color }}
                   aria-hidden
                 />
@@ -131,7 +132,7 @@ function SprintCard({ issue }: { issue: IssueSummary }) {
       <div className="flex flex-wrap gap-5 text-[12.5px] text-[var(--ink-muted)]">
         {parts.map((part) => (
           <span key={part.label} className="flex items-center gap-1.5">
-            <span className="size-2 rounded-[2px]" style={{ background: part.color }} aria-hidden />
+            <span className="size-2 rounded-full" style={{ background: part.color }} aria-hidden />
             {part.label}{' '}
             <span className="font-[family-name:var(--font-mono)]">{part.count ?? '–'}</span>
           </span>
@@ -177,7 +178,7 @@ export function HomePage({ me }: { me: Me }) {
   return (
     <main className="flex flex-col gap-6 px-9 py-8">
       <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-[24px] leading-8 font-semibold tracking-[-0.02em]">
+        <h1 className="m-0 text-[24px] leading-8 font-extrabold tracking-[-0.025em]">
           {t(greetingKey(now.getHours()), { name: me.displayName.split(' ')[0] ?? me.displayName })}
         </h1>
         <p className="m-0 text-sm text-[var(--ink-muted)]">
@@ -226,7 +227,7 @@ export function HomePage({ me }: { me: Me }) {
                 <Link
                   to="/spaces/$key/pages/$id"
                   params={{ key: page.spaceKey ?? '', id: page.ref }}
-                  className="truncate font-[family-name:var(--font-prose)] text-base font-medium text-[var(--ink)] no-underline hover:underline"
+                  className="truncate font-[family-name:var(--font-prose)] text-[14px] font-bold text-[var(--ink)] no-underline hover:underline"
                 >
                   {page.name}
                 </Link>

@@ -214,7 +214,9 @@ export function CalendarPage({
   return (
     <div className="flex flex-col gap-3 px-6 py-5">
       <header className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-xl font-semibold">{t('calendar.title')}</h1>
+        <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+          {t('calendar.title')}
+        </h1>
         <form onSubmit={submit} className="flex min-w-64 flex-1 gap-2">
           <input
             value={draft}

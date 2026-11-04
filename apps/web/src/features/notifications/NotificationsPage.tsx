@@ -181,7 +181,7 @@ export function NotificationsPage({ tab }: { tab: NotificationTab }) {
                   search: value === 'unread' ? {} : { tab: value },
                 })
               }
-              className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 text-[13px] text-[var(--ink-muted)] hover:text-[var(--ink)] aria-selected:border-[var(--ink)] aria-selected:font-semibold aria-selected:text-[var(--ink)]"
+              className="-mb-px cursor-pointer border-0 border-b-2 border-transparent bg-transparent px-0 pb-2 text-[13px] text-[var(--ink-muted)] hover:text-[var(--ink)] aria-selected:border-[var(--accent)] aria-selected:font-bold aria-selected:text-[var(--ink)]"
             >
               {t(`notifications.tabs.${value}`)}
               {value === 'unread' && count > 0 && ` ${count}`}

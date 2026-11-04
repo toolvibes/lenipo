@@ -92,7 +92,9 @@ export function MaintenanceScreen() {
   const notice = useQuery(noticeQuery).data;
   return (
     <main className="mx-auto flex min-h-screen max-w-[520px] flex-col justify-center gap-3 px-4">
-      <h1 className="m-0 text-xl font-semibold">{t('operations.maintenanceTitle')}</h1>
+      <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
+        {t('operations.maintenanceTitle')}
+      </h1>
       <p className="m-0 text-[var(--ink-muted)]">
         {notice?.maintenance.message || t('operations.maintenanceDefault')}
       </p>

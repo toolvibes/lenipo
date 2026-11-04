@@ -20,7 +20,7 @@ export function Select({ label, options, help, id, className = '', ...props }: S
       <select
         id={selectId}
         aria-describedby={helpId}
-        className={`h-[var(--control-md)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2 text-[var(--ink)] ${className}`}
+        className={`h-[var(--control-md)] rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2.5 text-[var(--ink)] transition-shadow focus:border-[var(--accent)] focus:shadow-[0_0_0_4px_var(--accent-soft)] ${className}`}
         {...props}
       >
         {options.map((option) => (

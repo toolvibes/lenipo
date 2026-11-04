@@ -85,7 +85,7 @@ function TitlePage({
           className="max-h-24 max-w-[240px] self-start object-contain"
         />
       )}
-      <h1 className="m-0 font-[family-name:var(--font-prose)] text-[40px] leading-tight font-medium">
+      <h1 className="m-0 font-[family-name:var(--font-prose)] text-[34px] leading-tight font-extrabold tracking-[-0.03em]">
         {values.title}
       </h1>
       {template.subtitle && (
@@ -112,7 +112,7 @@ function PrintedPage({ page, first }: { page: Page; first: boolean }) {
     <article id={`page-${page.id}`} className={first ? '' : 'tl-print-break'}>
       <header className="mb-6 flex flex-col gap-1 border-b border-[var(--border)] pb-3">
         <span className="text-xs text-[var(--ink-muted)]">{path}</span>
-        <h1 className="m-0 font-[family-name:var(--font-prose)] text-[32px] leading-tight font-medium">
+        <h1 className="m-0 font-[family-name:var(--font-prose)] text-[28px] leading-tight font-extrabold tracking-[-0.025em]">
           {page.title}
         </h1>
         <span className="text-xs text-[var(--ink-muted)]">
