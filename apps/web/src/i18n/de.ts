@@ -2441,6 +2441,33 @@ export const de = {
       anonymize: 'Die Person wurde anonymisiert.',
     },
   },
+  routeError: {
+    retry: 'Erneut versuchen',
+    home: 'Zur Startseite',
+    details: 'Technische Einzelheiten',
+    unreachable: {
+      title: 'Lenipo ist gerade nicht erreichbar',
+      text: 'Der Server antwortet nicht. Meist wird er gerade aktualisiert oder neu gestartet; das dauert nur einen Moment. Deine Daten sind sicher.',
+      waiting:
+        'Wir versuchen es alle paar Sekunden erneut und machen weiter, sobald er wieder da ist.',
+    },
+    maintenance: {
+      title: 'Lenipo wird gewartet',
+      text: 'Bitte versuche es später noch einmal.',
+    },
+    forbidden: {
+      title: 'Kein Zugriff',
+      text: 'Dafür fehlen dir die Rechte. Wer Lenipo bei euch verwaltet, kann sie dir geben.',
+    },
+    missing: {
+      title: 'Nicht gefunden',
+      text: 'Diese Seite gibt es nicht, oder sie wurde verschoben oder gelöscht.',
+    },
+    other: {
+      title: 'Das hat nicht geklappt',
+      text: 'Beim Laden dieser Seite ist ein Fehler aufgetreten. Versuch es noch einmal; bleibt der Fehler, helfen die Einzelheiten unten der Administration weiter.',
+    },
+  },
   operations: {
     plan: {
       title: 'Tarif',

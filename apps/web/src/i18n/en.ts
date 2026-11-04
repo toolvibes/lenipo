@@ -2403,6 +2403,32 @@ export const en: Messages = {
       anonymize: 'The person was anonymised.',
     },
   },
+  routeError: {
+    retry: 'Try again',
+    home: 'Go to the start page',
+    details: 'Technical details',
+    unreachable: {
+      title: 'Lenipo cannot be reached right now',
+      text: 'The server does not answer. Usually it is being updated or restarted, which takes just a moment. Your data is safe.',
+      waiting: 'We try again every few seconds and carry on as soon as it is back.',
+    },
+    maintenance: {
+      title: 'Lenipo is under maintenance',
+      text: 'Please try again later.',
+    },
+    forbidden: {
+      title: 'No access',
+      text: 'You lack the rights for this. Whoever manages Lenipo for you can grant them.',
+    },
+    missing: {
+      title: 'Not found',
+      text: 'This page does not exist, or it was moved or deleted.',
+    },
+    other: {
+      title: 'That did not work',
+      text: 'Something failed while loading this page. Try again; if the error stays, the details below help your administrators.',
+    },
+  },
   operations: {
     plan: {
       title: 'Plan',

@@ -68,6 +68,7 @@ import { ProjectSettingsPage } from './features/settings/ProjectSettingsPage';
 import { MaintenanceScreen } from './features/shell/Announcement';
 import { AppShell } from './features/shell/AppShell';
 import { HelpPage } from './features/shell/HelpPage';
+import { kindOf, RouteError, RouteNotFound } from './features/shell/RouteError';
 import { TimesheetPage } from './features/time/TimesheetPage';
 import { TimelinePage } from './features/timeline/TimelinePage';
 import { IssuePage } from './features/tracking/IssuePage';
@@ -264,7 +265,9 @@ const appRoute = createRoute({
   id: 'app',
   beforeLoad: async ({ context, location }) => {
     const me = await context.queryClient.ensureQueryData(meQuery).catch((error: unknown) => {
-      if (error instanceof ApiError && error.status === 503) throw redirect({ to: '/maintenance' });
+      if (error instanceof ApiError && kindOf(error) === 'maintenance') {
+        throw redirect({ to: '/maintenance' });
+      }
       throw error;
     });
     if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
@@ -1107,7 +1110,14 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {
-  return createRouter({ routeTree, context: { queryClient }, defaultPreload: 'intent' });
+  return createRouter({
+    routeTree,
+    context: { queryClient },
+    defaultPreload: 'intent',
+    // Readable pages instead of the router's own "Something went wrong".
+    defaultErrorComponent: RouteError,
+    defaultNotFoundComponent: RouteNotFound,
+  });
 }
 
 declare module '@tanstack/react-router' {
