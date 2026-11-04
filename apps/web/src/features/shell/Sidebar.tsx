@@ -273,7 +273,9 @@ export function Sidebar({
     .slice(0, 8);
   const isAdmin = me.globalPermissions.includes('admin');
   const modules = useModules();
-  const helpUrl = useQuery(noticeQuery).data?.helpUrl ?? null;
+  const notice = useQuery(noticeQuery).data;
+  const helpUrl = notice?.helpUrl ?? null;
+  const supportUrl = notice?.supportUrl ?? null;
 
   return (
     <nav
@@ -389,6 +391,11 @@ export function Sidebar({
           <NavRow to="/help" active={path === '/help'}>
             {t('sidebar.help')}
           </NavRow>
+        )}
+        {supportUrl && (
+          <a href={supportUrl} target="_blank" rel="noreferrer" className={ROW}>
+            {t('sidebar.support')}
+          </a>
         )}
         {isAdmin && (
           <NavRow to="/admin/webhooks" active={path.startsWith('/admin')}>

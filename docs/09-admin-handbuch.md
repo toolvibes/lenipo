@@ -1,4 +1,4 @@
-<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=22 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
+<!-- lenipo page=01a193bc-a25d-7714-b271-061da005a4cc version=23 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 09 · Admin-Handbuch
 
 Betrieb einer Lenipo-Instanz: Installation, Konfiguration, Anmeldung, Rechte, Sicherung, Updates, Überwachung und Fehlersuche.
@@ -41,6 +41,7 @@ Umgebungsvariablen, beim Start geprüft (ein Fehler nennt die Variable):
 | `SHUTDOWN_TIMEOUT_SECONDS` | Wie lange ein stoppender Prozess auf laufende Arbeit wartet (25) |
 | `WEBHOOK_ALLOW_PRIVATE_NETWORKS` | Webhooks und Abrufe an private Adressen erlauben (Standard aus) |
 | `HELP_URL` | Ziel des Eintrags „Hilfe“; ohne ihn das eingebaute Benutzerhandbuch |
+| `SUPPORT_URL` | Ziel des Eintrags „Support kontaktieren“ (Seite oder `mailto:`); ein Bereitsteller kann ihn mit seinem Tarif setzen |
 | `IMPRINT_URL`, `PRIVACY_URL` | Links zu Impressum und Datenschutzerklärung, solange Admins keine eigenen eintragen |
 | `LOG_LEVEL` | `info` (Standard), `debug`, `warn` … |
 
@@ -127,6 +128,8 @@ Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projek
 
 Hat ein Bereitsteller wie ein Hosting-Dienst einen Rahmen gesetzt, steht er unter Administration → Betrieb: Tarifname, belegte und gebuchte Plätze, Agenten, Speicher für Anhänge, Service Desk und gegebenenfalls Anfragen je Minute. Ist der Rahmen erreicht, lehnt Lenipo das Anlegen, Einladen und Reaktivieren von Personen ab (auch bei Anmeldung per OIDC, SAML und beim Verzeichnis-Sync), ebenso neue Agenten, Anhänge über dem Speicher, neue Service Desks und Module außerhalb des Tarifs, jeweils mit einem Hinweis auf den Tarif. Gäste (externe Personen) und KI-Agenten belegen keine Plätze. Setzt der Tarif Obergrenzen für die Anfragegrenzen, lassen sich die Grenzen je Person, Token und IP nur darunter einstellen; höhere Einstellungen von früher gelten nur bis zur Obergrenze. Ohne Rahmen, also beim eigenen Betrieb, ist nichts begrenzt.
 
+
+**Hinweis des Anbieters:** Mit demselben Token setzt ein Bereitsteller über `PUT /api/v1/provider/notice` einen Hinweis für alle (Text in Markdown, `level`, `startsAt`, `endsAt`), etwa eine geplante Wartung. Er erscheint getrennt vom Ankündigungsbanner der Admins; leerer Text entfernt ihn. Mit dem Tarif kann er auch `supportUrl` setzen.
 ## Sicherung und Wiederherstellung
 
 - **Backups** (Administration → Wartung): ein ZIP mit allen Tabellen und Anhängen im Dateispeicher, täglich zur eingestellten Stunde, die letzten drei bleiben. Von Hand oder per Cronjob: `lenipo admin backup create` und `lenipo admin backup download <id>`, oder ohne Token direkt im Container: `docker compose exec app node api/dist/maintenance/backup-cli.js --out /tmp/lenipo.zip`. Backups gehören zusätzlich außer Haus.

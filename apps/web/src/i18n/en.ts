@@ -59,6 +59,7 @@ export const en: Messages = {
   },
   sidebar: {
     help: 'Help',
+    support: 'Contact support',
     search: 'Search …',
     overview: 'Overview',
     myIssues: 'My tasks',
@@ -2434,6 +2435,7 @@ export const en: Messages = {
     },
   },
   operations: {
+    providerNotice: 'Notice from your provider',
     legal: 'Imprint and privacy',
     legalIntro:
       'Links to the imprint and privacy policy of your organisation. They show on the sign-in page, in the service portal and at the bottom of the sidebar. Empty: the value from the environment applies (IMPRINT_URL, PRIVACY_URL).',

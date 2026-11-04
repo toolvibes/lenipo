@@ -1,25 +1,48 @@
 import { useQuery } from '@tanstack/react-query';
 import { docToHtml, markdownToDoc } from '@toolvibes/editor';
+import type { InstanceNotice } from '@toolvibes/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { noticeQuery } from '../../lib/instance';
 
 const DISMISSED = 'lenipo.announcement.dismissed';
 
-function dismissedVersion(): string | null {
+/** Versions of dismissed banners; an older single value still counts. */
+function dismissedVersions(): string[] {
   try {
-    return localStorage.getItem(DISMISSED);
+    const stored = localStorage.getItem(DISMISSED);
+    if (!stored) return [];
+    const parsed: unknown = stored.startsWith('[') ? JSON.parse(stored) : [stored];
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-/** The administrators' banner and, for them, a reminder that maintenance mode is on (TL-40). */
+type Banner = NonNullable<InstanceNotice['announcement']>;
+
+/**
+ * The administrators' banner, the provider's notice (TL-106) and, for administrators, a reminder
+ * that maintenance mode is on (TL-40). Each banner can be dismissed until it changes.
+ */
 export function Announcement() {
   const { t } = useTranslation();
   const notice = useQuery(noticeQuery).data;
-  const [dismissed, setDismissed] = useState(dismissedVersion);
-  const announcement = notice?.announcement;
+  const [dismissed, setDismissed] = useState(dismissedVersions);
+  const dismiss = (version: string) => {
+    const next = [...dismissed.filter((item) => item !== version), version].slice(-10);
+    try {
+      localStorage.setItem(DISMISSED, JSON.stringify(next));
+    } catch {
+      // The banner just comes back on the next visit.
+    }
+    setDismissed(next);
+  };
+  const banners: { banner: Banner; label?: string }[] = [];
+  if (notice?.providerNotice) {
+    banners.push({ banner: notice.providerNotice, label: t('operations.providerNotice') });
+  }
+  if (notice?.announcement) banners.push({ banner: notice.announcement });
   return (
     <>
       {notice?.maintenance.enabled && (
@@ -30,38 +53,35 @@ export function Announcement() {
           {t('operations.maintenanceActive')}
         </div>
       )}
-      {announcement && announcement.version !== dismissed && (
-        <div
-          role="status"
-          className={`flex items-start gap-3 border-b border-[var(--border)] px-4 py-2 text-[13px] ${
-            announcement.level === 'warning'
-              ? 'bg-[var(--warning-soft,var(--surface-2))]'
-              : 'bg-[var(--surface-2)]'
-          }`}
-        >
+      {banners
+        .filter(({ banner }) => !dismissed.includes(banner.version))
+        .map(({ banner, label }) => (
           <div
-            className="tl-announcement min-w-0 flex-1 [&_p]:m-0"
-            // Rendered from Markdown by the editor package, which escapes HTML.
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by docToHtml
-            dangerouslySetInnerHTML={{ __html: docToHtml(markdownToDoc(announcement.text)) }}
-          />
-          <button
-            type="button"
-            className="text-[var(--ink-muted)]"
-            aria-label={t('operations.dismiss')}
-            onClick={() => {
-              try {
-                localStorage.setItem(DISMISSED, announcement.version);
-              } catch {
-                // The banner just comes back on the next visit.
-              }
-              setDismissed(announcement.version);
-            }}
+            key={banner.version}
+            role="status"
+            className={`flex items-start gap-3 border-b border-[var(--border)] px-4 py-2 text-[13px] ${
+              banner.level === 'warning'
+                ? 'bg-[var(--warning-soft,var(--surface-2))]'
+                : 'bg-[var(--surface-2)]'
+            }`}
           >
-            ×
-          </button>
-        </div>
-      )}
+            {label && <strong className="shrink-0">{label}:</strong>}
+            <div
+              className="tl-announcement min-w-0 flex-1 [&_p]:m-0"
+              // Rendered from Markdown by the editor package, which escapes HTML.
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by docToHtml
+              dangerouslySetInnerHTML={{ __html: docToHtml(markdownToDoc(banner.text)) }}
+            />
+            <button
+              type="button"
+              className="text-[var(--ink-muted)]"
+              aria-label={t('operations.dismiss')}
+              onClick={() => dismiss(banner.version)}
+            >
+              ×
+            </button>
+          </div>
+        ))}
     </>
   );
 }

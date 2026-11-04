@@ -60,6 +60,7 @@ export const de = {
   },
   sidebar: {
     help: 'Hilfe',
+    support: 'Support kontaktieren',
     search: 'Suchen …',
     overview: 'Übersicht',
     myIssues: 'Meine Aufgaben',
@@ -2473,6 +2474,7 @@ export const de = {
     },
   },
   operations: {
+    providerNotice: 'Hinweis des Anbieters',
     legal: 'Impressum und Datenschutz',
     legalIntro:
       'Links zu Impressum und Datenschutzerklärung deiner Organisation. Sie stehen auf der Anmeldeseite, im Service-Portal und unten in der Seitenleiste. Leer gilt der Wert aus der Umgebung (IMPRINT_URL, PRIVACY_URL).',

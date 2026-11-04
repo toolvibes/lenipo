@@ -22,6 +22,8 @@ const configSchema = z.object({
   /** Defaults for the links to imprint and privacy policy; administrators can set their own (TL-105). */
   IMPRINT_URL: z.url({ protocol: /^https?$/ }).optional(),
   PRIVACY_URL: z.url({ protocol: /^https?$/ }).optional(),
+  /** Where people reach support, shown in the help menu; a provider's plan can set its own (TL-106). */
+  SUPPORT_URL: z.url({ protocol: /^(https?|mailto)$/ }).optional(),
   /** How long a stopping process waits for running requests and jobs (TL-42). */
   SHUTDOWN_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(300).default(25),
   /** Built web app (apps/web/dist) to serve from the API process; unset in development (Vite serves it). */

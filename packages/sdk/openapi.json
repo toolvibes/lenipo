@@ -10656,6 +10656,47 @@
         }
       }
     },
+    "/api/v1/provider/notice": {
+      "put": {
+        "operationId": "Operations.setNotice",
+        "summary": "Set the notice of the provider",
+        "description": "For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.",
+        "tags": ["Operations"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Announcement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/provider/usage": {
       "get": {
         "operationId": "Operations.usage",
@@ -28422,9 +28463,73 @@
           },
           "legal": {
             "$ref": "#/components/schemas/LegalLinks"
+          },
+          "providerNotice": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "level": {
+                    "default": "info",
+                    "type": "string",
+                    "enum": ["info", "warning"]
+                  },
+                  "startsAt": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "endsAt": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                },
+                "required": ["text", "level", "startsAt", "endsAt", "version"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "supportUrl": {
+            "type": ["string", "null"]
           }
         },
-        "required": ["modules", "maintenance", "announcement", "helpUrl", "legal"],
+        "required": [
+          "modules",
+          "maintenance",
+          "announcement",
+          "helpUrl",
+          "legal",
+          "providerNotice",
+          "supportUrl"
+        ],
         "additionalProperties": false
       },
       "FeatureFlags": {
@@ -31380,6 +31485,19 @@
                 "type": "null"
               }
             ]
+          },
+          "supportUrl": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -31548,6 +31666,19 @@
                 "type": "null"
               }
             ]
+          },
+          "supportUrl": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -31557,7 +31688,8 @@
           "storageMb",
           "modules",
           "serviceDesk",
-          "requestsPerMinute"
+          "requestsPerMinute",
+          "supportUrl"
         ],
         "additionalProperties": false
       },

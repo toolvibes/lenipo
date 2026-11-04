@@ -1,4 +1,4 @@
-import type { Agent, FeatureFlags, ProviderUsage } from '@toolvibes/shared';
+import type { Agent, FeatureFlags, InstanceNotice, ProviderUsage } from '@toolvibes/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
@@ -166,5 +166,34 @@ describe('plan limits of a provider (TL-103)', () => {
       (await admin.request<ProviderUsage>('GET', '/admin/plan')).body.limits?.requestsPerMinute,
     ).toEqual({ people: 300, tokens: 100, anonymous: 30 });
     await anonymous.request('DELETE', '/provider/limits', undefined, provider);
+  });
+
+  it('shows the notice and support link of the provider to everyone (TL-106)', async () => {
+    const hour = 3_600_000;
+    const notice = {
+      text: 'Wartung am Dienstag, 06:00 bis 08:00 Uhr',
+      level: 'warning',
+      startsAt: new Date(Date.now() - hour).toISOString(),
+      endsAt: new Date(Date.now() + hour).toISOString(),
+    };
+    expect((await admin.request('PUT', '/provider/notice', notice)).status).toBe(403);
+    expect((await anonymous.request('PUT', '/provider/notice', notice, provider)).status).toBe(200);
+    await anonymous.request(
+      'PUT',
+      '/provider/limits',
+      { plan: 'Team', supportUrl: 'mailto:support@lenipo.example' },
+      provider,
+    );
+    const shown = (await anonymous.request<InstanceNotice>('GET', '/instance/notice')).body;
+    expect(shown.providerNotice).toMatchObject({ text: notice.text, level: 'warning' });
+    expect(shown.providerNotice?.version).toMatch(/^p/);
+    // Apart from the administrators' own banner.
+    expect(shown.announcement).toBeNull();
+    expect(shown.supportUrl).toBe('mailto:support@lenipo.example');
+    await anonymous.request('PUT', '/provider/notice', { text: '' }, provider);
+    await anonymous.request('DELETE', '/provider/limits', undefined, provider);
+    const after = (await anonymous.request<InstanceNotice>('GET', '/instance/notice')).body;
+    expect(after.providerNotice).toBeNull();
+    expect(after.supportUrl).toBeNull();
   });
 });

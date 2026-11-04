@@ -22,6 +22,8 @@ const KEYS = {
   maintenance: 'maintenance-mode',
   announcement: 'announcement',
   legal: 'legal-links',
+  /** Set by a provider with the SETUP_TOKEN (TL-106), apart from the administrators' banner. */
+  providerNotice: 'provider-notice',
   /** Written by ProviderService (TL-103); read here for the ceilings of the request limits. */
   providerLimits: 'provider-limits',
 } as const;
@@ -38,6 +40,9 @@ interface Snapshot {
   announcement: Announcement & { version: string };
   /** As the administrators saved them, without the defaults from the environment. */
   legal: LegalLinks;
+  providerNotice: Announcement & { version: string };
+  /** From the provider's plan; null without one. */
+  supportUrl: string | null;
   tokenLimits: Map<string, { perMinute: number | null; perDay: number | null }>;
 }
 
@@ -80,6 +85,7 @@ export class OperationsService implements OnApplicationShutdown {
     const rows = await db.select().from(systemSettings);
     const value = (key: string) => rows.find((row) => row.key === key);
     const announcement = value(KEYS.announcement);
+    const providerNotice = value(KEYS.providerNotice);
     const limited = await db
       .select({
         id: personalAccessTokens.id,
@@ -117,6 +123,13 @@ export class OperationsService implements OnApplicationShutdown {
         version: announcement?.updatedAt.toISOString() ?? '',
       },
       legal: LegalLinks.parse(value(KEYS.legal)?.value ?? {}),
+      providerNotice: {
+        ...Announcement.parse(providerNotice?.value ?? {}),
+        version: providerNotice ? `p${providerNotice.updatedAt.toISOString()}` : '',
+      },
+      supportUrl: provider
+        ? (ProviderLimits.safeParse(provider.value).data?.supportUrl ?? null)
+        : null,
       tokenLimits: new Map(
         limited.map(({ id, perMinute, perDay }) => [
           id,
@@ -161,6 +174,11 @@ export class OperationsService implements OnApplicationShutdown {
     return announcement;
   }
 
+  async setProviderNotice(notice: Announcement): Promise<Announcement> {
+    await this.save(KEYS.providerNotice, notice);
+    return notice;
+  }
+
   async setLegal(links: LegalLinks): Promise<LegalLinks> {
     await this.save(KEYS.legal, links);
     return this.legal();
@@ -176,17 +194,20 @@ export class OperationsService implements OnApplicationShutdown {
   }
 
   async notice(now = new Date()): Promise<InstanceNotice> {
-    const { modules, maintenance, announcement } = await this.snapshot();
-    const due =
-      announcement.text.trim() !== '' &&
-      (!announcement.startsAt || new Date(announcement.startsAt) <= now) &&
-      (!announcement.endsAt || new Date(announcement.endsAt) > now);
+    const { modules, maintenance, announcement, providerNotice, supportUrl } =
+      await this.snapshot();
+    const due = (banner: Announcement) =>
+      banner.text.trim() !== '' &&
+      (!banner.startsAt || new Date(banner.startsAt) <= now) &&
+      (!banner.endsAt || new Date(banner.endsAt) > now);
     return {
       modules,
       maintenance,
-      announcement: due ? announcement : null,
+      announcement: due(announcement) ? announcement : null,
       helpUrl: this.config.HELP_URL ?? null,
       legal: await this.legal(),
+      providerNotice: due(providerNotice) ? providerNotice : null,
+      supportUrl: supportUrl ?? this.config.SUPPORT_URL ?? null,
     };
   }
 

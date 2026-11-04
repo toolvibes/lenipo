@@ -78,6 +78,13 @@ export const InstanceNotice = z
     helpUrl: z.string().nullable(),
     /** Imprint and privacy policy of whoever runs the instance; null where none is set. */
     legal: LegalLinks,
+    /**
+     * A notice of the provider (TL-106), e.g. planned maintenance, while it is due; apart from
+     * the administrators' banner.
+     */
+    providerNotice: Announcement.extend({ version: z.string() }).nullable(),
+    /** The provider's support, from the plan or SUPPORT_URL; null without one. */
+    supportUrl: z.string().nullable(),
   })
   .meta({ id: 'InstanceNotice' });
 export type InstanceNotice = z.infer<typeof InstanceNotice>;
@@ -132,6 +139,12 @@ export const ProviderLimits = z
      */
     requestsPerMinute: z
       .object({ people: PerMinute, tokens: PerMinute, anonymous: PerMinute })
+      .nullable()
+      .default(null),
+    /** Where people of the instance reach the provider's support (TL-106): a page or mailto. */
+    supportUrl: z
+      .url({ protocol: /^(https?|mailto)$/ })
+      .max(500)
       .nullable()
       .default(null),
   })

@@ -263,7 +263,10 @@ export class OperationsController {
 @Public()
 @Controller('provider')
 export class ProviderController {
-  constructor(@Inject(ProviderService) private readonly provider: ProviderService) {}
+  constructor(
+    @Inject(ProviderService) private readonly provider: ProviderService,
+    @Inject(OperationsService) private readonly operations: OperationsService,
+  ) {}
 
   private authorize(request: Request) {
     const [scheme, token] = (request.get('authorization') ?? '').split(' ');
@@ -287,6 +290,22 @@ export class ProviderController {
     this.authorize(request);
     await this.provider.setLimits(body);
     return this.provider.usage();
+  }
+
+  @Endpoint({
+    tag: 'Operations',
+    summary: 'Set the notice of the provider',
+    description:
+      "For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.",
+    response: Announcement,
+  })
+  @Put('notice')
+  async setNotice(
+    @ValidBody(Announcement) body: Announcement,
+    @Req() request: Request,
+  ): Promise<Announcement> {
+    this.authorize(request);
+    return this.operations.setProviderNotice(body);
   }
 
   @Endpoint({ tag: 'Operations', summary: 'Remove the limits of the plan' })

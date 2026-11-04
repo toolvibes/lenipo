@@ -3903,6 +3903,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/provider/notice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set the notice of the provider
+     * @description For providers, with `Authorization: Bearer <SETUP_TOKEN>`: a banner for everyone, e.g. planned maintenance, shown between `startsAt` and `endsAt` and apart from the administrators' banner. Empty text removes it.
+     */
+    put: operations['Operations.setNotice'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/provider/usage': {
     parameters: {
       query?: never;
@@ -9323,6 +9343,21 @@ export interface components {
       } | null;
       helpUrl: string | null;
       legal: components['schemas']['LegalLinks'];
+      providerNotice: {
+        /** @default  */
+        text: string;
+        /**
+         * @default info
+         * @enum {string}
+         */
+        level: 'info' | 'warning';
+        /** @default null */
+        startsAt: string | null;
+        /** @default null */
+        endsAt: string | null;
+        version: string;
+      } | null;
+      supportUrl: string | null;
     };
     FeatureFlags: {
       /** @default true */
@@ -10095,6 +10130,8 @@ export interface components {
         tokens: number;
         anonymous: number;
       } | null;
+      /** @default null */
+      supportUrl?: string | null;
     };
     /** @enum {string} */
     ModuleName: 'wiki' | 'boards' | 'time-tracking' | 'automation' | 'dashboards';
@@ -10128,6 +10165,8 @@ export interface components {
         tokens: number;
         anonymous: number;
       } | null;
+      /** @default null */
+      supportUrl: string | null;
     };
     ProviderUsageOutput: {
       persons: number;
@@ -20640,6 +20679,39 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Operations.setNotice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AnnouncementInput'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Announcement'];
+        };
       };
       /** @description Error (RFC 9457 problem details) */
       default: {
