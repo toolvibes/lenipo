@@ -35,6 +35,21 @@ function normalizeCode(code: string): string {
 }
 
 /**
+ * Where the setup page is. Without PUBLIC_URL the server cannot know its public address: behind
+ * Caddy or another proxy it is not the API port, so the log names only the path.
+ */
+export function setupUrl(publicUrl: string | undefined): string {
+  return `${(publicUrl ?? '').replace(/\/+$/, '')}/setup`;
+}
+
+export function setupMessage(publicUrl: string | undefined, code: string): string {
+  const where = publicUrl
+    ? `Open ${setupUrl(publicUrl)}`
+    : 'Open /setup at the address of this installation';
+  return `Setup required. ${where} and enter the setup code ${code} (valid for 24 hours).`;
+}
+
+/**
  * First-run setup (decision E-24): while no system administrator exists, the server prints a
  * one-time code to its log. Whoever can read the log can create the first administrator.
  */
@@ -70,10 +85,9 @@ export class SetupService {
       .insert(systemSettings)
       .values({ key: SETUP_KEY, value })
       .onConflictDoUpdate({ target: systemSettings.key, set: { value, updatedAt: sql`now()` } });
-    const url = `${this.config.PUBLIC_URL ?? `http://localhost:${this.config.API_PORT}`}/setup`;
     this.logger.warn(
-      { setupUrl: url, setupCode: code },
-      `Setup required. Open ${url} and enter the setup code ${code} (valid for 24 hours).`,
+      { setupUrl: setupUrl(this.config.PUBLIC_URL), setupCode: code },
+      setupMessage(this.config.PUBLIC_URL, code),
     );
     return code;
   }
