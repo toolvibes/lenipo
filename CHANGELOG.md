@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.1 – 2026-11-05
+
+### Behoben
+
+- Installation per Docker Compose startet ohne S3-Schlüssel, Einstellungen per .env (deploy/.env.example)
+
 ## 1.2.0 – 2026-11-05
 
 ### Neu
