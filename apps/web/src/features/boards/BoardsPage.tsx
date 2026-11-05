@@ -1,6 +1,6 @@
 import { Kanban, Plus } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import type { BoardType } from '@toolvibes/shared';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,8 +32,10 @@ function CreateBoardDialog({
   const [type, setType] = useState<BoardType>('kanban');
   useEffect(() => {
     if (!open) return;
-    setName('');
-    setType('kanban');
+    const preset = projects.data?.find((entry) => entry.key === projectKey);
+    // For a given project the board takes its name and, for Scrum projects, its type.
+    setName(preset?.name ?? '');
+    setType(preset?.template === 'scrum' ? 'scrum' : 'kanban');
     setProject(projectKey ?? projects.data?.[0]?.key ?? '');
   }, [open, projectKey, projects.data]);
 
@@ -116,7 +118,8 @@ export function BoardsPage() {
   const { t } = useTranslation();
   const boards = useQuery(boardsQuery());
   const recent = useQuery(recentQuery(20));
-  const [creating, setCreating] = useState(false);
+  const search = useSearch({ strict: false }) as { create?: string };
+  const [creating, setCreating] = useState(Boolean(search.create));
   // Starred boards first, then the rest in the server's order (TL-6).
   const sorted = [...(boards.data ?? [])].sort((a, b) => Number(b.favourite) - Number(a.favourite));
   const recentBoards = (recent.data ?? []).filter((item) => item.kind === 'board').slice(0, 5);
@@ -178,7 +181,7 @@ export function BoardsPage() {
           </li>
         ))}
       </ul>
-      <CreateBoardDialog open={creating} onOpenChange={setCreating} />
+      <CreateBoardDialog open={creating} onOpenChange={setCreating} projectKey={search.create} />
     </main>
   );
 }

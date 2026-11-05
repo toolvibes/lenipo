@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  type OnModuleInit,
 } from '@nestjs/common';
 import type {
   Board,
@@ -36,6 +37,7 @@ import {
 import { signal } from '../realtime/signals.js';
 import { QueryException } from '../search/query-exception.js';
 import { SearchService } from '../search/search.service.js';
+import { templateStatuses } from '../tracking/builtins.js';
 import { CustomFieldService } from '../tracking/custom-field.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { MetaService } from '../tracking/meta.service.js';
@@ -55,7 +57,7 @@ type BoardRow = typeof boards.$inferSelect;
 
 /** Boards over a TQL scope, located in a project (T-BRD-01 to -07, E-53). */
 @Injectable()
-export class BoardService {
+export class BoardService implements OnModuleInit {
   constructor(
     @Inject(DATABASE) private readonly database: DatabaseHandle,
     @Inject(ProjectService) private readonly projects: ProjectService,
@@ -66,6 +68,21 @@ export class BoardService {
     @Inject(MetaService) private readonly meta: MetaService,
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
+
+  /** A new Scrum or Kanban project starts with its board, as in the welcome steps (E-71). */
+  onModuleInit(): void {
+    this.projects.onCreated(async (tx, project) => {
+      if (project.template !== 'scrum' && project.template !== 'kanban') return;
+      await this.insertBoard(tx, {
+        id: uuidv7(),
+        name: project.name,
+        type: project.template,
+        projectId: project.id,
+        query: `project = ${project.key}`,
+        statuses: templateStatuses(project.template),
+      });
+    });
+  }
 
   // ---------------------------------------------------------------- reading
 

@@ -690,6 +690,9 @@ const portalRequestRoute = createRoute({
 const boardsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/boards',
+  // ?create=KEY opens "create board" for that project, e.g. from the sidebar.
+  validateSearch: (search: Record<string, unknown>): { create?: string } =>
+    typeof search.create === 'string' ? { create: search.create } : {},
   component: BoardsPage,
 });
 

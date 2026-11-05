@@ -58,6 +58,7 @@ export const en: Messages = {
     restored: 'Restored {{rows}} records and {{files}} files. You can sign in now.',
   },
   sidebar: {
+    createBoard: 'Create board',
     help: 'Help',
     support: 'Contact support',
     search: 'Search …',
@@ -2843,6 +2844,11 @@ export const en: Messages = {
     migrateHint:
       'These issues move to the chosen status when you publish; history records it, no notifications are sent.',
     migrateTo: '{{count}} from “{{name}}” to',
+    moveIssues: 'Move issues',
+    moveIssuesHint:
+      'Optional: issues of a status move to another one on publish, e.g. into a new start status. History records it, no notifications are sent.',
+    moveNone: 'Do not move',
+    moveToStart: 'All {{count}} from “{{from}}” into the new start “{{to}}”',
     choose: 'Choose status …',
     publish: 'Publish',
     discard: 'Discard',

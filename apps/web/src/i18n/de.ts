@@ -59,6 +59,7 @@ export const de = {
       'Wiederhergestellt: {{rows}} Datensätze und {{files}} Dateien. Du kannst dich jetzt anmelden.',
   },
   sidebar: {
+    createBoard: 'Board anlegen',
     help: 'Hilfe',
     support: 'Support kontaktieren',
     search: 'Suchen …',
@@ -2884,6 +2885,11 @@ export const de = {
     migrateHint:
       'Diese Vorgänge wechseln beim Veröffentlichen in den gewählten Status; die Historie hält es fest, Benachrichtigungen gehen nicht raus.',
     migrateTo: '{{count}} aus „{{name}}“ nach',
+    moveIssues: 'Vorgänge verschieben',
+    moveIssuesHint:
+      'Optional: Vorgänge eines Status wechseln beim Veröffentlichen in einen anderen, z. B. in einen neuen Start-Status. Die Historie hält es fest, Benachrichtigungen gehen nicht raus.',
+    moveNone: 'Nicht verschieben',
+    moveToStart: 'Alle {{count}} aus „{{from}}“ in den neuen Start „{{to}}“',
     choose: 'Status wählen …',
     publish: 'Veröffentlichen',
     discard: 'Verwerfen',

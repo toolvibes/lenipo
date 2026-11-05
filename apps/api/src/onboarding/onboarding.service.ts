@@ -10,12 +10,7 @@ import { DATABASE } from '../core/tokens.js';
 import { type DatabaseHandle, isUniqueViolation } from '../db/client.js';
 import { pages, pageVersions, spaces, users } from '../db/schema/index.js';
 import { UserService } from '../identity/user.service.js';
-import {
-  BUILT_IN_STATUSES,
-  BUILT_IN_WORKFLOWS,
-  builtInId,
-  PROJECT_TEMPLATES,
-} from '../tracking/builtins.js';
+import { templateStatuses } from '../tracking/builtins.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { rankBetween } from '../tracking/rank.js';
 import { plainText } from '../tracking/rich-text.js';
@@ -32,17 +27,6 @@ const START_PAGE = {
     lead: `This is where the documentation of ${name} grows: decisions, how-tos and everything the team should know.`,
   }),
 };
-
-/** The statuses of a template's built-in workflow, for the board's first columns. */
-function templateStatuses(template: 'scrum' | 'kanban') {
-  const workflow = BUILT_IN_WORKFLOWS.find(
-    (entry) => entry.key === PROJECT_TEMPLATES[template].workflow,
-  );
-  const names = new Map(
-    BUILT_IN_STATUSES.map((status) => [builtInId('status', status.key), status.name]),
-  );
-  return (workflow?.definition.statusIds ?? []).map((id) => ({ id, name: names.get(id) ?? id }));
-}
 
 /**
  * The welcome steps after the first sign-in (E-71): profile, then per method a project with

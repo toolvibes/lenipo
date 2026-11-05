@@ -54,6 +54,12 @@ export function AppShell({ me: signedIn }: { me: Me }) {
   // The drawer closes when a link in it was followed.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every navigation
   useEffect(() => setMenuOpen(false), [path]);
+  // Every page below /projects/<KEY> is about that project, so "create issue" offers it,
+  // also on pages that do not report their project themselves (reports, team, releases …).
+  useEffect(() => {
+    const key = projectKeyOf(path);
+    if (key) setProjectKey(key);
+  }, [path]);
   const sidebar = (
     <Sidebar
       me={me}
@@ -144,4 +150,10 @@ function useNarrow(): boolean {
     return () => list.removeEventListener('change', change);
   }, []);
   return narrow;
+}
+
+/** The project a path is about, e.g. "/projects/web/reports" → "WEB"; null elsewhere. */
+export function projectKeyOf(path: string): string | null {
+  const match = /^\/projects\/([A-Za-z][A-Za-z0-9]{1,9})(?:\/|$)/.exec(path);
+  return match?.[1] ? match[1].toUpperCase() : null;
 }

@@ -303,10 +303,20 @@ export class WorkflowService {
       const byId = new Map(all.map((entry) => [entry.id, entry]));
       const definition = this.definition(ids, request, byId);
 
-      // Issues in statuses that are gone need a new home.
+      // Issues in statuses that are gone need a new home; issues in a kept status move too when
+      // the request names a target for it (e.g. into a new initial status).
       const removed = previous.statusIds.filter((id) => !ids.includes(id));
+      const moved = Object.entries(request.migrate)
+        .filter(
+          ([statusId, target]) =>
+            previous.statusIds.includes(statusId) &&
+            ids.includes(statusId) &&
+            ids[target] !== statusId,
+        )
+        .map(([statusId]) => statusId);
+      const sources = [...removed, ...moved];
       const inUse =
-        removed.length === 0
+        sources.length === 0
           ? []
           : await tx
               .select({
@@ -315,7 +325,7 @@ export class WorkflowService {
                 resolutionId: issues.resolutionId,
               })
               .from(issues)
-              .where(and(this.inScope(project.id, scope), inArray(issues.statusId, removed)));
+              .where(and(this.inScope(project.id, scope), inArray(issues.statusId, sources)));
       const unmapped = [...new Set(inUse.map((issue) => issue.statusId))].filter(
         (statusId) => request.migrate[statusId] === undefined,
       );

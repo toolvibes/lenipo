@@ -306,7 +306,10 @@ describe('boards as favourites and recently viewed (TL-6)', () => {
       projectKey: 'WEB',
     });
     const boards = (await jonas.request<BoardSummary[]>('GET', '/boards')).body;
-    expect(boards.map((board) => [board.name, board.favourite])).toEqual([['Team', true]]);
+    // Besides "Team" only the board the project got at its creation; "Audit" stays hidden.
+    expect(boards.map((board) => [board.name, board.favourite])).toContainEqual(['Team', true]);
+    expect(boards.map((board) => board.name)).not.toContain('Audit');
+    expect(boards.filter((board) => board.favourite)).toHaveLength(1);
     expect((await jonas.request<Board>('GET', `/boards/${web.id}`)).body.favourite).toBe(true);
     expect((await admin.request<Board>('GET', `/boards/${web.id}`)).body.favourite).toBe(false);
 

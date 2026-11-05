@@ -211,3 +211,43 @@ describe('project workflow', () => {
     expect(published.body.statuses.at(-1)?.id).toBe(review?.id);
   });
 });
+
+describe('moving issues out of a kept status', () => {
+  it('moves the issues of the old start into a new initial status on publish', async () => {
+    for (const summary of ['Eins', 'Zwei']) {
+      await admin.request('POST', '/issues', { projectKey: 'APP', issueType: 'task', summary });
+    }
+    const before = (await admin.request<ProjectWorkflow>('GET', '/projects/APP/workflow')).body;
+    const open = before.statuses.find((status) => status.id === before.initialStatusId);
+    expect(before.usage[open?.id ?? '']).toBe(2);
+    const request = edit(before);
+    // A new "Eingang" in front becomes the start; the issues in "Offen" follow it.
+    request.statuses = [{ id: null, name: 'Eingang', category: 'todo' }, ...request.statuses];
+    request.initial = 0;
+    request.migrate = { [open?.id ?? '']: 0 };
+    const published = await admin.request<ProjectWorkflow>(
+      'POST',
+      '/projects/APP/workflow',
+      request,
+    );
+    expect(published.status).toBe(200);
+    expect(published.body.statuses.map((status) => status.name)).toContain('Offen');
+    for (const key of ['APP-1', 'APP-2']) {
+      const issue = (await admin.request<Issue>('GET', `/issues/${key}`)).body;
+      expect(issue.status.name).toBe('Eingang');
+    }
+    const history = (await admin.request<ChangeGroup[]>('GET', '/issues/APP-1/history')).body;
+    expect(history.some((group) => group.via === 'workflow')).toBe(true);
+  });
+
+  it('leaves a kept status alone when the target is the status itself', async () => {
+    const before = (await admin.request<ProjectWorkflow>('GET', '/projects/APP/workflow')).body;
+    const start = before.statuses.findIndex((status) => status.id === before.initialStatusId);
+    const request = edit(before);
+    request.migrate = { [before.initialStatusId]: start };
+    const published = await admin.request('POST', '/projects/APP/workflow', request);
+    expect(published.status).toBe(200);
+    const issue = (await admin.request<Issue>('GET', '/issues/APP-1')).body;
+    expect(issue.status.name).toBe('Eingang');
+  });
+});

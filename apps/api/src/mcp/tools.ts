@@ -815,13 +815,9 @@ export function registerTools(
     async ({ lore, ...request }) => {
       const project = await projects.create(principal, request);
       const made = [`project ${project.key}`];
-      if (request.template === 'scrum' || request.template === 'kanban') {
-        const board = await services.boards.create(principal, {
-          name: project.name,
-          projectKey: project.key,
-          type: request.template,
-        });
-        made.push(`${request.template} board "${board.name}" (${board.id})`);
+      // Scrum and Kanban projects come with their board (created with the project).
+      for (const board of await services.boards.list(principal, project.key)) {
+        made.push(`${board.type} board "${board.name}" (${board.id})`);
       }
       if (lore) {
         await services.spaces.create(principal, {

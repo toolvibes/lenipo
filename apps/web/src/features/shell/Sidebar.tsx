@@ -13,6 +13,7 @@ import {
   ListBullets,
   ListChecks,
   MapTrifold,
+  Plus,
   Pulse,
   Question,
   Robot,
@@ -108,6 +109,11 @@ function ProjectPages({ projectKey, path }: { projectKey: string; path: string }
       >
         {t('sidebar.issues')}
       </NavRow>
+      {modules.boards && boards.isSuccess && boards.data.length === 0 && (
+        <NavRow small icon={Plus} to="/boards" search={{ create: projectKey }} active={false}>
+          {t('sidebar.createBoard')}
+        </NavRow>
+      )}
       {scrum && (
         <NavRow
           icon={ListBullets}

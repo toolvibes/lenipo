@@ -45,6 +45,12 @@ import { readDefinition, type WorkflowDefinition } from './workflow.js';
 
 export type ProjectRow = typeof projects.$inferSelect;
 
+/** Runs inside the transaction that creates a project (see ProjectService.onCreated). */
+export type ProjectCreatedHook = (
+  tx: Executor,
+  project: { id: string; key: string; name: string; template: ProjectTemplate },
+) => Promise<void>;
+
 @Injectable()
 export class ProjectService {
   constructor(
@@ -56,6 +62,16 @@ export class ProjectService {
     @Inject(CustomFieldService) private readonly customFields: CustomFieldService,
   ) {}
 
+  private readonly createdHooks: ProjectCreatedHook[] = [];
+
+  /**
+   * Lets another module add rows to a project created here, in the same transaction, e.g. the
+   * first board of a Scrum or Kanban project. The welcome steps add their own and skip these.
+   */
+  onCreated(hook: ProjectCreatedHook): void {
+    this.createdHooks.push(hook);
+  }
+
   /** Creates a project from a template. The creator administers it; everyone in "users" may work in it. */
   async create(principal: Principal, request: CreateProjectRequest): Promise<ProjectDetails> {
     if ('scopes' in principal && !principal.scopes.includes('admin')) {
@@ -66,9 +82,12 @@ export class ProjectService {
     }
     const id = uuidv7();
     try {
-      await this.database.db.transaction((tx) =>
-        this.insertProject(tx, principal.userId, id, request),
-      );
+      await this.database.db.transaction(async (tx) => {
+        await this.insertProject(tx, principal.userId, id, request);
+        for (const hook of this.createdHooks) {
+          await hook(tx, { id, key: request.key, name: request.name, template: request.template });
+        }
+      });
     } catch (error) {
       if (isUniqueViolation(error))
         throw new ConflictException(`The project key "${request.key}" is already taken`);

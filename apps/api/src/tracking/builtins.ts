@@ -131,3 +131,16 @@ export const PROJECT_TEMPLATES: Record<
   basic: { workflow: 'basic', hiddenIssueTypes: ['epic', 'story', 'bug'] },
   bugs: { workflow: 'bugs', hiddenIssueTypes: ['epic', 'story'] },
 };
+
+/** The statuses of a template's built-in workflow, for a new board's first columns. */
+export function templateStatuses(
+  template: 'scrum' | 'kanban',
+): Array<{ id: string; name: string }> {
+  const workflow = BUILT_IN_WORKFLOWS.find(
+    (entry) => entry.key === PROJECT_TEMPLATES[template].workflow,
+  );
+  const names = new Map(
+    BUILT_IN_STATUSES.map((status) => [builtInId('status', status.key), status.name]),
+  );
+  return (workflow?.definition.statusIds ?? []).map((id) => ({ id, name: names.get(id) ?? id }));
+}

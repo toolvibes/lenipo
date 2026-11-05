@@ -1,4 +1,10 @@
-import type { Board, BoardData, ProjectDetails, TrackingMeta } from '@toolvibes/shared';
+import type {
+  Board,
+  BoardData,
+  BoardSummary,
+  ProjectDetails,
+  TrackingMeta,
+} from '@toolvibes/shared';
 import { and, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -99,8 +105,10 @@ describe('boards', () => {
     expect((await mira.request<Board>('GET', `/boards/${board.id}`)).body.canConfigure).toBe(false);
     expect((await olaf.request('GET', `/boards/${board.id}`)).status).toBe(404);
     expect((await mira.request('PATCH', `/boards/${board.id}`, { name: 'X' })).status).toBe(403);
+    // Next to the board the Scrum project got when it was created.
     const list = await mira.request<Array<{ id: string }>>('GET', '/boards?project=WEB');
-    expect(list.body.map((entry) => entry.id)).toEqual([board.id]);
+    expect(list.body.map((entry) => entry.id)).toContain(board.id);
+    expect(list.body).toHaveLength(2);
   });
 
   it('shows cards in rank order with the columns they can reach', async () => {
@@ -211,5 +219,24 @@ describe('boards', () => {
     expect((await mira.request('DELETE', `/boards/${board.id}`)).status).toBe(403);
     expect((await admin.request('DELETE', `/boards/${board.id}`)).status).toBe(204);
     expect((await admin.request('GET', `/boards/${board.id}`)).status).toBe(404);
+  });
+});
+
+describe('a new project', () => {
+  it('starts with a board when it is Scrum or Kanban, with its workflow as columns', async () => {
+    await admin.request('POST', '/projects', { key: 'SCR', name: 'Scrum-Team', template: 'scrum' });
+    await admin.request('POST', '/projects', { key: 'KAN', name: 'Fluss', template: 'kanban' });
+    await admin.request('POST', '/projects', { key: 'BAS', name: 'Einfach', template: 'basic' });
+    const list = async (project: string) =>
+      (await admin.request<BoardSummary[]>('GET', `/boards?project=${project}`)).body;
+    const [scrum] = await list('SCR');
+    expect(scrum).toMatchObject({ name: 'Scrum-Team', type: 'scrum' });
+    const [kanban] = await list('KAN');
+    expect(kanban).toMatchObject({ name: 'Fluss', type: 'kanban' });
+    expect(await list('BAS')).toEqual([]);
+    const full = (
+      await admin.request<{ columns: Array<{ name: string }> }>('GET', `/boards/${scrum?.id}`)
+    ).body;
+    expect(full.columns.map((column) => column.name)).toContain('Offen');
   });
 });

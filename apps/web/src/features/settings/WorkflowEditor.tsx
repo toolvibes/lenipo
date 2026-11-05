@@ -662,6 +662,14 @@ export function WorkflowEditor({
       (workflow.usage[status.id] ?? 0) > 0 && !draft.rows.some((row) => row.id === status.id),
   );
   const missingTarget = removedInUse.some((status) => !draft.migrate[status.id]);
+  // Kept statuses with issues: their issues may move too, e.g. into a new start status.
+  const keptInUse = workflow.statuses.filter(
+    (status) =>
+      (workflow.usage[status.id] ?? 0) > 0 && draft.rows.some((row) => row.id === status.id),
+  );
+  const oldStart = keptInUse.find((status) => status.id === workflow.initialStatusId);
+  const newStart = draft.rows.find((row) => row.key === draft.initial);
+  const startMoved = Boolean(oldStart && newStart && newStart.id !== oldStart.id);
   const diagramPairs = useMemo(
     () =>
       draft.mode === 'free'
@@ -961,6 +969,64 @@ export function WorkflowEditor({
                     {row.name}
                   </option>
                 ))}
+              </select>
+            </label>
+          ))}
+        </section>
+      )}
+
+      {editable && keptInUse.length > 0 && (
+        <section
+          aria-label={t('workflow.moveIssues')}
+          className="flex flex-col gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-2)] px-4 py-3"
+        >
+          <h2 className="m-0 text-[13.5px] font-bold">{t('workflow.moveIssues')}</h2>
+          <p className="m-0 text-[13px] text-[var(--ink-muted)]">{t('workflow.moveIssuesHint')}</p>
+          {startMoved && oldStart && newStart && (
+            <div>
+              <Button
+                size="sm"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    migrate: { ...current.migrate, [oldStart.id]: newStart.key },
+                  }))
+                }
+              >
+                {t('workflow.moveToStart', {
+                  count: workflow.usage[oldStart.id] ?? 0,
+                  from: oldStart.name,
+                  to: newStart.name,
+                })}
+              </Button>
+            </div>
+          )}
+          {keptInUse.map((status) => (
+            <label key={status.id} className="flex flex-wrap items-center gap-2 text-[13px]">
+              {t('workflow.migrateTo', {
+                count: workflow.usage[status.id] ?? 0,
+                name: status.name,
+              })}
+              <select
+                value={draft.migrate[status.id] ?? ''}
+                onChange={(event) =>
+                  update((current) => {
+                    const migrate = { ...current.migrate };
+                    if (event.target.value) migrate[status.id] = event.target.value;
+                    else delete migrate[status.id];
+                    return { ...current, migrate };
+                  })
+                }
+                className={FIELD}
+              >
+                <option value="">{t('workflow.moveNone')}</option>
+                {draft.rows
+                  .filter((row) => row.id !== status.id)
+                  .map((row) => (
+                    <option key={row.key} value={row.key}>
+                      {row.name}
+                    </option>
+                  ))}
               </select>
             </label>
           ))}
