@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 
+:root {
+  /* Radio buttons, checkboxes and range inputs in the accent colour. */
+  accent-color: var(--accent);
+}
+
 body {
   margin: 0;
   background: var(--surface-0);
