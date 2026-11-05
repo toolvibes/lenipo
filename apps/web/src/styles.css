@@ -4,6 +4,13 @@
 :root {
   /* Radio buttons, checkboxes and range inputs in the accent colour. */
   accent-color: var(--accent);
+  /* Where bars inside a page stick: below the compact bar, from 768 px below the top bar. */
+  --sticky-top: 48px;
+}
+@media (min-width: 768px) {
+  :root {
+    --sticky-top: var(--topbar-height);
+  }
 }
 
 body {
@@ -31,6 +38,33 @@ body {
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* Fields show focus as a soft ring that follows their rounding, not as a square outline. */
+:is(
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]),
+  select,
+  textarea
+):focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 4px var(--accent-soft);
+}
+/* Inline-edited titles keep their own underline as focus. */
+.tl-field-plain:focus-visible {
+  box-shadow: none;
+}
+/* In a composed field (icon and select, label and input) the whole group shows it. */
+.tl-field-group :is(input, select, textarea):focus-visible {
+  box-shadow: none;
+}
+.tl-field-group:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 4px var(--accent-soft);
 }
 
 /* No animations for people who asked their system for less motion (WCAG 2.3.3, TL-43). */

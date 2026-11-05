@@ -399,7 +399,7 @@ export function WikiPage({ spaceKey, id }: { spaceKey: string; id: string }) {
         </div>
         {doc && (
           <aside
-            className={`sticky top-6 flex min-w-0 flex-col gap-6 ${withThreads ? 'flex-[1_1_280px] xl:max-w-[340px]' : 'flex-[1_1_200px] xl:max-w-[220px]'}`}
+            className={`sticky top-[calc(var(--sticky-top)+24px)] flex min-w-0 flex-col gap-6 ${withThreads ? 'flex-[1_1_280px] xl:max-w-[340px]' : 'flex-[1_1_200px] xl:max-w-[220px]'}`}
           >
             <PageOutline doc={doc} article={article} />
             {withThreads && (

@@ -82,14 +82,46 @@ export const STATUS_TONE = {
   done: 'bg-[var(--status-done-bg)] text-[var(--status-done-fg)]',
 } as const;
 
-/** Status as a quiet badge with its name, never by colour alone (E-67). */
+/** Built-in statuses with a tone of their own (design: Review, Blockiert), else by category. */
+const STATUS_KEY_TONE: Record<string, string> = {
+  review: 'bg-[var(--status-review-bg)] text-[var(--status-review-fg)]',
+  testing: 'bg-[var(--status-review-bg)] text-[var(--status-review-fg)]',
+  blocked: 'bg-[var(--status-blocked-bg)] text-[var(--status-blocked-fg)]',
+};
+
+export function statusTone(status: StatusInfo): string {
+  return STATUS_KEY_TONE[status.key] ?? STATUS_TONE[status.category];
+}
+
+/** Status as a pill with its name, never by colour alone (E-67). */
 export function StatusLozenge({ status }: { status: StatusInfo }) {
   const name = useMetaName();
   return (
     <span
-      className={`inline-flex items-center rounded-[4px] px-1.5 text-[11.5px] leading-[18px] font-medium whitespace-nowrap ${STATUS_TONE[status.category]}`}
+      className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[11.5px] font-semibold whitespace-nowrap ${statusTone(status)}`}
     >
       {name('status', status)}
+    </span>
+  );
+}
+
+const TYPE_TONE: Record<string, string> = {
+  story: 'bg-[var(--type-story-bg)] text-[var(--type-story-fg)]',
+  bug: 'bg-[var(--type-bug-bg)] text-[var(--type-bug-fg)]',
+  task: 'bg-[var(--type-task-bg)] text-[var(--type-task-fg)]',
+  subtask: 'bg-[var(--type-task-bg)] text-[var(--type-task-fg)]',
+  spike: 'bg-[var(--type-spike-bg)] text-[var(--type-spike-fg)]',
+  epic: 'bg-[var(--type-spike-bg)] text-[var(--type-spike-fg)]',
+};
+
+/** Issue type as a coloured pill with its name (design: board cards, lists). */
+export function IssueTypePill({ type }: { type: IssueTypeInfo }) {
+  const name = useMetaName();
+  return (
+    <span
+      className={`inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold whitespace-nowrap ${TYPE_TONE[type.key] ?? STATUS_TONE.todo}`}
+    >
+      {name('issueType', type)}
     </span>
   );
 }

@@ -57,6 +57,26 @@ export const en: Messages = {
     restoring: 'Restoring …',
     restored: 'Restored {{rows}} records and {{files}} files. You can sign in now.',
   },
+  nav: {
+    areasLabel: 'Main areas',
+    areaMenu: 'Area menu',
+    areas: { start: 'Home', planning: 'Planning', wiki: 'Wiki', service: 'Service' },
+    project: 'Project',
+    switchProject: '{{name}}, switch project',
+    searchProject: 'Search projects',
+    allProjects: 'Show all projects',
+    projectSettings: 'Project settings',
+    groups: {
+      work: 'Work',
+      plan: 'Plan',
+      project: 'Project',
+      spaces: 'Spaces',
+      projectWikis: 'Project wikis',
+    },
+    handbook: 'Handbook',
+    account: 'Account and settings',
+    profile: 'Profile',
+  },
   sidebar: {
     createBoard: 'Create board',
     help: 'Help',
@@ -164,7 +184,7 @@ export const en: Messages = {
     archive: {
       heading: 'Archive project',
       about:
-        'The project disappears from lists, search and the sidebar; nothing is lost. Projects → “Archived & deleted” restores it.',
+        'The project disappears from lists, search and menus; nothing is lost. Projects → “Archived & deleted” restores it.',
       title: 'Archive “{{name}}”?',
       text: 'The project is then hidden for everyone until a project administrator restores it.',
       spaces_one: 'Also archive the wiki space {{names}}',
@@ -2481,7 +2501,7 @@ export const en: Messages = {
     providerNotice: 'Notice from your provider',
     legal: 'Imprint and privacy',
     legalIntro:
-      'Links to the imprint and privacy policy of your organisation. They show on the sign-in page, in the service portal and at the bottom of the sidebar. Empty: the value from the environment applies (IMPRINT_URL, PRIVACY_URL).',
+      'Links to the imprint and privacy policy of your organisation. They show on the sign-in page, in the service portal and in the help menu at the top right. Empty: the value from the environment applies (IMPRINT_URL, PRIVACY_URL).',
     plan: {
       title: 'Plan',
       titleNamed: 'Plan “{{plan}}”',

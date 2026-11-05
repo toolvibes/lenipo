@@ -1,13 +1,21 @@
 <!-- lenipo page=01a193bc-a26a-7041-87d7-3d383d8ebe96 version=19 · Schnappschuss aus dem Wiki, Änderungen bitte dort -->
 # 10 · Benutzerhandbuch
 
-Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es der Eintrag „Hilfe“ in der Seitenleiste.
+Dieses Handbuch erklärt die tägliche Arbeit mit Lenipo: Vorgänge, Boards, Suche, Wiki, Benachrichtigungen und Tastatur. In der App öffnet es das Fragezeichen oben rechts → „Handbuch“.
 
 ## Erste Schritte
 
 Nach der ersten Anmeldung führen drei kurze Schritte durch Profil, Sprache und einen Start: ein Scrum- oder Kanban-Projekt mit Board und eigenem Wiki-Bereich, oder nur ein Wiki-Bereich. Alles lässt sich später ändern; „Überspringen“ führt direkt zur Startseite.
 
-Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen, die Projekte (das aktuelle mit Backlog, Board, Timeline, Berichten, Kalender, Releases und Wiki), den Abschnitt Wiki und Favoriten. Auf dem Handy öffnet das Menüsymbol oben links die Seitenleiste.
+Die **obere Leiste** zeigt die Bereiche **Start**, das aktuelle **Projekt**, **Planung**, **Wiki** und **Service**, rechts die Suche (⌘K bzw. Strg K), die Hilfe, die Glocke mit den Benachrichtigungen und das Konto-Menü (Profil, Benachrichtigungen, Darstellung, Abmelden). Das **Menü links** zeigt nur den aktiven Bereich:
+
+- **Start:** Übersicht, Meine Aufgaben, Aktivität, Zeiterfassung und favorisierte Projekte, Boards, Filter und Dashboards.
+- **Projekt:** Aufgaben, Backlog, Board · Timeline, Kalender, Releases · Berichte, Team, Wiki, Projekt-Einstellungen. Ein Klick auf den Projekt-Tab führt ins zuletzt genutzte Projekt; im Projekt öffnet er den Projektwechsel mit Suche. Ein Wechsel führt zur gleichen Seite im anderen Projekt, sonst zum Board.
+- **Planung:** Alle Projekte, Alle Boards, Pläne, Dashboards, Agenten.
+- **Wiki:** Startseite, die allgemeinen Bereiche, die Wikis der Projekte und favorisierte Bereiche und Seiten.
+- **Service:** das Service-Portal.
+
+Auf dem Handy öffnet das Menüsymbol oben links Bereiche und Menü.
 
 ## Vorgänge
 
@@ -16,7 +24,7 @@ Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen,
 - **Status:** über das Statusmenü oben auf der Vorgangsseite, in Listen oder durch Ziehen auf dem Board. Verlangt der Workflow Angaben (Pflichtfelder, Kommentar), fragt ein kleiner Dialog danach; der Wechsel gilt erst, wenn alles passt. Erledigte Vorgänge bekommen eine Lösung.
 - **Kommentare** mit Formatierung, Erwähnungen (`@Name`) und Anhängen; Erwähnte werden benachrichtigt.
 - **Verknüpfungen** (blockiert, dupliziert, bezieht sich auf …), **Unteraufgaben**, **Komponenten** und **Versionen** ordnen Vorgänge ein.
-- **Zeit erfassen** auf dem Vorgang oder mit dem Timer; „Zeiterfassung“ in der Seitenleiste zeigt die eigene Woche.
+- **Zeit erfassen** auf dem Vorgang oder mit dem Timer; „Zeiterfassung“ unter Start zeigt die eigene Woche.
 - **Mehrere Vorgänge** auf einmal ändern: in der Vorgangssuche auswählen und „Massenänderung“.
 - **Schätzen mit Planning Poker:** Wer den Vorgang bearbeiten darf, startet in der Seitenspalte eine Schätzrunde. Alle, die den Vorgang sehen, legen verdeckt eine Karte; „Aufdecken“ zeigt alle Karten und den Median, „übernehmen“ setzt ihn als Story Points.
 - **Löschen** braucht das Recht dazu; gelöschte Vorgänge verschwinden aus allen Listen und werden nach der Aufbewahrungsfrist (Standard 30 Tage) endgültig entfernt.
@@ -29,7 +37,7 @@ Die **Seitenleiste** links zeigt Übersicht, Meine Aufgaben, Benachrichtigungen,
 
 ## Pläne über mehrere Projekte
 
-Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen, auf Wunsch mit TQL eingegrenzt (z. B. `labels = roadmap`). Die Zeitleiste zeigt die Epics und ihre Vorgänge aller Projekte; alle sehen nur, was sie sehen dürfen.
+Unter Planung → „Pläne“ fasst ein Plan mehrere Projekte zusammen, auf Wunsch mit TQL eingegrenzt (z. B. `labels = roadmap`). Die Zeitleiste zeigt die Epics und ihre Vorgänge aller Projekte; alle sehen nur, was sie sehen dürfen.
 
 - **Kapazität:** Je Projekt und Monat trägt man ein, wie viele Story Points das Team schafft. Die Tabelle zeigt die geplanten offenen Punkte (nach Fälligkeit, sonst Start) dagegen; Überlastung ist rot.
 - **Szenarien:** „Szenario anlegen“ und dann mit dem Stift Start, Fälligkeit oder Story Points einzelner Vorgänge ändern, ohne die echten Vorgänge anzufassen. Zeitleiste und Kapazität rechnen mit dem Szenario. „In echte Daten übernehmen“ schreibt die Änderungen in die Vorgänge; was man nicht ändern darf oder was inzwischen jemand geändert hat, wird übersprungen und genannt.
@@ -37,7 +45,7 @@ Unter „Pläne“ in der Seitenleiste fasst ein Plan mehrere Projekte zusammen,
 
 ## Team
 
-„Team“ in der Seitenleiste eines Projekts zeigt, wer dort arbeitet: Personen und KI-Agenten mit Änderungen in den letzten 30 Tagen, offenen Vorgängen oder einem aktuellen Herzschlag. Je Eintrag stehen der Stand (aktiv, wartet, blockiert, offline), der Vorgang und Branch, an dem gerade gearbeitet wird, die Zahl offener Vorgänge und wann zuletzt etwas geschah. Agenten melden ihren Stand selbst (mindestens alle 30 Minuten, sonst gelten sie als offline); Personen gelten als aktiv, solange sie Lenipo in den letzten 15 Minuten genutzt haben.
+„Team“ im Menü eines Projekts zeigt, wer dort arbeitet: Personen und KI-Agenten mit Änderungen in den letzten 30 Tagen, offenen Vorgängen oder einem aktuellen Herzschlag. Je Eintrag stehen der Stand (aktiv, wartet, blockiert, offline), der Vorgang und Branch, an dem gerade gearbeitet wird, die Zahl offener Vorgänge und wann zuletzt etwas geschah. Agenten melden ihren Stand selbst (mindestens alle 30 Minuten, sonst gelten sie als offline); Personen gelten als aktiv, solange sie Lenipo in den letzten 15 Minuten genutzt haben.
 
 Wer an einem Vorgang arbeitet, **beansprucht** ihn: Er wird ihm zugewiesen, andere können ihn solange nicht beanspruchen, und am Vorgang steht „In Arbeit“ mit Name, Ablaufzeit, Branch und Pfaden. Ein Anspruch hält 30 Minuten und verlängert sich mit jedem Herzschlag; ohne Herzschlag endet er von selbst, die Zuweisung bleibt. Branch und Pfade sind der Arbeitsbereich: Überschneiden sie sich mit einem anderen Anspruch im Projekt, wird der neue abgelehnt und die Überschneidungen werden genannt. Die Team-Seite listet alle laufenden Ansprüche. Freigeben können sie die Beanspruchenden und die Projektadministration.
 
@@ -45,7 +53,7 @@ Wer an einem Vorgang arbeitet, **beansprucht** ihn: Er wird ihm zugewiesen, ande
 
 **Reviews:** „Review anfordern“ am Vorgang bittet jemand anderes um ein Review der Arbeit – ohne Auswahl einen Reviewer-Agenten des Projekts, möglichst eines anderen Herstellers als der Autor; wer die Arbeit gemacht hat, reviewt nie selbst. Das Urteil („freigegeben“ oder „Änderungen nötig“) erscheint als hervorgehobener Review-Kommentar, im Feld „Review“ und in der Glocke; je nach Projekteinstellung wechselt der Vorgang den Status. Gemergt wird von Menschen. Den Pull Request zeigt Lenipo aus der Git-Anbindung an; kommentiert wird im Pull Request vom Reviewer selbst.
 
-**Agenten beaufsichtigen:** „Agenten“ in der Seitenleiste zeigt, woran jeder Agent arbeitet, wie viel seines Budgets heute verbraucht ist, was er in den letzten 7 Tagen erledigt hat, wie oft er abgewiesen wurde und worauf er wartet. Oben steht alles, was auf deine Freigabe wartet: Sprint-Starts und -Abschlüsse sowie Statuswechsel, die das Projekt Menschen vorbehält. Dieselbe Anfrage erscheint am Vorgang unter „Wartet auf Freigabe“ und in der Glocke. Bist du für einen Agenten verantwortlich, hältst du ihn auf seiner Seite an („Anhalten“, mit Grund) und legst sein Budget fest; dort siehst du auch seine Rechte und seinen Verlauf mit allen schreibenden und abgewiesenen Anfragen.
+**Agenten beaufsichtigen:** Planung → „Agenten“ zeigt, woran jeder Agent arbeitet, wie viel seines Budgets heute verbraucht ist, was er in den letzten 7 Tagen erledigt hat, wie oft er abgewiesen wurde und worauf er wartet. Oben steht alles, was auf deine Freigabe wartet: Sprint-Starts und -Abschlüsse sowie Statuswechsel, die das Projekt Menschen vorbehält. Dieselbe Anfrage erscheint am Vorgang unter „Wartet auf Freigabe“ und in der Glocke. Bist du für einen Agenten verantwortlich, hältst du ihn auf seiner Seite an („Anhalten“, mit Grund) und legst sein Budget fest; dort siehst du auch seine Rechte und seinen Verlauf mit allen schreibenden und abgewiesenen Anfragen.
 
 ## Service-Portal
 
@@ -73,7 +81,7 @@ Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Fi
 
 ## Wiki
 
-- **Wiki in der Seitenleiste:** Der Abschnitt „Wiki“ führt zur Wiki-Startseite und zu favorisierten und allgemeinen Bereichen, egal welches Projekt gerade offen ist. Die Startseite sucht in allen Bereichen und zeigt, was zuletzt geändert und besucht wurde.
+- **Wiki-Bereich oben:** Der Bereich „Wiki“ führt zur Wiki-Startseite, zu den allgemeinen Bereichen, zu den Wikis der Projekte und zu favorisierten Bereichen und Seiten, egal welches Projekt gerade offen ist. Das Wiki eines Projekts erscheint im Projekt-Bereich. Die Startseite sucht in allen Bereichen und zeigt, was zuletzt geändert und besucht wurde.
 - **Bereiche** enthalten Seiten in einem Baum. Ein Bereich ist allgemein (für das ganze Team) oder gehört zu einem Projekt; das wählt man beim Anlegen.
 - **Bearbeiten** geschieht gemeinsam in Echtzeit: Mehrere Personen schreiben gleichzeitig, jede sieht die anderen. „Veröffentlichen“ macht den Entwurf zur neuen Version.
 - **Makros** über `/` im Editor: Inhaltsverzeichnis, Info-Kästen, Vorgangslisten per TQL, Diagramme (Mermaid), Seitenbäume, Einbettungen und mehr.

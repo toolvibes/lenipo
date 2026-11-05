@@ -58,6 +58,26 @@ export const de = {
     restored:
       'Wiederhergestellt: {{rows}} Datensätze und {{files}} Dateien. Du kannst dich jetzt anmelden.',
   },
+  nav: {
+    areasLabel: 'Hauptbereiche',
+    areaMenu: 'Bereichsmenü',
+    areas: { start: 'Start', planning: 'Planung', wiki: 'Wiki', service: 'Service' },
+    project: 'Projekt',
+    switchProject: '{{name}}, Projekt wechseln',
+    searchProject: 'Projekt suchen',
+    allProjects: 'Alle Projekte anzeigen',
+    projectSettings: 'Projekt-Einstellungen',
+    groups: {
+      work: 'Arbeiten',
+      plan: 'Planen',
+      project: 'Projekt',
+      spaces: 'Bereiche',
+      projectWikis: 'Projekt-Wikis',
+    },
+    handbook: 'Handbuch',
+    account: 'Konto und Einstellungen',
+    profile: 'Profil',
+  },
   sidebar: {
     createBoard: 'Board anlegen',
     help: 'Hilfe',
@@ -179,7 +199,7 @@ export const de = {
     archive: {
       heading: 'Projekt archivieren',
       about:
-        'Das Projekt verschwindet aus Listen, Suche und Seitenleiste; nichts geht verloren. Unter Projekte → „Archiviert & gelöscht“ lässt es sich wiederherstellen.',
+        'Das Projekt verschwindet aus Listen, Suche und Menüs; nichts geht verloren. Unter Projekte → „Archiviert & gelöscht“ lässt es sich wiederherstellen.',
       title: '„{{name}}“ archivieren?',
       text: 'Das Projekt ist danach für alle ausgeblendet, bis es jemand aus der Projektadministration wiederherstellt.',
       spaces_one: 'Wiki-Bereich {{names}} ebenfalls archivieren',
@@ -2520,7 +2540,7 @@ export const de = {
     providerNotice: 'Hinweis des Anbieters',
     legal: 'Impressum und Datenschutz',
     legalIntro:
-      'Links zu Impressum und Datenschutzerklärung deiner Organisation. Sie stehen auf der Anmeldeseite, im Service-Portal und unten in der Seitenleiste. Leer gilt der Wert aus der Umgebung (IMPRINT_URL, PRIVACY_URL).',
+      'Links zu Impressum und Datenschutzerklärung deiner Organisation. Sie stehen auf der Anmeldeseite, im Service-Portal und im Hilfe-Menü oben rechts. Leer gilt der Wert aus der Umgebung (IMPRINT_URL, PRIVACY_URL).',
     plan: {
       title: 'Tarif',
       titleNamed: 'Tarif „{{plan}}“',

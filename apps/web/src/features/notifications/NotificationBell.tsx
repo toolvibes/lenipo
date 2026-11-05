@@ -1,6 +1,4 @@
-import { Bell } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import {
   EMAIL_MODES,
   NOTIFICATION_CATEGORIES,
@@ -10,7 +8,7 @@ import {
 } from '@toolvibes/shared';
 import { useTranslation } from 'react-i18next';
 import { client, unwrap } from '../../lib/api';
-import { notificationSettingsQuery, unreadCountQuery } from '../../lib/notifications';
+import { notificationSettingsQuery } from '../../lib/notifications';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { useFieldLabel } from '../tracking/fieldLabel';
@@ -250,34 +248,5 @@ export function Settings({ onDone }: { onDone?: () => void }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** "Benachrichtigungen" in the sidebar with the unread count; opens the page (P-NTF-01, S10). */
-export function NotificationBell({ active }: { active: boolean }) {
-  const { t } = useTranslation();
-  const unread = useQuery(unreadCountQuery);
-  const count = unread.data?.count ?? 0;
-  return (
-    <Link
-      to="/notifications"
-      search={{}}
-      aria-current={active ? 'page' : undefined}
-      aria-label={
-        count > 0 ? t('notifications.openWithCount', { count }) : t('notifications.title')
-      }
-      className={`flex h-9 items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 text-[13.5px] font-medium text-[var(--ink-soft)] no-underline transition-colors hover:bg-[var(--surface-1)] hover:text-[var(--ink)] ${active ? 'bg-[var(--surface-1)] font-bold text-[var(--accent-hover)] shadow-[var(--shadow-raised)]' : ''}`}
-    >
-      <Bell size={18} className="shrink-0" aria-hidden />
-      <span className="flex-1">{t('notifications.title')}</span>
-      {count > 0 && (
-        <span
-          aria-hidden
-          className="rounded-full bg-[var(--accent)] px-[7px] py-px font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[var(--on-accent)]"
-        >
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
-    </Link>
   );
 }

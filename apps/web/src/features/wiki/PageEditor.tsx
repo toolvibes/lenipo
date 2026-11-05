@@ -111,7 +111,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
     <form onSubmit={submit} className="flex flex-col">
       {/* A disabled first submit button turns off implicit submission by Enter in any field. */}
       <button type="submit" disabled hidden aria-hidden tabIndex={-1} />
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-6 py-2">
+      <div className="sticky top-[var(--sticky-top)] z-10 flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-6 py-2">
         <Breadcrumbs page={page.data} current={page.data.title} />
         <div className="ml-auto flex flex-wrap items-center gap-3">
           {openComments > 0 && (
@@ -141,7 +141,7 @@ export function PageEditor({ me, spaceKey, id }: { me: Me; spaceKey: string; id:
               maxLength={255}
               aria-label={t('wiki.pageTitle')}
               placeholder={t('wiki.pageTitle')}
-              className="tl-heading-xl w-full border-0 border-b border-transparent bg-transparent px-0 outline-none focus:border-[var(--accent)]"
+              className="tl-field-plain tl-heading-xl w-full border-0 border-b border-transparent bg-transparent px-0 outline-none focus:border-[var(--accent)]"
             />
             <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
               {session && (

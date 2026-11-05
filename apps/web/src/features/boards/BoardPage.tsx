@@ -46,7 +46,7 @@ import { CHIP, PageHeading, TopBar } from '../../ui/TopBar';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { CreateIssueDialog } from '../tracking/CreateIssueDialog';
 import { IssueSplit, useWideScreen } from '../tracking/IssueSplit';
-import { IssueTypeIcon, PriorityIcon } from '../tracking/icons';
+import { IssueTypePill, PriorityIcon } from '../tracking/icons';
 import { useTransitionScreen } from '../tracking/TransitionDialog';
 import { Avatar } from '../tracking/UserPicker';
 import { BoardSettingsDialog } from './BoardSettingsDialog';
@@ -167,8 +167,8 @@ function CardView({
         >
           {issue.summary}
         </Link>
-        <span className="flex items-center gap-1.5">
-          <IssueTypeIcon type={issue.issueType} size={14} />
+        <span className="flex items-center gap-[7px]">
+          <IssueTypePill type={issue.issueType} />
           <PriorityIcon priority={issue.priority} />
           <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[var(--ink-muted)]">
             {issue.key}
@@ -180,7 +180,7 @@ function CardView({
             </span>
           )}
           <span className="flex items-center gap-1">
-            {issue.assignee && <Avatar user={issue.assignee} size={20} />}
+            {issue.assignee && <Avatar user={issue.assignee} size={24} />}
             {onMove && issue.canTransition && (
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger

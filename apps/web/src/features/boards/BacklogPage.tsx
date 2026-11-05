@@ -691,7 +691,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
           <div
             role="toolbar"
             aria-label={t('sprints.selection')}
-            className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[var(--surface-1)] px-3 py-2"
+            className="sticky top-[var(--sticky-top)] z-10 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[var(--surface-1)] px-3 py-2"
           >
             <span className="font-semibold">{t('sprints.checked', { count: checked.length })}</span>
             <select
@@ -908,9 +908,12 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                         ))}
                       </SectionList>
                       {!sprint && (
-                        <form onSubmit={addIssue} className="flex gap-2">
+                        <form
+                          onSubmit={addIssue}
+                          className="flex gap-2 border-t border-[var(--border)] px-3 py-2.5"
+                        >
                           {quickTypes.length > 1 && (
-                            <span className="flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] pl-2">
+                            <span className="tl-field-group flex h-[var(--control-md)] items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] pl-2.5">
                               <IssueTypeIcon
                                 type={
                                   quickTypes.find((type) => type.key === quickType) ??
@@ -921,7 +924,7 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                                 aria-label={t('issues.type')}
                                 value={quickType}
                                 onChange={(event) => setQuickType(event.target.value)}
-                                className="h-[calc(var(--control-sm)-2px)] border-0 bg-transparent pr-1 text-[13px]"
+                                className="h-full cursor-pointer rounded-[var(--radius-md)] border-0 bg-transparent pr-2 text-[13px]"
                               >
                                 {quickTypes.map((type) => (
                                   <option key={type.id} value={type.key}>
@@ -937,13 +940,9 @@ export function BacklogPage({ me, id, selected }: { me: Me; id: string; selected
                             value={summary}
                             maxLength={255}
                             onChange={(event) => setSummary(event.target.value)}
-                            className="h-[var(--control-sm)] min-w-0 flex-1 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-2"
+                            className="h-[var(--control-md)] min-w-0 flex-1 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-1)] px-3"
                           />
-                          <Button
-                            size="sm"
-                            type="submit"
-                            disabled={!summary.trim() || createIssue.isPending}
-                          >
+                          <Button type="submit" disabled={!summary.trim() || createIssue.isPending}>
                             {t('sprints.add')}
                           </Button>
                         </form>

@@ -1,19 +1,25 @@
 import { List, MagnifyingGlass, X } from '@phosphor-icons/react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { Me } from '@toolvibes/shared';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { client } from '../../lib/api';
 import { meQuery } from '../../lib/queries';
 import { startRealtime, stopRealtime } from '../../lib/realtime';
-import { CurrentProjectProvider, ShortcutListener } from '../../lib/shortcuts';
+import {
+  CurrentProjectProvider,
+  ShortcutListener,
+  useSetCurrentProject,
+} from '../../lib/shortcuts';
 import { LogoMark } from '../../ui/Logo';
 import { Announcement } from './Announcement';
+import { AreaMenu } from './AreaMenu';
 import { CommandPalette } from './CommandPalette';
 import { GlobalShortcuts } from './Shortcuts';
-import { Sidebar } from './Sidebar';
+import { AccountMenu, AreaTabs, NotificationsButton, TopNav } from './TopNav';
+import { useNav } from './useNav';
 
 /** Layout of the signed-in app: the fixed sidebar of direction 1a beside the page (E-67). */
 export function AppShell({ me: signedIn }: { me: Me }) {
@@ -54,22 +60,18 @@ export function AppShell({ me: signedIn }: { me: Me }) {
   // The drawer closes when a link in it was followed.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every navigation
   useEffect(() => setMenuOpen(false), [path]);
-  // Every page below /projects/<KEY> is about that project, so "create issue" offers it,
-  // also on pages that do not report their project themselves (reports, team, releases …).
-  useEffect(() => {
-    const key = projectKeyOf(path);
-    if (key) setProjectKey(key);
-  }, [path]);
-  const sidebar = (
-    <Sidebar
-      me={me}
-      onSearch={() => {
-        setMenuOpen(false);
-        setPaletteOpen(true);
-      }}
-      onSignOut={signOut}
-    />
-  );
+  const shellProps = {
+    me,
+    path,
+    narrow,
+    menuOpen,
+    setMenuOpen,
+    onSearch: () => {
+      setMenuOpen(false);
+      setPaletteOpen(true);
+    },
+    onSignOut: signOut,
+  };
 
   return (
     <CurrentProjectProvider value={currentProject}>
@@ -80,11 +82,49 @@ export function AppShell({ me: signedIn }: { me: Me }) {
       >
         {t('shell.skipToContent')}
       </a>
-      {narrow && (
-        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 bg-[var(--surface-2)] px-2">
+      <Frame {...shellProps} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
+      <ShortcutListener enabled={me.keyboardShortcuts} />
+      <GlobalShortcuts me={me} onPalette={() => setPaletteOpen(true)} />
+    </CurrentProjectProvider>
+  );
+}
+
+/**
+ * Top bar over the full width with the areas, the menu of the active area on the left and the
+ * page as a white panel (design "Neue Navigation"). Below 768 px a compact bar and a drawer.
+ */
+function Frame({
+  me,
+  path,
+  narrow,
+  menuOpen,
+  setMenuOpen,
+  onSearch,
+  onSignOut,
+}: {
+  me: Me;
+  path: string;
+  narrow: boolean;
+  menuOpen: boolean;
+  setMenuOpen: (open: boolean) => void;
+  onSearch: () => void;
+  onSignOut: () => void;
+}) {
+  const { t } = useTranslation();
+  const nav = useNav();
+  const setCurrent = useSetCurrentProject();
+  // The project of the page becomes the current one (create issue, project tab).
+  useEffect(() => {
+    if (nav.projectKey) setCurrent(nav.projectKey);
+  }, [nav.projectKey, setCurrent]);
+  return (
+    <div className="flex min-h-screen flex-col bg-[var(--surface-2)]">
+      {narrow ? (
+        <header className="sticky top-0 z-30 flex h-[var(--sticky-top)] items-center gap-1 bg-[var(--surface-2)] px-2">
           <RadixDialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <RadixDialog.Trigger
-              className="grid size-9 place-items-center rounded-[var(--radius-sm)]"
+              className="grid size-9 place-items-center rounded-[var(--radius-md)]"
               aria-label={t('shell.openMenu')}
             >
               <List size={20} aria-hidden />
@@ -93,49 +133,55 @@ export function AppShell({ me: signedIn }: { me: Me }) {
               <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
               <RadixDialog.Content
                 aria-describedby={undefined}
-                className="fixed inset-y-0 left-0 z-50 flex w-[min(300px,85vw)] flex-col overflow-y-auto bg-[var(--surface-2)] shadow-[var(--shadow-float)]"
+                className="fixed inset-y-0 left-0 z-50 flex w-[min(300px,85vw)] flex-col gap-4 overflow-y-auto bg-[var(--surface-2)] p-3 pt-12 shadow-[var(--shadow-float)]"
               >
                 <RadixDialog.Title className="sr-only">{t('shell.navigation')}</RadixDialog.Title>
                 <RadixDialog.Close
-                  className="absolute top-3 right-3 grid size-8 place-items-center rounded-[var(--radius-sm)]"
+                  className="absolute top-3 right-3 grid size-8 place-items-center rounded-[var(--radius-md)]"
                   aria-label={t('shell.closeMenu')}
                 >
                   <X size={18} aria-hidden />
                 </RadixDialog.Close>
-                {sidebar}
+                <AreaTabs nav={nav} vertical />
+                <div className="h-px bg-[var(--border)]" />
+                <AreaMenu nav={nav} me={me} inDrawer />
               </RadixDialog.Content>
             </RadixDialog.Portal>
           </RadixDialog.Root>
-          <span className="flex flex-1 items-center gap-2 text-[15px] font-bold">
-            <LogoMark size={20} />
+          <Link
+            to="/"
+            className="flex flex-1 items-center gap-2 text-[15px] font-bold text-[var(--ink)] no-underline"
+          >
+            <LogoMark size={22} />
             {t('common.product')}
-          </span>
+          </Link>
           <button
             type="button"
-            className="grid size-9 place-items-center rounded-[var(--radius-sm)]"
+            className="grid size-9 place-items-center rounded-[var(--radius-md)]"
             aria-label={t('sidebar.search')}
-            onClick={() => setPaletteOpen(true)}
+            onClick={onSearch}
           >
             <MagnifyingGlass size={20} aria-hidden />
           </button>
+          <NotificationsButton active={path === '/notifications'} />
+          <AccountMenu me={me} onSignOut={onSignOut} />
         </header>
+      ) : (
+        <TopNav me={me} nav={nav} path={path} onSearch={onSearch} onSignOut={onSignOut} />
       )}
-      <div className="flex min-h-screen flex-wrap bg-[var(--surface-2)]">
-        {!narrow && sidebar}
-        {/* The work area floats as a white panel next to the sidebar; overflow-clip keeps sticky bars working. */}
+      <div className="flex flex-1">
+        {!narrow && <AreaMenu nav={nav} me={me} />}
+        {/* The page lies in a white panel on the base, 10 px from the right and bottom; overflow-clip keeps sticky bars working. */}
         <div
           id="main"
           tabIndex={-1}
-          className="min-w-0 flex-[999_1_560px] bg-[var(--surface-0)] outline-none md:my-2.5 md:mr-2.5 md:min-h-[calc(100vh-20px)] md:overflow-clip md:rounded-[var(--radius-xl)] md:shadow-[var(--shadow-panel)] print:m-0 print:shadow-none"
+          className="min-w-0 flex-1 bg-[var(--surface-0)] outline-none md:mr-2.5 md:mb-2.5 md:min-h-[calc(100vh-var(--topbar-height)-10px)] md:overflow-clip md:rounded-[var(--radius-xl)] md:shadow-[var(--shadow-panel)] print:m-0 print:shadow-none"
         >
           <Announcement />
           <Outlet />
         </div>
-        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
-        <ShortcutListener enabled={me.keyboardShortcuts} />
-        <GlobalShortcuts me={me} onPalette={() => setPaletteOpen(true)} />
       </div>
-    </CurrentProjectProvider>
+    </div>
   );
 }
 
@@ -150,10 +196,4 @@ function useNarrow(): boolean {
     return () => list.removeEventListener('change', change);
   }, []);
   return narrow;
-}
-
-/** The project a path is about, e.g. "/projects/web/reports" → "WEB"; null elsewhere. */
-export function projectKeyOf(path: string): string | null {
-  const match = /^\/projects\/([A-Za-z][A-Za-z0-9]{1,9})(?:\/|$)/.exec(path);
-  return match?.[1] ? match[1].toUpperCase() : null;
 }

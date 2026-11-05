@@ -154,3 +154,10 @@ export function useCurrentProject(key: string | undefined): void {
 export function useCurrentProjectKey(): string | null {
   return useContext(CurrentProject)?.key ?? null;
 }
+
+const noProject: ProjectSetter = () => {};
+
+/** Sets the current project from outside a page (the shell, from the route). */
+export function useSetCurrentProject(): ProjectSetter {
+  return useContext(CurrentProject)?.set ?? noProject;
+}

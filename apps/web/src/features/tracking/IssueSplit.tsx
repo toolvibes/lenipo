@@ -33,7 +33,7 @@ export function IssueSplit({
     <div className="flex items-start gap-4">
       <div className="flex min-w-0 flex-1 flex-col gap-4">{children}</div>
       {wide && selected && (
-        <div className="sticky top-0 max-h-screen w-[min(600px,50%)] shrink-0 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
+        <div className="sticky top-[var(--sticky-top)] max-h-[calc(100vh-var(--sticky-top))] w-[min(600px,50%)] shrink-0 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-1)]">
           <IssuePage key={selected} me={me} issueKey={selected} variant="panel" onClose={onClose} />
         </div>
       )}
