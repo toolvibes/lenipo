@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.2 – 2026-11-05
+
+### Behoben
+
+- Einrichtungscode im Log ohne falsche Adresse: ohne PUBLIC_URL nennt Lenipo nur /setup statt localhost:4000
+
 ## 1.2.1 – 2026-11-05
 
 ### Behoben
