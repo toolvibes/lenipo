@@ -2,6 +2,14 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.0 – 2026-11-05
+
+### Neu
+
+- Projekt beim Anlegen vorbelegt, Board für neue Scrum- und Kanban-Projekte, Vorgänge in einen neuen Start-Status verschieben
+- Projekte archivieren und löschen (Papierkorb), mit Rückfrage zu verknüpften Wiki-Bereichen
+- Neue Navigation: obere Leiste mit Bereichen, Bereichsmenü links, Projektwechsler
+
 ## 1.1.1 – 2026-11-04
 
 ### Neu
