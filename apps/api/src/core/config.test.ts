@@ -18,6 +18,31 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: 'mysql://localhost/db' })).toThrow(/DATABASE_URL/);
   });
 
+  it('treats empty variables as unset, as Docker Compose passes them', () => {
+    const config = loadConfig({
+      ...base,
+      S3_SECRET_ACCESS_KEY: '',
+      SMTP_URL: '',
+      PUBLIC_URL: ' ',
+      MAIL_FROM: '',
+    });
+    expect(config.S3_SECRET_ACCESS_KEY).toBeUndefined();
+    expect(config.SMTP_URL).toBeUndefined();
+    expect(config.PUBLIC_URL).toBeUndefined();
+    expect(config.MAIL_FROM).toBe('Lenipo <lenipo@localhost>');
+  });
+
+  it('still requires S3 settings for STORAGE_DRIVER=s3 when they are empty', () => {
+    expect(() =>
+      loadConfig({
+        ...base,
+        STORAGE_DRIVER: 's3',
+        S3_ENDPOINT: 'http://s3:9000',
+        S3_SECRET_ACCESS_KEY: '',
+      }),
+    ).toThrow(/STORAGE_DRIVER/);
+  });
+
   it('rejects a missing database url', () => {
     expect(() => loadConfig({})).toThrow(/Invalid configuration/);
   });

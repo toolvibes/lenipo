@@ -1,5 +1,6 @@
 # Production setup: Lenipo, PostgreSQL, Valkey and Caddy (HTTPS).
-#   cd deploy && POSTGRES_PASSWORD=... SITE_ADDRESS=lenipo.example.org docker compose up -d
+#   cd deploy && cp .env.example .env && docker compose up -d   (settings in .env)
+#   or: cd deploy && POSTGRES_PASSWORD=... SITE_ADDRESS=lenipo.example.org docker compose up -d
 # Attachments are stored in the volume app-files. For S3 instead, set STORAGE_DRIVER=s3 and the
 # S3_* variables (any S3-compatible service), or start the bundled RustFS:
 #   STORAGE_DRIVER=s3 S3_SECRET_ACCESS_KEY=... docker compose --profile s3 up -d
@@ -7,7 +8,7 @@ name: lenipo-prod
 
 services:
   app:
-    # Released images (latest = proven for some days; or a fixed version like 1.4.0).
+    # Released images (latest = proven for some days; or a fixed version like 1.2.1).
     # `docker compose build` builds from the source instead.
     image: ghcr.io/toolvibes/lenipo:${LENIPO_VERSION:-latest}
     build:
@@ -23,6 +24,21 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-lenipo}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       ATTACHMENT_MAX_MB: ${ATTACHMENT_MAX_MB:-25}
+      # Optional; unset or empty variables keep Lenipo's defaults (see .env.example).
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SETUP_TOKEN: ${SETUP_TOKEN:-}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_DISPLAY_NAME: ${OIDC_DISPLAY_NAME:-}
+      OIDC_GROUPS_CLAIM: ${OIDC_GROUPS_CLAIM:-}
+      HELP_URL: ${HELP_URL:-}
+      SUPPORT_URL: ${SUPPORT_URL:-}
+      IMPRINT_URL: ${IMPRINT_URL:-}
+      PRIVACY_URL: ${PRIVACY_URL:-}
+      WEBHOOK_ALLOW_PRIVATE_NETWORKS: ${WEBHOOK_ALLOW_PRIVATE_NETWORKS:-}
     volumes:
       - app-files:/var/lib/lenipo/files
     depends_on:

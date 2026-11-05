@@ -4,7 +4,7 @@
 
 Website: <https://lenipo.de> · Früherer Projektname: Tasklore
 
-> **Stand:** in Entwicklung, noch vor Version 1.0. Freie Software unter der [GNU AGPL-3.0](LICENSE).
+> **Stand:** Version 1.x, in aktiver Entwicklung; Änderungen stehen im [Changelog](CHANGELOG.md). Freie Software unter der [GNU AGPL-3.0](LICENSE).
 
 ## Was Lenipo kann
 
@@ -81,10 +81,13 @@ Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://loca
 
 ```bash
 cd deploy
-POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d
+cp .env.example .env      # Passwort, Domain und bei Bedarf E-Mail-Versand eintragen
+docker compose up -d
 ```
 
-Holt das Image `ghcr.io/toolvibes/lenipo:latest` (die neueste bewährte Version; eine feste Version mit `LENIPO_VERSION=1.4.0`, aus dem Quellcode mit `--build`) und startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL mit pgvector, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
+In `.env` steht, was Lenipo braucht: `POSTGRES_PASSWORD` (Pflicht, z. B. aus `openssl rand -hex 24`), `SITE_ADDRESS` (die Domain; leer für einen ersten Versuch mit HTTP auf dem eigenen Rechner, Port mit `LENIPO_HTTP_PORT`), `PUBLIC_URL`, `SMTP_URL` für Einladungen und Benachrichtigungen, optional OIDC und S3. Kurz ohne Datei: `POSTGRES_PASSWORD='…' SITE_ADDRESS=lenipo.example.org docker compose up -d`.
+
+Holt das Image `ghcr.io/toolvibes/lenipo:latest` (die neueste bewährte Version; eine feste Version aus den [Releases](https://github.com/toolvibes/lenipo/releases) mit `LENIPO_VERSION=1.2.1`, aus dem Quellcode mit `--build`) und startet Lenipo (ein Image, API, Collab-Server und Worker in einem Prozess), PostgreSQL mit pgvector, Valkey und Caddy mit automatischem HTTPS. Den Einrichtungscode zeigt `docker compose logs app | grep setupCode`; unter `/setup` legt er den ersten Administrator an oder spielt ein Backup ein. Die API-Dokumentation liegt unter `/api/docs`.
 
 ### Kubernetes
 
@@ -107,8 +110,10 @@ Konfiguration, Anmeldung, Rechte, Backups, Updates, Überwachung und Fehlersuche
 Der eingebaute MCP-Server unter `/mcp` bietet Werkzeuge, Ressourcen (`lenipo://issue/WEB-1` …) und Prompts. Clients melden sich per OAuth im Browser an, zum Beispiel in Claude Code:
 
 ```bash
-claude mcp add --transport http lenipo http://localhost:5173/mcp
+claude mcp add --transport http lenipo https://lenipo.example.org/mcp
 ```
+
+Bei `pnpm dev` ist die Adresse `http://localhost:5173/mcp`.
 
 Alternativ mit einem persönlichen Token aus „Profil → Tokens“: `--header "Authorization: Bearer <token>"`. Der Assistent arbeitet mit den Rechten der Person.
 

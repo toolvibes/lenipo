@@ -84,6 +84,14 @@ const configSchema = z.object({
 
 export type AppConfig = z.infer<typeof configSchema>;
 
+/**
+ * Empty variables count as unset: Docker Compose passes `${VAR:-}` as an empty string, and an
+ * optional setting such as SMTP_URL or S3_SECRET_ACCESS_KEY must not fail the start because of it.
+ */
+function withoutEmpty(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(env).filter(([, value]) => value?.trim() !== ''));
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const result = configSchema
     .refine((config) => !(config.OIDC_ISSUER_URL && config.OIDC_CLIENT_ID) || config.PUBLIC_URL, {
@@ -103,7 +111,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         path: ['STORAGE_DRIVER'],
       },
     )
-    .safeParse(env);
+    .safeParse(withoutEmpty(env));
   if (!result.success) {
     throw new Error(`Invalid configuration:\n${z.prettifyError(result.error)}`);
   }
