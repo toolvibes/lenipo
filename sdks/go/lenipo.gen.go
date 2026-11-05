@@ -8028,6 +8028,20 @@ type ImportReport struct {
 // ImportSource defines model for ImportSource.
 type ImportSource string
 
+// InactiveProject defines model for InactiveProject.
+type InactiveProject struct {
+	ArchivedAt time.Time  `json:"archivedAt"`
+	DeletedAt  *time.Time `json:"deletedAt"`
+	Key        string     `json:"key"`
+	Name       string     `json:"name"`
+	PurgeAt    *time.Time `json:"purgeAt"`
+	Spaces     []struct {
+		Inactive bool   `json:"inactive"`
+		Key      string `json:"key"`
+		Name     string `json:"name"`
+	} `json:"spaces"`
+}
+
 // IncomingWebhookRequest defines model for IncomingWebhookRequest.
 type IncomingWebhookRequest struct {
 	Issues               *[]string              `json:"issues,omitempty"`
@@ -9571,6 +9585,11 @@ type ProjectFieldSetting_DefaultValue struct {
 	union json.RawMessage
 }
 
+// ProjectLifecycleRequest defines model for ProjectLifecycleRequest.
+type ProjectLifecycleRequest struct {
+	Spaces *bool `json:"spaces,omitempty"`
+}
+
 // ProjectMember defines model for ProjectMember.
 type ProjectMember struct {
 	External bool `json:"external"`
@@ -10261,6 +10280,8 @@ type RetentionResult struct {
 	Issues       int `json:"issues"`
 	PageViews    int `json:"pageViews"`
 	Pages        int `json:"pages"`
+	Projects     int `json:"projects"`
+	Spaces       int `json:"spaces"`
 	Versions     int `json:"versions"`
 }
 
@@ -12956,6 +12977,9 @@ type AgentsPauseAgentsJSONRequestBody = PauseRequest
 // AgentsSetAgentRolesJSONRequestBody defines body for AgentsSetAgentRoles for application/json ContentType.
 type AgentsSetAgentRolesJSONRequestBody = SetAgentRolesRequest
 
+// ProjectsArchiveJSONRequestBody defines body for ProjectsArchive for application/json ContentType.
+type ProjectsArchiveJSONRequestBody = ProjectLifecycleRequest
+
 // AgentsClaimNextJSONRequestBody defines body for AgentsClaimNext for application/json ContentType.
 type AgentsClaimNextJSONRequestBody = ClaimNextRequest
 
@@ -12967,6 +12991,9 @@ type ProjectsUpdateComponentJSONRequestBody = UpdateComponentRequest
 
 // ProjectsSetCustomFieldsJSONRequestBody defines body for ProjectsSetCustomFields for application/json ContentType.
 type ProjectsSetCustomFieldsJSONRequestBody = ProjectCustomFieldsRequest
+
+// ProjectsRemoveJSONRequestBody defines body for ProjectsRemove for application/json ContentType.
+type ProjectsRemoveJSONRequestBody = ProjectLifecycleRequest
 
 // ProjectsSaveMailHandlerJSONRequestBody defines body for ProjectsSaveMailHandler for application/json ContentType.
 type ProjectsSaveMailHandlerJSONRequestBody = SaveMailHandlerRequest
@@ -12982,6 +13009,9 @@ type ProjectsSetPermissionSchemeJSONRequestBody = SetProjectPermissionSchemeRequ
 
 // VersionsPublishJSONRequestBody defines body for VersionsPublish for application/json ContentType.
 type VersionsPublishJSONRequestBody = PublishReleaseNotesRequest
+
+// ProjectsRestoreJSONRequestBody defines body for ProjectsRestore for application/json ContentType.
+type ProjectsRestoreJSONRequestBody = ProjectLifecycleRequest
 
 // ProjectsSetSecuritySchemeJSONRequestBody defines body for ProjectsSetSecurityScheme for application/json ContentType.
 type ProjectsSetSecuritySchemeJSONRequestBody = SetProjectSecuritySchemeRequest
@@ -22543,6 +22573,13 @@ type ClientInterface interface {
 	// Corresponds with POST /api/v1/projects (the `ProjectsCreate` operationId).
 	ProjectsCreate(ctx context.Context, body ProjectsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ProjectsInactive List archived and deleted projects the caller administers
+	//
+	// Deleted projects stay in the trash for the trash days of the retention settings (E-164).
+	//
+	// Corresponds with GET /api/v1/projects/inactive (the `ProjectsInactive` operationId).
+	ProjectsInactive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ProjectsGet Get a project with its issue types, statuses and the caller’s permissions
 	//
 	// Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
@@ -22613,6 +22650,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
 	AgentsSetAgentRoles(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsArchiveWithBody Archive a project, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. The project is hidden everywhere until restored (E-164).
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+	ProjectsArchiveWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsArchive Archive a project, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. The project is hidden everywhere until restored (E-164).
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+	ProjectsArchive(ctx context.Context, key string, body ProjectsArchiveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AgentsClaimNextWithBody Claim the next fitting issue of a project
 	//
@@ -22702,6 +22757,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /api/v1/projects/{key}/custom-fields (the `ProjectsSetCustomFields` operationId).
 	ProjectsSetCustomFields(ctx context.Context, key string, body ProjectsSetCustomFieldsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsRemoveWithBody Move a project into the trash, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+	ProjectsRemoveWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsRemove Move a project into the trash, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+	ProjectsRemove(ctx context.Context, key string, body ProjectsRemoveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// InvitationsOfProject List the invitations of a project
 	//
@@ -22842,6 +22915,20 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/projects/{key}/releases/{id}/notes (the `VersionsPublish` operationId).
 	VersionsPublish(ctx context.Context, key string, id string, body VersionsPublishJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsRestoreWithBody Restore an archived or deleted project, optionally with its linked wiki spaces
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+	ProjectsRestoreWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProjectsRestore Restore an archived or deleted project, optionally with its linked wiki spaces
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+	ProjectsRestore(ctx context.Context, key string, body ProjectsRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ProjectsSetSecuritySchemeWithBody Give the project an issue security scheme, or none
 	//
@@ -32238,6 +32325,23 @@ func (c *Client) ProjectsCreate(ctx context.Context, body ProjectsCreateJSONRequ
 	return c.Client.Do(req)
 }
 
+// ProjectsInactive List archived and deleted projects the caller administers
+//
+// Deleted projects stay in the trash for the trash days of the retention settings (E-164).
+//
+// Corresponds with GET /api/v1/projects/inactive (the `ProjectsInactive` operationId).
+func (c *Client) ProjectsInactive(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsInactiveRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ProjectsGet Get a project with its issue types, statuses and the caller’s permissions
 //
 // Corresponds with GET /api/v1/projects/{key} (the `ProjectsGet` operationId).
@@ -32389,6 +32493,44 @@ func (c *Client) AgentsSetAgentRolesWithBody(ctx context.Context, key string, us
 // Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
 func (c *Client) AgentsSetAgentRoles(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAgentsSetAgentRolesRequest(c.Server, key, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsArchiveWithBody Archive a project, optionally with its linked wiki spaces
+//
+// Needs `administer`. The project is hidden everywhere until restored (E-164).
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+func (c *Client) ProjectsArchiveWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsArchiveRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsArchive Archive a project, optionally with its linked wiki spaces
+//
+// Needs `administer`. The project is hidden everywhere until restored (E-164).
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+func (c *Client) ProjectsArchive(ctx context.Context, key string, body ProjectsArchiveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsArchiveRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
 	}
@@ -32588,6 +32730,44 @@ func (c *Client) ProjectsSetCustomFieldsWithBody(ctx context.Context, key string
 // Corresponds with PUT /api/v1/projects/{key}/custom-fields (the `ProjectsSetCustomFields` operationId).
 func (c *Client) ProjectsSetCustomFields(ctx context.Context, key string, body ProjectsSetCustomFieldsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProjectsSetCustomFieldsRequest(c.Server, key, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsRemoveWithBody Move a project into the trash, optionally with its linked wiki spaces
+//
+// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+func (c *Client) ProjectsRemoveWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsRemoveRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsRemove Move a project into the trash, optionally with its linked wiki spaces
+//
+// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+func (c *Client) ProjectsRemove(ctx context.Context, key string, body ProjectsRemoveJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsRemoveRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
 	}
@@ -32928,6 +33108,40 @@ func (c *Client) VersionsPublishWithBody(ctx context.Context, key string, id str
 // Corresponds with POST /api/v1/projects/{key}/releases/{id}/notes (the `VersionsPublish` operationId).
 func (c *Client) VersionsPublish(ctx context.Context, key string, id string, body VersionsPublishJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewVersionsPublishRequest(c.Server, key, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsRestoreWithBody Restore an archived or deleted project, optionally with its linked wiki spaces
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+func (c *Client) ProjectsRestoreWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsRestoreRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ProjectsRestore Restore an archived or deleted project, optionally with its linked wiki spaces
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+func (c *Client) ProjectsRestore(ctx context.Context, key string, body ProjectsRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProjectsRestoreRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
 	}
@@ -48750,6 +48964,33 @@ func NewProjectsCreateRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
+// NewProjectsInactiveRequest constructs an http.Request for the ProjectsInactive method
+func NewProjectsInactiveRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/inactive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewProjectsGetRequest constructs an http.Request for the ProjectsGet method
 func NewProjectsGetRequest(server string, key string) (*http.Request, error) {
 	var err error
@@ -48991,6 +49232,53 @@ func NewAgentsSetAgentRolesRequestWithBody(server string, key string, userId str
 	}
 
 	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewProjectsArchiveRequest calls the generic ProjectsArchive builder with application/json body
+func NewProjectsArchiveRequest(server string, key string, body ProjectsArchiveJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProjectsArchiveRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewProjectsArchiveRequestWithBody constructs an http.Request for the ProjectsArchive method, with any body, and a specified content type
+func NewProjectsArchiveRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/archive", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -49295,6 +49583,53 @@ func NewProjectsSetCustomFieldsRequestWithBody(server string, key string, conten
 	}
 
 	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewProjectsRemoveRequest calls the generic ProjectsRemove builder with application/json body
+func NewProjectsRemoveRequest(server string, key string, body ProjectsRemoveJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProjectsRemoveRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewProjectsRemoveRequestWithBody constructs an http.Request for the ProjectsRemove method, with any body, and a specified content type
+func NewProjectsRemoveRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/delete", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -49982,6 +50317,53 @@ func NewVersionsPublishRequestWithBody(server string, key string, id string, con
 	}
 
 	operationPath := fmt.Sprintf("/api/v1/projects/%s/releases/%s/notes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewProjectsRestoreRequest calls the generic ProjectsRestore builder with application/json body
+func NewProjectsRestoreRequest(server string, key string, body ProjectsRestoreJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProjectsRestoreRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewProjectsRestoreRequestWithBody constructs an http.Request for the ProjectsRestore method, with any body, and a specified content type
+func NewProjectsRestoreRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/restore", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -58135,6 +58517,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/v1/projects (the `ProjectsCreate` operationId).
 	ProjectsCreateWithResponse(ctx context.Context, body ProjectsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsCreateHTTPResponse, error)
 
+	// ProjectsInactiveWithResponse List archived and deleted projects the caller administers
+	//
+	// Deleted projects stay in the trash for the trash days of the retention settings (E-164).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/projects/inactive (the `ProjectsInactive` operationId).
+	ProjectsInactiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ProjectsInactiveHTTPResponse, error)
+
 	// ProjectsGetWithResponse Get a project with its issue types, statuses and the caller’s permissions
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -58211,6 +58602,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /api/v1/projects/{key}/agent-settings/roles/{userId} (the `AgentsSetAgentRoles` operationId).
 	AgentsSetAgentRolesWithResponse(ctx context.Context, key string, userId string, body AgentsSetAgentRolesJSONRequestBody, reqEditors ...RequestEditorFn) (*AgentsSetAgentRolesHTTPResponse, error)
+
+	// ProjectsArchiveWithBodyWithResponse Archive a project, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. The project is hidden everywhere until restored (E-164).
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+	ProjectsArchiveWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsArchiveHTTPResponse, error)
+
+	// ProjectsArchiveWithResponse Archive a project, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. The project is hidden everywhere until restored (E-164).
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+	ProjectsArchiveWithResponse(ctx context.Context, key string, body ProjectsArchiveJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsArchiveHTTPResponse, error)
 
 	// AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
 	//
@@ -58306,6 +58715,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /api/v1/projects/{key}/custom-fields (the `ProjectsSetCustomFields` operationId).
 	ProjectsSetCustomFieldsWithResponse(ctx context.Context, key string, body ProjectsSetCustomFieldsJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsSetCustomFieldsHTTPResponse, error)
+
+	// ProjectsRemoveWithBodyWithResponse Move a project into the trash, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+	ProjectsRemoveWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsRemoveHTTPResponse, error)
+
+	// ProjectsRemoveWithResponse Move a project into the trash, optionally with its linked wiki spaces
+	//
+	// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+	ProjectsRemoveWithResponse(ctx context.Context, key string, body ProjectsRemoveJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsRemoveHTTPResponse, error)
 
 	// InvitationsOfProjectWithResponse List the invitations of a project
 	//
@@ -58466,6 +58893,20 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/projects/{key}/releases/{id}/notes (the `VersionsPublish` operationId).
 	VersionsPublishWithResponse(ctx context.Context, key string, id string, body VersionsPublishJSONRequestBody, reqEditors ...RequestEditorFn) (*VersionsPublishHTTPResponse, error)
+
+	// ProjectsRestoreWithBodyWithResponse Restore an archived or deleted project, optionally with its linked wiki spaces
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+	ProjectsRestoreWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsRestoreHTTPResponse, error)
+
+	// ProjectsRestoreWithResponse Restore an archived or deleted project, optionally with its linked wiki spaces
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+	ProjectsRestoreWithResponse(ctx context.Context, key string, body ProjectsRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsRestoreHTTPResponse, error)
 
 	// ProjectsSetSecuritySchemeWithBodyWithResponse Give the project an issue security scheme, or none
 	//
@@ -75600,6 +76041,54 @@ func (r ProjectsCreateHTTPResponse) ContentType() string {
 	return ""
 }
 
+type ProjectsInactiveHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]InactiveProject
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ProjectsInactiveHTTPResponse) GetJSON200() *[]InactiveProject {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ProjectsInactiveHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ProjectsInactiveHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ProjectsInactiveHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProjectsInactiveHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ProjectsInactiveHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ProjectsGetHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -75882,6 +76371,47 @@ func (r AgentsSetAgentRolesHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AgentsSetAgentRolesHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ProjectsArchiveHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ProjectsArchiveHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ProjectsArchiveHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ProjectsArchiveHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProjectsArchiveHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ProjectsArchiveHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76211,6 +76741,47 @@ func (r ProjectsSetCustomFieldsHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ProjectsSetCustomFieldsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ProjectsRemoveHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ProjectsRemoveHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ProjectsRemoveHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ProjectsRemoveHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProjectsRemoveHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ProjectsRemoveHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76911,6 +77482,54 @@ func (r VersionsPublishHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r VersionsPublishHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ProjectsRestoreHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ProjectDetails
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ProjectsRestoreHTTPResponse) GetJSON200() *ProjectDetails {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ProjectsRestoreHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ProjectsRestoreHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ProjectsRestoreHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProjectsRestoreHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ProjectsRestoreHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -88111,6 +88730,21 @@ func (c *ClientWithResponses) ProjectsCreateWithResponse(ctx context.Context, bo
 	return ParseProjectsCreateHTTPResponse(rsp)
 }
 
+// ProjectsInactiveWithResponse List archived and deleted projects the caller administers
+//
+// Deleted projects stay in the trash for the trash days of the retention settings (E-164).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/projects/inactive (the `ProjectsInactive` operationId).
+func (c *ClientWithResponses) ProjectsInactiveWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ProjectsInactiveHTTPResponse, error) {
+	rsp, err := c.ProjectsInactive(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsInactiveHTTPResponse(rsp)
+}
+
 // ProjectsGetWithResponse Get a project with its issue types, statuses and the caller’s permissions
 //
 // Returns a wrapper object for the known response body format(s).
@@ -88240,6 +88874,36 @@ func (c *ClientWithResponses) AgentsSetAgentRolesWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseAgentsSetAgentRolesHTTPResponse(rsp)
+}
+
+// ProjectsArchiveWithBodyWithResponse Archive a project, optionally with its linked wiki spaces
+//
+// Needs `administer`. The project is hidden everywhere until restored (E-164).
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+func (c *ClientWithResponses) ProjectsArchiveWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsArchiveHTTPResponse, error) {
+	rsp, err := c.ProjectsArchiveWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsArchiveHTTPResponse(rsp)
+}
+
+// ProjectsArchiveWithResponse Archive a project, optionally with its linked wiki spaces
+//
+// Needs `administer`. The project is hidden everywhere until restored (E-164).
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/archive (the `ProjectsArchive` operationId).
+func (c *ClientWithResponses) ProjectsArchiveWithResponse(ctx context.Context, key string, body ProjectsArchiveJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsArchiveHTTPResponse, error) {
+	rsp, err := c.ProjectsArchive(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsArchiveHTTPResponse(rsp)
 }
 
 // AgentsClaimNextWithBodyWithResponse Claim the next fitting issue of a project
@@ -88401,6 +89065,36 @@ func (c *ClientWithResponses) ProjectsSetCustomFieldsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseProjectsSetCustomFieldsHTTPResponse(rsp)
+}
+
+// ProjectsRemoveWithBodyWithResponse Move a project into the trash, optionally with its linked wiki spaces
+//
+// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+func (c *ClientWithResponses) ProjectsRemoveWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsRemoveHTTPResponse, error) {
+	rsp, err := c.ProjectsRemoveWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsRemoveHTTPResponse(rsp)
+}
+
+// ProjectsRemoveWithResponse Move a project into the trash, optionally with its linked wiki spaces
+//
+// Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/delete (the `ProjectsRemove` operationId).
+func (c *ClientWithResponses) ProjectsRemoveWithResponse(ctx context.Context, key string, body ProjectsRemoveJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsRemoveHTTPResponse, error) {
+	rsp, err := c.ProjectsRemove(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsRemoveHTTPResponse(rsp)
 }
 
 // InvitationsOfProjectWithResponse List the invitations of a project
@@ -88681,6 +89375,32 @@ func (c *ClientWithResponses) VersionsPublishWithResponse(ctx context.Context, k
 		return nil, err
 	}
 	return ParseVersionsPublishHTTPResponse(rsp)
+}
+
+// ProjectsRestoreWithBodyWithResponse Restore an archived or deleted project, optionally with its linked wiki spaces
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+func (c *ClientWithResponses) ProjectsRestoreWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProjectsRestoreHTTPResponse, error) {
+	rsp, err := c.ProjectsRestoreWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsRestoreHTTPResponse(rsp)
+}
+
+// ProjectsRestoreWithResponse Restore an archived or deleted project, optionally with its linked wiki spaces
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/restore (the `ProjectsRestore` operationId).
+func (c *ClientWithResponses) ProjectsRestoreWithResponse(ctx context.Context, key string, body ProjectsRestoreJSONRequestBody, reqEditors ...RequestEditorFn) (*ProjectsRestoreHTTPResponse, error) {
+	rsp, err := c.ProjectsRestore(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProjectsRestoreHTTPResponse(rsp)
 }
 
 // ProjectsSetSecuritySchemeWithBodyWithResponse Give the project an issue security scheme, or none
@@ -101585,6 +102305,39 @@ func ParseProjectsCreateHTTPResponse(rsp *http.Response) (*ProjectsCreateHTTPRes
 	return response, nil
 }
 
+// ParseProjectsInactiveHTTPResponse parses an HTTP response from a ProjectsInactiveWithResponse call
+func ParseProjectsInactiveHTTPResponse(rsp *http.Response) (*ProjectsInactiveHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProjectsInactiveHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []InactiveProject
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseProjectsGetHTTPResponse parses an HTTP response from a ProjectsGetWithResponse call
 func ParseProjectsGetHTTPResponse(rsp *http.Response) (*ProjectsGetHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -101770,6 +102523,35 @@ func ParseAgentsSetAgentRolesHTTPResponse(rsp *http.Response) (*AgentsSetAgentRo
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProjectsArchiveHTTPResponse parses an HTTP response from a ProjectsArchiveWithResponse call
+func ParseProjectsArchiveHTTPResponse(rsp *http.Response) (*ProjectsArchiveHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProjectsArchiveHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -101997,6 +102779,35 @@ func ParseProjectsSetCustomFieldsHTTPResponse(rsp *http.Response) (*ProjectsSetC
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProjectsRemoveHTTPResponse parses an HTTP response from a ProjectsRemoveWithResponse call
+func ParseProjectsRemoveHTTPResponse(rsp *http.Response) (*ProjectsRemoveHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProjectsRemoveHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -102476,6 +103287,39 @@ func ParseVersionsPublishHTTPResponse(rsp *http.Response) (*VersionsPublishHTTPR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProjectsRestoreHTTPResponse parses an HTTP response from a ProjectsRestoreWithResponse call
+func ParseProjectsRestoreHTTPResponse(rsp *http.Response) (*ProjectsRestoreHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProjectsRestoreHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProjectDetails
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

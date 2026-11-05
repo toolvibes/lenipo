@@ -29,6 +29,8 @@ class RetentionResult:
             audit_entries (int):
             files (int):
             page_views (int):
+            projects (int):
+            spaces (int):
      """
 
     issues: int
@@ -38,6 +40,8 @@ class RetentionResult:
     audit_entries: int
     files: int
     page_views: int
+    projects: int
+    spaces: int
 
 
 
@@ -58,6 +62,10 @@ class RetentionResult:
 
         page_views = self.page_views
 
+        projects = self.projects
+
+        spaces = self.spaces
+
 
         field_dict: dict[str, Any] = {}
 
@@ -69,6 +77,8 @@ class RetentionResult:
             "auditEntries": audit_entries,
             "files": files,
             "pageViews": page_views,
+            "projects": projects,
+            "spaces": spaces,
         })
 
         return field_dict
@@ -92,6 +102,10 @@ class RetentionResult:
 
         page_views = d.pop("pageViews")
 
+        projects = d.pop("projects")
+
+        spaces = d.pop("spaces")
+
         retention_result = cls(
             issues=issues,
             pages=pages,
@@ -100,6 +114,8 @@ class RetentionResult:
             audit_entries=audit_entries,
             files=files,
             page_views=page_views,
+            projects=projects,
+            spaces=spaces,
         )
 
         return retention_result

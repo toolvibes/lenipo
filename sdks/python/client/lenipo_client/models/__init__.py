@@ -317,6 +317,8 @@ from .import_job_state import ImportJobState
 from .import_report import ImportReport
 from .import_report_counts import ImportReportCounts
 from .import_source import ImportSource
+from .inactive_project import InactiveProject
+from .inactive_project_spaces_item import InactiveProjectSpacesItem
 from .incoming_webhook_request import IncomingWebhookRequest
 from .install_app_request import InstallAppRequest
 from .installed_app import InstalledApp
@@ -544,6 +546,7 @@ from .project_details_security_levels_item import ProjectDetailsSecurityLevelsIt
 from .project_details_security_scheme_type_0 import ProjectDetailsSecuritySchemeType0
 from .project_field_config import ProjectFieldConfig
 from .project_field_setting import ProjectFieldSetting
+from .project_lifecycle_request import ProjectLifecycleRequest
 from .project_member import ProjectMember
 from .project_member_group_type_0 import ProjectMemberGroupType0
 from .project_permission import ProjectPermission
@@ -1210,6 +1213,8 @@ __all__ = (
     "ImportReport",
     "ImportReportCounts",
     "ImportSource",
+    "InactiveProject",
+    "InactiveProjectSpacesItem",
     "IncomingWebhookRequest",
     "InstallAppRequest",
     "InstalledApp",
@@ -1437,6 +1442,7 @@ __all__ = (
     "ProjectDetailsSecuritySchemeType0",
     "ProjectFieldConfig",
     "ProjectFieldSetting",
+    "ProjectLifecycleRequest",
     "ProjectMember",
     "ProjectMemberGroupType0",
     "ProjectPermission",
