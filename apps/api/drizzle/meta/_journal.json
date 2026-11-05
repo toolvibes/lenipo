@@ -610,6 +610,13 @@
       "when": 1793718815297,
       "tag": "0086_agent_guardrails",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1793862442119,
+      "tag": "0087_project_trash",
+      "breakpoints": true
     }
   ]
 }

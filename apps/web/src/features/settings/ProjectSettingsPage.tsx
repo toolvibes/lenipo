@@ -29,6 +29,7 @@ import { RulesList } from '../automation/RulesList';
 import { ComponentsDialog } from '../tracking/ComponentsDialog';
 import { IssueTrash } from '../tracking/IssueTrash';
 import { ProjectFieldsDialog } from '../tracking/ProjectFieldsDialog';
+import { ProjectLifecycleSection } from '../tracking/ProjectLifecycle';
 import { VersionsDialog } from '../tracking/VersionsDialog';
 import { AgentSettings } from './AgentSettings';
 import { MailHandlerSettings } from './MailHandlerSettings';
@@ -332,6 +333,7 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
     | 'serviceDesk'
     | 'agents'
     | 'trash'
+    | 'lifecycle'
   >('workflow');
   useCurrentProject(projectKey);
   const administer = project.data?.permissions.includes('administer') ?? false;
@@ -451,6 +453,16 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
               {t('trash.title')}
             </button>
           )}
+          {administer && (
+            <button
+              type="button"
+              aria-current={view === 'lifecycle' ? 'page' : undefined}
+              className={NAV_ITEM}
+              onClick={() => setView('lifecycle')}
+            >
+              {t('projectLifecycle.title')}
+            </button>
+          )}
         </nav>
         <div className="flex min-w-0 max-w-[820px] flex-1 flex-col gap-3 px-10 py-7">
           {notice && (
@@ -470,6 +482,12 @@ export function ProjectSettingsPage({ projectKey }: { projectKey: string }) {
           {view === 'automation' && administer && <RulesList projectKey={projectKey} />}
           {view === 'wikiPages' && administer && <WikiPagesSettings projectKey={projectKey} />}
           {view === 'trash' && mayDelete && <IssueTrash projectKey={projectKey} />}
+          {view === 'lifecycle' && administer && (
+            <ProjectLifecycleSection
+              projectKey={projectKey}
+              projectName={project.data?.name ?? projectKey}
+            />
+          )}
           {view === 'agents' && administer && <AgentSettings projectKey={projectKey} />}
           {view === 'serviceDesk' && administer && (
             <div className="flex flex-col gap-6">

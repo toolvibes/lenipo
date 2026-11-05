@@ -27,6 +27,9 @@ export const RetentionResult = z
     files: z.number().int(),
     /** Per-person page views turned into anonymous counts (TL-51, E-135). */
     pageViews: z.number().int(),
+    /** Projects and wiki spaces emptied from the trash with everything in them (E-164). */
+    projects: z.number().int(),
+    spaces: z.number().int(),
   })
   .meta({ id: 'RetentionResult' });
 export type RetentionResult = z.infer<typeof RetentionResult>;

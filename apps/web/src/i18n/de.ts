@@ -171,7 +171,41 @@ export const de = {
       clones: { outward: 'klont', inward: 'wird geklont von' },
     },
   },
+  projectLifecycle: {
+    title: 'Archivieren und löschen',
+    archivedSince: 'archiviert seit {{date}}',
+    deletedUntil: 'im Papierkorb, endgültig gelöscht am {{date}}',
+    deletedKept: 'im Papierkorb',
+    archive: {
+      heading: 'Projekt archivieren',
+      about:
+        'Das Projekt verschwindet aus Listen, Suche und Seitenleiste; nichts geht verloren. Unter Projekte → „Archiviert & gelöscht“ lässt es sich wiederherstellen.',
+      title: '„{{name}}“ archivieren?',
+      text: 'Das Projekt ist danach für alle ausgeblendet, bis es jemand aus der Projektadministration wiederherstellt.',
+      spaces_one: 'Wiki-Bereich {{names}} ebenfalls archivieren',
+      spaces_other: 'Wiki-Bereiche {{names}} ebenfalls archivieren',
+      confirm: 'Archivieren',
+    },
+    delete: {
+      heading: 'Projekt löschen',
+      about:
+        'Das Projekt kommt mit allen Vorgängen, Boards und Anhängen in den Papierkorb und wird nach Ablauf der Aufbewahrungsfrist (standardmäßig 30 Tage) endgültig gelöscht. Bis dahin lässt es sich wiederherstellen.',
+      title: '„{{name}}“ löschen?',
+      text: 'Das Projekt kommt in den Papierkorb und wird nach Ablauf der Aufbewahrungsfrist endgültig gelöscht, mit allen Vorgängen, Boards und Anhängen.',
+      spaces_one: 'Wiki-Bereich {{names}} ebenfalls löschen',
+      spaces_other: 'Wiki-Bereiche {{names}} ebenfalls löschen',
+      confirm: 'In den Papierkorb',
+    },
+    restore: {
+      title: '„{{name}}“ wiederherstellen?',
+      text: 'Das Projekt ist danach wieder für alle sichtbar, die es vorher sehen durften.',
+      spaces_one: 'Wiki-Bereich {{names}} ebenfalls wiederherstellen',
+      spaces_other: 'Wiki-Bereiche {{names}} ebenfalls wiederherstellen',
+      confirm: 'Wiederherstellen',
+    },
+  },
   projects: {
+    inactive: 'Archiviert & gelöscht',
     all: 'Alle',
     favourites: 'Favoriten',
     filter: 'Projekte filtern',

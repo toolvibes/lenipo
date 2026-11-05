@@ -4857,6 +4857,83 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/inactive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List archived and deleted projects the caller administers
+     * @description Deleted projects stay in the trash for the trash days of the retention settings (E-164).
+     */
+    get: operations['Projects.inactive'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Archive a project, optionally with its linked wiki spaces
+     * @description Needs `administer`. The project is hidden everywhere until restored (E-164).
+     */
+    post: operations['Projects.archive'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a project into the trash, optionally with its linked wiki spaces
+     * @description Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).
+     */
+    post: operations['Projects.remove'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/projects/{key}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore an archived or deleted project, optionally with its linked wiki spaces */
+    post: operations['Projects.restore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}': {
     parameters: {
       query?: never;
@@ -9765,6 +9842,8 @@ export interface components {
       auditEntries: number;
       files: number;
       pageViews: number;
+      projects: number;
+      spaces: number;
     };
     BackupSettings: {
       /** @default true */
@@ -10844,6 +10923,23 @@ export interface components {
       tab: string | null;
       /** Format: uuid */
       fieldId: string;
+    };
+    InactiveProject: {
+      key: string;
+      name: string;
+      /** Format: date-time */
+      archivedAt: string;
+      deletedAt: string | null;
+      purgeAt: string | null;
+      spaces: {
+        key: string;
+        name: string;
+        inactive: boolean;
+      }[];
+    };
+    ProjectLifecycleRequest: {
+      /** @default false */
+      spaces?: boolean;
     };
     IssueList: {
       issues: components['schemas']['IssueSummary'][];
@@ -22818,6 +22914,136 @@ export interface operations {
     responses: {
       /** @description Success */
       201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProjectDetails'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.inactive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InactiveProject'][];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProjectLifecycleRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProjectLifecycleRequest'];
+      };
+    };
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Projects.restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProjectLifecycleRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
         headers: {
           [name: string]: unknown;
         };

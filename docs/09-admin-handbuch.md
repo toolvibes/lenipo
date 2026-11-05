@@ -120,6 +120,15 @@ Projekteinstellungen → Service Desk → E-Mail-Eingang verbindet ein IMAP-Post
 
 Administration → PDF-Vorlagen: Titelseite mit Logo (PNG, JPEG oder WebP bis 200 KB), Untertitel, Kopf- und Fußzeile mit den Platzhaltern `{{title}}`, `{{space}}`, `{{date}}`, `{{page}}` und `{{pages}}` sowie eigenes CSS (ohne `@import` und `url()`). Eine Vorlage kann Standard sein; Bereichsadministratoren wählen in den Bereichseinstellungen eine eigene. Gedruckt wird weiterhin im Browser; Kopf- und Fußzeilen erscheinen in Chromium-Browsern (Chrome, Edge).
 
+## Projekte archivieren und löschen
+
+Unter Projekteinstellungen → **Archivieren und löschen** (für die Projektadministration):
+
+- **Archivieren** blendet das Projekt überall aus – Listen, Suche, Seitenleiste, Boards –, ohne etwas zu löschen.
+- **Löschen** legt das Projekt in den Papierkorb. Nach Ablauf der Aufbewahrungsfrist (Papierkorb, standardmäßig 30 Tage) löscht der stündliche Aufräumlauf es endgültig mit allen Vorgängen, Boards und Anhängen; der Projektschlüssel ist danach wieder frei.
+- Beide Dialoge fragen, ob verknüpfte Wiki-Bereiche mitgehen sollen; das Häkchen ist anfangs aus.
+- Archivierte und gelöschte Projekte stehen unter **Projekte → „Archiviert & gelöscht“** (nur für ihre Administration und die globale Administration) und lassen sich dort wiederherstellen, auf Wunsch samt Wiki-Bereichen.
+
 ## Rechte
 
 Globale Rechte hängen an Gruppen (`administrators`, `users` und eigene). Projekte bekommen ein **Berechtigungsschema** (wer was darf, über Projektrollen), ein **Benachrichtigungsschema** und optional ein **Sicherheitsschema** mit Stufen, die einzelne Vorgänge verbergen. Bereiche in Wiki haben eigene Rollen und Seiteneinschränkungen. „Rechte prüfen“ in der Administration erklärt, warum eine Person etwas sehen darf oder nicht.

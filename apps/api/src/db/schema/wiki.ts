@@ -41,7 +41,10 @@ export const spaces = pgTable(
     homePageId: uuid(),
     createdById: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /** Hidden everywhere until restored; set for archived and for deleted spaces. */
     archivedAt: timestamp({ withTimezone: true }),
+    /** In the trash with its project: purged after the trash days (E-164). */
+    deletedAt: timestamp({ withTimezone: true }),
     /** team, project, documentation or personal (TL-29, E-110). */
     type: text().notNull().default('team'),
     /** New page versions need approval unless the page says otherwise (TL-51, E-135). */

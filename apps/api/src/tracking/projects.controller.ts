@@ -16,9 +16,11 @@ import {
   CreateComponentRequest,
   CreateProjectRequest,
   CreateVersionRequest,
+  InactiveProject,
   IssueList,
   ProjectCustomFieldsRequest,
   ProjectDetails,
+  ProjectLifecycleRequest,
   ProjectMember,
   ProjectSummary,
   ProjectWorkflow,
@@ -172,6 +174,64 @@ export class ProjectsController {
     @ValidBody(CreateProjectRequest) body: CreateProjectRequest,
   ): Promise<ProjectDetails> {
     return this.projects.create(principal, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'List archived and deleted projects the caller administers',
+    description:
+      'Deleted projects stay in the trash for the trash days of the retention settings (E-164).',
+    response: z.array(InactiveProject),
+  })
+  @Get('inactive')
+  inactive(@CurrentPrincipal() principal: Principal): Promise<InactiveProject[]> {
+    return this.projects.inactive(principal);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Archive a project, optionally with its linked wiki spaces',
+    description: 'Needs `administer`. The project is hidden everywhere until restored (E-164).',
+  })
+  @Post(':key/archive')
+  @HttpCode(204)
+  archive(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(ProjectLifecycleRequest) body: ProjectLifecycleRequest,
+  ): Promise<void> {
+    return this.projects.archive(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Move a project into the trash, optionally with its linked wiki spaces',
+    description:
+      'Needs `administer`. After the trash days the retention job deletes it with all issues, boards and files (E-164).',
+  })
+  @Post(':key/delete')
+  @HttpCode(204)
+  remove(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(ProjectLifecycleRequest) body: ProjectLifecycleRequest,
+  ): Promise<void> {
+    return this.projects.remove(principal, key, body);
+  }
+
+  @Endpoint({
+    tag: 'Projects',
+    summary: 'Restore an archived or deleted project, optionally with its linked wiki spaces',
+    response: ProjectDetails,
+  })
+  @Post(':key/restore')
+  @HttpCode(200)
+  restore(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+    @ValidBody(ProjectLifecycleRequest) body: ProjectLifecycleRequest,
+  ): Promise<ProjectDetails> {
+    return this.projects.restore(principal, key, body);
   }
 
   @Endpoint({

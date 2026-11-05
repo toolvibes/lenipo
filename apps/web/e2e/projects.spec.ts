@@ -47,9 +47,7 @@ test.describe('working inside a project', () => {
     await shot(page, '2-board-anlegen');
   });
 
-  test('moves the issues of the old start into a new start status on publish', async ({
-    page,
-  }) => {
+  test('moves the issues of the old start into a new start status on publish', async ({ page }) => {
     const workflow = (await (await page.request.get('/api/v1/projects/WEB/workflow')).json()) as {
       versionId: string;
       initialStatusId: string;
@@ -86,5 +84,46 @@ test.describe('working inside a project', () => {
         return issue.status.name;
       })
       .toBe('Eingang');
+  });
+
+  test('archives a project with the question about its wiki, restores and deletes it', async ({
+    page,
+  }) => {
+    await page.request.post('/api/v1/projects', {
+      data: { key: 'ARC', name: 'Altprojekt', template: 'basic' },
+    });
+    await page.request.post('/api/v1/spaces', { data: { key: 'ARC', name: 'Alt-Wiki' } });
+    await page.request.patch('/api/v1/spaces/ARC', { data: { projectKey: 'ARC' } });
+    await page.goto('/projects/ARC/settings');
+    await page.getByRole('button', { name: 'Archivieren und löschen' }).click();
+    await page.getByRole('button', { name: 'Archivieren', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    const wiki = dialog.getByRole('checkbox', {
+      name: /Wiki-Bereich „Alt-Wiki“ \(ARC\) ebenfalls archivieren/,
+    });
+    await expect(wiki).not.toBeChecked();
+    await wiki.check();
+    await shot(page, '4-archivieren');
+    await dialog.getByRole('button', { name: 'Archivieren' }).click();
+    await expect(page).toHaveURL(/\/projects\?tab=inactive/);
+    await expect(page.getByText('Altprojekt')).toBeVisible();
+    await shot(page, '5-archiviert');
+    expect((await page.request.get('/api/v1/spaces/ARC')).status()).toBe(404);
+
+    await page.getByRole('button', { name: 'Wiederherstellen' }).click();
+    await page.getByRole('dialog').getByRole('checkbox').check();
+    await page.getByRole('dialog').getByRole('button', { name: 'Wiederherstellen' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    expect((await page.request.get('/api/v1/projects/ARC')).ok()).toBe(true);
+    expect((await page.request.get('/api/v1/spaces/ARC')).ok()).toBe(true);
+
+    await page.goto('/projects/ARC/settings');
+    await page.getByRole('button', { name: 'Archivieren und löschen' }).click();
+    await page.getByRole('button', { name: 'In den Papierkorb' }).click();
+    await shot(page, '6-loeschen');
+    await page.getByRole('dialog').getByRole('button', { name: 'In den Papierkorb' }).click();
+    await expect(page.getByText(/im Papierkorb, endgültig gelöscht am/)).toBeVisible();
+    // The wiki stays: the box was not ticked.
+    expect((await page.request.get('/api/v1/spaces/ARC')).ok()).toBe(true);
   });
 });

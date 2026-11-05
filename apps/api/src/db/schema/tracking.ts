@@ -130,7 +130,10 @@ export const projects = pgTable(
       onDelete: 'set null',
     }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /** Hidden everywhere (404) until restored; set for archived and for deleted projects. */
     archivedAt: timestamp({ withTimezone: true }),
+    /** In the trash: purged with everything in it after the trash days (E-164). */
+    deletedAt: timestamp({ withTimezone: true }),
     /** Wiki pages created on sprint completion and release (TL-28, E-109), null when off. */
     wikiPages: jsonb(),
     /** Agents start and complete sprints only after a person approved it (TL-96, E-148). */

@@ -408,6 +408,28 @@ export const CreateProjectRequest = z
   .meta({ id: 'CreateProjectRequest' });
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequest>;
 
+/** Archive, delete (into the trash) or restore a project; `spaces` takes its linked wiki spaces along (E-164). */
+export const ProjectLifecycleRequest = z
+  .object({ spaces: z.boolean().default(false) })
+  .meta({ id: 'ProjectLifecycleRequest' });
+export type ProjectLifecycleRequest = z.infer<typeof ProjectLifecycleRequest>;
+
+/** An archived or deleted project, for its administrators (E-164). */
+export const InactiveProject = z
+  .object({
+    key: z.string(),
+    name: z.string(),
+    archivedAt: z.iso.datetime(),
+    /** Set when it is in the trash. */
+    deletedAt: z.iso.datetime().nullable(),
+    /** When the trash empties it for good; null if the trash is kept forever. */
+    purgeAt: z.iso.datetime().nullable(),
+    /** Wiki spaces linked to it, also archived or deleted ones. */
+    spaces: z.array(z.object({ key: z.string(), name: z.string(), inactive: z.boolean() })),
+  })
+  .meta({ id: 'InactiveProject' });
+export type InactiveProject = z.infer<typeof InactiveProject>;
+
 export const ProjectSummary = z
   .object({
     id: Id,

@@ -52,6 +52,8 @@ export class RetentionService {
       auditEntries: 0,
       files: 0,
       pageViews: 0,
+      projects: 0,
+      spaces: 0,
     };
     const keys: string[] = [];
     const db = this.database.db;
@@ -98,6 +100,32 @@ export class RetentionService {
         result.comments = issueComments.length + pageComments.length;
         keys.push(...issueFiles.map((row) => row.storage_key));
         keys.push(...pageFiles.map((row) => row.storage_key));
+      });
+
+      // Projects and wiki spaces in the trash go with everything in them (E-164).
+      await db.transaction(async (tx) => {
+        const projectFiles = await tx.execute<{ storage_key: string }>(sql`
+          select a.storage_key from issue_attachments a
+          join issues i on i.id = a.issue_id
+          join projects p on p.id = i.project_id
+          where p.deleted_at < ${cutoff}`);
+        const spaceFiles = await tx.execute<{ storage_key: string }>(sql`
+          select a.storage_key from page_attachments a
+          join pages g on g.id = a.page_id
+          join spaces s on s.id = g.space_id
+          where s.deleted_at < ${cutoff}`);
+        // Issues first: they keep their project (no cascade), everything below them cascades.
+        await tx.execute(sql`
+          delete from issues where project_id in (
+            select id from projects where deleted_at < ${cutoff})`);
+        const deletedProjects = await tx.execute(sql`
+          delete from projects where deleted_at < ${cutoff} returning id`);
+        const deletedSpaces = await tx.execute(sql`
+          delete from spaces where deleted_at < ${cutoff} returning id`);
+        result.projects = deletedProjects.length;
+        result.spaces = deletedSpaces.length;
+        keys.push(...projectFiles.map((row) => row.storage_key));
+        keys.push(...spaceFiles.map((row) => row.storage_key));
       });
     }
 

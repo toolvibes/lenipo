@@ -429,6 +429,9 @@ const spaceSettingsRoute = createRoute({
 const projectsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/projects',
+  // ?tab=inactive opens the archived and deleted projects (E-164).
+  validateSearch: (search: Record<string, unknown>): { tab?: 'inactive' } =>
+    search.tab === 'inactive' ? { tab: 'inactive' } : {},
   component: function Projects() {
     return <ProjectsPage me={projectsRoute.useRouteContext().me} />;
   },

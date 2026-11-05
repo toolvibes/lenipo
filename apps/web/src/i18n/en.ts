@@ -156,7 +156,41 @@ export const en: Messages = {
       clones: { outward: 'clones', inward: 'is cloned by' },
     },
   },
+  projectLifecycle: {
+    title: 'Archive and delete',
+    archivedSince: 'archived since {{date}}',
+    deletedUntil: 'in the trash, deleted for good on {{date}}',
+    deletedKept: 'in the trash',
+    archive: {
+      heading: 'Archive project',
+      about:
+        'The project disappears from lists, search and the sidebar; nothing is lost. Projects → “Archived & deleted” restores it.',
+      title: 'Archive “{{name}}”?',
+      text: 'The project is then hidden for everyone until a project administrator restores it.',
+      spaces_one: 'Also archive the wiki space {{names}}',
+      spaces_other: 'Also archive the wiki spaces {{names}}',
+      confirm: 'Archive',
+    },
+    delete: {
+      heading: 'Delete project',
+      about:
+        'The project goes into the trash with all issues, boards and attachments and is deleted for good after the retention period (30 days by default). Until then it can be restored.',
+      title: 'Delete “{{name}}”?',
+      text: 'The project goes into the trash and is deleted for good after the retention period, with all issues, boards and attachments.',
+      spaces_one: 'Also delete the wiki space {{names}}',
+      spaces_other: 'Also delete the wiki spaces {{names}}',
+      confirm: 'Move to trash',
+    },
+    restore: {
+      title: 'Restore “{{name}}”?',
+      text: 'The project is visible again to everyone who could see it before.',
+      spaces_one: 'Also restore the wiki space {{names}}',
+      spaces_other: 'Also restore the wiki spaces {{names}}',
+      confirm: 'Restore',
+    },
+  },
   projects: {
+    inactive: 'Archived & deleted',
     all: 'All',
     favourites: 'Favourites',
     filter: 'Filter projects',

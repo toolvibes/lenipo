@@ -5,14 +5,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type {
-  CreateProjectRequest,
-  ProjectDetails,
-  ProjectFieldSetting,
-  ProjectSummary,
-  ProjectTemplate,
+import {
+  type CreateProjectRequest,
+  type InactiveProject,
+  type ProjectDetails,
+  type ProjectFieldSetting,
+  type ProjectLifecycleRequest,
+  type ProjectSummary,
+  type ProjectTemplate,
+  RetentionSettings,
 } from '@toolvibes/shared';
-import { and, asc, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -33,6 +36,8 @@ import {
   projectTypeWorkflows,
   securityLevels,
   securitySchemes,
+  spaces,
+  systemSettings,
   users,
   workflowVersions,
 } from '../db/schema/index.js';
@@ -223,6 +228,139 @@ export class ProjectService {
       customFieldIds: fieldConfig.filter((entry) => !entry.hidden).map((entry) => entry.fieldId),
       customFieldSettings: fieldConfig,
     };
+  }
+
+  // ---------------------------------------------------------------- archive and trash (E-164)
+
+  /** A project by key, archived and deleted ones included, if the caller administers it. */
+  private async administered(principal: Principal, key: string): Promise<ProjectRow> {
+    const [project] = await this.database.db
+      .select()
+      .from(projects)
+      .where(eq(projects.key, key.toUpperCase()));
+    if (!project) throw new NotFoundException('Project not found');
+    await this.projectAccess.require(principal, project.id, 'administer');
+    return project;
+  }
+
+  private async record(
+    principal: Principal,
+    action: string,
+    project: ProjectRow,
+    withSpaces: boolean,
+  ) {
+    await this.audit.record({
+      action,
+      actorId: principal.userId,
+      via: principal.via,
+      targetType: 'project',
+      targetId: project.id,
+      details: { key: project.key, spaces: withSpaces },
+    });
+  }
+
+  /** Hides the project (and, if asked, its linked wiki spaces) until it is restored. */
+  async archive(principal: Principal, key: string, request: ProjectLifecycleRequest) {
+    const project = await this.administered(principal, key);
+    if (project.archivedAt)
+      throw new ConflictException('The project is already archived or deleted');
+    await this.database.db.transaction(async (tx) => {
+      await tx.update(projects).set({ archivedAt: sql`now()` }).where(eq(projects.id, project.id));
+      if (request.spaces) {
+        await tx
+          .update(spaces)
+          .set({ archivedAt: sql`now()` })
+          .where(and(eq(spaces.projectId, project.id), isNull(spaces.archivedAt)));
+      }
+    });
+    await this.record(principal, 'project.archived', project, request.spaces);
+  }
+
+  /** Moves the project (and, if asked, its linked wiki spaces) into the trash. */
+  async remove(principal: Principal, key: string, request: ProjectLifecycleRequest) {
+    const project = await this.administered(principal, key);
+    if (project.deletedAt) throw new ConflictException('The project is already in the trash');
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .update(projects)
+        .set({ archivedAt: sql`coalesce(${projects.archivedAt}, now())`, deletedAt: sql`now()` })
+        .where(eq(projects.id, project.id));
+      if (request.spaces) {
+        await tx
+          .update(spaces)
+          .set({ archivedAt: sql`coalesce(${spaces.archivedAt}, now())`, deletedAt: sql`now()` })
+          .where(and(eq(spaces.projectId, project.id), isNull(spaces.deletedAt)));
+      }
+    });
+    await this.record(principal, 'project.deleted', project, request.spaces);
+  }
+
+  /** Brings an archived or deleted project back (and, if asked, its linked wiki spaces). */
+  async restore(
+    principal: Principal,
+    key: string,
+    request: ProjectLifecycleRequest,
+  ): Promise<ProjectDetails> {
+    const project = await this.administered(principal, key);
+    if (!project.archivedAt) throw new ConflictException('The project is active');
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .update(projects)
+        .set({ archivedAt: null, deletedAt: null })
+        .where(eq(projects.id, project.id));
+      if (request.spaces) {
+        await tx
+          .update(spaces)
+          .set({ archivedAt: null, deletedAt: null })
+          .where(and(eq(spaces.projectId, project.id), isNotNull(spaces.archivedAt)));
+      }
+    });
+    await this.record(principal, 'project.restored', project, request.spaces);
+    return this.details(principal, project.key);
+  }
+
+  /** Archived and deleted projects the caller administers, newest first. */
+  async inactive(principal: Principal): Promise<InactiveProject[]> {
+    const rows = await this.database.db
+      .select()
+      .from(projects)
+      .where(isNotNull(projects.archivedAt))
+      .orderBy(sql`${projects.archivedAt} desc`);
+    const [setting] = await this.database.db
+      .select({ value: systemSettings.value })
+      .from(systemSettings)
+      .where(eq(systemSettings.key, 'retention'));
+    const trashDays = RetentionSettings.parse(setting?.value ?? {}).trashDays;
+    const admin = await this.access.hasGlobal(principal.userId, 'admin');
+    const result: InactiveProject[] = [];
+    for (const row of rows) {
+      if (
+        !admin &&
+        !(await this.projectAccess.permissions(principal.userId, row.id)).has('administer')
+      )
+        continue;
+      const linked = await this.database.db
+        .select({ key: spaces.key, name: spaces.name, archivedAt: spaces.archivedAt })
+        .from(spaces)
+        .where(eq(spaces.projectId, row.id))
+        .orderBy(spaces.key);
+      result.push({
+        key: row.key,
+        name: row.name,
+        archivedAt: (row.archivedAt as Date).toISOString(),
+        deletedAt: row.deletedAt?.toISOString() ?? null,
+        purgeAt:
+          row.deletedAt && trashDays > 0
+            ? new Date(row.deletedAt.getTime() + trashDays * 86_400_000).toISOString()
+            : null,
+        spaces: linked.map((space) => ({
+          key: space.key,
+          name: space.name,
+          inactive: space.archivedAt !== null,
+        })),
+      });
+    }
+    return result;
   }
 
   /** Switches custom fields on for a project, in this order (E-50); needs `administer`. */
