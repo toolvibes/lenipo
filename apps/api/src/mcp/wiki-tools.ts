@@ -35,10 +35,12 @@ const Markdown = z
     'Markdown. Macros: > [!NOTE] … (also TIP, IMPORTANT, WARNING), :::expand Title … :::, ::toc, ::children, ::issues{query="…"}, :status[Text]{color=green}, :issue[WEB-1]; mentions as @[Name](user:<uuid>).',
   );
 
+// Clients such as Claude Code show the model only structuredContent when it is present, so it must
+// also carry the text, or page bodies, descriptions and sprint contents never reach the model.
 function text(markdown: string, structured?: Record<string, unknown>): CallToolResult {
   return {
     content: [{ type: 'text', text: markdown }],
-    ...(structured ? { structuredContent: structured } : {}),
+    ...(structured ? { structuredContent: { ...structured, markdown } } : {}),
   };
 }
 

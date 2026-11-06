@@ -242,6 +242,8 @@ describe('MCP wiki tools', () => {
     expect(created.text).toContain('Not published yet');
     const draft = await call(agent, 'get_page', { page: id, draft: true });
     expect(draft.text).toContain('Erster Schritt');
+    // Claude Code shows the model only structuredContent, so it carries the page body too.
+    expect(draft.structuredContent).toMatchObject({ id, markdown: draft.text });
     const comment = await call(agent, 'add_page_comment', {
       page: page.id,
       markdown: 'Bitte prüfen',

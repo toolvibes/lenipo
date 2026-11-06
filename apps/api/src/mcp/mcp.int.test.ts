@@ -123,6 +123,8 @@ describe('MCP', () => {
     const shown = await call(client, 'get_issue', { key: 'WEB-1', comments: true });
     expect(shown.text).toContain('assignee: Lena Vogt');
     expect(shown.text).toContain('Geht *wieder*.');
+    // Claude Code shows the model only structuredContent, so it carries the full text too.
+    expect(shown.structuredContent).toMatchObject({ key: 'WEB-1', markdown: shown.text });
 
     // Changes are marked as MCP in the history and the audit log (D-MCP-06).
     const history = await admin.request<ChangeGroup[]>('GET', '/issues/WEB-1/history');

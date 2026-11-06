@@ -102,10 +102,12 @@ export function teamMarkdown(team: TeamMember[]): string {
     .join('\n');
 }
 
+// Clients such as Claude Code show the model only structuredContent when it is present, so it must
+// also carry the text, or page bodies, descriptions and sprint contents never reach the model.
 function text(markdown: string, structured?: Record<string, unknown>): CallToolResult {
   return {
     content: [{ type: 'text', text: markdown }],
-    ...(structured ? { structuredContent: structured } : {}),
+    ...(structured ? { structuredContent: { ...structured, markdown } } : {}),
   };
 }
 
@@ -912,15 +914,10 @@ export function registerTools(
       if (!comments) return shown;
       const list = await issues.comments(principal, key);
       const first = shown.content[0];
-      return {
-        ...shown,
-        content: [
-          {
-            type: 'text',
-            text: `${first?.type === 'text' ? first.text : ''}\n\n## Comments\n\n${commentsMarkdown(list)}`,
-          },
-        ],
-      };
+      return text(
+        `${first?.type === 'text' ? first.text : ''}\n\n## Comments\n\n${commentsMarkdown(list)}`,
+        shown.structuredContent,
+      );
     },
   );
 
