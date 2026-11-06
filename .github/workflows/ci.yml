@@ -18,13 +18,13 @@ jobs:
         # With pgvector for semantic search; the local setup builds the same on Alpine.
         image: pgvector/pgvector:0.8.6-pg17
         env:
-          POSTGRES_USER: tasklore
-          POSTGRES_PASSWORD: tasklore
-          POSTGRES_DB: tasklore
+          POSTGRES_USER: lenipo
+          POSTGRES_PASSWORD: lenipo
+          POSTGRES_DB: lenipo
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U tasklore -d tasklore"
+          --health-cmd "pg_isready -U lenipo -d lenipo"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -34,15 +34,15 @@ jobs:
         env:
           RUSTFS_VOLUMES: /data
           RUSTFS_ADDRESS: 0.0.0.0:9000
-          RUSTFS_ACCESS_KEY: tasklore
-          RUSTFS_SECRET_KEY: tasklore-dev-secret
+          RUSTFS_ACCESS_KEY: lenipo
+          RUSTFS_SECRET_KEY: lenipo-dev-secret
         ports:
           - 9000:9000
     env:
-      DATABASE_URL: postgres://tasklore:tasklore@localhost:5432/tasklore
+      DATABASE_URL: postgres://lenipo:lenipo@localhost:5432/lenipo
       TEST_S3_ENDPOINT: http://localhost:9000
-      TEST_S3_ACCESS_KEY_ID: tasklore
-      TEST_S3_SECRET_ACCESS_KEY: tasklore-dev-secret
+      TEST_S3_ACCESS_KEY_ID: lenipo
+      TEST_S3_SECRET_ACCESS_KEY: lenipo-dev-secret
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

@@ -65,9 +65,8 @@ export async function resolveProfile(
   name: string | undefined,
 ): Promise<{ name: string | null; profile: Profile; config: Config }> {
   const config = await loadConfig(io.configFile);
-  // TASKLORE_URL/TASKLORE_TOKEN are the names before the rename (E-129).
-  const url = io.env.LENIPO_URL ?? io.env.TASKLORE_URL;
-  const token = io.env.LENIPO_TOKEN ?? io.env.TASKLORE_TOKEN;
+  const url = io.env.LENIPO_URL;
+  const token = io.env.LENIPO_TOKEN;
   if (url && token) {
     return { name: null, config, profile: { url: normalize(url), auth: { type: 'token', token } } };
   }

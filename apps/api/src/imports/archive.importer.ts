@@ -108,8 +108,7 @@ export class ArchiveImporter {
       await readFile(join(this.folder, 'archive.json'), 'utf8').catch(() => '{}'),
     ) as Archive;
     if (
-      // Archives written under the old name Tasklore still import (E-129).
-      ![ARCHIVE_FORMAT, 'tasklore-archive'].includes(this.archive.format) ||
+      this.archive.format !== ARCHIVE_FORMAT ||
       this.archive.formatVersion !== ARCHIVE_VERSION ||
       !this.archive.root
     ) {

@@ -177,9 +177,7 @@ class Runner {
     } else {
       // The runner's own LENIPO_URL/LENIPO_TOKEN must not stand in for the agent's profile.
       const env = Object.fromEntries(
-        Object.entries(this.io.env).filter(
-          ([name]) => !/^(LENIPO|TASKLORE)_(URL|TOKEN)$/.test(name),
-        ),
+        Object.entries(this.io.env).filter(([name]) => !/^LENIPO_(URL|TOKEN)$/.test(name)),
       );
       session = await openSession({ ...this.io, env }, agent.profile);
     }

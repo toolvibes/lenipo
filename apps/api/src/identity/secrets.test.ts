@@ -32,7 +32,7 @@ describe('secrets', () => {
     expect(readCookie(undefined, 'tl_session')).toBeUndefined();
   });
 
-  it('accepts cookies and token prefixes from the old name Tasklore (E-129)', () => {
+  it('accepts cookies and tokens with the earlier prefix (E-129)', () => {
     expect(readSessionCookie('lp_session=neu; tl_session=alt')).toBe('neu');
     expect(readSessionCookie('tl_session=alt')).toBe('alt');
     expect(hasPrefix('lp_pat_abc', 'lp_pat_')).toBe(true);

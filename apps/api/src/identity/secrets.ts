@@ -4,8 +4,8 @@ export const SESSION_COOKIE = 'lp_session';
 export const TOKEN_PREFIX = 'lp_pat_';
 
 /**
- * Whether a secret carries a prefix, in its Lenipo form (`lp_…`) or as issued under the old
- * name Tasklore (`tl_…`); those keep working (E-129).
+ * Whether a secret carries a prefix, in its current form (`lp_…`) or with the earlier
+ * prefix (`tl_…`); those keep working (E-129).
  */
 export function hasPrefix(secret: string, prefix: string): boolean {
   return secret.startsWith(prefix) || secret.startsWith(`tl_${prefix.slice(3)}`);

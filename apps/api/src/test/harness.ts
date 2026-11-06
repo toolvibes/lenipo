@@ -10,7 +10,7 @@ import { createLogger } from '../core/logger.js';
 import { createDatabase, type DatabaseHandle } from '../db/client.js';
 import { runMigrations } from '../db/migrate.js';
 
-const DEFAULT_URL = 'postgres://tasklore:tasklore@localhost:5440/tasklore';
+const DEFAULT_URL = 'postgres://lenipo:lenipo@localhost:5440/lenipo';
 
 export interface TestApp {
   app: NestExpressApplication;

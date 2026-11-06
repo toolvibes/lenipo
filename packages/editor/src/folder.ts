@@ -55,8 +55,7 @@ export class FolderConflict extends Error {}
  * the import publishes gets the marker of its new version.
  */
 
-// Files exported under the old name Tasklore carry its marker (E-129).
-const MARKER = /^<!-- (?:lenipo|tasklore) page=([0-9a-f-]{36}) version=(\d+)\b[^\n]*-->\n/;
+const MARKER = /^<!-- lenipo page=([0-9a-f-]{36}) version=(\d+)\b[^\n]*-->\n/;
 const marker = (page: FolderPage) =>
   `<!-- lenipo page=${page.id} version=${page.version} · Schnappschuss aus dem Wiki, Änderungen bitte dort -->\n`;
 

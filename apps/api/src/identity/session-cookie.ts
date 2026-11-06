@@ -17,6 +17,6 @@ export function setSessionCookie(
 
 export function clearSessionCookie(response: Response, config: AppConfig) {
   response.clearCookie(SESSION_COOKIE, options(config));
-  // The cookie of the old name Tasklore, if a session still uses it (E-129).
+  // The cookie with the earlier prefix, if a session still uses it (E-129).
   response.clearCookie('tl_session', options(config));
 }

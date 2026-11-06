@@ -19,7 +19,7 @@ const CHART = 'deploy/helm/lenipo/Chart.yaml';
 // check in CI stays green without regenerating (the Go SDK carries no version).
 const PYPROJECT = 'sdks/python/client/pyproject.toml';
 const MIGRATIONS = 'apps/api/drizzle';
-const MARKER = /^--\s*(?:lenipo|tasklore):contract\b/m;
+const MARKER = /^--\s*lenipo:contract\b/m;
 const GROUPS = [
   ['feat', 'Neu'],
   ['fix', 'Behoben'],

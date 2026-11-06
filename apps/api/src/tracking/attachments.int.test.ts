@@ -238,8 +238,8 @@ describe.runIf(process.env.TEST_S3_ENDPOINT)('attachments on S3 storage', () => 
       STORAGE_DRIVER: 's3',
       S3_ENDPOINT: process.env.TEST_S3_ENDPOINT ?? '',
       S3_BUCKET: `lenipo-test-${Date.now()}`,
-      S3_ACCESS_KEY_ID: process.env.TEST_S3_ACCESS_KEY_ID ?? 'tasklore',
-      S3_SECRET_ACCESS_KEY: process.env.TEST_S3_SECRET_ACCESS_KEY ?? 'tasklore-dev-secret',
+      S3_ACCESS_KEY_ID: process.env.TEST_S3_ACCESS_KEY_ID ?? 'lenipo',
+      S3_SECRET_ACCESS_KEY: process.env.TEST_S3_SECRET_ACCESS_KEY ?? 'lenipo-dev-secret',
     });
   }, 60_000);
 

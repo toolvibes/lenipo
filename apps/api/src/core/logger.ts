@@ -14,7 +14,6 @@ export function createLogger(config: AppConfig): Logger {
         'req.headers.authorization',
         'req.headers.cookie',
         'req.headers["x-lenipo-token"]',
-        'req.headers["x-tasklore-token"]',
         'req.headers["x-setup-code"]',
         'res.headers["set-cookie"]',
         '*.password',

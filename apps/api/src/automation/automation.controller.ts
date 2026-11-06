@@ -128,14 +128,12 @@ export class AutomationController {
     @Query('token') token: string | undefined,
     @Headers('authorization') authorization: string | undefined,
     @Headers('x-lenipo-token') header: string | undefined,
-    /** The header's name before the rename (E-129). */
-    @Headers('x-tasklore-token') oldHeader: string | undefined,
     @ValidBody(IncomingWebhookRequest) body: IncomingWebhookRequest,
   ): Promise<{ queued: number }> {
     // A header keeps the secret out of access logs (TL-41); ?token= stays for older senders.
     const bearer = /^Bearer\s+(.+)$/i.exec(authorization ?? '')?.[1];
     return {
-      queued: await this.engine.incoming(id, header ?? oldHeader ?? bearer ?? token ?? '', body),
+      queued: await this.engine.incoming(id, header ?? bearer ?? token ?? '', body),
     };
   }
 }

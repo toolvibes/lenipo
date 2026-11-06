@@ -309,12 +309,7 @@ export class BackupService {
       const manifest = JSON.parse(
         await readFile(join(directory, 'manifest.json'), 'utf8').catch(() => '{}'),
       ) as Partial<Manifest>;
-      // Backups made under the old name Tasklore still restore (E-129).
-      const format = manifest.format as string | undefined;
-      if (
-        (format !== BACKUP_FORMAT && format !== 'tasklore-backup') ||
-        manifest.formatVersion !== FORMAT_VERSION
-      )
+      if (manifest.format !== BACKUP_FORMAT || manifest.formatVersion !== FORMAT_VERSION)
         throw new RestoreError('This is not a Lenipo backup');
       const migrations = await this.migrations();
       if (manifest.migrations !== migrations)

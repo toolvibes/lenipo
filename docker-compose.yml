@@ -1,6 +1,6 @@
 # Infrastructure for local development. The app itself runs on the host (`pnpm dev`).
 # Host ports are offset from the defaults to avoid clashes with other local projects.
-name: tasklore
+name: lenipo
 
 services:
   postgres:
@@ -9,15 +9,15 @@ services:
       context: ./deploy/postgres
     image: lenipo-postgres:17
     environment:
-      POSTGRES_USER: tasklore
-      POSTGRES_PASSWORD: tasklore
-      POSTGRES_DB: tasklore
+      POSTGRES_USER: lenipo
+      POSTGRES_PASSWORD: lenipo
+      POSTGRES_DB: lenipo
     ports:
-      - "${TASKLORE_POSTGRES_PORT:-5440}:5432"
+      - "${LENIPO_POSTGRES_PORT:-5440}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tasklore -d tasklore"]
+      test: ["CMD-SHELL", "pg_isready -U lenipo -d lenipo"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -26,7 +26,7 @@ services:
   valkey:
     image: valkey/valkey:8-alpine
     ports:
-      - "${TASKLORE_VALKEY_PORT:-6380}:6379"
+      - "${LENIPO_VALKEY_PORT:-6380}:6379"
     volumes:
       - valkey-data:/data
     healthcheck:
@@ -36,7 +36,7 @@ services:
       retries: 10
 
   # S3-compatible object storage for attachments (RustFS, Apache-2.0), used with STORAGE_DRIVER=s3.
-  # Console: http://localhost:9011 (tasklore / tasklore-dev-secret).
+  # Console: http://localhost:9011 (lenipo / lenipo-dev-secret).
   rustfs:
     image: rustfs/rustfs:1.0.1
     environment:
@@ -44,11 +44,11 @@ services:
       RUSTFS_ADDRESS: 0.0.0.0:9000
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
-      RUSTFS_ACCESS_KEY: tasklore
-      RUSTFS_SECRET_KEY: tasklore-dev-secret
+      RUSTFS_ACCESS_KEY: lenipo
+      RUSTFS_SECRET_KEY: lenipo-dev-secret
     ports:
-      - "${TASKLORE_S3_PORT:-9010}:9000"
-      - "${TASKLORE_S3_CONSOLE_PORT:-9011}:9001"
+      - "${LENIPO_S3_PORT:-9010}:9000"
+      - "${LENIPO_S3_CONSOLE_PORT:-9011}:9001"
     volumes:
       - rustfs-data:/data
 
@@ -56,8 +56,8 @@ services:
   mailpit:
     image: axllent/mailpit:v1.31
     ports:
-      - "${TASKLORE_SMTP_PORT:-1026}:1025"
-      - "${TASKLORE_MAILPIT_PORT:-8026}:8025"
+      - "${LENIPO_SMTP_PORT:-1026}:1025"
+      - "${LENIPO_MAILPIT_PORT:-8026}:8025"
 
   # Only for testing OIDC sign-in: docker compose --profile oidc up -d keycloak
   keycloak:
@@ -68,9 +68,9 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
     ports:
-      - "${TASKLORE_KEYCLOAK_PORT:-8180}:8080"
+      - "${LENIPO_KEYCLOAK_PORT:-8180}:8080"
     volumes:
-      - ./dev/keycloak/tasklore-realm.json:/opt/keycloak/data/import/tasklore-realm.json:ro
+      - ./dev/keycloak/lenipo-realm.json:/opt/keycloak/data/import/lenipo-realm.json:ro
 
 volumes:
   postgres-data:

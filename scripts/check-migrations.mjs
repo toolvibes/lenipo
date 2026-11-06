@@ -8,8 +8,7 @@ import { join } from 'node:path';
 const DIR = 'apps/api/drizzle';
 /** Migrations up to here were written before the rule and only ran with downtime. */
 const BASELINE = 65;
-// Migrations written under the old name Tasklore carry its marker (E-129).
-const MARKER = /^--\s*(?:lenipo|tasklore):contract\b/m;
+const MARKER = /^--\s*lenipo:contract\b/m;
 
 const RULES = [
   [/\bDROP\s+(TABLE|COLUMN|TYPE|SCHEMA)\b/i, 'drops something the previous version may use'],
