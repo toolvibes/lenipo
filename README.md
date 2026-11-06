@@ -2,7 +2,7 @@
 
 **Projekte, Aufgaben und Wissen – einfach verbunden.** Lenipo ist eine selbst gehostete Plattform für Vorgänge, Boards und Wiki: eine Alternative zu **Jira Server/Data Center** und **Confluence Server/Data Center** mit einer Anwendung, einer Datenbank und einem Login.
 
-Website: <https://lenipo.de> · Früherer Projektname: Tasklore
+Website: <https://lenipo.de> · **Video-Tutorial:** [Lenipo-Einführung auf YouTube](https://www.youtube.com/playlist?list=PLCtXm6pkVoY0)
 
 > **Stand:** Version 1.x, in aktiver Entwicklung; Änderungen stehen im [Changelog](CHANGELOG.md). Freie Software unter der [GNU AGPL-3.0](LICENSE).
 
@@ -39,13 +39,13 @@ Dann <http://localhost:5173> öffnen. Beim allerersten Start gibt es noch keinen
 
 | Dienst aus `docker-compose.yml` | Adresse |
 | --- | --- |
-| PostgreSQL 17 mit pgvector | `localhost:5440` (Benutzer, Passwort und Datenbank `tasklore`) |
+| PostgreSQL 17 mit pgvector | `localhost:5440` (Zugangsdaten in `docker-compose.yml`) |
 | Valkey (Redis-kompatibel) | `localhost:6380` |
 | RustFS als S3-Speicher | `localhost:9010`, Konsole <http://localhost:9011> |
 | Mailpit (alle E-Mails landen hier) | SMTP `localhost:1026`, Postfach <http://localhost:8026> |
 | Keycloak für OIDC, optional | `docker compose --profile oidc up -d keycloak`, siehe [dev/keycloak](dev/keycloak/README.md) |
 
-Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vor der Umbenennung und bleiben, damit vorhandene Entwicklungsdaten erhalten bleiben. Anhänge liegen standardmäßig in `apps/api/data/files`; für S3 die `S3_*`-Zeilen in `.env` einkommentieren.
+Anhänge liegen standardmäßig in `apps/api/data/files`; für S3 die `S3_*`-Zeilen in `.env` einkommentieren.
 
 `pnpm infra:down` stoppt die Dienste, die Daten bleiben in Docker-Volumes.
 
@@ -63,7 +63,7 @@ Die lokalen Namen `tasklore` (Datenbank, Docker-Projekt) stammen aus der Zeit vo
 | `pnpm release minor` | Release: Version, Changelog und Tag; der Push des Tags baut das Image (siehe unten) |
 | `node tools/loadtest/run.mjs --smoke` | Kleiner Lasttest; ohne `--smoke` der volle Lauf mit einer Million Vorgängen |
 
-Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://localhost:9010` mit `TEST_S3_ACCESS_KEY_ID=tasklore` und `TEST_S3_SECRET_ACCESS_KEY=tasklore-dev-secret`), die Valkey-Tests nur mit `TEST_REDIS_URL`. Die CI in `.github/workflows/ci.yml` führt alles zusammen aus.
+Die S3-Tests laufen nur, wenn `TEST_S3_ENDPOINT` gesetzt ist (z. B. `http://localhost:9010` mit `TEST_S3_ACCESS_KEY_ID` und `TEST_S3_SECRET_ACCESS_KEY` aus `docker-compose.yml`), die Valkey-Tests nur mit `TEST_REDIS_URL`. Die CI in `.github/workflows/ci.yml` führt alles zusammen aus.
 
 ### Weitere Befehle
 
