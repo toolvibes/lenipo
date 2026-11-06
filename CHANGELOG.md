@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.4 – 2026-11-06
+
+### Behoben
+
+- MCP-Antworten enthalten den vollen Text auch in structuredContent, Claude Code sah sonst keine Seiten, Beschreibungen und Kommentare
+
 ## 1.2.3 – 2026-11-06
 
 ### Behoben
