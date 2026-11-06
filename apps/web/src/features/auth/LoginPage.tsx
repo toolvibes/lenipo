@@ -7,6 +7,7 @@ import { authProvidersQuery, meQuery } from '../../lib/queries';
 import { Button, buttonClass } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { TextField } from '../../ui/TextField';
+import { kindOf } from '../shell/RouteError';
 import { AuthLayout } from './AuthLayout';
 
 export type LoginError = 'oidc' | 'oidc_denied' | 'saml';
@@ -33,6 +34,10 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
       }
       await navigate({ to: redirect ?? '/' });
     },
+    // The password was right, but maintenance mode only lets administrators in (TL-40).
+    onError: async (failure) => {
+      if (kindOf(failure) === 'maintenance') await navigate({ to: '/maintenance' });
+    },
   });
 
   function submit(event: FormEvent) {
@@ -43,7 +48,9 @@ export function LoginPage({ redirect, error }: { redirect?: string; error?: Logi
   return (
     <AuthLayout title={t('auth.signInTitle')} subtitle={t('auth.tagline')}>
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        {login.isError && <FormError message={t('auth.invalidCredentials')} />}
+        {login.isError && kindOf(login.error) !== 'maintenance' && (
+          <FormError message={t('auth.invalidCredentials')} />
+        )}
         {!login.isError && error && (
           <FormError
             message={

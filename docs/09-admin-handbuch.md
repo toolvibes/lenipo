@@ -164,7 +164,7 @@ Die Docker-Compose-Datei nutzt `latest`; eine feste Version setzt `LENIPO_VERSIO
 
 1. Release-Hinweise lesen, vor allem den Abschnitt „Update“.
 2. Eine Sicherung anlegen (Administration → Wartung oder `backup-cli`).
-3. Neues Image holen und starten (`docker compose pull && docker compose up -d`). Migrationen laufen beim Start unter einer Sperre, im Helm-Chart zusätzlich als Job vor dem Update.
+3. Neues Image holen und starten (`docker compose pull app && docker compose up -d`; ohne `app` endet `pull` mit einem Fehler, weil das Postgres-Image vor Ort gebaut wird). Migrationen laufen beim Start unter einer Sperre, im Helm-Chart zusätzlich als Job vor dem Update.
 4. Mit mehreren Instanzen rollt das Update ohne Ausfall: jede Migration funktioniert noch mit der vorigen Version (erst erweitern, eine Version später aufräumen; `pnpm migrations:check` prüft das).
 
 **Versionen überspringen** geht, solange die Release-Hinweise keine Mindestversion nennen. Nennt eine Version eine (etwa „Updates auf diese Version gehen ab Lenipo 1.3.0“), weil sie Altes aus der Datenbank entfernt, startet sie nicht auf einer älteren Datenbank. Sie meldet dann, auf welche Version zuerst zu aktualisieren ist, statt halb zu migrieren.
