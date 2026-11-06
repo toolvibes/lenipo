@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.3 – 2026-11-06
+
+### Behoben
+
+- Anmeldung im Wartungsmodus zeigt die Wartungsseite statt „Passwort falsch“, Update-Befehl im Handbuch korrigiert
+
 ## 1.2.2 – 2026-11-05
 
 ### Behoben
