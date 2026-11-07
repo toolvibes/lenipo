@@ -564,7 +564,8 @@ export function SpaceLayout({ spaceKey }: { spaceKey: string }) {
           )}
         </div>
       </aside>
-      <div className="min-w-0 flex-1">
+      {/* basis-full: below md the tree takes the whole row, so the page must wrap below it instead of shrinking to 0. */}
+      <div className="min-w-0 flex-1 basis-full md:basis-0">
         <Outlet />
       </div>
       <CreatePageDialog
