@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.2.5 – 2026-11-07
+
+### Behoben
+
+- MCP nennt die Kennungen der Vorgangstypen, Agenten scheiterten sonst an create_issue
+
 ## 1.2.4 – 2026-11-06
 
 ### Behoben
