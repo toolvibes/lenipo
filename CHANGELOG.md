@@ -2,6 +2,12 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.3.1 – 2026-11-07
+
+### Behoben
+
+- Wiki und Administration zeigen in der Handy-Ansicht den Inhalt unter dem Menü statt mit 0 px Breite
+
 ## 1.3.0 – 2026-11-07
 
 ### Neu
