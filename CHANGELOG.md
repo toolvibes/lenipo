@@ -2,6 +2,16 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.3.0 – 2026-11-07
+
+### Neu
+
+- TQL-Schnellauswahl mit Vorlagen, Kurzerklärungen und Kurzhilfe
+
+### Behoben
+
+- Administration mit einheitlichem Abstand zum Menü
+
 ## 1.2.5 – 2026-11-07
 
 ### Behoben
