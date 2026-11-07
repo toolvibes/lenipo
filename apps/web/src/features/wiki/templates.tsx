@@ -173,7 +173,8 @@ export function TemplateEditorPage({
   const editable = creating || (source.data?.canEdit ?? false);
 
   return (
-    <main className="flex max-w-[860px] flex-col gap-5 px-10 py-7">
+    // Global templates open inside the administration, whose layout gives the margin.
+    <main className={`flex max-w-[860px] flex-col gap-5 ${spaceKey ? 'px-10 py-7' : ''}`}>
       <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
         {creating ? t('templates.newTitle') : t('templates.editTitle')}
       </h1>

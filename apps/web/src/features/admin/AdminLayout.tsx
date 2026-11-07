@@ -55,7 +55,8 @@ export function AdminLayout() {
           );
         })}
       </nav>
-      <div className="min-w-0 flex-1">
+      {/* One margin for every administration page, so none sits against the menu. */}
+      <div className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-7">
         <Outlet />
       </div>
     </div>

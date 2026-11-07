@@ -104,7 +104,7 @@ export function AccessCheckPage() {
   };
 
   return (
-    <main className="flex max-w-[880px] flex-col gap-5 px-8 py-6">
+    <main className="flex max-w-[880px] flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="tl-heading-xl m-0">{t('access.title')}</h1>
         <p className="m-0 text-sm text-[var(--ink-muted)]">{t('access.intro')}</p>

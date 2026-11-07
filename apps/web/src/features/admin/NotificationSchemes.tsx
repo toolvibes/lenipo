@@ -149,7 +149,7 @@ export function NotificationSchemeEditor({ id }: { id: string }) {
       return next;
     });
   return (
-    <main className="flex max-w-[1080px] flex-col gap-5 px-8 py-6">
+    <main className="flex max-w-[1080px] flex-col gap-5">
       <Link to="/admin/notification-schemes" className="text-[13px] text-[var(--ink-muted)]">
         ← {t('notificationSchemes.title')}
       </Link>
@@ -235,7 +235,7 @@ export function NotificationSchemesPage() {
     create.mutate();
   }
   return (
-    <main className="flex max-w-[880px] flex-col gap-5 px-8 py-6">
+    <main className="flex max-w-[880px] flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="tl-heading-xl m-0">{t('notificationSchemes.title')}</h1>
         <p className="m-0 text-sm text-[var(--ink-muted)]">{t('notificationSchemes.intro')}</p>

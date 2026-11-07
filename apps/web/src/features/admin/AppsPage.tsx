@@ -76,7 +76,7 @@ export function AppsPage() {
   const error = installed.error ?? preview.error ?? install.error ?? change.error;
 
   return (
-    <main className="flex max-w-[820px] flex-col gap-4 px-10 py-7">
+    <main className="flex max-w-[820px] flex-col gap-4">
       <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
         {t('apps.title')}
       </h1>

@@ -206,7 +206,7 @@ export function AgentsPage() {
   const [editing, setEditing] = useState<Agent | 'new' | null>(null);
   const [tokensOf, setTokensOf] = useState<string | null>(null);
   return (
-    <main className="flex max-w-[880px] flex-col gap-4 px-10 py-7">
+    <main className="flex max-w-[880px] flex-col gap-4">
       <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
         {t('agents.title')}
       </h1>

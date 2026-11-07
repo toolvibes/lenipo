@@ -119,7 +119,7 @@ export function SecuritySchemeEditor({ id }: { id: string }) {
     ...(groups.data ?? []).map((group) => ({ grant: { groupId: group.id }, label: group.name })),
   ];
   return (
-    <main className="flex max-w-[880px] flex-col gap-5 px-8 py-6">
+    <main className="flex max-w-[880px] flex-col gap-5">
       <Link to="/admin/security-schemes" className="text-[13px] text-[var(--ink-muted)]">
         ← {t('security.title')}
       </Link>
@@ -258,7 +258,7 @@ export function SecuritySchemesPage() {
     create.mutate();
   }
   return (
-    <main className="flex max-w-[880px] flex-col gap-5 px-8 py-6">
+    <main className="flex max-w-[880px] flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="tl-heading-xl m-0">{t('security.title')}</h1>
         <p className="m-0 text-sm text-[var(--ink-muted)]">{t('security.intro')}</p>

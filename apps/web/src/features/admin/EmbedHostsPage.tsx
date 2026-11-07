@@ -34,7 +34,7 @@ export function EmbedHostsPage() {
     onSuccess: (saved) => queryClient.setQueryData(embedHostsQuery.queryKey, saved),
   });
   return (
-    <main className="flex max-w-[720px] flex-col gap-4 px-10 py-7">
+    <main className="flex max-w-[720px] flex-col gap-4">
       <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
         {t('wikiMacros.embedTitle')}
       </h1>

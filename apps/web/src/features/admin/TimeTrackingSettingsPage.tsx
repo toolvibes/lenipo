@@ -40,7 +40,7 @@ export function TimeTrackingSettingsPage() {
   }
 
   return (
-    <main className="flex max-w-[960px] flex-col gap-5 px-10 py-7">
+    <main className="flex max-w-[960px] flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="m-0 text-[24px] leading-[30px] font-extrabold tracking-[-0.025em]">
           {t('time.settingsTitle')}
