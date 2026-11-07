@@ -210,7 +210,7 @@ export function registerPrompts(server: McpServer, handlers: Map<string, ToolHan
           `Create a bug in project ${project} from the error below.`,
           '1. First look for an existing issue with search_issues (e.g. text ~ "<the key part of the message>" AND resolution is EMPTY); if one fits, show it and ask whether to comment there instead.',
           '2. Otherwise draft the bug: a short summary naming the symptom, and a description with Steps to reproduce (as far as known), Expected, Actual, Environment and the relevant excerpt of the error in a code block. Use get_field_schema for required fields.',
-          '3. Show the draft, and create it with create_issue (issue type Bug) once I agree.',
+          '3. Show the draft, and create it with create_issue (issueType bug) once I agree.',
           '',
           '```',
           error.slice(0, 20_000),

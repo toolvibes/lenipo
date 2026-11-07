@@ -90,6 +90,20 @@ describe('MCP', () => {
     }
   });
 
+  it('names the issue type keys, so an agent need not guess them', async () => {
+    const project = await call(client, 'get_project', { project: 'WEB' });
+    expect(project.text).toContain('task (Aufgabe)');
+
+    const refused = await call(client, 'create_issue', {
+      projectKey: 'WEB',
+      issueType: 'Aufgabe',
+      summary: 'Falscher Typ',
+    });
+    expect(refused.isError).toBe(true);
+    expect(refused.text).toContain('is not available in WEB');
+    expect(refused.text).toMatch(/Use one of these keys: .*\btask\b/);
+  });
+
   it('works through an issue like an agent would', async () => {
     expect((await call(client, 'whoami')).text).toContain('Lena Vogt');
     const created = await call(client, 'create_issue', {

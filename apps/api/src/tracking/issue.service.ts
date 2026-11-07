@@ -528,7 +528,12 @@ export class IssueService {
     const type = meta.issueTypes.find((entry) => entry.key === key);
     const hidden = await this.projectService.hiddenIssueTypeIds(project.id);
     if (!type || hidden.includes(type.id)) {
-      throw new BadRequestException(`The issue type "${key}" is not available in ${project.key}`);
+      const available = meta.issueTypes
+        .filter((entry) => !hidden.includes(entry.id))
+        .map((entry) => entry.key);
+      throw new BadRequestException(
+        `The issue type "${key}" is not available in ${project.key}. Use one of these keys: ${available.join(', ')}`,
+      );
     }
     return type;
   }

@@ -926,7 +926,7 @@ export function registerTools(
     {
       title: 'Create an issue',
       description:
-        'Creates an issue; the description is Markdown. Mention people with @email. Custom fields by field id (see get_project).',
+        'Creates an issue; the description is Markdown. Mention people with @email. issueType takes the key of a type, such as task or story, not its display name (get_project lists them). Custom fields by field id (see get_project).',
       inputSchema: {
         ...CreateIssueRequest.shape,
         description: MarkdownText.optional().describe('Markdown'),
@@ -947,7 +947,7 @@ export function registerTools(
     {
       title: 'Update an issue',
       description:
-        'Changes the given fields only; the description is Markdown, null clears a field. Use transition_issue for the status and assign_issue for the assignee.',
+        'Changes the given fields only; the description is Markdown, null clears a field. issueType takes the key of a type, such as task or story, not its display name (get_project lists them). Use transition_issue for the status and assign_issue for the assignee.',
       inputSchema: {
         key: IssueKey,
         ...UpdateIssueRequest.omit({ assigneeId: true }).shape,

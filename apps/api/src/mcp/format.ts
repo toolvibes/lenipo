@@ -155,7 +155,7 @@ export function projectMarkdown(
     `# ${project.key}: ${project.name}`,
     '',
     project.description,
-    `issue types: ${project.issueTypes.map((type) => type.name).join(', ')}`,
+    `issue types (key and name; create_issue and update_issue take the key): ${project.issueTypes.map((type) => `${type.key} (${type.name})`).join(', ')}`,
     `statuses (workflow order): ${project.statuses.map((status) => `${status.name} (${status.category})`).join(', ')}`,
     `components: ${components.join(', ') || '(none)'}`,
     `custom fields: ${
