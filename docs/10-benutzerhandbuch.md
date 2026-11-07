@@ -77,7 +77,9 @@ assignee in agents() AND status = Review
 
 Ist die KI-Erweiterung eingerichtet, findet `similar ~ "Anmeldung klappt nicht"` die Vorgänge mit ähnlicher Bedeutung, auch ohne gleiche Wörter – die ähnlichsten zuerst, kombinierbar mit anderen Bedingungen. In der globalen Suche schaltet „Nach Bedeutung“ dasselbe für Vorgänge und Seiten ein; Assistenten über MCP haben dafür das Werkzeug `semantic_search`.
 
-Felder, Operatoren und Werte werden beim Tippen vorgeschlagen. Gespeicherte **Filter** lassen sich teilen, abonnieren (Ergebnisse per E-Mail zu einer festen Zeit) und als Dashboard-Gadget nutzen. Die globale Suche oben (`/` oder `Strg+K`/`⌘K`) findet Vorgänge, Seiten, Projekte und Bereiche.
+Felder, Operatoren und Werte werden beim Tippen vorgeschlagen, jeweils mit einer kurzen Erklärung (zum Beispiel `currentUser()` mit „du selbst“). Ein Klick ins leere Suchfeld zeigt **Vorlagen** wie „Überfällig“, „Im laufenden Sprint“ oder „Offen ohne Bearbeiter“ und darüber die zuletzt genutzten Abfragen. Ein Klick oder Enter sucht sofort. Mit `/` und einem Stichwort lassen sich die Vorlagen filtern, etwa `/über`. Der Knopf **Vorlagen und Hilfe** neben dem Feld zeigt dieselben Vorlagen und einen Spickzettel mit Bausteinen wie `AND`, `IN (…)`, `IS EMPTY`, `startOfWeek()` oder `-7d`. Ein Klick fügt den Baustein an der Schreibmarke ein.
+
+Gespeicherte **Filter** lassen sich teilen, abonnieren (Ergebnisse per E-Mail zu einer festen Zeit) und als Dashboard-Gadget nutzen. Die globale Suche oben (`/` oder `Strg+K`/`⌘K`) findet Vorgänge, Seiten, Projekte und Bereiche.
 
 ## Wiki
 

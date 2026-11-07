@@ -6,3 +6,4 @@ export * from './errors.js';
 export * from './fields.js';
 export * from './lexer.js';
 export { type Expectation, type Keyword, type ParseResult, parse } from './parser.js';
+export * from './templates.js';

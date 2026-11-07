@@ -2,8 +2,16 @@ import { CalendarBlank, CaretLeft, CaretRight, EnvelopeSimple, Star } from '@pho
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { type Me, type QueryError, type SavedFilter } from '@toolvibes/shared';
-import { fromBasic, nextSort, parse, primarySort, toBasic, withSort } from '@toolvibes/tql';
-import { useEffect, useId, useMemo, useState } from 'react';
+import {
+  fromBasic,
+  nextSort,
+  parse,
+  primarySort,
+  QUERY_TEMPLATES,
+  toBasic,
+  withSort,
+} from '@toolvibes/tql';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
 import { formatTotal } from '../../lib/format';
@@ -21,16 +29,15 @@ import { BulkChangeDialog } from './BulkChangeDialog';
 import { ColumnPicker } from './ColumnPicker';
 import { FilterSubscriptionsDialog } from './FilterSubscriptions';
 import { IssueExportMenu } from './IssueExport';
+import { rememberQuery } from './recentQueries';
 import { SaveFilterDialog } from './SaveFilterDialog';
-import { TqlInput } from './TqlInput';
+import { TqlHelp } from './TqlHelp';
+import { TqlInput, type TqlInputHandle } from './TqlInput';
 
-/** Built-in starting points, like Jira's default filters. */
-const PRESETS = {
-  mine: 'assignee = currentUser() AND resolution is EMPTY ORDER BY priority, updated DESC',
-  reported: 'reporter = currentUser() ORDER BY created DESC',
-  recent: 'updated >= -7d ORDER BY updated DESC',
-  all: 'ORDER BY created DESC',
-} as const;
+/** Built-in starting points, like Jira's default filters: the first of the query templates. */
+const PRESETS = QUERY_TEMPLATES.filter((template) =>
+  ['mine', 'reported', 'recent', 'all'].includes(template.id),
+);
 
 type Mode = 'basic' | 'advanced';
 const MODE_KEY = 'lenipo.search.mode';
@@ -106,6 +113,7 @@ export function SearchPage({
   const queryClient = useQueryClient();
   const inputId = useId();
   const errorId = useId();
+  const tql = useRef<TqlInputHandle>(null);
 
   const filter = useQuery({ ...filterQuery(filterId ?? ''), enabled: !!filterId });
   const filters = useQuery(filtersQuery());
@@ -197,7 +205,16 @@ export function SearchPage({
     setCheckNow(true);
     if (parse(draft, catalogue).errors.length > 0) return;
     setCheckNow(false);
+    rememberQuery(draft);
     apply(draft);
+  }
+
+  /** Searches a query from the quick selection or the templates at once. */
+  function runQuery(query: string) {
+    setDraft(query);
+    setCheckNow(false);
+    rememberQuery(query);
+    apply(query);
   }
 
   // The basic search shows the applied query when it has the simple form (E-48).
@@ -267,6 +284,37 @@ export function SearchPage({
     },
   });
 
+  /** Below the query: its first errors, or how to use the field. */
+  function hintOrErrors() {
+    if (errors.length === 0) {
+      return <p className="m-0 text-xs text-[var(--ink-muted)]">{t('search.hint')}</p>;
+    }
+    return (
+      <ul id={errorId} className="m-0 flex flex-col gap-1 p-0">
+        {errors.slice(0, 3).map((error) => (
+          <li
+            key={`${error.code}:${error.start}`}
+            className="flex flex-wrap items-baseline gap-2 text-[var(--danger)]"
+          >
+            <span>
+              {t(`search.errors.${error.code}` as never, {
+                ...error.params,
+                defaultValue: error.message,
+              })}
+            </span>
+            <button
+              type="button"
+              onClick={() => showError(error)}
+              className="text-xs text-[var(--ink-muted)] underline"
+            >
+              {t('search.showError')}
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   const all = filters.data ?? [];
   const page = results.data;
   const title = current?.name ?? t('search.title');
@@ -279,15 +327,15 @@ export function SearchPage({
       >
         <section className="flex flex-col gap-0.5">
           <h2 className="tl-label px-2 text-[var(--ink-muted)]">{t('search.defaultFilters')}</h2>
-          {(Object.keys(PRESETS) as Array<keyof typeof PRESETS>).map((preset) => (
+          {PRESETS.map((preset) => (
             <Link
-              key={preset}
+              key={preset.id}
               to="/issues"
-              search={{ q: PRESETS[preset] }}
-              data-current={!filterId && q === PRESETS[preset]}
+              search={{ q: preset.query }}
+              data-current={!filterId && q === preset.query}
               className={SIDEBAR_LINK}
             >
-              {t(`search.presets.${preset}`)}
+              {t(`search.presets.${preset.id}`)}
             </Link>
           ))}
         </section>
@@ -408,6 +456,7 @@ export function SearchPage({
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <TqlInput
+                    ref={tql}
                     id={inputId}
                     value={draft}
                     onChange={(value) => {
@@ -415,6 +464,7 @@ export function SearchPage({
                       setCheckNow(false);
                     }}
                     onSubmit={run}
+                    onRun={runQuery}
                     errors={errors}
                     errorId={errorId}
                   />
@@ -423,32 +473,13 @@ export function SearchPage({
                   {t('search.run')}
                 </Button>
               </div>
-              {errors.length > 0 ? (
-                <ul id={errorId} className="flex flex-col gap-1">
-                  {errors.slice(0, 3).map((error) => (
-                    <li
-                      key={`${error.code}:${error.start}`}
-                      className="flex flex-wrap items-baseline gap-2 text-[var(--danger)]"
-                    >
-                      <span>
-                        {t(`search.errors.${error.code}` as never, {
-                          ...error.params,
-                          defaultValue: error.message,
-                        })}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => showError(error)}
-                        className="text-xs text-[var(--ink-muted)] underline"
-                      >
-                        {t('search.showError')}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-[var(--ink-muted)]">{t('search.hint')}</p>
-              )}
+              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                <div className="min-w-0 flex-1">{hintOrErrors()}</div>
+                <TqlHelp
+                  onTemplate={runQuery}
+                  onInsert={(snippet) => tql.current?.insert(snippet)}
+                />
+              </div>
             </>
           )}
         </div>
