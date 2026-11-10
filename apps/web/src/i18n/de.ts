@@ -80,6 +80,7 @@ export const de = {
   },
   sidebar: {
     createBoard: 'Board anlegen',
+    createWiki: 'Wiki anlegen',
     help: 'Hilfe',
     support: 'Support kontaktieren',
     search: 'Suchen …',
@@ -243,6 +244,12 @@ export const de = {
     name: 'Name',
     key: 'Schlüssel',
     keyHelp: 'Steht vor jeder Vorgangsnummer, z. B. WEB-12. 2–10 Großbuchstaben oder Ziffern.',
+    withWiki: 'Wiki-Bereich dazu anlegen',
+    withWikiHelp: 'Mit demselben Namen und Schlüssel, gleich mit dem Projekt verknüpft.',
+    wikiFailed:
+      'Das Projekt ist angelegt, der Wiki-Bereich nicht: {{message}} Über „Wiki anlegen“ im Projektmenü lässt er sich nachholen.',
+    openProject: 'Zum Projekt',
+    new: 'Neues Projekt',
     template: 'Vorlage',
     templates: {
       scrum: 'Scrum – Sprints, Stories und Epics',
@@ -1780,6 +1787,10 @@ export const de = {
     intro:
       'Seiten, die das Projekt selbst im Wiki anlegt. Sie entstehen als „Automatisierung“ und lassen sich danach normal bearbeiten.',
     space: 'Bereich für die Seiten',
+    projectWiki: 'Wiki des Projekts',
+    linkedTo: 'Verknüpft mit',
+    noWiki:
+      'Das Projekt hat noch keinen eigenen Wiki-Bereich. „Wiki anlegen“ legt einen an und verknüpft ihn gleich mit dem Projekt.',
     off: 'Aus',
     retroOnSprintEnd: 'Retrospektive anlegen, wenn ein Sprint abgeschlossen wird',
     reportOnSprintEnd: 'Sprint-Bericht anlegen, wenn ein Sprint abgeschlossen wird',

@@ -79,6 +79,7 @@ export const en: Messages = {
   },
   sidebar: {
     createBoard: 'Create board',
+    createWiki: 'Create wiki',
     help: 'Help',
     support: 'Contact support',
     search: 'Search …',
@@ -228,6 +229,12 @@ export const en: Messages = {
     name: 'Name',
     key: 'Key',
     keyHelp: 'Prefixes every issue number, e.g. WEB-12. 2–10 capital letters or digits.',
+    withWiki: 'Also create a wiki space',
+    withWikiHelp: 'With the same name and key, linked with the project right away.',
+    wikiFailed:
+      'The project was created, the wiki space was not: {{message}} You can add it later with “Create wiki” in the project menu.',
+    openProject: 'Open project',
+    new: 'New project',
     template: 'Template',
     templates: {
       scrum: 'Scrum – sprints, stories and epics',
@@ -1753,6 +1760,10 @@ export const en: Messages = {
     intro:
       'Pages the project writes to the wiki by itself. They are created as “Automation” and can be edited as usual afterwards.',
     space: 'Space for the pages',
+    projectWiki: 'Project wiki',
+    linkedTo: 'Linked with',
+    noWiki:
+      'The project has no wiki space of its own yet. “Create wiki” creates one and links it with the project right away.',
     off: 'Off',
     retroOnSprintEnd: 'Create a retrospective when a sprint is completed',
     reportOnSprintEnd: 'Create a sprint report when a sprint is completed',

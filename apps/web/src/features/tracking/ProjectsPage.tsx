@@ -143,7 +143,7 @@ export function ProjectsPage({ me }: { me: Me }) {
           </ul>
         </>
       )}
-      <CreateProjectDialog open={creating} onOpenChange={setCreating} />
+      {creating && <CreateProjectDialog open onOpenChange={setCreating} />}
     </main>
   );
 }

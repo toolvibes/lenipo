@@ -17,6 +17,8 @@ export function useProjectTargets(key: string | null) {
     board: modules.boards ? (boards.data?.[0] ?? null) : null,
     scrum: modules.boards ? (boards.data?.find((board) => board.type === 'scrum') ?? null) : null,
     lore: modules.wiki ? (spaces.data?.[0] ?? null) : null,
+    /** Whether "no wiki" is known, not just not loaded yet. */
+    wikiLoaded: modules.wiki && spaces.isSuccess,
   };
 }
 

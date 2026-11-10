@@ -3,6 +3,7 @@ import {
   CaretDown,
   MagnifyingGlass,
   PaintBrush,
+  Plus,
   Question,
   ShieldCheck,
   SignOut,
@@ -22,6 +23,7 @@ import { initials, presenceColor } from '../../lib/presence';
 import { projectsQuery } from '../../lib/tracking';
 import { LogoMark } from '../../ui/Logo';
 import { TimerBar } from '../time/TimerBar';
+import { CreateProjectDialog } from '../tracking/CreateProjectDialog';
 import { projectTarget, useProjectTargets } from './projectTargets';
 import type { Nav } from './useNav';
 
@@ -43,7 +45,7 @@ const AREA_HOME: Record<Exclude<Area, 'project'>, string> = {
 };
 
 /** The project tab: into the last project from elsewhere, the project switcher inside it. */
-function ProjectTab({ nav }: { nav: Nav }) {
+function ProjectTab({ nav, me }: { nav: Nav; me: Me }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -51,6 +53,10 @@ function ProjectTab({ nav }: { nav: Nav }) {
   const projects = useQuery(projectsQuery);
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
+  const [creating, setCreating] = useState(false);
+  const canCreate =
+    me.globalPermissions.includes('create-projects') ||
+    me.globalPermissions.includes('system-admin');
   const active = nav.area === 'project';
   const label = (
     <>
@@ -159,14 +165,28 @@ function ProjectTab({ nav }: { nav: Nav }) {
           >
             {t('nav.allProjects')}
           </Link>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setCreating(true);
+              }}
+              className="flex h-[38px] w-full cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border-0 bg-transparent px-2.5 text-left text-[13px] font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]"
+            >
+              <Plus size={15} weight="bold" aria-hidden />
+              {t('projects.new')}
+            </button>
+          )}
         </Popover.Content>
       </Popover.Portal>
+      {creating && <CreateProjectDialog open onOpenChange={setCreating} />}
     </Popover.Root>
   );
 }
 
 /** Area tabs: Start, the project, Planung, Wiki, Service. */
-export function AreaTabs({ nav, vertical = false }: { nav: Nav; vertical?: boolean }) {
+export function AreaTabs({ nav, me, vertical = false }: { nav: Nav; me: Me; vertical?: boolean }) {
   const { t } = useTranslation();
   const tab = (area: Exclude<Area, 'project'>) => (
     <Link
@@ -186,7 +206,7 @@ export function AreaTabs({ nav, vertical = false }: { nav: Nav; vertical?: boole
       className={vertical ? 'flex flex-col gap-0.5' : 'flex items-center gap-[3px]'}
     >
       {tab('start')}
-      <ProjectTab nav={nav} />
+      <ProjectTab nav={nav} me={me} />
       {tab('planning')}
       {tab('wiki')}
       {tab('service')}
@@ -357,7 +377,7 @@ export function TopNav({
         <LogoMark size={28} />
         <span className="text-[17px] font-extrabold tracking-[-0.02em]">{t('common.product')}</span>
       </Link>
-      <AreaTabs nav={nav} />
+      <AreaTabs nav={nav} me={me} />
       <span className="flex-1" />
       {modules['time-tracking'] && <TimerBar />}
       <button

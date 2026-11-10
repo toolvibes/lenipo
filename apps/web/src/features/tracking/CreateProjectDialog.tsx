@@ -1,30 +1,17 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { CreateProjectRequest, PROJECT_TEMPLATES, type ProjectTemplate } from '@toolvibes/shared';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { useModules } from '../../lib/instance';
+import { meQuery } from '../../lib/queries';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
-
-/** Suggests a key from the name: initials of several words, else the first letters. */
-function suggestKey(name: string): string {
-  // Hyphens, slashes and the like separate words just as spaces do ("Web-Relaunch" → WR).
-  const words = name
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean);
-  const key =
-    words.length > 1 ? words.map((word) => word[0]).join('') : (words[0] ?? '').slice(0, 4);
-  return key
-    .toUpperCase()
-    .replace(/^[0-9]+/, '')
-    .slice(0, 10);
-}
+import { createSpace, suggestKey } from '../wiki/CreateSpaceDialog';
 
 export function CreateProjectDialog({
   open,
@@ -41,14 +28,45 @@ export function CreateProjectDialog({
   const [keyTouched, setKeyTouched] = useState(false);
   const [template, setTemplate] = useState<ProjectTemplate>('scrum');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // A wiki space for the project in the same step, if the person may create spaces.
+  const me = useQuery(meQuery);
+  const modules = useModules();
+  const canWiki = modules.wiki && (me.data?.globalPermissions.includes('create-spaces') ?? false);
+  const [withWiki, setWithWiki] = useState(true);
+  const wikiHelpId = useId();
+  /** The project exists but its space failed (e.g. the key is taken): say so, then go on. */
+  const [created, setCreated] = useState<{ key: string; wikiError: string } | null>(null);
+
+  async function openProject(key: string) {
+    onOpenChange(false);
+    await navigate({ to: '/projects/$key', params: { key } });
+  }
 
   const create = useMutation({
     mutationFn: (request: CreateProjectRequest) =>
       unwrap(client.POST('/api/v1/projects', { body: request })),
     onSuccess: async (project) => {
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
-      onOpenChange(false);
-      await navigate({ to: '/projects/$key', params: { key: project.key } });
+      if (canWiki && withWiki) {
+        try {
+          await createSpace({
+            key: project.key,
+            name: project.name,
+            description: '',
+            type: 'project',
+            projectKey: project.key,
+          });
+          await queryClient.invalidateQueries({ queryKey: ['spaces'] });
+          await queryClient.invalidateQueries({ queryKey: ['project', project.key, 'spaces'] });
+        } catch (error) {
+          setCreated({
+            key: project.key,
+            wikiError: error instanceof ApiError ? error.message : String(error),
+          });
+          return;
+        }
+      }
+      await openProject(project.key);
     },
   });
 
@@ -65,6 +83,21 @@ export function CreateProjectDialog({
     }
     setErrors({});
     create.mutate(parsed.data);
+  }
+
+  if (created) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange} title={t('projects.create')}>
+        <div className="flex flex-col gap-4">
+          <FormError message={t('projects.wikiFailed', { message: created.wikiError })} />
+          <div className="flex justify-end">
+            <Button variant="primary" onClick={() => openProject(created.key)}>
+              {t('projects.openProject')}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    );
   }
 
   return (
@@ -105,6 +138,23 @@ export function CreateProjectDialog({
             label: t(`projects.templates.${value}`),
           }))}
         />
+        {canWiki && (
+          <label className="flex items-start gap-2.5 text-[13.5px]">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={withWiki}
+              onChange={(event) => setWithWiki(event.target.checked)}
+              aria-describedby={wikiHelpId}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="font-semibold text-[var(--ink)]">{t('projects.withWiki')}</span>
+              <span id={wikiHelpId} className="text-xs text-[var(--ink-muted)]">
+                {t('projects.withWikiHelp')}
+              </span>
+            </span>
+          </label>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}

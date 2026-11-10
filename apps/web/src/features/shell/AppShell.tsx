@@ -142,7 +142,7 @@ function Frame({
                 >
                   <X size={18} aria-hidden />
                 </RadixDialog.Close>
-                <AreaTabs nav={nav} vertical />
+                <AreaTabs nav={nav} me={me} vertical />
                 <div className="h-px bg-[var(--border)]" />
                 <AreaMenu nav={nav} me={me} inDrawer />
               </RadixDialog.Content>

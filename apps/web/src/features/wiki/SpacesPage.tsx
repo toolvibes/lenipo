@@ -1,158 +1,18 @@
 import { BookOpenText, FileText, FolderSimple, MagnifyingGlass, Plus } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { CreateSpaceRequest, type Me, type SpaceSummary } from '@toolvibes/shared';
-import { type FormEvent, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { type Me, type SpaceSummary } from '@toolvibes/shared';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ApiError, client, unwrap } from '../../lib/api';
+import { client, unwrap } from '../../lib/api';
 import { formatRelative } from '../../lib/format';
 import { recentQuery } from '../../lib/personal';
 import { everythingQuery } from '../../lib/search';
-import { projectsQuery } from '../../lib/tracking';
 import { spacesQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
-import { Dialog } from '../../ui/Dialog';
-import { FormError } from '../../ui/FormError';
-import { Select } from '../../ui/Select';
-import { TextField } from '../../ui/TextField';
 import { FavouriteButton } from '../personal/FavouriteButton';
 import { useDebounced } from '../search/TqlInput';
-
-/** Suggests a key from the name: initials of several words, else the first letters. */
-function suggestKey(name: string): string {
-  const words = name
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean);
-  const key =
-    words.length > 1 ? words.map((word) => word[0]).join('') : (words[0] ?? '').slice(0, 4);
-  return key
-    .toUpperCase()
-    .replace(/^[0-9]+/, '')
-    .slice(0, 10);
-}
-
-function CreateSpaceDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState('');
-  const [key, setKey] = useState('');
-  const [keyTouched, setKeyTouched] = useState(false);
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<'team' | 'project' | 'documentation'>('team');
-  // General (no project) or a project's space (TL-83); linking needs administer on it.
-  const [projectKey, setProjectKey] = useState('');
-  const projects = useQuery({ ...projectsQuery, enabled: open });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const create = useMutation({
-    mutationFn: (request: CreateSpaceRequest) =>
-      unwrap(client.POST('/api/v1/spaces', { body: request })),
-    onSuccess: async (space) => {
-      await queryClient.invalidateQueries({ queryKey: ['spaces'] });
-      onOpenChange(false);
-      await navigate({ to: '/spaces/$key', params: { key: space.key } });
-    },
-  });
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const parsed = CreateSpaceRequest.safeParse({
-      key,
-      name,
-      description,
-      type,
-      ...(projectKey ? { projectKey } : {}),
-    });
-    if (!parsed.success) {
-      setErrors(
-        Object.fromEntries(
-          parsed.error.issues.map((issue) => [issue.path.join('.'), issue.message]),
-        ),
-      );
-      return;
-    }
-    setErrors({});
-    create.mutate(parsed.data);
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t('wiki.createSpace')}>
-      <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-        {create.error && (
-          <FormError
-            message={create.error instanceof ApiError ? create.error.message : String(create.error)}
-          />
-        )}
-        <TextField
-          label={t('wiki.spaceName')}
-          value={name}
-          error={errors.name}
-          autoFocus
-          onChange={(event) => {
-            setName(event.target.value);
-            if (!keyTouched) setKey(suggestKey(event.target.value));
-          }}
-        />
-        <TextField
-          label={t('wiki.spaceKey')}
-          help={t('wiki.spaceKeyHelp')}
-          error={errors.key}
-          value={key}
-          className="font-[family-name:var(--font-mono)] uppercase placeholder:normal-case"
-          onChange={(event) => {
-            setKeyTouched(true);
-            setKey(event.target.value.toUpperCase());
-          }}
-        />
-        <Select
-          label={t('wikiHome.belongsTo')}
-          help={t('wikiHome.belongsHelp')}
-          value={projectKey}
-          options={[
-            { value: '', label: t('wikiHome.general') },
-            ...(projects.data ?? []).map((project) => ({
-              value: project.key,
-              label: `${project.name} (${project.key})`,
-            })),
-          ]}
-          onChange={(event) => setProjectKey(event.target.value)}
-        />
-        <Select
-          label={t('spaceTypes.label')}
-          value={type}
-          options={(['team', 'project', 'documentation'] as const).map((value) => ({
-            value,
-            label: t(`spaceTypes.${value}`),
-          }))}
-          onChange={(event) => setType(event.target.value as typeof type)}
-        />
-        <TextField
-          label={t('wiki.spaceDescription')}
-          value={description}
-          error={errors.description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button type="submit" variant="primary" disabled={create.isPending}>
-            {t('wiki.createSpace')}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
-  );
-}
+import { CreateSpaceDialog } from './CreateSpaceDialog';
 
 /** Spaces and pages opened lately, as quick links above the directory (W-SPC-08). */
 function RecentlyVisited() {
@@ -387,7 +247,7 @@ export function SpacesPage({ me }: { me: Me }) {
         title={t('wikiHome.projectSpaces')}
         spaces={all.filter((space) => space.project)}
       />
-      <CreateSpaceDialog open={creating} onOpenChange={setCreating} />
+      {creating && <CreateSpaceDialog open onOpenChange={setCreating} />}
     </main>
   );
 }

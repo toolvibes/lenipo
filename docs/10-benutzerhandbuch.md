@@ -10,7 +10,7 @@ Nach der ersten Anmeldung führen drei kurze Schritte durch Profil, Sprache und 
 Die **obere Leiste** zeigt die Bereiche **Start**, das aktuelle **Projekt**, **Planung**, **Wiki** und **Service**, rechts die Suche (⌘K bzw. Strg K), die Hilfe, die Glocke mit den Benachrichtigungen und das Konto-Menü (Profil, Benachrichtigungen, Darstellung, Abmelden). Das **Menü links** zeigt nur den aktiven Bereich:
 
 - **Start:** Übersicht, Meine Aufgaben, Aktivität, Zeiterfassung und favorisierte Projekte, Boards, Filter und Dashboards.
-- **Projekt:** Aufgaben, Backlog, Board · Timeline, Kalender, Releases · Berichte, Team, Wiki, Projekt-Einstellungen. Ein Klick auf den Projekt-Tab führt ins zuletzt genutzte Projekt; im Projekt öffnet er den Projektwechsel mit Suche. Ein Wechsel führt zur gleichen Seite im anderen Projekt, sonst zum Board.
+- **Projekt:** Aufgaben, Backlog, Board · Timeline, Kalender, Releases · Berichte, Team, Wiki, Projekt-Einstellungen. Ein Klick auf den Projekt-Tab führt ins zuletzt genutzte Projekt; im Projekt öffnet er den Projektwechsel mit Suche, „Alle Projekte anzeigen“ und „Neues Projekt“. Ein Wechsel führt zur gleichen Seite im anderen Projekt, sonst zum Board.
 - **Planung:** Alle Projekte, Alle Boards, Pläne, Dashboards, Agenten.
 - **Wiki:** Startseite, die allgemeinen Bereiche, die Wikis der Projekte und favorisierte Bereiche und Seiten.
 - **Service:** das Service-Portal.
@@ -85,6 +85,7 @@ Gespeicherte **Filter** lassen sich teilen, abonnieren (Ergebnisse per E-Mail zu
 
 - **Wiki-Bereich oben:** Der Bereich „Wiki“ führt zur Wiki-Startseite, zu den allgemeinen Bereichen, zu den Wikis der Projekte und zu favorisierten Bereichen und Seiten, egal welches Projekt gerade offen ist. Das Wiki eines Projekts erscheint im Projekt-Bereich. Die Startseite sucht in allen Bereichen und zeigt, was zuletzt geändert und besucht wurde.
 - **Bereiche** enthalten Seiten in einem Baum. Ein Bereich ist allgemein (für das ganze Team) oder gehört zu einem Projekt; das wählt man beim Anlegen.
+- **Wiki eines Projekts:** Beim Anlegen eines Projekts legt „Wiki-Bereich dazu anlegen“ gleich einen Bereich mit demselben Namen und Schlüssel an, verknüpft mit dem Projekt. Hat ein Projekt noch kein Wiki, steht im Projektmenü „Wiki anlegen“, ebenso unter Projekt-Einstellungen → „Wiki-Seiten“. Dafür braucht es die Berechtigung, Bereiche anzulegen, und die Projektadministration.
 - **Bearbeiten** geschieht gemeinsam in Echtzeit: Mehrere Personen schreiben gleichzeitig, jede sieht die anderen. „Veröffentlichen“ macht den Entwurf zur neuen Version.
 - **Makros** über `/` im Editor: Inhaltsverzeichnis, Info-Kästen, Vorgangslisten per TQL, Diagramme (Mermaid), Seitenbäume, Einbettungen und mehr.
 - **Zeichnungen:** `/` → „Diagramm (Zeichnung)“ und dann „Diagramm bearbeiten“ öffnet Excalidraw im Vollbild. Gespeichert wird die Zeichnung als Anhang der Seite; Lesende und der PDF-Export sehen sie als Bild.

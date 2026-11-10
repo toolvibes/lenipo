@@ -26,11 +26,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Favourite, Me } from '@toolvibes/shared';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModules } from '../../lib/instance';
 import { MY_ISSUES } from '../../lib/navigation';
 import { favouritesQuery } from '../../lib/personal';
+import { projectQuery } from '../../lib/tracking';
 import { spacesQuery } from '../../lib/wiki';
+import { CreateSpaceDialog } from '../wiki/CreateSpaceDialog';
 import { useProjectTargets } from './projectTargets';
 import type { Nav } from './useNav';
 
@@ -62,6 +65,28 @@ function Item({
       <ItemIcon size={18} className="shrink-0" aria-hidden />
       <span className="min-w-0 flex-1 truncate">{children}</span>
     </Link>
+  );
+}
+
+/** A menu entry that opens a dialog instead of a page. */
+function ActionItem({
+  icon: ItemIcon,
+  onClick,
+  children,
+}: {
+  icon: Icon;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${ITEM} cursor-pointer border-0 bg-transparent text-left`}
+    >
+      <ItemIcon size={18} className="shrink-0" aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+    </button>
   );
 }
 
@@ -190,11 +215,22 @@ function StartMenu({ nav }: { nav: Nav }) {
   );
 }
 
-function ProjectMenu({ nav }: { nav: Nav }) {
+function ProjectMenu({ nav, me }: { nav: Nav; me: Me }) {
   const { t } = useTranslation();
   const modules = useModules();
   const key = nav.project?.key ?? null;
-  const { board, scrum, lore, loaded } = useProjectTargets(key);
+  const { board, scrum, lore, loaded, wikiLoaded } = useProjectTargets(key);
+  // A project without a wiki offers one, linked right away; that needs both permissions (E-60).
+  const details = useQuery({
+    ...projectQuery(key ?? ''),
+    enabled: Boolean(key) && wikiLoaded && !lore,
+  });
+  const canCreateWiki =
+    wikiLoaded &&
+    !lore &&
+    me.globalPermissions.includes('create-spaces') &&
+    (details.data?.permissions.includes('administer') ?? false);
+  const [creatingWiki, setCreatingWiki] = useState(false);
   if (!key) {
     return (
       <p className="m-0 px-2.5 text-[13px] text-[var(--ink-muted)]">{t('sidebar.noProjects')}</p>
@@ -278,6 +314,11 @@ function ProjectMenu({ nav }: { nav: Nav }) {
             {t('sidebar.lore')}
           </Item>
         )}
+        {canCreateWiki && nav.project && (
+          <ActionItem icon={Plus} onClick={() => setCreatingWiki(true)}>
+            {t('sidebar.createWiki')}
+          </ActionItem>
+        )}
         <Item
           icon={SlidersHorizontal}
           to="/projects/$key/settings"
@@ -287,6 +328,9 @@ function ProjectMenu({ nav }: { nav: Nav }) {
           {t('nav.projectSettings')}
         </Item>
       </Group>
+      {creatingWiki && nav.project && (
+        <CreateSpaceDialog open onOpenChange={setCreatingWiki} project={nav.project} />
+      )}
     </>
   );
 }
@@ -374,7 +418,7 @@ export function AreaMenu({ nav, me, inDrawer = false }: { nav: Nav; me: Me; inDr
       className={`flex flex-col gap-4 ${inDrawer ? '' : 'px-3 pt-1.5 pb-3.5'} md:sticky md:top-[var(--topbar-height)] md:h-[calc(100vh-var(--topbar-height))] md:w-[var(--sidebar-width)] md:shrink-0 md:overflow-y-auto`}
     >
       {nav.shown === 'start' && <StartMenu nav={nav} />}
-      {nav.shown === 'project' && <ProjectMenu nav={nav} />}
+      {nav.shown === 'project' && <ProjectMenu nav={nav} me={me} />}
       {nav.shown === 'planning' && <PlanningMenu nav={nav} me={me} />}
       {nav.shown === 'wiki' && <WikiMenu nav={nav} />}
       {nav.shown === 'service' && <ServiceMenu nav={nav} />}
