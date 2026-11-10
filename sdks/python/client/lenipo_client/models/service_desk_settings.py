@@ -35,6 +35,8 @@ class ServiceDeskSettings:
             pause_status_ids (list[UUID]):
             time_zone (str):
             day_start_hour (int):
+            accept_unknown_senders (bool):  Default: False.
+            allowed_domains (list[str]):
      """
 
     customer_access: ServiceDeskSettingsCustomerAccess
@@ -44,6 +46,8 @@ class ServiceDeskSettings:
     pause_status_ids: list[UUID]
     time_zone: str
     day_start_hour: int
+    allowed_domains: list[str]
+    accept_unknown_senders: bool = False
 
 
 
@@ -71,6 +75,12 @@ class ServiceDeskSettings:
 
         day_start_hour = self.day_start_hour
 
+        accept_unknown_senders = self.accept_unknown_senders
+
+        allowed_domains = self.allowed_domains
+
+
+
 
         field_dict: dict[str, Any] = {}
 
@@ -82,6 +92,8 @@ class ServiceDeskSettings:
             "pauseStatusIds": pause_status_ids,
             "timeZone": time_zone,
             "dayStartHour": day_start_hour,
+            "acceptUnknownSenders": accept_unknown_senders,
+            "allowedDomains": allowed_domains,
         })
 
         return field_dict
@@ -124,6 +136,11 @@ class ServiceDeskSettings:
 
         day_start_hour = d.pop("dayStartHour")
 
+        accept_unknown_senders = d.pop("acceptUnknownSenders")
+
+        allowed_domains = cast(list[str], d.pop("allowedDomains"))
+
+
         service_desk_settings = cls(
             customer_access=customer_access,
             intro=intro,
@@ -132,6 +149,8 @@ class ServiceDeskSettings:
             pause_status_ids=pause_status_ids,
             time_zone=time_zone,
             day_start_hour=day_start_hour,
+            accept_unknown_senders=accept_unknown_senders,
+            allowed_domains=allowed_domains,
         )
 
         return service_desk_settings

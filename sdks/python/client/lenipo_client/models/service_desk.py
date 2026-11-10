@@ -13,6 +13,7 @@ from typing import cast
 if TYPE_CHECKING:
   from ..models.request_type import RequestType
   from ..models.service_customer import ServiceCustomer
+  from ..models.service_desk_inbound import ServiceDeskInbound
   from ..models.service_desk_settings import ServiceDeskSettings
 
 
@@ -31,12 +32,14 @@ class ServiceDesk:
             request_types (list[RequestType]):
             customers (list[ServiceCustomer]):
             portal_path (str):
+            inbound (ServiceDeskInbound):
      """
 
     settings: ServiceDeskSettings
     request_types: list[RequestType]
     customers: list[ServiceCustomer]
     portal_path: str
+    inbound: ServiceDeskInbound
 
 
 
@@ -45,6 +48,7 @@ class ServiceDesk:
     def to_dict(self) -> dict[str, Any]:
         from ..models.request_type import RequestType # noqa: PLC0415
         from ..models.service_customer import ServiceCustomer # noqa: PLC0415
+        from ..models.service_desk_inbound import ServiceDeskInbound # noqa: PLC0415
         from ..models.service_desk_settings import ServiceDeskSettings # noqa: PLC0415
         settings = self.settings.to_dict()
 
@@ -64,6 +68,8 @@ class ServiceDesk:
 
         portal_path = self.portal_path
 
+        inbound = self.inbound.to_dict()
+
 
         field_dict: dict[str, Any] = {}
 
@@ -72,6 +78,7 @@ class ServiceDesk:
             "requestTypes": request_types,
             "customers": customers,
             "portalPath": portal_path,
+            "inbound": inbound,
         })
 
         return field_dict
@@ -82,6 +89,7 @@ class ServiceDesk:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.request_type import RequestType # noqa: PLC0415
         from ..models.service_customer import ServiceCustomer # noqa: PLC0415
+        from ..models.service_desk_inbound import ServiceDeskInbound # noqa: PLC0415
         from ..models.service_desk_settings import ServiceDeskSettings # noqa: PLC0415
         d = dict(src_dict)
         settings = ServiceDeskSettings.from_dict(d.pop("settings"))
@@ -111,11 +119,17 @@ class ServiceDesk:
 
         portal_path = d.pop("portalPath")
 
+        inbound = ServiceDeskInbound.from_dict(d.pop("inbound"))
+
+
+
+
         service_desk = cls(
             settings=settings,
             request_types=request_types,
             customers=customers,
             portal_path=portal_path,
+            inbound=inbound,
         )
 
         return service_desk

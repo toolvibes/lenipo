@@ -8042,6 +8042,44 @@ type InactiveProject struct {
 	} `json:"spaces"`
 }
 
+// InboundServiceRequest defines model for InboundServiceRequest.
+type InboundServiceRequest struct {
+	// CustomFields Values by custom field id, as far as the request type asks for them.
+	CustomFields *map[string]interface{} `json:"customFields,omitempty"`
+
+	// Description Plain text or Markdown.
+	Description *string `json:"description,omitempty"`
+
+	// DueDate Due date, only if the request type asks for it.
+	DueDate *openapi_types.Date `json:"dueDate,omitempty"`
+
+	// Email The person asking; answers reach them at this address.
+	Email openapi_types.Email `json:"email"`
+
+	// Name Their name in Lenipo; without it the part of the address before the @.
+	Name *string `json:"name,omitempty"`
+
+	// Priority Priority key such as high; only if the request type asks for it.
+	Priority *string `json:"priority,omitempty"`
+
+	// RequestType Id or name of a request type of the desk; without it the first one.
+	RequestType *string `json:"requestType,omitempty"`
+
+	// Summary Short title of the request.
+	Summary string `json:"summary"`
+}
+
+// InboundServiceResponse defines model for InboundServiceResponse.
+type InboundServiceResponse struct {
+	Key string `json:"key"`
+}
+
+// InboundToken defines model for InboundToken.
+type InboundToken struct {
+	Path   string `json:"path"`
+	Secret string `json:"secret"`
+}
+
 // IncomingWebhookRequest defines model for IncomingWebhookRequest.
 type IncomingWebhookRequest struct {
 	Issues               *[]string              `json:"issues,omitempty"`
@@ -10636,7 +10674,12 @@ type ServiceCustomer struct {
 
 // ServiceDesk defines model for ServiceDesk.
 type ServiceDesk struct {
-	Customers    []ServiceCustomer   `json:"customers"`
+	Customers []ServiceCustomer `json:"customers"`
+	Inbound   struct {
+		Enabled        bool       `json:"enabled"`
+		Path           string     `json:"path"`
+		TokenCreatedAt *time.Time `json:"tokenCreatedAt"`
+	} `json:"inbound"`
 	PortalPath   string              `json:"portalPath"`
 	RequestTypes []RequestType       `json:"requestTypes"`
 	Settings     ServiceDeskSettings `json:"settings"`
@@ -10644,13 +10687,15 @@ type ServiceDesk struct {
 
 // ServiceDeskSettings defines model for ServiceDeskSettings.
 type ServiceDeskSettings struct {
-	CustomerAccess     ServiceDeskSettingsCustomerAccess `json:"customerAccess"`
-	DayStartHour       int                               `json:"dayStartHour"`
-	FirstResponseHours map[string]float32                `json:"firstResponseHours"`
-	Intro              string                            `json:"intro"`
-	PauseStatusIds     []openapi_types.UUID              `json:"pauseStatusIds"`
-	ResolutionHours    map[string]float32                `json:"resolutionHours"`
-	TimeZone           string                            `json:"timeZone"`
+	AcceptUnknownSenders bool                              `json:"acceptUnknownSenders"`
+	AllowedDomains       []string                          `json:"allowedDomains"`
+	CustomerAccess       ServiceDeskSettingsCustomerAccess `json:"customerAccess"`
+	DayStartHour         int                               `json:"dayStartHour"`
+	FirstResponseHours   map[string]float32                `json:"firstResponseHours"`
+	Intro                string                            `json:"intro"`
+	PauseStatusIds       []openapi_types.UUID              `json:"pauseStatusIds"`
+	ResolutionHours      map[string]float32                `json:"resolutionHours"`
+	TimeZone             string                            `json:"timeZone"`
 }
 
 // ServiceDeskSettingsCustomerAccess defines model for ServiceDeskSettings.CustomerAccess.
@@ -10658,13 +10703,15 @@ type ServiceDeskSettingsCustomerAccess string
 
 // ServiceDeskSettingsInput defines model for ServiceDeskSettingsInput.
 type ServiceDeskSettingsInput struct {
-	CustomerAccess     ServiceDeskSettingsInputCustomerAccess `json:"customerAccess"`
-	DayStartHour       int                                    `json:"dayStartHour"`
-	FirstResponseHours map[string]float32                     `json:"firstResponseHours"`
-	Intro              string                                 `json:"intro"`
-	PauseStatusIds     []openapi_types.UUID                   `json:"pauseStatusIds"`
-	ResolutionHours    map[string]float32                     `json:"resolutionHours"`
-	TimeZone           string                                 `json:"timeZone"`
+	AcceptUnknownSenders *bool                                  `json:"acceptUnknownSenders,omitempty"`
+	AllowedDomains       *[]string                              `json:"allowedDomains,omitempty"`
+	CustomerAccess       ServiceDeskSettingsInputCustomerAccess `json:"customerAccess"`
+	DayStartHour         int                                    `json:"dayStartHour"`
+	FirstResponseHours   map[string]float32                     `json:"firstResponseHours"`
+	Intro                string                                 `json:"intro"`
+	PauseStatusIds       []openapi_types.UUID                   `json:"pauseStatusIds"`
+	ResolutionHours      map[string]float32                     `json:"resolutionHours"`
+	TimeZone             string                                 `json:"timeZone"`
 }
 
 // ServiceDeskSettingsInputCustomerAccess defines model for ServiceDeskSettingsInput.CustomerAccess.
@@ -13084,6 +13131,9 @@ type SearchRunJSONRequestBody = SearchRequest
 
 // SearchSearchJSONRequestBody defines body for SearchSearch for application/json ContentType.
 type SearchSearchJSONRequestBody = IssueExportRequest
+
+// ServiceDeskInboundJSONRequestBody defines body for ServiceDeskInbound for application/json ContentType.
+type ServiceDeskInboundJSONRequestBody = InboundServiceRequest
 
 // SetupCompleteJSONRequestBody defines body for SetupComplete for application/json ContentType.
 type SetupCompleteJSONRequestBody = SetupRequest
@@ -22995,6 +23045,18 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/v1/projects/{key}/service-desk/customers/{id} (the `ServiceDeskRemoveCustomer` operationId).
 	ServiceDeskRemoveCustomer(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ServiceDeskDisableInbound Switch off the inbound endpoint
+	//
+	// Corresponds with DELETE /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskDisableInbound` operationId).
+	ServiceDeskDisableInbound(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ServiceDeskRotateInboundToken Issue a new token for the inbound endpoint
+	//
+	// Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.
+	//
+	// Corresponds with POST /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskRotateInboundToken` operationId).
+	ServiceDeskRotateInboundToken(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ServiceDeskServiceQueue Open requests, the one closest to breaching its SLA first
 	//
 	// Corresponds with GET /api/v1/projects/{key}/service-desk/queue (the `ServiceDeskServiceQueue` operationId).
@@ -23450,6 +23512,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /api/v1/search/suggestions (the `SearchSuggestions` operationId).
 	SearchSuggestions(ctx context.Context, params *SearchSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ServiceDeskInboundWithBody File a request from another system
+	//
+	// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+	ServiceDeskInboundWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ServiceDeskInbound File a request from another system
+	//
+	// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+	ServiceDeskInbound(ctx context.Context, key string, body ServiceDeskInboundJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetupCompleteWithBody Create the first administrator with the setup code and sign in
 	//
@@ -33307,6 +33387,38 @@ func (c *Client) ServiceDeskRemoveCustomer(ctx context.Context, key string, id s
 	return c.Client.Do(req)
 }
 
+// ServiceDeskDisableInbound Switch off the inbound endpoint
+//
+// Corresponds with DELETE /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskDisableInbound` operationId).
+func (c *Client) ServiceDeskDisableInbound(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewServiceDeskDisableInboundRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ServiceDeskRotateInboundToken Issue a new token for the inbound endpoint
+//
+// Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.
+//
+// Corresponds with POST /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskRotateInboundToken` operationId).
+func (c *Client) ServiceDeskRotateInboundToken(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewServiceDeskRotateInboundTokenRequest(c.Server, key)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ServiceDeskServiceQueue Open requests, the one closest to breaching its SLA first
 //
 // Corresponds with GET /api/v1/projects/{key}/service-desk/queue (the `ServiceDeskServiceQueue` operationId).
@@ -34373,6 +34485,44 @@ func (c *Client) SearchSemanticStatus(ctx context.Context, reqEditors ...Request
 // Corresponds with GET /api/v1/search/suggestions (the `SearchSuggestions` operationId).
 func (c *Client) SearchSuggestions(ctx context.Context, params *SearchSuggestionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchSuggestionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ServiceDeskInboundWithBody File a request from another system
+//
+// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+func (c *Client) ServiceDeskInboundWithBody(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewServiceDeskInboundRequestWithBody(c.Server, key, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ServiceDeskInbound File a request from another system
+//
+// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+func (c *Client) ServiceDeskInbound(ctx context.Context, key string, body ServiceDeskInboundJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewServiceDeskInboundRequest(c.Server, key, body)
 	if err != nil {
 		return nil, err
 	}
@@ -50633,6 +50783,74 @@ func NewServiceDeskRemoveCustomerRequest(server string, key string, id string) (
 	return req, nil
 }
 
+// NewServiceDeskDisableInboundRequest constructs an http.Request for the ServiceDeskDisableInbound method
+func NewServiceDeskDisableInboundRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/service-desk/inbound-token", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewServiceDeskRotateInboundTokenRequest constructs an http.Request for the ServiceDeskRotateInboundToken method
+func NewServiceDeskRotateInboundTokenRequest(server string, key string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/projects/%s/service-desk/inbound-token", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewServiceDeskServiceQueueRequest constructs an http.Request for the ServiceDeskServiceQueue method
 func NewServiceDeskServiceQueueRequest(server string, key string) (*http.Request, error) {
 	var err error
@@ -52457,6 +52675,53 @@ func NewSearchSuggestionsRequest(server string, params *SearchSuggestionsParams)
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewServiceDeskInboundRequest calls the generic ServiceDeskInbound builder with application/json body
+func NewServiceDeskInboundRequest(server string, key string, body ServiceDeskInboundJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewServiceDeskInboundRequestWithBody(server, key, "application/json", bodyReader)
+}
+
+// NewServiceDeskInboundRequestWithBody constructs an http.Request for the ServiceDeskInbound method, with any body, and a specified content type
+func NewServiceDeskInboundRequestWithBody(server string, key string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "key", key, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/service-desk/inbound/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -58979,6 +59244,22 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/v1/projects/{key}/service-desk/customers/{id} (the `ServiceDeskRemoveCustomer` operationId).
 	ServiceDeskRemoveCustomerWithResponse(ctx context.Context, key string, id string, reqEditors ...RequestEditorFn) (*ServiceDeskRemoveCustomerHTTPResponse, error)
 
+	// ServiceDeskDisableInboundWithResponse Switch off the inbound endpoint
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskDisableInbound` operationId).
+	ServiceDeskDisableInboundWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ServiceDeskDisableInboundHTTPResponse, error)
+
+	// ServiceDeskRotateInboundTokenWithResponse Issue a new token for the inbound endpoint
+	//
+	// Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskRotateInboundToken` operationId).
+	ServiceDeskRotateInboundTokenWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ServiceDeskRotateInboundTokenHTTPResponse, error)
+
 	// ServiceDeskServiceQueueWithResponse Open requests, the one closest to breaching its SLA first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -59474,6 +59755,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /api/v1/search/suggestions (the `SearchSuggestions` operationId).
 	SearchSuggestionsWithResponse(ctx context.Context, params *SearchSuggestionsParams, reqEditors ...RequestEditorFn) (*SearchSuggestionsHTTPResponse, error)
+
+	// ServiceDeskInboundWithBodyWithResponse File a request from another system
+	//
+	// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+	ServiceDeskInboundWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ServiceDeskInboundHTTPResponse, error)
+
+	// ServiceDeskInboundWithResponse File a request from another system
+	//
+	// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+	ServiceDeskInboundWithResponse(ctx context.Context, key string, body ServiceDeskInboundJSONRequestBody, reqEditors ...RequestEditorFn) (*ServiceDeskInboundHTTPResponse, error)
 
 	// SetupCompleteWithBodyWithResponse Create the first administrator with the setup code and sign in
 	//
@@ -77803,6 +78102,95 @@ func (r ServiceDeskRemoveCustomerHTTPResponse) ContentType() string {
 	return ""
 }
 
+type ServiceDeskDisableInboundHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ServiceDeskDisableInboundHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ServiceDeskDisableInboundHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ServiceDeskDisableInboundHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ServiceDeskDisableInboundHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ServiceDeskDisableInboundHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ServiceDeskRotateInboundTokenHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *InboundToken
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r ServiceDeskRotateInboundTokenHTTPResponse) GetJSON201() *InboundToken {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ServiceDeskRotateInboundTokenHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ServiceDeskRotateInboundTokenHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ServiceDeskRotateInboundTokenHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ServiceDeskRotateInboundTokenHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ServiceDeskRotateInboundTokenHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ServiceDeskServiceQueueHTTPResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -79723,6 +80111,54 @@ func (r SearchSuggestionsHTTPResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SearchSuggestionsHTTPResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ServiceDeskInboundHTTPResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *InboundServiceResponse
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r ServiceDeskInboundHTTPResponse) GetJSON201() *InboundServiceResponse {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ServiceDeskInboundHTTPResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ServiceDeskInboundHTTPResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ServiceDeskInboundHTTPResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ServiceDeskInboundHTTPResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ServiceDeskInboundHTTPResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -89528,6 +89964,34 @@ func (c *ClientWithResponses) ServiceDeskRemoveCustomerWithResponse(ctx context.
 	return ParseServiceDeskRemoveCustomerHTTPResponse(rsp)
 }
 
+// ServiceDeskDisableInboundWithResponse Switch off the inbound endpoint
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskDisableInbound` operationId).
+func (c *ClientWithResponses) ServiceDeskDisableInboundWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ServiceDeskDisableInboundHTTPResponse, error) {
+	rsp, err := c.ServiceDeskDisableInbound(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseServiceDeskDisableInboundHTTPResponse(rsp)
+}
+
+// ServiceDeskRotateInboundTokenWithResponse Issue a new token for the inbound endpoint
+//
+// Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/projects/{key}/service-desk/inbound-token (the `ServiceDeskRotateInboundToken` operationId).
+func (c *ClientWithResponses) ServiceDeskRotateInboundTokenWithResponse(ctx context.Context, key string, reqEditors ...RequestEditorFn) (*ServiceDeskRotateInboundTokenHTTPResponse, error) {
+	rsp, err := c.ServiceDeskRotateInboundToken(ctx, key, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseServiceDeskRotateInboundTokenHTTPResponse(rsp)
+}
+
 // ServiceDeskServiceQueueWithResponse Open requests, the one closest to breaching its SLA first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -90394,6 +90858,36 @@ func (c *ClientWithResponses) SearchSuggestionsWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseSearchSuggestionsHTTPResponse(rsp)
+}
+
+// ServiceDeskInboundWithBodyWithResponse File a request from another system
+//
+// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+func (c *ClientWithResponses) ServiceDeskInboundWithBodyWithResponse(ctx context.Context, key string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ServiceDeskInboundHTTPResponse, error) {
+	rsp, err := c.ServiceDeskInboundWithBody(ctx, key, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseServiceDeskInboundHTTPResponse(rsp)
+}
+
+// ServiceDeskInboundWithResponse File a request from another system
+//
+// Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/v1/service-desk/inbound/{key} (the `ServiceDeskInbound` operationId).
+func (c *ClientWithResponses) ServiceDeskInboundWithResponse(ctx context.Context, key string, body ServiceDeskInboundJSONRequestBody, reqEditors ...RequestEditorFn) (*ServiceDeskInboundHTTPResponse, error) {
+	rsp, err := c.ServiceDeskInbound(ctx, key, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseServiceDeskInboundHTTPResponse(rsp)
 }
 
 // SetupCompleteWithBodyWithResponse Create the first administrator with the setup code and sign in
@@ -103523,6 +104017,68 @@ func ParseServiceDeskRemoveCustomerHTTPResponse(rsp *http.Response) (*ServiceDes
 	return response, nil
 }
 
+// ParseServiceDeskDisableInboundHTTPResponse parses an HTTP response from a ServiceDeskDisableInboundWithResponse call
+func ParseServiceDeskDisableInboundHTTPResponse(rsp *http.Response) (*ServiceDeskDisableInboundHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ServiceDeskDisableInboundHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseServiceDeskRotateInboundTokenHTTPResponse parses an HTTP response from a ServiceDeskRotateInboundTokenWithResponse call
+func ParseServiceDeskRotateInboundTokenHTTPResponse(rsp *http.Response) (*ServiceDeskRotateInboundTokenHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ServiceDeskRotateInboundTokenHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest InboundToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseServiceDeskServiceQueueHTTPResponse parses an HTTP response from a ServiceDeskServiceQueueWithResponse call
 func ParseServiceDeskServiceQueueHTTPResponse(rsp *http.Response) (*ServiceDeskServiceQueueHTTPResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -104836,6 +105392,39 @@ func ParseSearchSuggestionsHTTPResponse(rsp *http.Response) (*SearchSuggestionsH
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseServiceDeskInboundHTTPResponse parses an HTTP response from a ServiceDeskInboundWithResponse call
+func ParseServiceDeskInboundHTTPResponse(rsp *http.Response) (*ServiceDeskInboundHTTPResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ServiceDeskInboundHTTPResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest InboundServiceResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem

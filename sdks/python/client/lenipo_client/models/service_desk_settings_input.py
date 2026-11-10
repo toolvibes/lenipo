@@ -9,6 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 from ..models.service_desk_settings_input_customer_access import ServiceDeskSettingsInputCustomerAccess
+from ..types import UNSET, Unset
 from typing import cast
 from uuid import UUID
 
@@ -35,6 +36,8 @@ class ServiceDeskSettingsInput:
             pause_status_ids (list[UUID]):
             time_zone (str):
             day_start_hour (int):
+            accept_unknown_senders (bool | Unset):  Default: False.
+            allowed_domains (list[str] | Unset):
      """
 
     customer_access: ServiceDeskSettingsInputCustomerAccess
@@ -44,6 +47,8 @@ class ServiceDeskSettingsInput:
     pause_status_ids: list[UUID]
     time_zone: str
     day_start_hour: int
+    accept_unknown_senders: bool | Unset = False
+    allowed_domains: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
 
@@ -72,6 +77,14 @@ class ServiceDeskSettingsInput:
 
         day_start_hour = self.day_start_hour
 
+        accept_unknown_senders = self.accept_unknown_senders
+
+        allowed_domains: list[str] | Unset = UNSET
+        if not isinstance(self.allowed_domains, Unset):
+            allowed_domains = self.allowed_domains
+
+
+
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -84,6 +97,10 @@ class ServiceDeskSettingsInput:
             "timeZone": time_zone,
             "dayStartHour": day_start_hour,
         })
+        if accept_unknown_senders is not UNSET:
+            field_dict["acceptUnknownSenders"] = accept_unknown_senders
+        if allowed_domains is not UNSET:
+            field_dict["allowedDomains"] = allowed_domains
 
         return field_dict
 
@@ -125,6 +142,11 @@ class ServiceDeskSettingsInput:
 
         day_start_hour = d.pop("dayStartHour")
 
+        accept_unknown_senders = d.pop("acceptUnknownSenders", UNSET)
+
+        allowed_domains = cast(list[str], d.pop("allowedDomains", UNSET))
+
+
         service_desk_settings_input = cls(
             customer_access=customer_access,
             intro=intro,
@@ -133,6 +155,8 @@ class ServiceDeskSettingsInput:
             pause_status_ids=pause_status_ids,
             time_zone=time_zone,
             day_start_hour=day_start_hour,
+            accept_unknown_senders=accept_unknown_senders,
+            allowed_domains=allowed_domains,
         )
 
 

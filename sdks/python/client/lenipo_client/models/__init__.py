@@ -319,6 +319,10 @@ from .import_report_counts import ImportReportCounts
 from .import_source import ImportSource
 from .inactive_project import InactiveProject
 from .inactive_project_spaces_item import InactiveProjectSpacesItem
+from .inbound_service_request import InboundServiceRequest
+from .inbound_service_request_custom_fields import InboundServiceRequestCustomFields
+from .inbound_service_response import InboundServiceResponse
+from .inbound_token import InboundToken
 from .incoming_webhook_request import IncomingWebhookRequest
 from .install_app_request import InstallAppRequest
 from .installed_app import InstalledApp
@@ -697,6 +701,7 @@ from .series_field import SeriesField
 from .service_customer import ServiceCustomer
 from .service_customer_group_type_0 import ServiceCustomerGroupType0
 from .service_desk import ServiceDesk
+from .service_desk_inbound import ServiceDeskInbound
 from .service_desk_issue_sla_response_200 import ServiceDeskIssueSlaResponse200
 from .service_desk_settings import ServiceDeskSettings
 from .service_desk_settings_customer_access import ServiceDeskSettingsCustomerAccess
@@ -1215,6 +1220,10 @@ __all__ = (
     "ImportSource",
     "InactiveProject",
     "InactiveProjectSpacesItem",
+    "InboundServiceRequest",
+    "InboundServiceRequestCustomFields",
+    "InboundServiceResponse",
+    "InboundToken",
     "IncomingWebhookRequest",
     "InstallAppRequest",
     "InstalledApp",
@@ -1593,6 +1602,7 @@ __all__ = (
     "ServiceCustomer",
     "ServiceCustomerGroupType0",
     "ServiceDesk",
+    "ServiceDeskInbound",
     "ServiceDeskIssueSlaResponse200",
     "ServiceDeskSettings",
     "ServiceDeskSettingsCustomerAccess",
