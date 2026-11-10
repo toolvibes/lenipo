@@ -155,11 +155,7 @@ Die API beschreibt jede Instanz selbst unter `/api/docs` (OpenAPI).
 
 ## Mitwirken
 
-- Vor einem Commit `pnpm lint`, `pnpm typecheck` und `pnpm test` ausführen; bei Änderungen an der Oberfläche auch die End-to-End-Tests.
-- Neue Abhängigkeiten brauchen eine permissive Lizenz und sollten mindestens zwei Wochen alt sein.
-- Größere Änderungen bitte vorher in einem Issue besprechen.
-- Beiträge stehen unter derselben Lizenz wie Lenipo (AGPL-3.0-only).
-- Commit-Nachrichten auf Deutsch, im Stil `feat: …`, `fix: …`, `perf: …` mit Story-Nummer.
+Beiträge sind willkommen. Wie du die Umgebung aufsetzt, was vor einem Pull Request zu prüfen ist und welche Regeln im Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Für alle gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md); wie Lenipo Barrierefreiheit prüft und wo Barrieren gemeldet werden, steht in [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
 Sicherheitslücken bitte nicht öffentlich als Issue melden, sondern über [SECURITY.md](SECURITY.md).
 

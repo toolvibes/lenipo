@@ -1,0 +1,29 @@
+name: Barriere melden
+description: Etwas ist mit Tastatur, Screenreader, Vergrößerung oder auf dem Handy nicht gut benutzbar.
+labels: [bug, accessibility]
+body:
+  - type: input
+    id: seite
+    attributes:
+      label: Seite
+      description: Wo ist es passiert? Pfad oder Name der Seite, z. B. /projects/WEB/board.
+    validations:
+      required: true
+  - type: textarea
+    id: was
+    attributes:
+      label: Was wolltest du tun, und was hat dich behindert?
+    validations:
+      required: true
+  - type: textarea
+    id: hilfsmittel
+    attributes:
+      label: Hilfsmittel
+      description: Browser, Betriebssystem und Hilfsmittel, z. B. NVDA 2025.1 mit Firefox, VoiceOver auf dem iPhone, 200 % Zoom.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Lenipo-Version
+      placeholder: z. B. 1.4.0

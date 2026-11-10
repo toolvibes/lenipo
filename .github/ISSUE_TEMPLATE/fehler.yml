@@ -1,0 +1,53 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für die Meldung. Sicherheitslücken bitte **nicht** hier melden, sondern wie in [SECURITY.md](https://github.com/toolvibes/lenipo/blob/main/SECURITY.md) beschrieben.
+  - type: textarea
+    id: was
+    attributes:
+      label: Was ist passiert?
+      description: Was hast du getan, was hast du erwartet, und was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zum Nachstellen
+      placeholder: |
+        1. Projekt öffnen
+        2. Auf „…“ klicken
+        3. Fehler erscheint
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Lenipo-Version
+      description: Steht unter „Administration → Wartung“ oder im Image-Tag, z. B. 1.4.0.
+    validations:
+      required: true
+  - type: dropdown
+    id: betrieb
+    attributes:
+      label: Betrieb
+      options:
+        - Docker Compose
+        - Kubernetes (Helm)
+        - Lokale Entwicklung (pnpm dev)
+        - Gehostete Instanz
+        - Anderes
+  - type: input
+    id: browser
+    attributes:
+      label: Browser und Betriebssystem
+      placeholder: z. B. Firefox 140 unter Windows 11
+  - type: textarea
+    id: log
+    attributes:
+      label: Log-Ausgabe oder Screenshots
+      description: Bitte vorher Passwörter, Tokens und persönliche Daten entfernen.
+      render: text

@@ -8,4 +8,4 @@ Wir bestätigen den Eingang und melden uns mit einer Einschätzung. Bis eine Beh
 
 ## Unterstützte Versionen
 
-Lenipo ist noch vor Version 1.0. Behebungen gibt es für den aktuellen Stand von `main`.
+Behebungen gibt es für die jeweils neueste Version (siehe [Releases](https://github.com/toolvibes/lenipo/releases)) und den aktuellen Stand von `main`. Bitte aktualisiere vor einer Meldung auf die neueste Version, wenn möglich.

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Sicherheitslücke melden
+    url: https://github.com/toolvibes/lenipo/security/advisories/new
+    about: Bitte privat melden, nicht als öffentliches Issue.
+  - name: Gehostetes Lenipo anfragen
+    url: https://lenipo.de
+    about: Lenipo betreiben lassen statt selbst hosten.

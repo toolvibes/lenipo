@@ -1,0 +1,28 @@
+name: Funktion wünschen
+description: Eine Idee, was Lenipo besser oder zusätzlich können sollte.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+      description: Beschreibe die Situation aus Sicht der Nutzerin oder des Nutzers, z. B. „Wenn ich …, muss ich jedes Mal …“.
+    validations:
+      required: true
+  - type: textarea
+    id: vorschlag
+    attributes:
+      label: Wie könnte die Lösung aussehen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternativen
+    attributes:
+      label: Alternativen
+      description: Wie hilfst du dir heute? Wie lösen andere Werkzeuge (z. B. Jira oder Confluence) das?
+  - type: checkboxes
+    id: mitarbeit
+    attributes:
+      label: Mitarbeit
+      options:
+        - label: Ich würde das gern selbst umsetzen (siehe CONTRIBUTING.md).
