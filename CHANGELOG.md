@@ -2,6 +2,13 @@
 
 Alle Versionen von Lenipo; die neueste oben.
 
+## 1.4.0 – 2026-11-10
+
+### Neu
+
+- Neues Projekt im Projektwechsler, Wiki direkt mit dem Projekt anlegen
+- Service Desk nimmt Anfragen ohne Konto an, per Mail und per Webhook
+
 ## 1.3.1 – 2026-11-07
 
 ### Behoben
