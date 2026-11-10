@@ -26,7 +26,8 @@ import { AttachmentService } from '../tracking/attachment.service.js';
 import { IssueService } from '../tracking/issue.service.js';
 import { ProjectService } from '../tracking/project.service.js';
 import { ProjectAccessService } from '../tracking/project-access.service.js';
-import { ServiceDeskService } from './servicedesk.service.js';
+import { senderVerified } from './sender-check.js';
+import { ContactRefused, ServiceDeskService } from './servicedesk.service.js';
 
 type HandlerRow = typeof mailHandlers.$inferSelect;
 
@@ -65,7 +66,7 @@ function automatic(mail: ParsedMail): boolean {
  * Mail handlers (TL-53, E-142): the worker reads each project's IMAP mailbox every minute.
  * A mail naming an issue of the project in its subject becomes a comment, any other a new issue
  * (or, from a customer of a service desk, a request). Senders act with their own rights;
- * unknown senders change nothing.
+ * unknown senders change nothing, unless the service desk lets them in (E-168).
  */
 @Injectable()
 export class MailHandlerService {
@@ -257,11 +258,32 @@ export class MailHandlerService {
       .select({ id: users.id })
       .from(users)
       .where(and(eq(users.email, from), eq(users.status, 'active')));
-    if (!sender || sender.id === AUTOMATION_ACTOR_ID) {
-      this.logger.info({ projectId, from }, 'Mail from an unknown sender ignored');
+    if (sender?.id === AUTOMATION_ACTOR_ID) {
       return this.receipt(projectId, messageId, 'unknown-sender');
     }
-    const principal: Principal = { userId: sender.id, via: 'mail', projectId };
+    let senderId = sender?.id;
+    if (!senderId) {
+      // Unknown senders only where the service desk lets them in, and only if confirmed (E-168).
+      const results = mail.headerLines
+        .filter((line) => line.key === 'authentication-results')
+        .map((line) => line.line.replace(/^[^:]*:\s*/, ''));
+      try {
+        const desk = await this.desks.acceptsUnknownSenders(projectId);
+        if (!desk) throw new ContactRefused('unknown-sender', 403);
+        if (!senderVerified(results, from)) throw new ContactRefused('unverified-sender', 403);
+        senderId = await this.desks.contactForMail(projectId, from, mail.from?.value[0]?.name);
+      } catch (error) {
+        if (error instanceof HttpException && error.getStatus() < 500) {
+          this.logger.info(
+            { projectId, from, reason: error.message },
+            'Mail from an unknown sender ignored',
+          );
+          return this.receipt(projectId, messageId, error.message.slice(0, 200));
+        }
+        throw error;
+      }
+    }
+    const principal: Principal = { userId: senderId, via: 'mail', projectId };
     const [project] = await this.database.db
       .select({ key: projects.key })
       .from(projects)

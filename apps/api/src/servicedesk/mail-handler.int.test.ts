@@ -1,7 +1,15 @@
-import type { Attachment, Comment, Issue, MailHandler, UserSummary } from '@toolvibes/shared';
+import type {
+  Attachment,
+  Comment,
+  InboundToken,
+  Issue,
+  MailHandler,
+  ServiceDesk,
+  UserSummary,
+} from '@toolvibes/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { projects } from '../db/schema/index.js';
+import { projects, users } from '../db/schema/index.js';
 import { SetupService } from '../identity/setup.service.js';
 import { startTestApp, type TestApp, TestClient } from '../test/harness.js';
 import { MailHandlerService, replyText } from './mail-handler.service.js';
@@ -205,6 +213,126 @@ describe('mail handler (TL-53)', () => {
     expect(result).toEqual({ outcome: 'issue', issueKey: 'HELP-1' });
     const issue = (await admin.request<Issue>('GET', '/issues/HELP-1')).body;
     expect(issue.reporter?.displayName).toBe('Karla Kunde');
+  });
+
+  it('lets confirmed unknown senders in where the service desk allows it (E-168)', async () => {
+    const handler = test.app.get(MailHandlerService);
+    const from = 'Nina Neu <neu@kunde.de>';
+    const confirmed = 'mx.test; dmarc=pass (p=none) header.from=kunde.de';
+    const outcome = async (headers: Record<string, string>) =>
+      (await handler.handle(deskId, mail(headers, 'Das Rezept lädt nicht.'))).outcome;
+    expect(await outcome({ From: from, Subject: 'Fehler', 'Message-ID': '<u1@x>' })).toBe(
+      'unknown-sender',
+    );
+
+    await admin.request('PUT', '/projects/HELP/service-desk', {
+      customerAccess: 'list',
+      intro: '',
+      firstResponseHours: {},
+      resolutionHours: {},
+      pauseStatusIds: [],
+      timeZone: 'Europe/Berlin',
+      dayStartHour: 9,
+      acceptUnknownSenders: true,
+      allowedDomains: ['kunde.de'],
+    });
+    expect(await outcome({ From: from, Subject: 'Fehler', 'Message-ID': '<u2@x>' })).toBe(
+      'unverified-sender',
+    );
+    expect(
+      await outcome({
+        From: 'x@fremd.com',
+        Subject: 'Fehler',
+        'Message-ID': '<u3@x>',
+        'Authentication-Results': 'mx.test; dmarc=pass header.from=fremd.com',
+      }),
+    ).toBe('domain-not-allowed');
+
+    const created = await handler.handle(
+      deskId,
+      mail(
+        {
+          From: from,
+          Subject: 'Rezept lädt nicht',
+          'Message-ID': '<u4@x>',
+          'Authentication-Results': confirmed,
+        },
+        'Das Rezept lädt nicht.',
+      ),
+    );
+    expect(created.outcome).toBe('issue');
+    const issue = (await admin.request<Issue>('GET', `/issues/${created.issueKey}`)).body;
+    expect(issue.reporter?.displayName).toBe('Nina Neu');
+    const [contact] = await test.database.db
+      .select({ external: users.external, passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.email, 'neu@kunde.de'));
+    expect(contact).toEqual({ external: true, passwordHash: null });
+    const desk = (await admin.request<ServiceDesk>('GET', '/projects/HELP/service-desk')).body;
+    expect(desk.customers.map((entry) => entry.user?.displayName)).toContain('Nina Neu');
+
+    // Now known: the answer to the request needs no confirmation any more.
+    expect(
+      await outcome({ From: from, Subject: `Re: ${created.issueKey}`, 'Message-ID': '<u5@x>' }),
+    ).toBe('comment');
+  });
+
+  it('files requests from other systems with the token of the desk (E-168)', async () => {
+    const anonymous = new TestClient(test.baseUrl);
+    const body = {
+      email: 'Kai@Shop.de',
+      name: 'Kai Kauf',
+      summary: 'Rezept fehlt',
+      description: 'Das Rezept **Linsensuppe** fehlt.',
+    };
+    const send = (token: string, payload: unknown = body) =>
+      anonymous.request<{ key: string }>('POST', '/service-desk/inbound/HELP', payload, {
+        authorization: `Bearer ${token}`,
+      });
+    expect((await send('sdin_raten')).status).toBe(401);
+
+    const token = await admin.request<InboundToken>(
+      'POST',
+      '/projects/HELP/service-desk/inbound-token',
+    );
+    expect(token.status, JSON.stringify(token.body)).toBe(201);
+    expect(token.body.secret).toMatch(/^sdin_/);
+    const desk = await admin.request<ServiceDesk>('GET', '/projects/HELP/service-desk');
+    expect(desk.body.inbound).toMatchObject({
+      path: '/api/v1/service-desk/inbound/HELP',
+      enabled: true,
+    });
+    expect(JSON.stringify(desk.body)).not.toContain(token.body.secret);
+
+    expect((await send('sdin_falsch')).status).toBe(401);
+    const filed = await send(token.body.secret);
+    expect(filed.status).toBe(201);
+    const issue = (await admin.request<Issue>('GET', `/issues/${filed.body.key}?format=markdown`))
+      .body;
+    expect(issue.reporter?.displayName).toBe('Kai Kauf');
+    expect(issue.description).toContain('**Linsensuppe**');
+    expect((await send(token.body.secret, { ...body, requestType: 'Gibt es nicht' })).status).toBe(
+      400,
+    );
+    expect(
+      (await send(token.body.secret, { ...body, requestType: 'frage', summary: 'Zweite' })).status,
+    ).toBe(201);
+
+    // At most ten requests per person and hour.
+    for (let index = 2; index < 10; index += 1) {
+      expect((await send(token.body.secret, { ...body, summary: `Nr. ${index}` })).status).toBe(
+        201,
+      );
+    }
+    expect((await send(token.body.secret)).status).toBe(429);
+
+    const rotated = await admin.request<InboundToken>(
+      'POST',
+      '/projects/HELP/service-desk/inbound-token',
+    );
+    expect((await send(token.body.secret)).status).toBe(401);
+    await admin.request('DELETE', '/projects/HELP/service-desk/inbound-token');
+    expect((await send(rotated.body.secret)).status).toBe(401);
   });
 
   it('cuts the quoted mail from replies', () => {

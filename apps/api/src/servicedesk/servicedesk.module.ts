@@ -4,6 +4,7 @@ import { TrackingModule } from '../tracking/tracking.module.js';
 import { MailHandlerController } from './mail-handler.controller.js';
 import { MailHandlerService } from './mail-handler.service.js';
 import {
+  InboundController,
   PortalController,
   ServiceDeskController,
   ServiceQueueController,
@@ -17,6 +18,7 @@ import { ServiceDeskService } from './servicedesk.service.js';
     ServiceDeskController,
     ServiceQueueController,
     PortalController,
+    InboundController,
     MailHandlerController,
   ],
   providers: [ServiceDeskService, MailHandlerService],

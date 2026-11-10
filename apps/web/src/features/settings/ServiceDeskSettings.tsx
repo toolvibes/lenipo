@@ -1,16 +1,23 @@
 import { Trash, X } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { ServiceDesk, ServiceDeskSettings as Settings } from '@toolvibes/shared';
+import {
+  type InboundToken,
+  inboundRequestJsonSchema,
+  type ServiceDesk,
+  type ServiceDeskSettings as Settings,
+} from '@toolvibes/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, client, unwrap } from '../../lib/api';
+import { formatRelative } from '../../lib/format';
 import { projectQuery, trackingMetaQuery } from '../../lib/tracking';
 import { userSearchQuery } from '../../lib/wiki';
 import { Button } from '../../ui/Button';
 import { FormError } from '../../ui/FormError';
 import { Select } from '../../ui/Select';
 import { TextField } from '../../ui/TextField';
+import { CopyButton } from '../personal/ProfilePage';
 import { useDebounced } from '../search/TqlInput';
 
 const DEFAULTS: Settings = {
@@ -21,6 +28,8 @@ const DEFAULTS: Settings = {
   pauseStatusIds: [],
   timeZone: 'Europe/Berlin',
   dayStartHour: 9,
+  acceptUnknownSenders: false,
+  allowedDomains: [],
 };
 
 /** Runs the project as a service desk (TL-47, E-137): portal, request types, customers, SLAs. */
@@ -91,6 +100,13 @@ export function ServiceDeskSettings({ projectKey }: { projectKey: string }) {
       {data.settings.customerAccess === 'list' && (
         <Customers projectKey={projectKey} desk={data} onChange={settle} />
       )}
+      <OutsideRequests
+        projectKey={projectKey}
+        desk={data}
+        busy={save.isPending}
+        onSave={(settings) => save.mutate(settings)}
+        onChange={() => queryClient.invalidateQueries({ queryKey })}
+      />
       <SlaSettings
         projectKey={projectKey}
         settings={data.settings}
@@ -155,6 +171,203 @@ function GeneralSettings({
           {t('common.save')}
         </Button>
       </form>
+    </div>
+  );
+}
+
+/**
+ * Requests from people without an account (E-168): mail from unknown senders and a webhook for
+ * forms on other websites, with its token, address, JSON schema and an example.
+ */
+function OutsideRequests({
+  projectKey,
+  desk,
+  busy,
+  onSave,
+  onChange,
+}: {
+  projectKey: string;
+  desk: ServiceDesk;
+  busy: boolean;
+  onSave: (settings: Settings) => void;
+  onChange: () => void;
+}) {
+  const { t } = useTranslation();
+  const settings = desk.settings;
+  const [domains, setDomains] = useState(settings.allowedDomains.join(', '));
+  const [token, setToken] = useState<InboundToken | null>(null);
+  const path = { params: { path: { key: projectKey } } };
+  const rotate = useMutation({
+    mutationFn: () =>
+      unwrap(client.POST('/api/v1/projects/{key}/service-desk/inbound-token', path)),
+    onSuccess: (created) => {
+      setToken(created);
+      onChange();
+    },
+  });
+  const switchOff = useMutation({
+    mutationFn: () =>
+      unwrap(client.DELETE('/api/v1/projects/{key}/service-desk/inbound-token', path)),
+    onSuccess: () => {
+      setToken(null);
+      onChange();
+    },
+  });
+  const url = `${window.location.origin}${desk.inbound.path}`;
+  const parsedDomains = domains
+    .split(/[\s,;]+/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  const example = [
+    `curl -X POST ${url} \\`,
+    `  -H "Authorization: Bearer ${token?.secret ?? '<TOKEN>'}" \\`,
+    '  -H "Content-Type: application/json" \\',
+    `  -d '${JSON.stringify({
+      email: 'kundin@example.org',
+      name: 'Karla Kundin',
+      summary: 'Rezept lässt sich nicht öffnen',
+      description: 'Seit heute Morgen bleibt die Seite leer.',
+    })}'`,
+  ].join('\n');
+  const error = rotate.error ?? switchOff.error;
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h3 className="tl-label m-0 text-[var(--ink-muted)]">{t('serviceDesk.outside')}</h3>
+        <p className="m-0 text-sm text-[var(--ink-muted)]">{t('serviceDesk.outsideIntro')}</p>
+      </div>
+      {error && <FormError message={error.message} />}
+      <div className="flex flex-col gap-2">
+        <label className="flex items-start gap-2.5 text-[13.5px]">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={settings.acceptUnknownSenders}
+            disabled={busy}
+            onChange={(event) =>
+              onSave({ ...settings, acceptUnknownSenders: event.target.checked })
+            }
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="font-semibold">{t('serviceDesk.acceptUnknown')}</span>
+            <span className="text-xs text-[var(--ink-muted)]">
+              {t('serviceDesk.acceptUnknownHelp')}
+            </span>
+          </span>
+        </label>
+        {settings.acceptUnknownSenders && (
+          <form
+            className="flex items-end gap-2 pl-6"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSave({ ...settings, allowedDomains: parsedDomains });
+            }}
+          >
+            <div className="flex-1">
+              <TextField
+                label={t('serviceDesk.allowedDomains')}
+                help={t('serviceDesk.allowedDomainsHelp')}
+                value={domains}
+                onChange={(event) => setDomains(event.target.value)}
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={busy || parsedDomains.join(',') === settings.allowedDomains.join(',')}
+            >
+              {t('common.save')}
+            </Button>
+          </form>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <span className="text-[13.5px] font-semibold">{t('serviceDesk.inbound')}</span>
+        <p className="m-0 text-xs text-[var(--ink-muted)]">{t('serviceDesk.inboundIntro')}</p>
+        <p className="m-0 text-[13px]">
+          {desk.inbound.enabled
+            ? t('serviceDesk.inboundOn', {
+                when: formatRelative(desk.inbound.tokenCreatedAt ?? new Date().toISOString()),
+              })
+            : t('serviceDesk.inboundOff')}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={rotate.isPending}
+            onClick={() => {
+              if (!desk.inbound.enabled || window.confirm(t('serviceDesk.inboundRotateConfirm')))
+                rotate.mutate();
+            }}
+          >
+            {desk.inbound.enabled ? t('serviceDesk.inboundRotate') : t('serviceDesk.inboundEnable')}
+          </Button>
+          {desk.inbound.enabled && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={switchOff.isPending}
+              onClick={() => switchOff.mutate()}
+            >
+              {t('serviceDesk.inboundDisable')}
+            </Button>
+          )}
+        </div>
+        {token && (
+          <div
+            role="status"
+            className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--success-soft)] p-3"
+          >
+            <strong className="text-[13px]">{t('serviceDesk.inboundToken')}</strong>
+            <div className="flex flex-wrap items-center gap-2">
+              <code className="min-w-0 flex-1 break-all">{token.secret}</code>
+              <CopyButton text={token.secret} />
+            </div>
+          </div>
+        )}
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-[var(--ink-soft)]">
+            {t('serviceDesk.inboundUrl')}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="min-w-0 flex-1 text-xs break-all">POST {url}</code>
+            <CopyButton text={url} />
+          </div>
+        </div>
+        <details className="text-[13px]">
+          <summary className="cursor-pointer font-semibold">
+            {t('serviceDesk.inboundSchema')}
+          </summary>
+          <div className="mt-2 flex flex-col items-start gap-2">
+            <CopyButton text={JSON.stringify(inboundRequestJsonSchema(), null, 2)} />
+            <section
+              aria-label={t('serviceDesk.inboundSchema')}
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrolling area must be reachable with the keyboard (WCAG 2.1.1)
+              tabIndex={0}
+              className="max-h-80 w-full overflow-auto rounded-[var(--radius-md)] bg-[var(--surface-2)] p-3"
+            >
+              <pre className="m-0 text-xs">
+                {JSON.stringify(inboundRequestJsonSchema(), null, 2)}
+              </pre>
+            </section>
+          </div>
+        </details>
+        <details className="text-[13px]">
+          <summary className="cursor-pointer font-semibold">
+            {t('serviceDesk.inboundExample')}
+          </summary>
+          <div className="mt-2 flex flex-col items-start gap-2">
+            <CopyButton text={example} />
+            <section
+              aria-label={t('serviceDesk.inboundExample')}
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrolling area must be reachable with the keyboard (WCAG 2.1.1)
+              tabIndex={0}
+              className="w-full overflow-auto rounded-[var(--radius-md)] bg-[var(--surface-2)] p-3"
+            >
+              <pre className="m-0 text-xs">{example}</pre>
+            </section>
+          </div>
+        </details>
+      </div>
     </div>
   );
 }

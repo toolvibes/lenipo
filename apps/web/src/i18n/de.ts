@@ -2364,7 +2364,7 @@ export const de = {
   mailHandler: {
     title: 'E-Mail-Eingang',
     intro:
-      'Lenipo liest dieses IMAP-Postfach jede Minute. Neue Mails werden Vorgänge, Antworten mit dem Vorgangsschlüssel im Betreff Kommentare, Anhänge kommen mit. Absender handeln mit ihren eigenen Rechten; Kunden des Service Desks stellen Anfragen. Unbekannte Absender und automatische Antworten bleiben liegen.',
+      'Lenipo liest dieses IMAP-Postfach jede Minute. Neue Mails werden Vorgänge, Antworten mit dem Vorgangsschlüssel im Betreff Kommentare, Anhänge kommen mit. Absender handeln mit ihren eigenen Rechten; Kunden des Service Desks stellen Anfragen. Automatische Antworten bleiben liegen, Mails unbekannter Absender ebenso, außer der Service Desk nimmt sie an.',
     host: 'IMAP-Server',
     port: 'Port',
     username: 'Benutzer',
@@ -3433,6 +3433,28 @@ export const de = {
   },
   serviceDesk: {
     title: 'Service Desk',
+    outside: 'Anfragen ohne Konto',
+    outsideIntro:
+      'Für Kunden, die Sie aus einem anderen System kennen: Sie melden sich per Mail oder über ein Formular auf Ihrer Website. Lenipo legt für sie ein externes Konto ohne Passwort an, nur als Kunde dieses Service Desks; Antworten bekommen sie per Mail.',
+    acceptUnknown: 'Mails unbekannter Absender annehmen',
+    acceptUnknownHelp:
+      'Nur wenn der Mailserver den Absender bestätigt hat (SPF, DKIM oder DMARC bestanden). Höchstens 30 neue Kontakte pro Stunde.',
+    allowedDomains: 'Nur diese Domains',
+    allowedDomainsHelp: 'Durch Kommas getrennt, z. B. kunde.de, beispiel.com. Leer: alle Domains.',
+    inbound: 'Formular oder anderes System (Webhook)',
+    inboundIntro:
+      'Ihre Website oder ein anderes System schickt Anfragen per POST an diese Adresse, mit dem Token im Header „Authorization: Bearer …“. Höchstens 10 Anfragen pro Person und Stunde.',
+    inboundOff: 'Aus. Mit einem Token wird der Eingang eingeschaltet.',
+    inboundOn: 'Eingeschaltet, Token erzeugt {{when}}.',
+    inboundEnable: 'Token erzeugen und einschalten',
+    inboundRotate: 'Neuen Token erzeugen',
+    inboundRotateConfirm:
+      'Neuen Token erzeugen? Der bisherige funktioniert dann sofort nicht mehr.',
+    inboundDisable: 'Ausschalten',
+    inboundToken: 'Ihr Token, nur jetzt sichtbar:',
+    inboundUrl: 'Adresse',
+    inboundSchema: 'JSON-Schema der Anfrage',
+    inboundExample: 'Beispiel mit curl',
     intro:
       'Kunden stellen Anfragen über ein eigenes Portal und sehen dort nur ihre eigenen; das Team bearbeitet sie als Vorgänge dieses Projekts, mit internen Notizen und SLAs.',
     enable: 'Als Service Desk betreiben',

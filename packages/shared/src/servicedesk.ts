@@ -18,6 +18,22 @@ export const ServiceDeskSettings = z
     pauseStatusIds: z.array(Id),
     timeZone: z.string().min(1).max(64),
     dayStartHour: z.number().int().min(0).max(23),
+    /**
+     * Mail from people without an account becomes a request: they get an external account without
+     * a password, as a customer of this desk only (E-168). Needs a passed SPF, DKIM or DMARC check.
+     */
+    acceptUnknownSenders: z.boolean().default(false),
+    /** With unknown senders: only these mail domains; empty means any. */
+    allowedDomains: z
+      .array(
+        z
+          .string()
+          .trim()
+          .toLowerCase()
+          .regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/, 'Eine Domain wie beispiel.de'),
+      )
+      .max(50)
+      .default([]),
   })
   .meta({ id: 'ServiceDeskSettings' });
 export type ServiceDeskSettings = z.infer<typeof ServiceDeskSettings>;
@@ -66,8 +82,65 @@ export const ServiceDesk = z
     customers: z.array(ServiceCustomer),
     /** Where customers go: /portal/KEY. */
     portalPath: z.string(),
+    /** Requests from other systems, e.g. a form on a website (E-168). */
+    inbound: z.object({
+      /** Where they post: /api/v1/service-desk/inbound/KEY. */
+      path: z.string(),
+      /** Whether a token is set; the token itself is only shown once. */
+      enabled: z.boolean(),
+      tokenCreatedAt: z.iso.datetime().nullable(),
+    }),
   })
   .meta({ id: 'ServiceDesk' });
+
+/** A new token for the inbound endpoint; the old one stops working at once. */
+export const InboundToken = z
+  .object({ secret: z.string(), path: z.string() })
+  .meta({ id: 'InboundToken' });
+export type InboundToken = z.infer<typeof InboundToken>;
+
+/**
+ * A request from another system, e.g. a contact form (E-168). The person is found by email or
+ * gets an external account without a password, as a customer of this desk.
+ */
+export const InboundServiceRequest = z
+  .object({
+    email: z.email().max(254).describe('The person asking; answers reach them at this address.'),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe('Their name in Lenipo; without it the part of the address before the @.'),
+    requestType: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .optional()
+      .describe('Id or name of a request type of the desk; without it the first one.'),
+    summary: z.string().trim().min(1).max(255).describe('Short title of the request.'),
+    description: z.string().max(20_000).optional().describe('Plain text or Markdown.'),
+    priority: z
+      .string()
+      .min(1)
+      .max(40)
+      .optional()
+      .describe('Priority key such as high; only if the request type asks for it.'),
+    dueDate: z.iso.date().optional().describe('Due date, only if the request type asks for it.'),
+    customFields: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Values by custom field id, as far as the request type asks for them.'),
+  })
+  .meta({ id: 'InboundServiceRequest' });
+export type InboundServiceRequest = z.infer<typeof InboundServiceRequest>;
+
+export const InboundServiceResponse = z
+  .object({ key: z.string() })
+  .meta({ id: 'InboundServiceResponse' });
+export type InboundServiceResponse = z.infer<typeof InboundServiceResponse>;
 export type ServiceDesk = z.infer<typeof ServiceDesk>;
 
 /** A desk as a customer sees it. */
@@ -207,3 +280,13 @@ export const MailReceipt = z
   })
   .meta({ id: 'MailReceipt' });
 export type MailReceipt = z.infer<typeof MailReceipt>;
+
+/** The JSON schema of {@link InboundServiceRequest}, as the settings show it to integrators. */
+export function inboundRequestJsonSchema(): Record<string, unknown> {
+  const full = z.toJSONSchema(InboundServiceRequest, { io: 'input' }) as {
+    $schema?: string;
+    $defs?: Record<string, Record<string, unknown>>;
+  };
+  const definition = full.$defs?.InboundServiceRequest ?? full;
+  return { $schema: full.$schema, title: 'InboundServiceRequest', ...definition };
+}

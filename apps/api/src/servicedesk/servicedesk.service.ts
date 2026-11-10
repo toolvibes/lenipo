@@ -1,15 +1,22 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   type AddServiceCustomerRequest,
   AUTOMATION_ACTOR_ID,
   CreateIssueRequest,
   type CreatePortalRequest,
+  type InboundServiceRequest,
+  type InboundServiceResponse,
+  type InboundToken,
   type IssueSla,
   type PortalDesk,
   type PortalRequest,
@@ -22,7 +29,7 @@ import {
   type ServiceDeskSettings,
   type SlaMetric,
 } from '@toolvibes/shared';
-import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { Principal } from '../core/http/principal.js';
 import { DATABASE } from '../core/tokens.js';
@@ -43,6 +50,8 @@ import {
   statuses,
   users,
 } from '../db/schema/index.js';
+import { constantTimeEquals, randomSecret, sha256 } from '../identity/secrets.js';
+import { UserService } from '../identity/user.service.js';
 import { emitIssueEvent } from '../notifications/events.js';
 import { ProviderService } from '../operations/provider.service.js';
 import { IssueService } from '../tracking/issue.service.js';
@@ -64,7 +73,16 @@ const DEFAULTS: ServiceDeskSettings = {
   pauseStatusIds: [],
   timeZone: 'Europe/Berlin',
   dayStartHour: 9,
+  acceptUnknownSenders: false,
+  allowedDomains: [],
 };
+
+/** New contact accounts per desk and hour, and requests per person and hour (E-168). */
+const NEW_CONTACTS_PER_HOUR = 30;
+const INBOUND_REQUESTS_PER_HOUR = 10;
+
+/** Why a person without an account was not let in. */
+export class ContactRefused extends HttpException {}
 
 type DeskRow = typeof serviceDesks.$inferSelect;
 
@@ -81,6 +99,7 @@ export class ServiceDeskService {
     @Inject(IssueService) private readonly issues: IssueService,
     @Inject(WorkingTimeService) private readonly workingTime: WorkingTimeService,
     @Inject(ProviderService) private readonly provider: ProviderService,
+    @Inject(UserService) private readonly users: UserService,
   ) {}
 
   // ---------------------------------------------------------------- setup (administer)
@@ -100,6 +119,11 @@ export class ServiceDeskService {
       requestTypes: await this.requestTypes(project.id),
       customers: await this.customers(project.id),
       portalPath: `/portal/${project.key}`,
+      inbound: {
+        path: `/api/v1/service-desk/inbound/${project.key}`,
+        enabled: desk.inboundTokenHash !== null,
+        tokenCreatedAt: desk.inboundTokenCreatedAt?.toISOString() ?? null,
+      },
     };
   }
 
@@ -122,6 +146,27 @@ export class ServiceDeskService {
       .values({ projectId: project.id, ...values })
       .onConflictDoUpdate({ target: serviceDesks.projectId, set: values });
     return this.get(principal, key);
+  }
+
+  /** A new token for the inbound endpoint, shown once; the old one stops working at once. */
+  async rotateInboundToken(principal: Principal, key: string): Promise<InboundToken> {
+    const project = await this.administered(principal, key);
+    if (!(await this.desk(project.id)))
+      throw new NotFoundException('This project is no service desk');
+    const secret = `sdin_${randomSecret()}`;
+    await this.database.db
+      .update(serviceDesks)
+      .set({ inboundTokenHash: sha256(secret), inboundTokenCreatedAt: new Date() })
+      .where(eq(serviceDesks.projectId, project.id));
+    return { secret, path: `/api/v1/service-desk/inbound/${project.key}` };
+  }
+
+  async disableInbound(principal: Principal, key: string): Promise<void> {
+    const project = await this.administered(principal, key);
+    await this.database.db
+      .update(serviceDesks)
+      .set({ inboundTokenHash: null, inboundTokenCreatedAt: null })
+      .where(eq(serviceDesks.projectId, project.id));
   }
 
   async disable(principal: Principal, key: string): Promise<void> {
@@ -205,6 +250,154 @@ export class ServiceDeskService {
     await this.database.db
       .delete(serviceCustomers)
       .where(and(eq(serviceCustomers.id, id), eq(serviceCustomers.projectId, project.id)));
+  }
+
+  // ---------------------------------------------------------------- people without an account
+
+  /**
+   * A request from another system (E-168): the token of the desk decides, the person is found by
+   * email or gets a contact account. Missing desks and wrong tokens answer the same.
+   */
+  async inbound(
+    key: string,
+    secret: string,
+    request: InboundServiceRequest,
+  ): Promise<InboundServiceResponse> {
+    const [row] = await this.database.db
+      .select({ desk: serviceDesks, project: projects })
+      .from(serviceDesks)
+      .innerJoin(projects, eq(projects.id, serviceDesks.projectId))
+      .where(
+        and(
+          eq(projects.key, key.toUpperCase()),
+          isNull(projects.archivedAt),
+          isNull(projects.deletedAt),
+        ),
+      );
+    const hash = row?.desk.inboundTokenHash;
+    if (!row || !hash || !secret || !constantTimeEquals(sha256(secret), hash)) {
+      throw new UnauthorizedException('Unknown service desk or wrong token');
+    }
+    const userId = await this.contact(row.desk, request.email, request.name, 'inbound');
+    const [recent] = await this.database.db
+      .select({ value: count() })
+      .from(issues)
+      .where(
+        and(
+          eq(issues.projectId, row.project.id),
+          eq(issues.reporterId, userId),
+          gt(issues.createdAt, sql`now() - interval '1 hour'`),
+        ),
+      );
+    if ((recent?.value ?? 0) >= INBOUND_REQUESTS_PER_HOUR) {
+      throw new HttpException('Too many requests from this person', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    const types = await this.requestTypes(row.project.id);
+    const wanted = request.requestType?.toLowerCase();
+    const type = wanted
+      ? types.find(
+          (entry) => entry.id === request.requestType || entry.name.toLowerCase() === wanted,
+        )
+      : types[0];
+    if (!type) {
+      throw new BadRequestException(
+        wanted ? 'Unknown request type' : 'The service desk has no request types',
+      );
+    }
+    // The person acts as a customer of this desk, like a sender of mail.
+    const detail = await this.createRequest(
+      { userId, via: 'mail', projectId: row.project.id },
+      row.project.key,
+      {
+        requestTypeId: type.id,
+        summary: request.summary,
+        ...(request.description ? { description: { markdown: request.description } } : {}),
+        ...(request.priority ? { priority: request.priority } : {}),
+        ...(request.dueDate ? { dueDate: request.dueDate } : {}),
+        ...(request.customFields ? { customFields: request.customFields } : {}),
+      },
+    );
+    return { key: detail.key };
+  }
+
+  /** Whether the project is a service desk that lets mail of unknown senders in. */
+  async acceptsUnknownSenders(projectId: string): Promise<boolean> {
+    return (await this.desk(projectId))?.acceptUnknownSenders ?? false;
+  }
+
+  /**
+   * Mail from an address without an account (E-168): a contact account if the desk lets unknown
+   * senders in. The caller has checked SPF, DKIM or DMARC.
+   */
+  async contactForMail(
+    projectId: string,
+    email: string,
+    name: string | undefined,
+  ): Promise<string> {
+    const desk = await this.desk(projectId);
+    if (!desk?.acceptUnknownSenders) throw new ContactRefused('unknown-sender', 403);
+    const domain = email.split('@').pop()?.toLowerCase() ?? '';
+    if (desk.allowedDomains.length > 0 && !desk.allowedDomains.includes(domain)) {
+      throw new ContactRefused('domain-not-allowed', 403);
+    }
+    return this.contact(desk, email, name, 'mail');
+  }
+
+  /**
+   * The person behind an address, as a customer of the desk: an existing account (listed as a
+   * customer if it may not use the desk yet), else a new external account without a password.
+   */
+  private async contact(
+    desk: DeskRow,
+    email: string,
+    name: string | undefined,
+    via: 'mail' | 'inbound',
+  ): Promise<string> {
+    const address = email.trim().toLowerCase();
+    const [existing] = await this.database.db
+      .select({ id: users.id, status: users.status })
+      .from(users)
+      .where(eq(users.email, address));
+    if (existing) {
+      if (existing.status !== 'active' || existing.id === AUTOMATION_ACTOR_ID) {
+        throw new ForbiddenException('This person may not file requests');
+      }
+      if (!(await this.mayUse(existing.id, desk))) {
+        await this.database.db
+          .insert(serviceCustomers)
+          .values({ id: uuidv7(), projectId: desk.projectId, userId: existing.id });
+      }
+      return existing.id;
+    }
+    const [created] = await this.database.db
+      .select({ value: count() })
+      .from(serviceCustomers)
+      .innerJoin(users, eq(users.id, serviceCustomers.userId))
+      .where(
+        and(
+          eq(serviceCustomers.projectId, desk.projectId),
+          eq(users.external, true),
+          gt(users.createdAt, sql`now() - interval '1 hour'`),
+        ),
+      );
+    if ((created?.value ?? 0) >= NEW_CONTACTS_PER_HOUR) {
+      throw via === 'mail'
+        ? new ContactRefused('too-many-new-contacts', HttpStatus.TOO_MANY_REQUESTS)
+        : new HttpException('Too many new people this hour', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    return this.database.atomic(async () => {
+      const id = await this.users.create({
+        email: address,
+        displayName: name?.trim() || address.split('@')[0] || address,
+        passwordHash: null,
+        groupNames: [],
+        external: true,
+      });
+      await this.database.db
+        .insert(serviceCustomers)
+        .values({ id: uuidv7(), projectId: desk.projectId, userId: id });
+      return id;
+    });
   }
 
   // ---------------------------------------------------------------- portal (customers)
@@ -609,6 +802,8 @@ function settingsOf(desk: DeskRow): ServiceDeskSettings {
     pauseStatusIds: desk.pauseStatusIds,
     timeZone: desk.timeZone,
     dayStartHour: desk.dayStartHour,
+    acceptUnknownSenders: desk.acceptUnknownSenders,
+    allowedDomains: desk.allowedDomains,
   };
 }
 

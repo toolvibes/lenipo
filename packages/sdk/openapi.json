@@ -15793,6 +15793,76 @@
         }
       }
     },
+    "/api/v1/projects/{key}/service-desk/inbound-token": {
+      "post": {
+        "operationId": "Service desk.rotateInboundToken",
+        "summary": "Issue a new token for the inbound endpoint",
+        "description": "Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.",
+        "tags": ["Service desk"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboundToken"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "Service desk.disableInbound",
+        "summary": "Switch off the inbound endpoint",
+        "tags": ["Service desk"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success, no content"
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{key}/service-desk/request-types": {
       "post": {
         "operationId": "Service desk.addRequestType",
@@ -16104,6 +16174,57 @@
                   },
                   "required": ["sla"],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (RFC 9457 problem details)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/service-desk/inbound/{key}": {
+      "post": {
+        "operationId": "Service desk.inbound",
+        "summary": "File a request from another system",
+        "description": "Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.",
+        "tags": ["Service desk"],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboundServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboundServiceResponse"
                 }
               }
             }
@@ -36889,9 +37010,34 @@
           },
           "portalPath": {
             "type": "string"
+          },
+          "inbound": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "tokenCreatedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["path", "enabled", "tokenCreatedAt"],
+            "additionalProperties": false
           }
         },
-        "required": ["settings", "requestTypes", "customers", "portalPath"],
+        "required": ["settings", "requestTypes", "customers", "portalPath", "inbound"],
         "additionalProperties": false
       },
       "ServiceDeskSettings": {
@@ -36944,6 +37090,19 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 23
+          },
+          "acceptUnknownSenders": {
+            "default": false,
+            "type": "boolean"
+          },
+          "allowedDomains": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$"
+            }
           }
         },
         "required": [
@@ -36953,7 +37112,9 @@
           "resolutionHours",
           "pauseStatusIds",
           "timeZone",
-          "dayStartHour"
+          "dayStartHour",
+          "acceptUnknownSenders",
+          "allowedDomains"
         ],
         "additionalProperties": false
       },
@@ -37051,6 +37212,19 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 23
+          },
+          "acceptUnknownSenders": {
+            "default": false,
+            "type": "boolean"
+          },
+          "allowedDomains": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+$"
+            }
           }
         },
         "required": [
@@ -37062,6 +37236,19 @@
           "timeZone",
           "dayStartHour"
         ]
+      },
+      "InboundToken": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": ["secret", "path"],
+        "additionalProperties": false
       },
       "SaveRequestTypeRequest": {
         "type": "object",
@@ -37237,6 +37424,72 @@
           "stopped",
           "paused"
         ],
+        "additionalProperties": false
+      },
+      "InboundServiceRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "The person asking; answers reach them at this address."
+          },
+          "name": {
+            "description": "Their name in Lenipo; without it the part of the address before the @.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "requestType": {
+            "description": "Id or name of a request type of the desk; without it the first one.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Short title of the request."
+          },
+          "description": {
+            "description": "Plain text or Markdown.",
+            "type": "string",
+            "maxLength": 20000
+          },
+          "priority": {
+            "description": "Priority key such as high; only if the request type asks for it.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "dueDate": {
+            "description": "Due date, only if the request type asks for it.",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "customFields": {
+            "description": "Values by custom field id, as far as the request type asks for them.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": ["email", "summary"]
+      },
+      "InboundServiceResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          }
+        },
+        "required": ["key"],
         "additionalProperties": false
       },
       "SetupStatusResponse": {

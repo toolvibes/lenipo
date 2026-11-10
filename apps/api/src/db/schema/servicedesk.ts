@@ -31,6 +31,13 @@ export const serviceDesks = pgTable('service_desks', {
   timeZone: text().notNull().default('Europe/Berlin'),
   /** First working hour of the day; the day lasts the instance's hours per day. */
   dayStartHour: integer().notNull().default(9),
+  /** Mail from people without an account becomes a request through a contact account (E-168). */
+  acceptUnknownSenders: boolean().notNull().default(false),
+  /** With unknown senders: only these mail domains; empty means any. */
+  allowedDomains: text().array().notNull().default([]),
+  /** SHA-256 of the token for the inbound endpoint; null switches the endpoint off. */
+  inboundTokenHash: text(),
+  inboundTokenCreatedAt: timestamp({ withTimezone: true }),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -5586,6 +5586,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/projects/{key}/service-desk/inbound-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issue a new token for the inbound endpoint
+     * @description Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.
+     */
+    post: operations['Service desk.rotateInboundToken'];
+    /** Switch off the inbound endpoint */
+    delete: operations['Service desk.disableInbound'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/projects/{key}/service-desk/request-types': {
     parameters: {
       query?: never;
@@ -5683,6 +5704,26 @@ export interface paths {
     get: operations['Service desk.issueSla'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/service-desk/inbound/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * File a request from another system
+     * @description Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.
+     */
+    post: operations['Service desk.inbound'];
     delete?: never;
     options?: never;
     head?: never;
@@ -11507,6 +11548,11 @@ export interface components {
       requestTypes: components['schemas']['RequestType'][];
       customers: components['schemas']['ServiceCustomer'][];
       portalPath: string;
+      inbound: {
+        path: string;
+        enabled: boolean;
+        tokenCreatedAt: string | null;
+      };
     };
     ServiceDeskSettings: {
       /** @enum {string} */
@@ -11521,6 +11567,10 @@ export interface components {
       pauseStatusIds: string[];
       timeZone: string;
       dayStartHour: number;
+      /** @default false */
+      acceptUnknownSenders: boolean;
+      /** @default [] */
+      allowedDomains: string[];
     };
     ServiceCustomer: {
       /** Format: uuid */
@@ -11545,6 +11595,14 @@ export interface components {
       pauseStatusIds: string[];
       timeZone: string;
       dayStartHour: number;
+      /** @default false */
+      acceptUnknownSenders?: boolean;
+      /** @default [] */
+      allowedDomains?: string[];
+    };
+    InboundToken: {
+      secret: string;
+      path: string;
     };
     SaveRequestTypeRequest: {
       name: string;
@@ -11586,6 +11644,35 @@ export interface components {
       breached: boolean;
       stopped: boolean;
       paused: boolean;
+    };
+    InboundServiceRequest: {
+      /**
+       * Format: email
+       * @description The person asking; answers reach them at this address.
+       */
+      email: string;
+      /** @description Their name in Lenipo; without it the part of the address before the @. */
+      name?: string;
+      /** @description Id or name of a request type of the desk; without it the first one. */
+      requestType?: string;
+      /** @description Short title of the request. */
+      summary: string;
+      /** @description Plain text or Markdown. */
+      description?: string;
+      /** @description Priority key such as high; only if the request type asks for it. */
+      priority?: string;
+      /**
+       * Format: date
+       * @description Due date, only if the request type asks for it.
+       */
+      dueDate?: string;
+      /** @description Values by custom field id, as far as the request type asks for them. */
+      customFields?: {
+        [key: string]: unknown;
+      };
+    };
+    InboundServiceResponse: {
+      key: string;
     };
     SetupStatusResponse: {
       required: boolean;
@@ -24534,6 +24621,66 @@ export interface operations {
       };
     };
   };
+  'Service desk.rotateInboundToken': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InboundToken'];
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.disableInbound': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success, no content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
   'Service desk.addRequestType': {
     parameters: {
       query?: never;
@@ -24751,6 +24898,41 @@ export interface operations {
           'application/json': {
             sla: components['schemas']['IssueSla'] | null;
           };
+        };
+      };
+      /** @description Error (RFC 9457 problem details) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+    };
+  };
+  'Service desk.inbound': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InboundServiceRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InboundServiceResponse'];
         };
       };
       /** @description Error (RFC 9457 problem details) */

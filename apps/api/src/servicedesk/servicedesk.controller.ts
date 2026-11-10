@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Inject,
   Param,
@@ -12,6 +13,9 @@ import {
 import {
   AddServiceCustomerRequest,
   CreatePortalRequest,
+  InboundServiceRequest,
+  InboundServiceResponse,
+  InboundToken,
   IssueSla,
   PortalCommentRequest,
   PortalDesk,
@@ -23,7 +27,7 @@ import {
   ServiceDeskSettings,
 } from '@toolvibes/shared';
 import { z } from 'zod';
-import { CurrentPrincipal, ValidBody } from '../core/http/decorators.js';
+import { CurrentPrincipal, Public, ValidBody } from '../core/http/decorators.js';
 import { Endpoint } from '../core/http/endpoint.js';
 import type { Principal } from '../core/http/principal.js';
 import { ServiceDeskService } from './servicedesk.service.js';
@@ -67,6 +71,29 @@ export class ServiceDeskController {
     @Param('key') key: string,
   ): Promise<void> {
     return this.desks.disable(principal, key);
+  }
+
+  @Endpoint({
+    tag: 'Service desk',
+    summary: 'Issue a new token for the inbound endpoint',
+    description:
+      'Switches on requests from other systems, e.g. a form on a website (E-168). The token is shown only now; the old one stops working at once.',
+    response: InboundToken,
+  })
+  @Post('inbound-token')
+  @HttpCode(201)
+  rotateInboundToken(@CurrentPrincipal() principal: Principal, @Param('key') key: string) {
+    return this.desks.rotateInboundToken(principal, key);
+  }
+
+  @Endpoint({ tag: 'Service desk', summary: 'Switch off the inbound endpoint' })
+  @Delete('inbound-token')
+  @HttpCode(204)
+  disableInbound(
+    @CurrentPrincipal() principal: Principal,
+    @Param('key') key: string,
+  ): Promise<void> {
+    return this.desks.disableInbound(principal, key);
   }
 
   @Endpoint({ tag: 'Service desk', summary: 'Add a request type', response: ServiceDesk })
@@ -216,5 +243,31 @@ export class PortalController {
     @ValidBody(PortalCommentRequest) body: PortalCommentRequest,
   ) {
     return this.desks.comment(principal, issueKey, body.body);
+  }
+}
+
+/** Requests from other systems, e.g. a contact form on a website (E-168). */
+@Controller('service-desk')
+export class InboundController {
+  constructor(@Inject(ServiceDeskService) private readonly desks: ServiceDeskService) {}
+
+  @Endpoint({
+    tag: 'Service desk',
+    summary: 'File a request from another system',
+    description:
+      'Called with the token of the desk in `Authorization: Bearer <token>` (or `X-Lenipo-Token`). The person is found by email or gets an external account without a password, as a customer of this desk; answers reach them by mail. At most 10 requests per person and hour.',
+    response: InboundServiceResponse,
+  })
+  @Public()
+  @Post('inbound/:key')
+  @HttpCode(201)
+  inbound(
+    @Param('key') key: string,
+    @Headers('authorization') authorization: string | undefined,
+    @Headers('x-lenipo-token') header: string | undefined,
+    @ValidBody(InboundServiceRequest) body: InboundServiceRequest,
+  ): Promise<InboundServiceResponse> {
+    const bearer = /^Bearer\s+(.+)$/i.exec(authorization ?? '')?.[1];
+    return this.desks.inbound(key, header ?? bearer ?? '', body);
   }
 }

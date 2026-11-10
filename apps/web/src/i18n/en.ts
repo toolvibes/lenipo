@@ -2329,7 +2329,7 @@ export const en: Messages = {
   mailHandler: {
     title: 'Incoming e-mail',
     intro:
-      'Lenipo reads this IMAP mailbox every minute. New mails become issues, replies with the issue key in the subject comments, attachments come along. Senders act with their own rights; customers of the service desk file requests. Unknown senders and automatic replies are left alone.',
+      'Lenipo reads this IMAP mailbox every minute. New mails become issues, replies with the issue key in the subject comments, attachments come along. Senders act with their own rights; customers of the service desk file requests. Automatic replies are left alone, and so are mails from unknown senders unless the service desk accepts them.',
     host: 'IMAP server',
     port: 'Port',
     username: 'User',
@@ -3388,6 +3388,27 @@ export const en: Messages = {
   },
   serviceDesk: {
     title: 'Service desk',
+    outside: 'Requests without an account',
+    outsideIntro:
+      'For customers you know from another system: they write by mail or through a form on your website. Lenipo creates an external account without a password for them, as a customer of this service desk only; they get answers by mail.',
+    acceptUnknown: 'Accept mail from unknown senders',
+    acceptUnknownHelp:
+      'Only if the mail server confirmed the sender (SPF, DKIM or DMARC passed). At most 30 new contacts per hour.',
+    allowedDomains: 'Only these domains',
+    allowedDomainsHelp: 'Separated by commas, e.g. customer.com, example.org. Empty: all domains.',
+    inbound: 'Form or other system (webhook)',
+    inboundIntro:
+      'Your website or another system posts requests to this address, with the token in the header “Authorization: Bearer …”. At most 10 requests per person and hour.',
+    inboundOff: 'Off. A token switches it on.',
+    inboundOn: 'On, token created {{when}}.',
+    inboundEnable: 'Create token and switch on',
+    inboundRotate: 'Create a new token',
+    inboundRotateConfirm: 'Create a new token? The current one stops working at once.',
+    inboundDisable: 'Switch off',
+    inboundToken: 'Your token, visible only now:',
+    inboundUrl: 'Address',
+    inboundSchema: 'JSON schema of the request',
+    inboundExample: 'Example with curl',
     intro:
       'Customers file requests in their own portal and only see theirs; the team works on them as issues of this project, with internal notes and SLAs.',
     enable: 'Run as a service desk',

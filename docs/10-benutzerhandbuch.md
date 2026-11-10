@@ -57,7 +57,7 @@ Wer an einem Vorgang arbeitet, **beansprucht** ihn: Er wird ihm zugewiesen, ande
 
 ## Service-Portal
 
-Ist ein Projekt als Service Desk eingerichtet, stellen Kunden unter „Service-Portal“ (`/portal`) Anfragen: Anfragetyp wählen, Formular ausfüllen, absenden. „Meine Anfragen“ zeigt den Stand und die Antworten des Teams; geantwortet wird direkt im Portal. Bei Antworten und Statuswechseln kommt eine E-Mail.
+Ist ein Projekt als Service Desk eingerichtet, stellen Kunden unter „Service-Portal“ (`/portal`) Anfragen: Anfragetyp wählen, Formular ausfüllen, absenden. „Meine Anfragen“ zeigt den Stand und die Antworten des Teams; geantwortet wird direkt im Portal. Bei Antworten und Statuswechseln kommt eine E-Mail. Kunden ohne Konto können auch per Mail oder über ein Formular auf einer anderen Website Anfragen stellen, wenn die Administration das am Service Desk eingeschaltet hat; sie bekommen die Antworten per Mail.
 
 Im Team sind Anfragen normale Vorgänge. Ein Kommentar mit „Interne Notiz“ bleibt für Kunden unsichtbar. Die **Warteschlange** des Projekts (`/projects/KEY/queue`) listet offene Anfragen, die mit der knappsten SLA-Frist zuerst; am Vorgang zeigt „SLA“, wie viel Zeit bis zur ersten Antwort und zur Lösung bleibt.
 
